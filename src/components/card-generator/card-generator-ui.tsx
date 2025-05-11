@@ -14,10 +14,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface GameCard {
   id: string;
   name: string;
-  type: string; // e.g., 'Event', 'Item', 'Curse'
+  type: string; // e.g., 'Event', 'Item', 'Madness'
   deck: string;
   description: string;
-  imageUrl?: string; // Placeholder
+  imageUrl?: string;
   dataAiHint: string;
 }
 
@@ -39,10 +39,17 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
     ],
   },
   {
-    name: "Curse Deck",
+    name: "Madness Deck",
     cards: [
-      { id: "cu1", name: "Curse of Frailty", type: "Curse", deck: "Curse Deck", description: "Your DEF is reduced by 1 until this curse is lifted.", imageUrl: "https://picsum.photos/300/450?random=7", dataAiHint: "weakness curse" },
-      { id: "cu2", name: "Haunting Visions", type: "Curse", deck: "Curse Deck", description: "At the start of your turn, make a Sanity check (difficulté 2) or skip your action.", imageUrl: "https://picsum.photos/300/450?random=8", dataAiHint: "scary vision" },
+      { id: "md1", name: "Hands of the King", type: "Madness", deck: "Madness Deck", description: "The unseen sovereign extends its influence.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/43nipe84zquo/Hands_of_the_King.png", dataAiHint: "royal horror" },
+      { id: "md2", name: "Possalm Vo", type: "Madness", deck: "Madness Deck", description: "Your will is not your own.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/cpw0ilysp86m/Possalm_Vo.png", dataAiHint: "spirit possession" },
+      { id: "md3", name: "Falling Star", type: "Madness", deck: "Madness Deck", description: "A cosmic omen of despair.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/ez5ki98cis6f/Falling_Star.png", dataAiHint: "cosmic event" },
+      { id: "md4", name: "MK Ultra", type: "Madness", deck: "Madness Deck", description: "Your mind is a fractured landscape.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/nbzc428nj3il/MK_Ultra.png", dataAiHint: "mind control" },
+      { id: "md5", name: "Creeping Darkness", type: "Madness", deck: "Madness Deck", description: "Shadows lengthen and sanity wanes.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/ve1le0fptccw/Creeping_Darkness.png", dataAiHint: "dark shadow" },
+      { id: "md6", name: "Bella Don", type: "Madness", deck: "Madness Deck", description: "Poisonous thoughts cloud your judgment.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/3bv66ld5b23p/Bella_Don.png", dataAiHint: "toxic plant" },
+      { id: "md7", name: "Mad World", type: "Madness", deck: "Madness Deck", description: "Reality itself seems to unravel.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/43tj82lcf9n6/Mad_World.png", dataAiHint: "chaotic world" },
+      { id: "md8", name: "You Can Not Escape", type: "Madness", deck: "Madness Deck", description: "The walls are closing in.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/w28w5ktrqv84/You_can_not_Escape.png", dataAiHint: "trapped feeling" },
+      { id: "md9", name: "Breach", type: "Madness", deck: "Madness Deck", description: "Something has broken through.", imageUrl: "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/images%2FBreach.png?alt=media&token=8f586d07-30a9-4420-af15-057787aa5d8a", dataAiHint: "dimensional breach" },
     ],
   },
 ];
@@ -68,8 +75,11 @@ export function CardGeneratorUI() {
       .flatMap(deck => deck.cards);
 
     if (availableCards.length === 0) {
-      alert("Please select at least one deck to draw from.");
+      // This case should ideally be prevented by disabling the button
+      // but as a fallback:
       setIsLoading(false);
+      // Consider using a toast notification here for better UX
+      alert("Please select at least one deck to draw from."); 
       return;
     }
     
@@ -88,6 +98,13 @@ export function CardGeneratorUI() {
     setIsLoading(false);
   }
 
+  // Effect to ensure some decks are selected by default if none are
+  useEffect(() => {
+    if (selectedDecks.length === 0 && sampleDecks.length > 0) {
+      setSelectedDecks([sampleDecks[0].name]);
+    }
+  }, [selectedDecks]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
       <Card className="md:col-span-1 shadow-xl">
@@ -105,6 +122,7 @@ export function CardGeneratorUI() {
                 id={deck.name}
                 checked={selectedDecks.includes(deck.name)}
                 onCheckedChange={() => handleDeckSelection(deck.name)}
+                aria-label={`Select ${deck.name}`}
               />
               <Label htmlFor={deck.name} className="text-base cursor-pointer flex-grow">
                 {deck.name} <span className="text-xs text-muted-foreground">({deck.cards.length} cards)</span>
@@ -137,12 +155,13 @@ export function CardGeneratorUI() {
           ) : generatedCard ? (
             <Card key={cardKey} className="w-full max-w-sm bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
               {generatedCard.imageUrl && (
-                <div className="relative w-full h-60 overflow-hidden rounded-t-lg">
+                <div className="relative w-full aspect-[2/3] max-h-[300px] overflow-hidden rounded-t-lg"> {/* Adjusted for aspect ratio */}
                   <Image
                     src={generatedCard.imageUrl}
                     alt={generatedCard.name}
-                    layout="fill"
-                    objectFit="cover"
+                    fill // Changed layout to fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Added sizes
+                    style={{ objectFit: "cover" }} // Changed objectFit to style
                     data-ai-hint={generatedCard.dataAiHint}
                   />
                 </div>

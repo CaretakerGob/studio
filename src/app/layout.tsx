@@ -18,8 +18,8 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Beast Companion',
-  description: 'Your companion app for the Beast board game.',
+  title: 'Riddle of the Beast Companion',
+  description: 'Your companion app for the Rotb board game.',
 };
 
 export default function RootLayout({
