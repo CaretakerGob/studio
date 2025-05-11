@@ -14,9 +14,9 @@ export default function HomePage() {
   return (
     <div className="container mx-auto py-12 px-4">
       <header className="text-center mb-12">
-        <h1 className="text-5xl font-bold text-primary mb-4">Welcome to Beast Companion</h1>
+        <h1 className="text-5xl font-bold text-primary mb-4">Riddle of the Beast Companion</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Your essential toolkit for navigating the horrors and challenges of the Beast board game. Dive in and enhance your gameplay experience!
+          Your essential toolkit for navigating the horrors and challenges of the RotB board game. Dive in and enhance your gameplay experience!
         </p>
       </header>
 
@@ -42,7 +42,7 @@ export default function HomePage() {
       </div>
 
       <footer className="text-center mt-16 text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Beast Companion. Unleash the beast within!</p>
+        <p>&copy; {new Date().getFullYear()} RotB Companion App. The Black Easter is coming!</p>
       </footer>
     </div>
   );
