@@ -24,12 +24,12 @@ const initialBaseStats: Omit<CharacterStats, 'atk' | 'rng'> = {
 };
 
 const initialSkills: Skills = {
-  tactics: 1,
-  survival: 1,
-  knowledge: 1,
-  occult: 1,
-  empathy: 1,
-  tuner: 1,
+  tactics: 0,
+  survival: 0,
+  knowledge: 0,
+  occult: 0,
+  empathy: 0,
+  tuner: 0,
 };
 
 const statDefinitions: CharacterStatDefinition[] = [
@@ -368,6 +368,7 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
 
 
 
