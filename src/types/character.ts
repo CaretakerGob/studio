@@ -43,7 +43,8 @@ export interface Ability {
   cost?: string; 
   range?: string; 
   cooldown?: string; 
-  details?: string; 
+  details?: string;
+  maxQuantity?: number; // Added for consumable charges
 }
 
 export interface Weapon {
@@ -63,10 +64,11 @@ export interface Character {
   skills?: Skills; 
   abilities: Ability[];
   avatarSeed?: string;
-  imageUrl?: string; // Added character image URL
+  imageUrl?: string; 
   meleeWeapon?: Weapon;
   rangedWeapon?: RangedWeapon;
   characterPoints?: number;
 }
+
 
 

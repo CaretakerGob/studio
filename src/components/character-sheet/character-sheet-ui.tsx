@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -76,7 +76,7 @@ const charactersData: Character[] = [
       { id: 'gob_wounding_strike', name: 'Wounding Strike', type: 'Action', description: 'Bypasses Targets Armor Effect. Damaged targets are WOUNDED for 2 rounds.', details: 'A3/R1' },
       { id: 'gob_leadership', name: 'Leadership', type: 'Action', description: 'Roll 1 combat dice. Allies within 2 spaces increase their Attack or Defense by 1 for 1 round on a HIT.' },
       { id: 'gob_quick_draw', name: 'Quick Draw', type: 'Interrupt', description: 'Push target back 1 space for each HIT.', details: 'A3/R3', cooldown: '2 round CD' },
-      { id: 'gob_flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6' },
+      { id: 'gob_flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6', maxQuantity: 3 },
     ],
     characterPoints: 375,
   },
@@ -93,8 +93,8 @@ const charactersData: Character[] = [
       { id: 'cass_death_knell', name: 'Death Knell', type: 'Action', description: 'Roll 1 additional Attack Dice for each HP Cassandra is below her Max HP.', details: 'A3/R3 - NETHER', cooldown: '3 round CD' },
       { id: 'cass_anoint_weapon', name: 'Anoint Weapon', type: 'Action', description: 'Targets attacks are now of the ETHER element for 2 rounds.', details: 'R4' },
       { id: 'cass_enrage', name: 'Enrage', type: 'Passive', description: "When Cassie's HP falls to 3 or less she gains the BERSERK buff." },
-      { id: 'cass_curse_x4', name: 'Curse x4', type: 'Interrupt', description: 'Target is inflicted with Hex for 1 round.', details: 'R4' },
-      { id: 'cass_healing_light_x4', name: 'Healing Light x4', type: 'Interrupt', description: 'Target regains 1 HP per HIT.', details: 'A3/R4' },
+      { id: 'cass_curse_x4', name: 'Curse x4', type: 'Interrupt', description: 'Target is inflicted with Hex for 1 round.', details: 'R4', maxQuantity: 4 },
+      { id: 'cass_healing_light_x4', name: 'Healing Light x4', type: 'Interrupt', description: 'Target regains 1 HP per HIT.', details: 'A3/R4', maxQuantity: 4 },
     ],
     characterPoints: 375,
   },
@@ -106,8 +106,12 @@ export function CharacterSheetUI() {
   const [stats, setStats] = useState<CharacterStats>(charactersData.find(c => c.id === charactersData[0].id)?.baseStats || initialBaseStats);
   const [characterSkills, setCharacterSkills] = useState<Skills>(charactersData.find(c => c.id === charactersData[0].id)?.skills || initialSkills);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
+  
   const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
   const [maxAbilityCooldowns, setMaxAbilityCooldowns] = useState<Record<string, number>>({});
+  const [currentAbilityQuantities, setCurrentAbilityQuantities] = useState<Record<string, number>>({});
+  const [maxAbilityQuantities, setMaxAbilityQuantities] = useState<Record<string, number>>({});
+
 
   const selectedCharacter = charactersData.find(c => c.id === selectedCharacterId) || charactersData[0];
 
@@ -124,17 +128,26 @@ export function CharacterSheetUI() {
 
       const newCurrentCooldowns: Record<string, number> = {};
       const newMaxCooldowns: Record<string, number> = {};
+      const newCurrentQuantities: Record<string, number> = {};
+      const newMaxQuantities: Record<string, number> = {};
+
       selectedCharacter.abilities.forEach(ability => {
-        if ((ability.type === 'Action' || ability.type === 'Interrupt') && ability.cooldown) {
+        if (ability.cooldown && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCooldowns[ability.id] = maxRounds;
             newCurrentCooldowns[ability.id] = maxRounds; 
           }
         }
+        if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
+          newMaxQuantities[ability.id] = ability.maxQuantity;
+          newCurrentQuantities[ability.id] = ability.maxQuantity;
+        }
       });
       setCurrentAbilityCooldowns(newCurrentCooldowns);
       setMaxAbilityCooldowns(newMaxCooldowns);
+      setCurrentAbilityQuantities(newCurrentQuantities);
+      setMaxAbilityQuantities(newMaxQuantities);
     }
   }, [selectedCharacter, parseCooldownRounds]);
 
@@ -181,11 +194,27 @@ export function CharacterSheetUI() {
     }));
   };
 
+  const handleIncrementQuantity = (abilityId: string) => {
+    setCurrentAbilityQuantities(prev => ({
+      ...prev,
+      [abilityId]: Math.min((prev[abilityId] || 0) + 1, maxAbilityQuantities[abilityId] || Infinity),
+    }));
+  };
+
+  const handleDecrementQuantity = (abilityId: string) => {
+    setCurrentAbilityQuantities(prev => ({
+      ...prev,
+      [abilityId]: Math.max((prev[abilityId] || 0) - 1, 0),
+    }));
+  };
+
+
   const resetStats = () => {
     if (selectedCharacter) {
       setStats(selectedCharacter.baseStats);
       setCharacterSkills(selectedCharacter.skills || initialSkills);
       const newCurrentCooldowns: Record<string, number> = {};
+      const newCurrentQuantities: Record<string, number> = {};
       selectedCharacter.abilities.forEach(ability => {
         if ((ability.type === 'Action' || ability.type === 'Interrupt') && ability.cooldown) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
@@ -193,8 +222,12 @@ export function CharacterSheetUI() {
             newCurrentCooldowns[ability.id] = maxRounds; 
           }
         }
+        if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
+          newCurrentQuantities[ability.id] = ability.maxQuantity;
+        }
       });
       setCurrentAbilityCooldowns(newCurrentCooldowns);
+      setCurrentAbilityQuantities(newCurrentQuantities);
     }
   };
 
@@ -299,10 +332,26 @@ export function CharacterSheetUI() {
     maxCooldown?: number;
     onIncrementCooldown?: () => void;
     onDecrementCooldown?: () => void;
+    currentQuantity?: number;
+    maxQuantity?: number;
+    onIncrementQuantity?: () => void;
+    onDecrementQuantity?: () => void;
   }
   
-  const AbilityCard: React.FC<AbilityCardProps> = ({ ability, currentCooldown, maxCooldown, onIncrementCooldown, onDecrementCooldown }) => {
-    const hasTrackableCooldown = ability.cooldown && 
+  const AbilityCard: React.FC<AbilityCardProps> = ({ 
+    ability, 
+    currentCooldown, maxCooldown, onIncrementCooldown, onDecrementCooldown,
+    currentQuantity, maxQuantity, onIncrementQuantity, onDecrementQuantity 
+  }) => {
+    
+    const hasTrackableQuantity = ability.maxQuantity !== undefined && 
+                                 typeof currentQuantity === 'number' && 
+                                 typeof maxQuantity === 'number' && 
+                                 onIncrementQuantity && 
+                                 onDecrementQuantity;
+
+    const hasTrackableCooldown = !hasTrackableQuantity && // Prioritize quantity display if both defined
+                                 ability.cooldown && 
                                  typeof currentCooldown === 'number' && 
                                  typeof maxCooldown === 'number' && 
                                  onIncrementCooldown && 
@@ -316,11 +365,34 @@ export function CharacterSheetUI() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">{ability.description}</p>
-          {ability.cooldown && !hasTrackableCooldown && (
-            <p className="text-xs text-amber-400 mt-1 flex items-center">
-              <Clock className="mr-1 h-3 w-3" /> Cooldown: {ability.cooldown}
-            </p>
+
+          {hasTrackableQuantity && (
+            <div className="mt-3 pt-3 border-t border-muted-foreground/20">
+              <div className='flex justify-between items-center mb-1'>
+                <Label htmlFor={`${ability.id}-quantity`} className="text-sm font-medium text-green-400 flex items-center">
+                  <Box className="mr-1 h-4 w-4" /> Charges
+                </Label>
+                {ability.maxQuantity && <span className="text-xs text-muted-foreground">(Max: {ability.maxQuantity})</span>}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={onDecrementQuantity} disabled={currentQuantity === 0} className="h-8 w-8">
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Input
+                  id={`${ability.id}-quantity`}
+                  type="number"
+                  value={currentQuantity}
+                  readOnly
+                  className="w-16 h-8 text-center text-lg font-bold"
+                />
+                <Button variant="outline" size="icon" onClick={onIncrementQuantity} disabled={currentQuantity === maxQuantity} className="h-8 w-8">
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <span className="text-xl font-medium text-muted-foreground">/ {maxQuantity}</span>
+              </div>
+            </div>
           )}
+
           {hasTrackableCooldown && (
             <div className="mt-3 pt-3 border-t border-muted-foreground/20">
               <div className='flex justify-between items-center mb-1'>
@@ -347,6 +419,12 @@ export function CharacterSheetUI() {
               </div>
             </div>
           )}
+          
+          {!hasTrackableQuantity && !hasTrackableCooldown && ability.cooldown && (
+            <p className="text-xs text-amber-400 mt-1 flex items-center">
+              <Clock className="mr-1 h-3 w-3" /> Cooldown: {ability.cooldown}
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -365,7 +443,7 @@ export function CharacterSheetUI() {
           data-ai-hint="character background"
         />
       )}
-      <div className="relative z-10 bg-transparent"> {/* Changed bg-card/75 to bg-transparent */}
+      <div className="relative z-10 bg-transparent">
         <CardHeader>
           <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -404,9 +482,9 @@ export function CharacterSheetUI() {
               )}
             </div>
           
-            <div className="md:col-span-2 space-y-4 flex justify-end"> {/* Ensure this div itself aligns content to the right */}
+            <div className="md:col-span-2 space-y-4 flex justify-end">
               {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-                <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end"> {/* w-fit and items-end */}
+                <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
                   <Label className="text-md font-medium flex items-center">
                     <Award className="mr-2 h-5 w-5 text-primary" />
                     Character Points
@@ -447,8 +525,12 @@ export function CharacterSheetUI() {
                 {
                   (() => {
                     const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] || 0) > 0);
-                    if (relevantSkillDefinitions.length === 0) {
-                      return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no skills with a value greater than 0.</p>;
+                    if (relevantSkillDefinitions.length === 0 && selectedCharacter.id !== 'custom') { // Show for custom, hide for others if no skills
+                      return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
+                    }
+                    if (selectedCharacter.id === 'custom' && relevantSkillDefinitions.length === 0) {
+                       // Potentially allow adding/editing skills for custom characters in future
+                       return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">Define custom skills for this character.</p>;
                     }
                     return (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -469,15 +551,20 @@ export function CharacterSheetUI() {
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><BookOpen className="mr-2 h-6 w-6 text-primary" /> Actions</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {actionAbilities.map(ability => {
-                            const isTrackable = ability.type === 'Action' && ability.cooldown && maxAbilityCooldowns[ability.id] !== undefined && currentAbilityCooldowns[ability.id] !== undefined;
+                            const isTrackableCooldown = ability.cooldown && maxAbilityCooldowns[ability.id] !== undefined && currentAbilityCooldowns[ability.id] !== undefined;
+                            const isTrackableQuantity = ability.maxQuantity !== undefined && maxAbilityQuantities[ability.id] !== undefined && currentAbilityQuantities[ability.id] !== undefined;
                             return (
                                 <AbilityCard
                                 key={ability.id}
                                 ability={ability}
-                                currentCooldown={isTrackable ? currentAbilityCooldowns[ability.id] : undefined}
-                                maxCooldown={isTrackable ? maxAbilityCooldowns[ability.id] : undefined}
-                                onIncrementCooldown={isTrackable ? () => handleIncrementCooldown(ability.id) : undefined}
-                                onDecrementCooldown={isTrackable ? () => handleDecrementCooldown(ability.id) : undefined}
+                                currentCooldown={isTrackableCooldown ? currentAbilityCooldowns[ability.id] : undefined}
+                                maxCooldown={isTrackableCooldown ? maxAbilityCooldowns[ability.id] : undefined}
+                                onIncrementCooldown={isTrackableCooldown ? () => handleIncrementCooldown(ability.id) : undefined}
+                                onDecrementCooldown={isTrackableCooldown ? () => handleDecrementCooldown(ability.id) : undefined}
+                                currentQuantity={isTrackableQuantity ? currentAbilityQuantities[ability.id] : undefined}
+                                maxQuantity={isTrackableQuantity ? maxAbilityQuantities[ability.id] : undefined}
+                                onIncrementQuantity={isTrackableQuantity ? () => handleIncrementQuantity(ability.id) : undefined}
+                                onDecrementQuantity={isTrackableQuantity ? () => handleDecrementQuantity(ability.id) : undefined}
                                 />
                             );
                         })}
@@ -489,16 +576,21 @@ export function CharacterSheetUI() {
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" /> Interrupts</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {interruptAbilities.map(ability => {
-                           const isTrackable = ability.type === 'Interrupt' && ability.cooldown && maxAbilityCooldowns[ability.id] !== undefined && currentAbilityCooldowns[ability.id] !== undefined;
+                           const isTrackableCooldown = ability.cooldown && maxAbilityCooldowns[ability.id] !== undefined && currentAbilityCooldowns[ability.id] !== undefined;
+                           const isTrackableQuantity = ability.maxQuantity !== undefined && maxAbilityQuantities[ability.id] !== undefined && currentAbilityQuantities[ability.id] !== undefined;
                            return (
-                               <AbilityCard
-                                   key={ability.id}
-                                   ability={ability}
-                                   currentCooldown={isTrackable ? currentAbilityCooldowns[ability.id] : undefined}
-                                   maxCooldown={isTrackable ? maxAbilityCooldowns[ability.id] : undefined}
-                                   onIncrementCooldown={isTrackable ? () => handleIncrementCooldown(ability.id) : undefined}
-                                   onDecrementCooldown={isTrackable ? () => handleDecrementCooldown(ability.id) : undefined}
-                               />
+                                <AbilityCard
+                                    key={ability.id}
+                                    ability={ability}
+                                    currentCooldown={isTrackableCooldown ? currentAbilityCooldowns[ability.id] : undefined}
+                                    maxCooldown={isTrackableCooldown ? maxAbilityCooldowns[ability.id] : undefined}
+                                    onIncrementCooldown={isTrackableCooldown ? () => handleIncrementCooldown(ability.id) : undefined}
+                                    onDecrementCooldown={isTrackableCooldown ? () => handleDecrementCooldown(ability.id) : undefined}
+                                    currentQuantity={isTrackableQuantity ? currentAbilityQuantities[ability.id] : undefined}
+                                    maxQuantity={isTrackableQuantity ? maxAbilityQuantities[ability.id] : undefined}
+                                    onIncrementQuantity={isTrackableQuantity ? () => handleIncrementQuantity(ability.id) : undefined}
+                                    onDecrementQuantity={isTrackableQuantity ? () => handleDecrementQuantity(ability.id) : undefined}
+                                />
                            );
                         })}
                       </div>
