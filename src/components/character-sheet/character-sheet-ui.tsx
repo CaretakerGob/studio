@@ -251,7 +251,7 @@ export function CharacterSheetUI() {
           alt={`${selectedCharacter.name} background`}
           fill
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
-          className="absolute inset-0 z-0 opacity-25 pointer-events-none"
+          className="absolute inset-0 z-0 opacity-40 pointer-events-none"
           priority
           data-ai-hint="character background"
         />
