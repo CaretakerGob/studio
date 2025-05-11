@@ -22,6 +22,62 @@ interface GameCard {
   dataAiHint: string;
 }
 
+const clashCardImageUrls = [
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%201.png?alt=media&token=9572fefe-ca20-487a-9278-23705019273f",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2010%20copy.png?alt=media&token=205a8ce1-c0f8-455c-af6f-c571c60f587d",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2011%20copy.png?alt=media&token=82b15447-7ec9-471d-966b-6e435008284c",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2012.png?alt=media&token=ec31c317-9f8d-42f0-a736-2a8f0915ecdd",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2013%20copy.png?alt=media&token=286b117c-af9a-4c28-88e9-4d3c141b8410",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2014.png?alt=media&token=ccaf7f26-b8ff-4fa1-a82e-a5cdc78de01f",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2015%20copy.png?alt=media&token=997a5a95-2063-4261-b483-92515f0549fa",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2016%20copy.png?alt=media&token=d941b5b4-bebc-48d9-84aa-3ea8b19e1083",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2017%20copy.png?alt=media&token=d5d33e6e-199e-4d19-82c2-41d065456f7c",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2018%20copy.png?alt=media&token=f1aacf2d-880b-4af8-8cd8-542d237c31cc",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2019%20copy.png?alt=media&token=63793e0a-6e4f-4c1a-8a3d-35979b65e092",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%202.png?alt=media&token=6ec4b3cb-1146-4e57-bca5-5209a25d7ed9",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2020%20copy.png?alt=media&token=6b7b0268-f7eb-43b8-b78a-555057bed1ed",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2021.png?alt=media&token=78fc2ca4-7b01-4334-bc29-f7064caede84",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2022%20copy.png?alt=media&token=ffa8d295-ea0f-4550-bda8-84855b2790ee",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2023%20copy.png?alt=media&token=e617a98e-1dc4-42a4-b2ce-9d6fee374bc6",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2024.png?alt=media&token=f03a8968-62d6-43e9-871e-f3a06f66ac49",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2025.png?alt=media&token=49cd2fee-1e4d-413c-aac7-7530fdcdd2c8",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2026%20copy.png?alt=media&token=b7ee5a11-b83c-44b6-8bab-18a5bc68f245",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2027%20copy.png?alt=media&token=7a534e30-f3c3-463a-baff-982c7a569c6d",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2028%20copy.png?alt=media&token=b17f88fe-1297-49b8-a30b-a7a662219ee1",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2029.png?alt=media&token=602435d1-ea14-4837-b9ee-732c33a17484",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%203%20copy.png?alt=media&token=a39ef525-6c60-4208-a869-109669e42278",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%2030.png?alt=media&token=4377ab1b-7aa8-476c-9316-b2aa672c1619",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%204.png?alt=media&token=515d8ff8-a724-473c-aa43-2c7c9ee023e8",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%205.png?alt=media&token=8f7e9b9c-fc85-4015-9cfb-da9a8cd906c9",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%206%20copy.png?alt=media&token=4dd50f1c-3c80-4e71-94de-65e782fa7c26",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%207%20copy.png?alt=media&token=e33f698e-a8d6-4f05-986a-cb28834770e6",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%208%20copy.png?alt=media&token=854d2418-0717-47b0-bd25-a05c553e4d5f",
+  "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FClash%2FDN%209%20copy.png?alt=media&token=2fcb052e-c0a6-403a-a4b3-d8b8c202962e",
+];
+
+const generateClashCards = (): GameCard[] => {
+  const existingCards: GameCard[] = [
+    { id: "cl1", name: "Sudden Strike", type: "Clash", deck: "Clash Deck", description: "The Beast lashes out unexpectedly. The targeted hero must defend or suffer 2 damage.", imageUrl: clashCardImageUrls[0], dataAiHint: "beast attack" },
+    { id: "cl2", name: "Feint", type: "Clash", deck: "Clash Deck", description: "The Beast attempts to trick a hero. If successful, the hero loses their next action.", imageUrl: clashCardImageUrls[1], dataAiHint: "cunning beast" },
+    { id: "cl3", name: "Desperate Claw", type: "Clash", deck: "Clash Deck", description: "A wild attack from the Beast. +1 ATK for this clash.", imageUrl: clashCardImageUrls[2], dataAiHint: "sharp claws" },
+  ];
+
+  const newCards: GameCard[] = [];
+  for (let i = 3; i < clashCardImageUrls.length; i++) {
+    newCards.push({
+      id: `cl${i + 1}`,
+      name: `Clash Card ${i + 1}`,
+      type: "Clash",
+      deck: "Clash Deck",
+      description: "A mysterious clash card has been drawn.",
+      imageUrl: clashCardImageUrls[i],
+      dataAiHint: "clash beast",
+    });
+  }
+  return [...existingCards, ...newCards];
+};
+
+
 const sampleDecks: { name: string; cards: GameCard[] }[] = [
   {
     name: "Event Deck",
@@ -32,7 +88,7 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
     ],
   },
   {
-    name: "Item Deck", // Renamed from "Clash Deck" as it contained items
+    name: "Item Deck", 
     cards: [
       { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://picsum.photos/300/450?random=4", dataAiHint: "old lantern" },
       { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://picsum.photos/300/450?random=5", dataAiHint: "holy charm" },
@@ -54,15 +110,11 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
     ],
   },
   {
-    name: "Clash Deck", // New deck
-    cards: [
-      { id: "cl1", name: "Sudden Strike", type: "Clash", deck: "Clash Deck", description: "The Beast lashes out unexpectedly. The targeted hero must defend or suffer 2 damage.", imageUrl: "https://picsum.photos/300/450?random=10", dataAiHint: "beast attack" },
-      { id: "cl2", name: "Feint", type: "Clash", deck: "Clash Deck", description: "The Beast attempts to trick a hero. If successful, the hero loses their next action.", imageUrl: "https://picsum.photos/300/450?random=11", dataAiHint: "cunning beast" },
-      { id: "cl3", name: "Desperate Claw", type: "Clash", deck: "Clash Deck", description: "A wild attack from the Beast. +1 ATK for this clash.", imageUrl: "https://picsum.photos/300/450?random=12", dataAiHint: "sharp claws" },
-    ],
+    name: "Clash Deck",
+    cards: generateClashCards(),
   },
   {
-    name: "Combat Deck", // New deck
+    name: "Combat Deck",
     cards: [
       { id: "cb1", name: "Power Attack", type: "Combat", deck: "Combat Deck", description: "Hero makes an attack with +2 ATK but -1 DEF this round.", imageUrl: "https://picsum.photos/300/450?random=13", dataAiHint: "strong attack" },
       { id: "cb2", name: "Swift Dodge", type: "Combat", deck: "Combat Deck", description: "Hero gains +2 DEF against the next attack this round.", imageUrl: "https://picsum.photos/300/450?random=14", dataAiHint: "agile movement" },
@@ -75,7 +127,7 @@ export function CardGeneratorUI() {
   const [selectedDecks, setSelectedDecks] = useState<string[]>(sampleDecks.map(deck => deck.name));
   const [generatedCard, setGeneratedCard] = useState<GameCard | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [cardKey, setCardKey] = useState(0); // For re-triggering animation
+  const [cardKey, setCardKey] = useState(0); 
 
   const handleDeckSelection = (deckName: string) => {
     setSelectedDecks(prev =>
@@ -85,28 +137,24 @@ export function CardGeneratorUI() {
 
   const generateCard = () => {
     setIsLoading(true);
-    setGeneratedCard(null); // Clear previous card for loading state
+    setGeneratedCard(null); 
 
     const availableCards = sampleDecks
       .filter(deck => selectedDecks.includes(deck.name))
       .flatMap(deck => deck.cards);
 
     if (availableCards.length === 0) {
-      // This case should ideally be prevented by disabling the button
-      // but as a fallback:
       setIsLoading(false);
-      // Consider using a toast notification here for better UX
       alert("Please select at least one deck to draw from."); 
       return;
     }
     
-    // Simulate API call or heavy processing
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * availableCards.length);
       setGeneratedCard(availableCards[randomIndex]);
-      setCardKey(prev => prev + 1); // Change key to re-mount/re-animate card
+      setCardKey(prev => prev + 1); 
       setIsLoading(false);
-    }, 500); // Simulate delay
+    }, 500); 
   };
 
   const resetGenerator = () => {
@@ -115,7 +163,6 @@ export function CardGeneratorUI() {
     setIsLoading(false);
   }
 
-  // Effect to ensure some decks are selected by default if none are
   useEffect(() => {
     if (selectedDecks.length === 0 && sampleDecks.length > 0) {
       setSelectedDecks([sampleDecks[0].name]);
@@ -157,28 +204,28 @@ export function CardGeneratorUI() {
         </CardFooter>
       </Card>
 
-      <Card className="md:col-span-2 shadow-xl min-h-[500px] flex flex-col justify-start items-center"> {/* Adjusted min-h for taller images */}
+      <Card className="md:col-span-2 shadow-xl min-h-[500px] flex flex-col justify-start items-center">
         <CardHeader className="w-full text-center">
            <CardTitle className="text-2xl">Generated Card</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex items-center justify-center w-full p-4">
           {isLoading ? (
             <div className="space-y-4 w-full max-w-xs">
-              <Skeleton className="h-[450px] w-[300px] rounded-lg mx-auto" /> {/* Adjusted skeleton to approx 2:3, e.g., 300x450 */}
+              <Skeleton className="h-[450px] w-[300px] rounded-lg mx-auto" /> 
               <Skeleton className="h-6 w-3/4 mx-auto" />
               <Skeleton className="h-4 w-full mx-auto" />
               <Skeleton className="h-4 w-5/6 mx-auto" />
             </div>
           ) : generatedCard ? (
-            <Card key={cardKey} className="w-full max-w-xs sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500"> {/* max-w-xs for small, sm:max-w-sm for medium, md:max-w-md for larger */}
+            <Card key={cardKey} className="w-full max-w-[300px] bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500"> 
               {generatedCard.imageUrl && (
-                <div className="relative w-full aspect-[2/3] overflow-hidden rounded-t-lg"> {/* Maintained 2:3 aspect ratio */}
+                <div className="relative w-full aspect-[720/1000] overflow-hidden rounded-t-lg"> 
                   <Image
                     src={generatedCard.imageUrl}
                     alt={generatedCard.name}
                     fill
-                    sizes="(max-width: 640px) 90vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 300px" // Adjusted sizes
-                    style={{ objectFit: "cover" }} 
+                    sizes="(max-width: 768px) 90vw, (max-width: 1024px) 50vw, 300px" 
+                    style={{ objectFit: "contain" }} 
                     data-ai-hint={generatedCard.dataAiHint}
                     priority={true} 
                   />
@@ -206,4 +253,3 @@ export function CardGeneratorUI() {
     </div>
   );
 }
-
