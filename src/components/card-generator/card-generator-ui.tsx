@@ -140,14 +140,14 @@ export function CardGeneratorUI() {
         </CardFooter>
       </Card>
 
-      <Card className="md:col-span-2 shadow-xl min-h-[400px] flex flex-col justify-center items-center">
+      <Card className="md:col-span-2 shadow-xl min-h-[400px] flex flex-col justify-start items-center"> {/* Changed justify-center to justify-start */}
         <CardHeader className="w-full text-center">
            <CardTitle className="text-2xl">Generated Card</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex items-center justify-center w-full p-4">
           {isLoading ? (
             <div className="space-y-4 w-full max-w-xs">
-              <Skeleton className="h-[250px] w-full rounded-lg" />
+              <Skeleton className="h-[375px] w-[250px] rounded-lg mx-auto" /> {/* Adjusted skeleton to approx 2:3 */}
               <Skeleton className="h-6 w-3/4 mx-auto" />
               <Skeleton className="h-4 w-full mx-auto" />
               <Skeleton className="h-4 w-5/6 mx-auto" />
@@ -155,14 +155,15 @@ export function CardGeneratorUI() {
           ) : generatedCard ? (
             <Card key={cardKey} className="w-full max-w-sm bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
               {generatedCard.imageUrl && (
-                <div className="relative w-full aspect-[2/3] max-h-[300px] overflow-hidden rounded-t-lg"> {/* Adjusted for aspect ratio */}
+                <div className="relative w-full aspect-[2/3] overflow-hidden rounded-t-lg">
                   <Image
                     src={generatedCard.imageUrl}
                     alt={generatedCard.name}
-                    fill // Changed layout to fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Added sizes
-                    style={{ objectFit: "cover" }} // Changed objectFit to style
+                    fill
+                    sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 384px" // Adjusted sizes based on max-w-sm (384px)
+                    style={{ objectFit: "cover" }} 
                     data-ai-hint={generatedCard.dataAiHint}
+                    priority={true} // Added priority for LCP potential
                   />
                 </div>
               )}
@@ -188,3 +189,4 @@ export function CardGeneratorUI() {
     </div>
   );
 }
+
