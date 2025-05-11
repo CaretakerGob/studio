@@ -1,4 +1,3 @@
-tsx
 "use client";
 
 import { useState } from 'react';
@@ -11,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label'; // Added import
+import { Label } from '@/components/ui/label';
 
 const diceTypes = [
   { value: '4', label: 'd4' },
@@ -217,4 +216,3 @@ export function DiceRollerUI() {
     </div>
   );
 }
-
