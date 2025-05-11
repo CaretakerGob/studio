@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ChangeEvent } from 'react';
@@ -67,6 +68,16 @@ const charactersData: Character[] = [
       { id: 'quick_draw', name: 'Quick Draw', type: 'Interrupt', description: 'Push target back 1 space for each HIT.', details: 'A3/R3', cooldown: '2 round CD' },
       { id: 'flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6' },
     ],
+  },
+  {
+    id: 'cassandra',
+    name: 'Cassandra',
+    baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
+    skills: { tactics: 2, survival: 1, knowledge: 2 },
+    avatarSeed: 'cassandra',
+    meleeWeapon: { name: "Saber", attack: 3 },
+    rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
+    abilities: [],
   },
 ];
 
@@ -351,4 +362,5 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
 
