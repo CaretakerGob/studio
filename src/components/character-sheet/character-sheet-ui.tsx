@@ -16,7 +16,6 @@ import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 
 const initialBaseStats: CharacterStats = {
@@ -55,7 +54,7 @@ const charactersData: Character[] = [
   {
     id: 'custom',
     name: 'Custom Character',
-    baseStats: initialBaseStats,
+    baseStats: { hp: 5, maxHp: 5, mv: 2, def: 2, sanity: 5, maxSanity: 5 },
     skills: initialSkills,
     abilities: [],
     avatarSeed: 'customcharacter',
@@ -474,17 +473,6 @@ export function CharacterSheetUI() {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <Avatar className="w-48 h-48 rounded-lg border-2 border-primary shadow-lg mt-4">
-                {selectedCharacter.imageUrl ? (
-                  <AvatarImage src={selectedCharacter.imageUrl} alt={selectedCharacter.name} data-ai-hint="character portrait"/>
-                ) : selectedCharacter.avatarSeed && (
-                  <AvatarImage src={`https://picsum.photos/seed/${selectedCharacter.avatarSeed}/200/200`} alt={selectedCharacter.name} data-ai-hint="character placeholder"/>
-                )}
-                <AvatarFallback className="text-6xl bg-muted text-muted-foreground">
-                  {selectedCharacter.name.substring(0,2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
             </div>
           
             <div className="md:col-span-2 space-y-4 flex justify-end">
@@ -628,5 +616,6 @@ export function CharacterSheetUI() {
 }
 
     
+
 
 
