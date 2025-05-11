@@ -34,11 +34,11 @@ export function TurnTrackerUI() {
 
   const addPlayer = () => {
     if (newPlayerName.trim() === '') {
-      toast({ title: "Error", description: "Player name cannot be empty.", variant: "destructive" });
+      setTimeout(() => toast({ title: "Error", description: "Player name cannot be empty.", variant: "destructive" }), 0);
       return;
     }
     if (players.length >= 8) { // Arbitrary limit
-        toast({ title: "Limit Reached", description: "Maximum of 8 players allowed.", variant: "destructive" });
+        setTimeout(() => toast({ title: "Limit Reached", description: "Maximum of 8 players allowed.", variant: "destructive" }), 0);
         return;
     }
     const newPlayer: Player = {
@@ -48,16 +48,39 @@ export function TurnTrackerUI() {
     };
     setPlayers([...players, newPlayer]);
     setNewPlayerName('');
-    toast({ title: "Player Added", description: `${newPlayer.name} has joined the hunt.` });
+    setTimeout(() => toast({ title: "Player Added", description: `${newPlayer.name} has joined the hunt.` }), 0);
   };
 
   const removePlayer = (id: string) => {
     const playerToRemove = players.find(p => p.id === id);
+    const removedPlayerName = playerToRemove?.name; // Capture name before state update potentially affects closure
+
     setPlayers(players.filter(player => player.id !== id));
-    if (players.length -1 <= currentTurnIndex && currentTurnIndex > 0) {
-      setCurrentTurnIndex(prev => Math.max(0, prev -1));
-    }
-    toast({ title: "Player Removed", description: `${playerToRemove?.name} has left the game.`, variant: "destructive" });
+    
+    // Adjust currentTurnIndex if the removed player was the current one or before
+    setPlayers(currentPlayers => {
+        if (currentPlayers.length > 0) {
+            setCurrentTurnIndex(prevIndex => {
+                if (prevIndex >= currentPlayers.length) {
+                    return currentPlayers.length -1;
+                }
+                // If the player removed was before or at the current index, and it's not the first player
+                // and the current index is now out of bounds, adjust.
+                // This logic might need further refinement based on desired behavior when current player is removed.
+                // For now, a simple adjustment if index becomes invalid.
+                const playerIndexBeingRemoved = players.findIndex(p => p.id === id);
+                if (playerIndexBeingRemoved <= prevIndex && prevIndex > 0) {
+                     return Math.max(0, prevIndex -1);
+                }
+                return prevIndex % currentPlayers.length; // Ensure index is valid
+            });
+        } else {
+            setCurrentTurnIndex(0); // Reset if no players left
+        }
+        return currentPlayers;
+    });
+    
+    setTimeout(() => toast({ title: "Player Removed", description: `${removedPlayerName || 'A player'} has left the game.`, variant: "destructive" }), 0);
   };
 
   const nextTurn = () => {
@@ -65,8 +88,11 @@ export function TurnTrackerUI() {
     setCurrentTurnIndex(prevIndex => {
       const nextIndex = (prevIndex + 1) % players.length;
       if (nextIndex === 0) {
-        setRound(prevRound => prevRound + 1);
-         toast({ title: "New Round!", description: `Round ${round + 1} begins.`});
+        setRound(prevRound => {
+          const newRoundValue = prevRound + 1;
+          setTimeout(() => toast({ title: "New Round!", description: `Round ${newRoundValue} begins.`}), 0);
+          return newRoundValue;
+        });
       }
       return nextIndex;
     });
@@ -77,7 +103,7 @@ export function TurnTrackerUI() {
     setCurrentTurnIndex(0);
     setRound(1);
     setNewPlayerName('');
-    toast({ title: "Tracker Reset", description: "The turn order and players have been reset." });
+    setTimeout(() => toast({ title: "Tracker Reset", description: "The turn order and players have been reset." }), 0);
   }
 
   const currentPlayer = players[currentTurnIndex];
@@ -146,7 +172,7 @@ export function TurnTrackerUI() {
           <CardDescription>Keep track of whose turn it is. The hunt continues!</CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-6 min-h-[250px] flex flex-col justify-center items-center">
-          {players.length === 0 ? (
+          {players.length === 0 || !currentPlayer ? ( // Added !currentPlayer check
              <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50">
               <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <AlertTitle>No Players</AlertTitle>
@@ -174,10 +200,11 @@ export function TurnTrackerUI() {
         </CardContent>
         <CardFooter className="pt-6">
             <div className="w-full text-xs text-muted-foreground">
-                Next up: {players.length > 0 ? players[(currentTurnIndex + 1) % players.length]?.name || 'N/A' : 'N/A'}
+                Next up: {players.length > 0 && players[(currentTurnIndex + 1) % players.length] ? players[(currentTurnIndex + 1) % players.length]?.name : 'N/A'}
             </div>
         </CardFooter>
       </Card>
     </div>
   );
 }
+
