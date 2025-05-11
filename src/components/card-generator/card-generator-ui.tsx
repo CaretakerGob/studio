@@ -158,16 +158,10 @@ export function CardGeneratorUI() {
   };
 
   const resetGenerator = () => {
-    setSelectedDecks(sampleDecks.map(deck => deck.name));
+    setSelectedDecks([]); // Unselect all decks
     setGeneratedCard(null);
     setIsLoading(false);
   }
-
-  useEffect(() => {
-    if (selectedDecks.length === 0 && sampleDecks.length > 0) {
-      setSelectedDecks([sampleDecks[0].name]);
-    }
-  }, [selectedDecks]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -219,7 +213,7 @@ export function CardGeneratorUI() {
           ) : generatedCard ? (
             <Card key={cardKey} className="w-full max-w-[300px] bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500"> 
               {generatedCard.imageUrl && (
-                <div className="relative w-full aspect-[720/1000] overflow-hidden rounded-t-lg"> 
+                <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-lg"> {/* Adjusted aspect ratio */}
                   <Image
                     src={generatedCard.imageUrl}
                     alt={generatedCard.name}
@@ -253,3 +247,4 @@ export function CardGeneratorUI() {
     </div>
   );
 }
+
