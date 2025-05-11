@@ -19,11 +19,11 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 
-const initialBaseStats: Omit<CharacterStats, 'atk' | 'rng'> = {
-  hp: 10, maxHp: 10,
-  mv: 3,
+const initialBaseStats: CharacterStats = {
+  hp: 5, maxHp: 5,
+  mv: 2,
   def: 2,
-  sanity: 8, maxSanity: 8,
+  sanity: 5, maxSanity: 5,
 };
 
 const initialSkills: Skills = {
@@ -628,4 +628,5 @@ export function CharacterSheetUI() {
 }
 
     
+
 
