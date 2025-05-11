@@ -1,5 +1,5 @@
 export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity';
-export type SkillName = 'tactics' | 'survival' | 'knowledge';
+export type SkillName = 'tactics' | 'survival' | 'knowledge' | 'occult' | 'empathy' | 'tuner';
 
 export interface CharacterStats {
   hp: number;
@@ -14,6 +14,9 @@ export interface Skills {
   tactics?: number;
   survival?: number;
   knowledge?: number;
+  occult?: number;
+  empathy?: number;
+  tuner?: number;
 }
 
 export interface CharacterStatDefinition {
@@ -57,10 +60,11 @@ export interface Character {
   id: string;
   name: string;
   baseStats: CharacterStats;
-  skills?: Skills; // Added skills
+  skills?: Skills; 
   abilities: Ability[];
   avatarSeed?: string;
   meleeWeapon?: Weapon;
   rangedWeapon?: RangedWeapon;
 }
+
 

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library } from "lucide-react"; // Added Crosshair, ClipboardList, Leaf, Library
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal } from "lucide-react"; // Added BookMarked, HeartHandshake, SlidersHorizontal
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,9 @@ const initialSkills: Skills = {
   tactics: 1,
   survival: 1,
   knowledge: 1,
+  occult: 1,
+  empathy: 1,
+  tuner: 1,
 };
 
 const statDefinitions: CharacterStatDefinition[] = [
@@ -39,7 +42,10 @@ const statDefinitions: CharacterStatDefinition[] = [
 const skillDefinitions: SkillDefinition[] = [
   { id: 'tactics', label: "Tactics", icon: ClipboardList, description: "Governs strategic planning and combat effectiveness." },
   { id: 'survival', label: "Survival", icon: Leaf, description: "Represents wilderness survival, tracking, and foraging." },
-  { id: 'knowledge', label: "Knowledge", icon: Library, description: "Measures understanding of lore, rituals, and the occult." },
+  { id: 'knowledge', label: "Knowledge", icon: Library, description: "Measures understanding of lore, rituals, and general information." },
+  { id: 'occult', label: "Occult (Occ)", icon: BookMarked, description: "Understanding of forbidden lore, supernatural entities, and dark rituals." },
+  { id: 'empathy', label: "Empathy (Emp)", icon: HeartHandshake, description: "Ability to understand and influence the emotions and intentions of others." },
+  { id: 'tuner', label: "Tuner (Tun)", icon: SlidersHorizontal, description: "Special ability to manipulate game mechanics or reality to a certain extent." },
 ];
 
 const charactersData: Character[] = [
@@ -57,7 +63,7 @@ const charactersData: Character[] = [
     id: 'gob',
     name: 'Gob',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { tactics: 3, survival: 2, knowledge: 3 },
+    skills: { tactics: 3, survival: 2, knowledge: 3, occult: 1, empathy: 0, tuner: 0 },
     avatarSeed: 'gob',
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
@@ -73,7 +79,7 @@ const charactersData: Character[] = [
     id: 'cassandra',
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { tactics: 2, survival: 1, knowledge: 2 },
+    skills: { tactics: 2, survival: 1, knowledge: 2, occult: 3, empathy: 2, tuner: 1 },
     avatarSeed: 'cassandra',
     meleeWeapon: { name: "Saber", attack: 3 },
     rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
@@ -362,5 +368,6 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
 
 
