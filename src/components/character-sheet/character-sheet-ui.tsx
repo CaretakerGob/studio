@@ -55,7 +55,7 @@ const charactersData: Character[] = [
   {
     id: 'gob',
     name: 'Gob',
-    baseStats: { hp: 12, maxHp: 12, mv: 2, def: 3, sanity: 7, maxSanity: 7 },
+    baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
     skills: { tactics: 3, survival: 2, knowledge: 3 },
     avatarSeed: 'gob',
     meleeWeapon: { name: "Knife", attack: 2 },
