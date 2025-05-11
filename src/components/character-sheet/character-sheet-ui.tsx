@@ -99,6 +99,18 @@ const charactersData: Character[] = [
     ],
     characterPoints: 375,
   },
+  {
+    id: 'fei',
+    name: 'Fei',
+    baseStats: { hp: 5, maxHp: 5, mv: 4, def: 2, sanity: 6, maxSanity: 6 },
+    skills: { occult: 4, empathy: 2, knowledge: 2, tactics: 0, survival: 0, tuner: 0 },
+    abilities: [],
+    avatarSeed: 'fei',
+    imageUrl: 'https://picsum.photos/seed/feibackground/600/800', // Placeholder for Fei's background image
+    meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
+    rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon." },
+    characterPoints: 375,
+  },
 ];
 
 
@@ -441,7 +453,7 @@ export function CharacterSheetUI() {
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
           className="absolute inset-0 z-0 opacity-[0.08] pointer-events-none"
           priority
-          data-ai-hint="character background"
+          data-ai-hint={selectedCharacter.name === "Fei" ? "male hunter anime" : "character background"}
         />
       )}
       <div className="relative z-10 bg-transparent">
@@ -459,8 +471,8 @@ export function CharacterSheetUI() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            <div className="md:col-span-1 space-y-4 flex flex-col items-center">
-              <div className="w-full max-w-xs">
+            <div className="md:col-span-1 space-y-4">
+              <div className="w-full">
                 <Label htmlFor="characterName" className="text-lg font-medium mb-1 block">Character</Label>
                 <Select value={selectedCharacterId} onValueChange={handleCharacterChange}>
                   <SelectTrigger id="characterName" className="text-xl p-2 w-full">
@@ -616,6 +628,7 @@ export function CharacterSheetUI() {
 }
 
     
+
 
 
 
