@@ -251,7 +251,7 @@ export function CharacterSheetUI() {
           alt={`${selectedCharacter.name} background`}
           fill
           style={{ objectFit: 'cover', objectPosition: 'center' }}
-          className="absolute inset-0 z-0 opacity-15 pointer-events-none"
+          className="absolute inset-0 z-0 opacity-25 pointer-events-none"
           priority
           data-ai-hint="character background"
         />
@@ -297,7 +297,7 @@ export function CharacterSheetUI() {
           
             <div className="md:col-span-2 space-y-4">
               {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-                <div className="p-4 rounded-lg border border-border bg-card/70 backdrop-filter backdrop-blur-sm shadow-md">
+                <div className="p-4 rounded-lg border border-border bg-card/10 backdrop-filter backdrop-blur-sm shadow-md">
                   <Label className="text-lg font-medium flex items-center">
                     <Award className="mr-2 h-6 w-6 text-primary" />
                     Character Points
@@ -425,3 +425,4 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
