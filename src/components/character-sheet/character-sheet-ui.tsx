@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -249,6 +249,23 @@ export function CharacterSheetUI() {
   const interruptAbilities = abilities.filter(a => a.type === 'Interrupt');
   const passiveAbilities = abilities.filter(a => a.type === 'Passive');
 
+  const AbilityCard: React.FC<{ability: Ability}> = ({ability}) => (
+    <Card className="bg-card/50">
+      <CardHeader>
+        <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
+        {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">{ability.description}</p>
+        {ability.cooldown && (
+          <p className="text-xs text-amber-400 mt-1 flex items-center">
+            <Clock className="mr-1 h-3 w-3" /> Cooldown: {ability.cooldown}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <Card className="w-full max-w-4xl mx-auto shadow-xl relative overflow-hidden">
       {selectedCharacter.imageUrl && (
@@ -257,7 +274,7 @@ export function CharacterSheetUI() {
           alt={`${selectedCharacter.name} background`}
           fill
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
-          className="absolute inset-0 z-0 opacity-60 pointer-events-none"
+          className="absolute inset-0 z-0 opacity-[0.6] pointer-events-none"
           priority
           data-ai-hint="character background"
         />
@@ -303,12 +320,12 @@ export function CharacterSheetUI() {
           
             <div className="md:col-span-2 space-y-4">
               {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-                <div className="ml-auto p-4 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
-                  <Label className="text-lg font-medium flex items-center">
-                    <Award className="mr-2 h-6 w-6 text-primary" />
+                <div className="ml-auto p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
+                  <Label className="text-md font-medium flex items-center">
+                    <Award className="mr-2 h-5 w-5 text-primary" />
                     Character Points
                   </Label>
-                  <p className="text-2xl font-bold text-primary mt-1">
+                  <p className="text-xl font-bold text-primary mt-1">
                     {selectedCharacter.characterPoints}
                   </p>
                 </div>
@@ -366,16 +383,7 @@ export function CharacterSheetUI() {
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><BookOpen className="mr-2 h-6 w-6 text-primary" /> Actions</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {actionAbilities.map(ability => (
-                          <Card key={ability.id} className="bg-card/50">
-                            <CardHeader>
-                              <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
-                              {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm text-muted-foreground">{ability.description}</p>
-                              {ability.cooldown && <p className="text-xs text-amber-400 mt-1">Cooldown: {ability.cooldown}</p>}
-                            </CardContent>
-                          </Card>
+                          <AbilityCard key={ability.id} ability={ability} />
                         ))}
                       </div>
                     </div>
@@ -385,16 +393,7 @@ export function CharacterSheetUI() {
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" /> Interrupts</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {interruptAbilities.map(ability => (
-                          <Card key={ability.id} className="bg-card/50">
-                            <CardHeader>
-                              <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
-                              {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm text-muted-foreground">{ability.description}</p>
-                              {ability.cooldown && <p className="text-xs text-amber-400 mt-1">Cooldown: {ability.cooldown}</p>}
-                            </CardContent>
-                          </Card>
+                           <AbilityCard key={ability.id} ability={ability} />
                         ))}
                       </div>
                     </div>
@@ -404,14 +403,7 @@ export function CharacterSheetUI() {
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><ShieldAlert className="mr-2 h-6 w-6 text-primary" /> Passives</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {passiveAbilities.map(ability => (
-                          <Card key={ability.id} className="bg-card/50">
-                            <CardHeader>
-                              <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm text-muted-foreground">{ability.description}</p>
-                            </CardContent>
-                          </Card>
+                           <AbilityCard key={ability.id} ability={ability} />
                         ))}
                       </div>
                     </div>
