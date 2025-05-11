@@ -1,4 +1,4 @@
-export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity' | 'atk' | 'rng';
+export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity';
 
 export interface CharacterStats {
   hp: number;
@@ -7,8 +7,6 @@ export interface CharacterStats {
   def: number;
   sanity: number;
   maxSanity: number;
-  atk: number;
-  rng: number;
 }
 
 export interface CharacterStatDefinition {
@@ -25,11 +23,20 @@ export interface Ability {
   name: string;
   type: AbilityType;
   description: string;
-  // Optional fields based on common game mechanics
-  cost?: string; // e.g., "1 Action Point", "3 Sanity"
-  range?: string; // e.g., "Melee", "5 spaces"
-  cooldown?: string; // e.g., "2 rounds"
-  details?: string; // For stats like A4/R5
+  cost?: string; 
+  range?: string; 
+  cooldown?: string; 
+  details?: string; 
+}
+
+export interface Weapon {
+  name: string;
+  attack: number;
+  flavorText?: string;
+}
+
+export interface RangedWeapon extends Weapon {
+  range: number;
 }
 
 export interface Character {
@@ -37,5 +44,8 @@ export interface Character {
   name: string;
   baseStats: CharacterStats;
   abilities: Ability[];
-  avatarSeed?: string; // For character avatar image
+  avatarSeed?: string;
+  meleeWeapon?: Weapon;
+  rangedWeapon?: RangedWeapon;
 }
+

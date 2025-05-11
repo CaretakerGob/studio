@@ -10,18 +10,16 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, LocateFixed, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert } from "lucide-react";
-import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability } from "@/types/character";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair } from "lucide-react"; // Added Crosshair
+import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
-const initialStats: CharacterStats = {
+const initialBaseStats: Omit<CharacterStats, 'atk' | 'rng'> = {
   hp: 10, maxHp: 10,
   mv: 3,
   def: 2,
   sanity: 8, maxSanity: 8,
-  atk: 1,
-  rng: 1,
 };
 
 const statDefinitions: CharacterStatDefinition[] = [
@@ -29,23 +27,25 @@ const statDefinitions: CharacterStatDefinition[] = [
   { id: 'sanity', label: "Sanity", icon: Brain, description: "Your character's mental stability. Low sanity can have dire consequences." },
   { id: 'mv', label: "Movement (MV)", icon: Footprints, description: "How many spaces your character can move." },
   { id: 'def', label: "Defense (DEF)", icon: Shield, description: "Reduces incoming damage." },
-  { id: 'atk', label: "Attack (ATK)", icon: Swords, description: "Bonus to your attack rolls." },
-  { id: 'rng', label: "Range (RNG)", icon: LocateFixed, description: "How far your character can attack." },
 ];
 
 const charactersData: Character[] = [
   {
     id: 'custom',
     name: 'Custom Character',
-    baseStats: initialStats,
+    baseStats: initialBaseStats,
     abilities: [],
-    avatarSeed: 'customcharacter'
+    avatarSeed: 'customcharacter',
+    meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
+    rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
   },
   {
-    id: 'warden',
+    id: 'gob',
     name: 'Gob',
-    baseStats: { hp: 12, maxHp: 12, mv: 2, def: 3, sanity: 7, maxSanity: 7, atk: 2, rng: 1 },
-    avatarSeed: 'gob', // Changed from 'warden' to 'gob' for consistency
+    baseStats: { hp: 12, maxHp: 12, mv: 2, def: 3, sanity: 7, maxSanity: 7 },
+    avatarSeed: 'gob',
+    meleeWeapon: { name: "Knife", attack: 2 },
+    rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
     abilities: [
       { id: 'vital_shot', name: 'Vital Shot', type: 'Action', description: 'Re-rolls 2 missed Attack Dice.', details: 'A4/R5 - PHYS', cooldown: '2 round CD' },
       { id: 'wounding_strike', name: 'Wounding Strike', type: 'Action', description: 'Bypasses Targets Armor Effect. Damaged targets are WOUNDED for 2 rounds.', details: 'A3/R1' },
@@ -54,13 +54,12 @@ const charactersData: Character[] = [
       { id: 'flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6' },
     ],
   },
-  // Add more characters here as needed
 ];
 
 
 export function CharacterSheetUI() {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>(charactersData[0].id);
-  const [stats, setStats] = useState<CharacterStats>(charactersData[0].baseStats);
+  const [stats, setStats] = useState<CharacterStats>(charactersData.find(c => c.id === charactersData[0].id)?.baseStats || initialBaseStats);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
 
   useEffect(() => {
@@ -92,11 +91,11 @@ export function CharacterSheetUI() {
   };
   
   const incrementStat = (statName: StatName) => {
-    handleStatChange(statName, stats[statName] + 1);
+    handleStatChange(statName, (stats[statName] || 0) + 1);
   };
 
   const decrementStat = (statName: StatName) => {
-    handleStatChange(statName, stats[statName] - 1);
+    handleStatChange(statName, (stats[statName] || 0) - 1);
   };
 
   const resetStats = () => {
@@ -108,7 +107,7 @@ export function CharacterSheetUI() {
 
   const StatInputComponent: React.FC<{ def: CharacterStatDefinition }> = ({ def }) => {
     const isProgressStat = def.id === 'hp' || def.id === 'sanity';
-    const currentValue = stats[def.id];
+    const currentValue = stats[def.id] || 0;
     const maxValue = def.id === 'hp' ? stats.maxHp : (def.id === 'sanity' ? stats.maxSanity : undefined);
 
     return (
@@ -125,7 +124,7 @@ export function CharacterSheetUI() {
             <Input
               id={def.id}
               type="number"
-              value={stats[def.id]}
+              value={currentValue}
               onChange={(e: ChangeEvent<HTMLInputElement>) => handleStatChange(def.id, e.target.value)}
               className="w-20 h-8 text-center text-lg font-bold"
               min="0"
@@ -158,6 +157,28 @@ export function CharacterSheetUI() {
       </div>
     );
   };
+  
+  const WeaponDisplay: React.FC<{ weapon?: Weapon | RangedWeapon, type: 'melee' | 'ranged' }> = ({ weapon, type }) => {
+    if (!weapon) return null;
+    const Icon = type === 'melee' ? Swords : Crosshair;
+    const isRanged = 'range' in weapon && weapon.range !== undefined;
+
+    return (
+        <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+            <div className="flex items-center mb-2">
+                <Icon className="mr-2 h-6 w-6 text-primary" />
+                <h4 className="text-lg font-medium">{type === 'melee' ? "Melee Weapon" : "Ranged Weapon"}</h4>
+            </div>
+            <p><span className="font-semibold">Name:</span> {weapon.name}</p>
+            <p><span className="font-semibold">ATK:</span> {weapon.attack}</p>
+            {isRanged && <p><span className="font-semibold">RNG:</span> {(weapon as RangedWeapon).range}</p>}
+            {weapon.flavorText && <p className="text-xs text-muted-foreground mt-1">{weapon.flavorText}</p>}
+            {type === 'ranged' && isRanged && <p className="text-sm text-primary mt-1">Formatted: A{weapon.attack}/R{(weapon as RangedWeapon).range}</p>}
+             {type === 'melee' && <p className="text-sm text-primary mt-1">{weapon.attack} attack dmg</p>}
+        </div>
+    );
+  };
+
 
   const selectedCharacter = charactersData.find(c => c.id === selectedCharacterId) || charactersData[0];
   const abilities = selectedCharacter.abilities;
@@ -197,12 +218,20 @@ export function CharacterSheetUI() {
 
         <Tabs defaultValue="stats" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="stats">Stats</TabsTrigger>
+            <TabsTrigger value="stats">Stats & Equipment</TabsTrigger>
             <TabsTrigger value="abilities">Abilities</TabsTrigger>
           </TabsList>
           <TabsContent value="stats" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)}
+            </div>
+            <Separator className="my-6" />
+            <div>
+                <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <WeaponDisplay weapon={selectedCharacter.meleeWeapon} type="melee" />
+                    <WeaponDisplay weapon={selectedCharacter.rangedWeapon} type="ranged" />
+                </div>
             </div>
           </TabsContent>
           <TabsContent value="abilities" className="mt-6">
