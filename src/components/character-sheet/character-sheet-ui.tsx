@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal } from "lucide-react"; // Added BookMarked, HeartHandshake, SlidersHorizontal
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award } from "lucide-react"; // Added Award
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -58,6 +58,7 @@ const charactersData: Character[] = [
     avatarSeed: 'customcharacter',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
+    characterPoints: 0,
   },
   {
     id: 'gob',
@@ -74,6 +75,7 @@ const charactersData: Character[] = [
       { id: 'quick_draw', name: 'Quick Draw', type: 'Interrupt', description: 'Push target back 1 space for each HIT.', details: 'A3/R3', cooldown: '2 round CD' },
       { id: 'flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6' },
     ],
+    characterPoints: 375,
   },
   {
     id: 'cassandra',
@@ -84,6 +86,7 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Saber", attack: 3 },
     rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
     abilities: [],
+    characterPoints: 375,
   },
 ];
 
@@ -264,7 +267,20 @@ export function CharacterSheetUI() {
             </SelectContent>
           </Select>
         </div>
+        
+        {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
+          <div className="mt-4">
+            <Label className="text-lg font-medium flex items-center">
+              <Award className="mr-2 h-6 w-6 text-primary" />
+              Character Points
+            </Label>
+            <p className="text-2xl font-bold text-primary mt-1">
+              {selectedCharacter.characterPoints}
+            </p>
+          </div>
+        )}
         <Separator />
+
 
         <Tabs defaultValue="stats" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -378,6 +394,7 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
 
 
 

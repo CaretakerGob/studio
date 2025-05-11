@@ -65,6 +65,7 @@ export interface Character {
   avatarSeed?: string;
   meleeWeapon?: Weapon;
   rangedWeapon?: RangedWeapon;
+  characterPoints?: number;
 }
 
 
