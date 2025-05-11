@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  /* Use the font variable from next/font for the primary sans-serif font */
+  font-family: var(--font-open-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Optional: Define a class for mono if needed elsewhere, or apply directly */
+/* .font-mono { font-family: var(--font-roboto-mono), monospace; } */
 
 @layer base {
   :root {

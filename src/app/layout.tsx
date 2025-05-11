@@ -1,18 +1,20 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Open_Sans, Roboto_Mono } from 'next/font/google';
 import './globals.css';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { Toaster } from "@/components/ui/toaster";
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const openSans = Open_Sans({
+  variable: '--font-open-sans',
   subsets: ['latin'],
+  display: 'swap', // Added for better font loading
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const robotoMono = Roboto_Mono({
+  variable: '--font-roboto-mono',
   subsets: ['latin'],
+  display: 'swap', // Added for better font loading
 });
 
 export const metadata: Metadata = {
@@ -26,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark"> {/* Ensuring dark theme if needed by specific components, though globals.css sets :root */}
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className="dark">
+      <body className={`${openSans.variable} ${robotoMono.variable} antialiased`}>
         <SidebarProvider defaultOpen>
           <AppSidebar />
           <SidebarInset>
