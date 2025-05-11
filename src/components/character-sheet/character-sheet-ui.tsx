@@ -106,7 +106,7 @@ const charactersData: Character[] = [
     skills: { occult: 4, empathy: 2, knowledge: 2, tactics: 0, survival: 0, tuner: 0 },
     abilities: [],
     avatarSeed: 'fei',
-    imageUrl: 'https://picsum.photos/seed/feibackground/600/800', // Placeholder for Fei's background image
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2Ffei.png?alt=media&token=ec84180b-3734-499e-9767-0846580cdce9',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon." },
     characterPoints: 375,
@@ -451,7 +451,7 @@ export function CharacterSheetUI() {
           alt={`${selectedCharacter.name} background`}
           fill
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
-          className="absolute inset-0 z-0 opacity-[0.08] pointer-events-none"
+          className="absolute inset-0 z-0 opacity-[0.12] pointer-events-none"
           priority
           data-ai-hint={selectedCharacter.name === "Fei" ? "male hunter anime" : "character background"}
         />
@@ -628,6 +628,7 @@ export function CharacterSheetUI() {
 }
 
     
+
 
 
 
