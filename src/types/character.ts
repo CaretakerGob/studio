@@ -63,6 +63,7 @@ export interface Character {
   skills?: Skills; 
   abilities: Ability[];
   avatarSeed?: string;
+  imageUrl?: string; // Added character image URL
   meleeWeapon?: Weapon;
   rangedWeapon?: RangedWeapon;
   characterPoints?: number;

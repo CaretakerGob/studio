@@ -4,6 +4,7 @@
 
 import type { ChangeEvent } from 'react';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,8 @@ import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+
 
 const initialBaseStats: Omit<CharacterStats, 'atk' | 'rng'> = {
   hp: 10, maxHp: 10,
@@ -56,6 +59,7 @@ const charactersData: Character[] = [
     skills: initialSkills,
     abilities: [],
     avatarSeed: 'customcharacter',
+    imageUrl: `https://picsum.photos/seed/customcharacter/400/400`,
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
     characterPoints: 0,
@@ -66,6 +70,7 @@ const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
     skills: { tactics: 3, survival: 2, knowledge: 3, occult: 0, empathy: 0, tuner: 0 },
     avatarSeed: 'gob',
+    imageUrl: `https://picsum.photos/seed/gob/400/400`, // Placeholder, replace with actual Gob image if available
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
     abilities: [
@@ -83,6 +88,7 @@ const charactersData: Character[] = [
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
     skills: { tactics: 0, survival: 0, knowledge: 0, occult: 2, empathy: 2, tuner: 1 },
     avatarSeed: 'cassandra',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCassandra.png?alt=media&token=6df9b49f-aeb0-45a1-ae75-7f77945ce18c',
     meleeWeapon: { name: "Saber", attack: 3 },
     rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
     abilities: [],
@@ -254,31 +260,56 @@ export function CharacterSheetUI() {
         <CardDescription>Manage your character's attributes, abilities, and status.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div>
-          <Label htmlFor="characterName" className="text-lg font-medium">Character</Label>
-          <Select value={selectedCharacterId} onValueChange={handleCharacterChange}>
-            <SelectTrigger id="characterName" className="mt-1 text-xl p-2">
-              <SelectValue placeholder="Select a character" />
-            </SelectTrigger>
-            <SelectContent>
-              {charactersData.map(char => (
-                <SelectItem key={char.id} value={char.id}>{char.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-          <div className="mt-4">
-            <Label className="text-lg font-medium flex items-center">
-              <Award className="mr-2 h-6 w-6 text-primary" />
-              Character Points
-            </Label>
-            <p className="text-2xl font-bold text-primary mt-1">
-              {selectedCharacter.characterPoints}
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          <div className="md:col-span-1 space-y-4">
+            <Label htmlFor="characterName" className="text-lg font-medium">Character</Label>
+            <Select value={selectedCharacterId} onValueChange={handleCharacterChange}>
+              <SelectTrigger id="characterName" className="text-xl p-2">
+                <SelectValue placeholder="Select a character" />
+              </SelectTrigger>
+              <SelectContent>
+                {charactersData.map(char => (
+                  <SelectItem key={char.id} value={char.id}>{char.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {selectedCharacter.imageUrl && (
+              <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-primary shadow-lg">
+                <Image 
+                  src={selectedCharacter.imageUrl} 
+                  alt={selectedCharacter.name} 
+                  fill 
+                  style={{ objectFit: 'cover' }}
+                  data-ai-hint="character portrait"
+                  priority
+                />
+              </div>
+            )}
+             {!selectedCharacter.imageUrl && selectedCharacter.avatarSeed && (
+                <Avatar className="w-full h-auto aspect-square rounded-lg border border-primary shadow-lg">
+                    <AvatarFallback className="text-6xl bg-muted text-muted-foreground">
+                        {selectedCharacter.name.substring(0,2).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
+            )}
+
           </div>
-        )}
+        
+          <div className="md:col-span-2 space-y-4">
+            {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
+              <div>
+                <Label className="text-lg font-medium flex items-center">
+                  <Award className="mr-2 h-6 w-6 text-primary" />
+                  Character Points
+                </Label>
+                <p className="text-2xl font-bold text-primary mt-1">
+                  {selectedCharacter.characterPoints}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
         <Separator />
 
 
@@ -394,3 +425,4 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
