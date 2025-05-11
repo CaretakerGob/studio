@@ -2,7 +2,7 @@
 "use client";
 
 import type { ChangeEvent } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -111,11 +111,11 @@ export function CharacterSheetUI() {
 
   const selectedCharacter = charactersData.find(c => c.id === selectedCharacterId) || charactersData[0];
 
-  const parseCooldownRounds = (cooldownString?: string): number | undefined => {
+  const parseCooldownRounds = useCallback((cooldownString?: string): number | undefined => {
     if (!cooldownString) return undefined;
     const match = cooldownString.match(/\d+/);
     return match ? parseInt(match[0], 10) : undefined;
-  };
+  }, []);
 
   useEffect(() => {
     if (selectedCharacter) {
@@ -125,7 +125,7 @@ export function CharacterSheetUI() {
       const newCurrentCooldowns: Record<string, number> = {};
       const newMaxCooldowns: Record<string, number> = {};
       selectedCharacter.abilities.forEach(ability => {
-        if (ability.type === 'Action' && ability.cooldown) {
+        if ((ability.type === 'Action' || ability.type === 'Interrupt') && ability.cooldown) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCooldowns[ability.id] = maxRounds;
@@ -136,7 +136,7 @@ export function CharacterSheetUI() {
       setCurrentAbilityCooldowns(newCurrentCooldowns);
       setMaxAbilityCooldowns(newMaxCooldowns);
     }
-  }, [selectedCharacter]);
+  }, [selectedCharacter, parseCooldownRounds]);
 
   const handleCharacterChange = (id: string) => {
     setSelectedCharacterId(id);
@@ -187,7 +187,7 @@ export function CharacterSheetUI() {
       setCharacterSkills(selectedCharacter.skills || initialSkills);
       const newCurrentCooldowns: Record<string, number> = {};
       selectedCharacter.abilities.forEach(ability => {
-        if (ability.type === 'Action' && ability.cooldown) {
+        if ((ability.type === 'Action' || ability.type === 'Interrupt') && ability.cooldown) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newCurrentCooldowns[ability.id] = maxRounds; 
@@ -302,7 +302,11 @@ export function CharacterSheetUI() {
   }
   
   const AbilityCard: React.FC<AbilityCardProps> = ({ ability, currentCooldown, maxCooldown, onIncrementCooldown, onDecrementCooldown }) => {
-    const hasTrackableCooldown = ability.type === 'Action' && ability.cooldown && typeof currentCooldown === 'number' && typeof maxCooldown === 'number' && onIncrementCooldown && onDecrementCooldown;
+    const hasTrackableCooldown = ability.cooldown && 
+                                 typeof currentCooldown === 'number' && 
+                                 typeof maxCooldown === 'number' && 
+                                 onIncrementCooldown && 
+                                 onDecrementCooldown;
   
     return (
       <Card className="bg-card/50">
@@ -356,12 +360,12 @@ export function CharacterSheetUI() {
           alt={`${selectedCharacter.name} background`}
           fill
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
-          className="absolute inset-0 z-0 opacity-[0.6] pointer-events-none"
+          className="absolute inset-0 z-0 opacity-[0.08] pointer-events-none"
           priority
           data-ai-hint="character background"
         />
       )}
-      <div className="relative z-10 bg-card/75">
+      <div className="relative z-10 bg-transparent"> {/* Changed bg-card/75 to bg-transparent */}
         <CardHeader>
           <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -400,9 +404,9 @@ export function CharacterSheetUI() {
               )}
             </div>
           
-            <div className="md:col-span-2 space-y-4">
+            <div className="md:col-span-2 space-y-4 flex justify-end"> {/* Ensure this div itself aligns content to the right */}
               {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-                <div className="ml-auto p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
+                <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end"> {/* w-fit and items-end */}
                   <Label className="text-md font-medium flex items-center">
                     <Award className="mr-2 h-5 w-5 text-primary" />
                     Character Points
@@ -484,9 +488,19 @@ export function CharacterSheetUI() {
                     <div>
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" /> Interrupts</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {interruptAbilities.map(ability => (
-                           <AbilityCard key={ability.id} ability={ability} />
-                        ))}
+                        {interruptAbilities.map(ability => {
+                           const isTrackable = ability.type === 'Interrupt' && ability.cooldown && maxAbilityCooldowns[ability.id] !== undefined && currentAbilityCooldowns[ability.id] !== undefined;
+                           return (
+                               <AbilityCard
+                                   key={ability.id}
+                                   ability={ability}
+                                   currentCooldown={isTrackable ? currentAbilityCooldowns[ability.id] : undefined}
+                                   maxCooldown={isTrackable ? maxAbilityCooldowns[ability.id] : undefined}
+                                   onIncrementCooldown={isTrackable ? () => handleIncrementCooldown(ability.id) : undefined}
+                                   onDecrementCooldown={isTrackable ? () => handleDecrementCooldown(ability.id) : undefined}
+                               />
+                           );
+                        })}
                       </div>
                     </div>
                   )}
@@ -515,6 +529,5 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
-
 
     
