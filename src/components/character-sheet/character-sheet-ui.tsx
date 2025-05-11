@@ -81,7 +81,7 @@ const charactersData: Character[] = [
     id: 'cassandra',
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { tactics: 2, survival: 1, knowledge: 2, occult: 3, empathy: 2, tuner: 1 },
+    skills: { tactics: 0, survival: 0, knowledge: 0, occult: 2, empathy: 2, tuner: 1 },
     avatarSeed: 'cassandra',
     meleeWeapon: { name: "Saber", attack: 3 },
     rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
@@ -394,10 +394,3 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
-
-
-
-
-
-
-
