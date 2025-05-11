@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -26,12 +27,12 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
     name: "Event Deck",
     cards: [
       { id: "ev1", name: "Sudden Gloom", type: "Event", deck: "Event Deck", description: "Darkness falls. All heroes suffer -1 Sanity.", imageUrl: "https://picsum.photos/300/450?random=1", dataAiHint: "dark event" },
-      { id: "ev2", name: "Whispers in the Dark", type: "Event", deck: "Event Deck", description: "Make a Sanity check ( difficulté 3) or lose your next turn.", imageUrl: "https://picsum.photos/300/450?random=2", dataAiHint: "eerie whisper" },
+      { id: "ev2", name: "Whispers in the Dark", type: "Event", deck: "Event Deck", description: "Make a Sanity check (difficulté 3) or lose your next turn.", imageUrl: "https://picsum.photos/300/450?random=2", dataAiHint: "eerie whisper" },
       { id: "ev3", name: "A Moment of Respite", type: "Event", deck: "Event Deck", description: "A brief calm. All heroes recover 1 HP.", imageUrl: "https://picsum.photos/300/450?random=3", dataAiHint: "calm scene" },
     ],
   },
   {
-    name: "Item Deck",
+    name: "Item Deck", // Renamed from "Clash Deck" as it contained items
     cards: [
       { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://picsum.photos/300/450?random=4", dataAiHint: "old lantern" },
       { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://picsum.photos/300/450?random=5", dataAiHint: "holy charm" },
@@ -50,6 +51,22 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
       { id: "md7", name: "Mad World", type: "Madness", deck: "Madness Deck", description: "Reality itself seems to unravel.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/43tj82lcf9n6/Mad_World.png", dataAiHint: "chaotic world" },
       { id: "md8", name: "You Can Not Escape", type: "Madness", deck: "Madness Deck", description: "The walls are closing in.", imageUrl: "https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/riddleofthe-beastcompanionapp-56plcg/assets/w28w5ktrqv84/You_can_not_Escape.png", dataAiHint: "trapped feeling" },
       { id: "md9", name: "Breach", type: "Madness", deck: "Madness Deck", description: "Something has broken through.", imageUrl: "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/images%2FBreach.png?alt=media&token=8f586d07-30a9-4420-af15-057787aa5d8a", dataAiHint: "dimensional breach" },
+    ],
+  },
+  {
+    name: "Clash Deck", // New deck
+    cards: [
+      { id: "cl1", name: "Sudden Strike", type: "Clash", deck: "Clash Deck", description: "The Beast lashes out unexpectedly. The targeted hero must defend or suffer 2 damage.", imageUrl: "https://picsum.photos/300/450?random=10", dataAiHint: "beast attack" },
+      { id: "cl2", name: "Feint", type: "Clash", deck: "Clash Deck", description: "The Beast attempts to trick a hero. If successful, the hero loses their next action.", imageUrl: "https://picsum.photos/300/450?random=11", dataAiHint: "cunning beast" },
+      { id: "cl3", name: "Desperate Claw", type: "Clash", deck: "Clash Deck", description: "A wild attack from the Beast. +1 ATK for this clash.", imageUrl: "https://picsum.photos/300/450?random=12", dataAiHint: "sharp claws" },
+    ],
+  },
+  {
+    name: "Combat Deck", // New deck
+    cards: [
+      { id: "cb1", name: "Power Attack", type: "Combat", deck: "Combat Deck", description: "Hero makes an attack with +2 ATK but -1 DEF this round.", imageUrl: "https://picsum.photos/300/450?random=13", dataAiHint: "strong attack" },
+      { id: "cb2", name: "Swift Dodge", type: "Combat", deck: "Combat Deck", description: "Hero gains +2 DEF against the next attack this round.", imageUrl: "https://picsum.photos/300/450?random=14", dataAiHint: "agile movement" },
+      { id: "cb3", name: "Calculated Shot", type: "Combat", deck: "Combat Deck", description: "Hero makes a ranged attack. If successful, +1 damage.", imageUrl: "https://picsum.photos/300/450?random=15", dataAiHint: "precise aim" },
     ],
   },
 ];
@@ -140,30 +157,30 @@ export function CardGeneratorUI() {
         </CardFooter>
       </Card>
 
-      <Card className="md:col-span-2 shadow-xl min-h-[400px] flex flex-col justify-start items-center"> {/* Changed justify-center to justify-start */}
+      <Card className="md:col-span-2 shadow-xl min-h-[500px] flex flex-col justify-start items-center"> {/* Adjusted min-h for taller images */}
         <CardHeader className="w-full text-center">
            <CardTitle className="text-2xl">Generated Card</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex items-center justify-center w-full p-4">
           {isLoading ? (
             <div className="space-y-4 w-full max-w-xs">
-              <Skeleton className="h-[375px] w-[250px] rounded-lg mx-auto" /> {/* Adjusted skeleton to approx 2:3 */}
+              <Skeleton className="h-[450px] w-[300px] rounded-lg mx-auto" /> {/* Adjusted skeleton to approx 2:3, e.g., 300x450 */}
               <Skeleton className="h-6 w-3/4 mx-auto" />
               <Skeleton className="h-4 w-full mx-auto" />
               <Skeleton className="h-4 w-5/6 mx-auto" />
             </div>
           ) : generatedCard ? (
-            <Card key={cardKey} className="w-full max-w-sm bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
+            <Card key={cardKey} className="w-full max-w-xs sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500"> {/* max-w-xs for small, sm:max-w-sm for medium, md:max-w-md for larger */}
               {generatedCard.imageUrl && (
-                <div className="relative w-full aspect-[2/3] overflow-hidden rounded-t-lg">
+                <div className="relative w-full aspect-[2/3] overflow-hidden rounded-t-lg"> {/* Maintained 2:3 aspect ratio */}
                   <Image
                     src={generatedCard.imageUrl}
                     alt={generatedCard.name}
                     fill
-                    sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 384px" // Adjusted sizes based on max-w-sm (384px)
+                    sizes="(max-width: 640px) 90vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 300px" // Adjusted sizes
                     style={{ objectFit: "cover" }} 
                     data-ai-hint={generatedCard.dataAiHint}
-                    priority={true} // Added priority for LCP potential
+                    priority={true} 
                   />
                 </div>
               )}
