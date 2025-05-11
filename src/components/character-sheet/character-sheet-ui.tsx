@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award } from "lucide-react"; // Added Award
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -59,7 +59,7 @@ const charactersData: Character[] = [
     skills: initialSkills,
     abilities: [],
     avatarSeed: 'customcharacter',
-    imageUrl: `https://picsum.photos/seed/customcharacter/400/400`,
+    // No imageUrl for custom, will use avatarSeed for picsum or fallback
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
     characterPoints: 0,
@@ -70,7 +70,7 @@ const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
     skills: { tactics: 3, survival: 2, knowledge: 3, occult: 0, empathy: 0, tuner: 0 },
     avatarSeed: 'gob',
-    imageUrl: `https://picsum.photos/seed/gob/400/400`, 
+    imageUrl: `https://picsum.photos/seed/gob/1200/800`, // Generic image for background use
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
     abilities: [
@@ -103,13 +103,14 @@ export function CharacterSheetUI() {
   const [characterSkills, setCharacterSkills] = useState<Skills>(charactersData.find(c => c.id === charactersData[0].id)?.skills || initialSkills);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
 
+  const selectedCharacter = charactersData.find(c => c.id === selectedCharacterId) || charactersData[0];
+
   useEffect(() => {
-    const character = charactersData.find(c => c.id === selectedCharacterId);
-    if (character) {
-      setStats(character.baseStats);
-      setCharacterSkills(character.skills || initialSkills);
+    if (selectedCharacter) {
+      setStats(selectedCharacter.baseStats);
+      setCharacterSkills(selectedCharacter.skills || initialSkills);
     }
-  }, [selectedCharacterId]);
+  }, [selectedCharacter]);
 
   const handleCharacterChange = (id: string) => {
     setSelectedCharacterId(id);
@@ -141,10 +142,9 @@ export function CharacterSheetUI() {
   };
 
   const resetStats = () => {
-    const character = charactersData.find(c => c.id === selectedCharacterId);
-    if (character) {
-      setStats(character.baseStats);
-      setCharacterSkills(character.skills || initialSkills);
+    if (selectedCharacter) {
+      setStats(selectedCharacter.baseStats);
+      setCharacterSkills(selectedCharacter.skills || initialSkills);
     }
   };
 
@@ -154,7 +154,7 @@ export function CharacterSheetUI() {
     const maxValue = def.id === 'hp' ? stats.maxHp : (def.id === 'sanity' ? stats.maxSanity : undefined);
 
     return (
-      <div className={cn("p-4 rounded-lg border border-border bg-card/50 transition-all duration-300", highlightedStat === def.id ? "ring-2 ring-primary shadow-lg" : "shadow-md")}>
+      <div className={cn("p-4 rounded-lg border border-border bg-card/70 backdrop-filter backdrop-blur-sm transition-all duration-300", highlightedStat === def.id ? "ring-2 ring-primary shadow-lg" : "shadow-md")}>
         <div className="flex items-center justify-between mb-2">
           <Label htmlFor={def.id} className="flex items-center text-lg font-medium">
             <def.icon className="mr-2 h-6 w-6 text-primary" />
@@ -204,7 +204,7 @@ export function CharacterSheetUI() {
   const SkillDisplayComponent: React.FC<{ def: SkillDefinition }> = ({ def }) => {
     const skillValue = characterSkills[def.id] || 0;
     return (
-      <div className="p-3 rounded-lg border border-border bg-card/50 shadow-sm">
+      <div className="p-3 rounded-lg border border-border bg-card/70 backdrop-filter backdrop-blur-sm shadow-sm">
         <div className="flex items-center justify-between">
           <Label htmlFor={def.id} className="flex items-center text-md font-medium">
             <def.icon className="mr-2 h-5 w-5 text-primary" />
@@ -223,7 +223,7 @@ export function CharacterSheetUI() {
     const isRanged = 'range' in weapon && weapon.range !== undefined;
 
     return (
-        <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+        <div className="p-4 rounded-lg border border-border bg-card/70 backdrop-filter backdrop-blur-sm shadow-md">
             <div className="flex items-center mb-2">
                 <Icon className="mr-2 h-6 w-6 text-primary" />
                 <h4 className="text-lg font-medium">{type === 'melee' ? "Melee Weapon" : "Ranged Weapon"}</h4>
@@ -238,192 +238,190 @@ export function CharacterSheetUI() {
     );
   };
 
-
-  const selectedCharacter = charactersData.find(c => c.id === selectedCharacterId) || charactersData[0];
   const abilities = selectedCharacter.abilities;
   const actionAbilities = abilities.filter(a => a.type === 'Action');
   const interruptAbilities = abilities.filter(a => a.type === 'Interrupt');
   const passiveAbilities = abilities.filter(a => a.type === 'Passive');
 
   return (
-    <Card className="w-full max-w-4xl mx-auto shadow-xl">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-            <div className="flex items-center">
-                <UserCircle className="mr-3 h-10 w-10 text-primary" />
-                <CardTitle className="text-3xl">Character Sheet</CardTitle>
-            </div>
-            <Button variant="ghost" onClick={resetStats} size="sm">
-                <RotateCcw className="mr-2 h-4 w-4" /> Reset Stats
-            </Button>
-        </div>
-        <CardDescription>Manage your character's attributes, abilities, and status.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          <div className="md:col-span-1 space-y-4 flex flex-col items-center">
-            <div className="w-full max-w-xs">
-              <Label htmlFor="characterName" className="text-lg font-medium mb-1 block">Character</Label>
-              <Select value={selectedCharacterId} onValueChange={handleCharacterChange}>
-                <SelectTrigger id="characterName" className="text-xl p-2 w-full">
-                  <SelectValue placeholder="Select a character" />
-                </SelectTrigger>
-                <SelectContent>
-                  {charactersData.map(char => (
-                    <SelectItem key={char.id} value={char.id}>{char.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedCharacter.imageUrl && (
-              <div className="relative w-full max-w-xs aspect-[3/4] rounded-lg overflow-hidden border border-primary shadow-lg mt-4">
-                <Image 
-                  src={selectedCharacter.imageUrl} 
-                  alt={selectedCharacter.name} 
-                  fill 
-                  style={{ objectFit: 'contain' }}
-                  data-ai-hint="character portrait"
-                  priority
-                />
+    <Card className="w-full max-w-4xl mx-auto shadow-xl relative overflow-hidden">
+      {selectedCharacter.imageUrl && (
+        <Image
+          src={selectedCharacter.imageUrl}
+          alt={`${selectedCharacter.name} background`}
+          fill
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+          className="absolute inset-0 z-0 opacity-15 pointer-events-none"
+          priority
+          data-ai-hint="character background"
+        />
+      )}
+      <div className="relative z-10 bg-card/75 backdrop-blur-sm">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                  <UserCircle className="mr-3 h-10 w-10 text-primary" />
+                  <CardTitle className="text-3xl">Character Sheet</CardTitle>
               </div>
-            )}
-             {!selectedCharacter.imageUrl && selectedCharacter.avatarSeed && (
-                <Avatar className="w-full max-w-xs h-auto aspect-square rounded-lg border border-primary shadow-lg mt-4">
-                    <AvatarFallback className="text-6xl bg-muted text-muted-foreground">
-                        {selectedCharacter.name.substring(0,2).toUpperCase()}
-                    </AvatarFallback>
-                </Avatar>
-            )}
+              <Button variant="ghost" onClick={resetStats} size="sm">
+                  <RotateCcw className="mr-2 h-4 w-4" /> Reset Stats
+              </Button>
           </div>
-        
-          <div className="md:col-span-2 space-y-4">
-            {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-              <div>
-                <Label className="text-lg font-medium flex items-center">
-                  <Award className="mr-2 h-6 w-6 text-primary" />
-                  Character Points
-                </Label>
-                <p className="text-2xl font-bold text-primary mt-1">
-                  {selectedCharacter.characterPoints}
-                </p>
+          <CardDescription>Manage your character's attributes, abilities, and status.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div className="md:col-span-1 space-y-4 flex flex-col items-center">
+              <div className="w-full max-w-xs">
+                <Label htmlFor="characterName" className="text-lg font-medium mb-1 block">Character</Label>
+                <Select value={selectedCharacterId} onValueChange={handleCharacterChange}>
+                  <SelectTrigger id="characterName" className="text-xl p-2 w-full">
+                    <SelectValue placeholder="Select a character" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {charactersData.map(char => (
+                      <SelectItem key={char.id} value={char.id}>{char.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
-        </div>
-        <Separator />
-
-
-        <Tabs defaultValue="stats" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="stats">Stats & Equipment</TabsTrigger>
-            <TabsTrigger value="abilities">Abilities</TabsTrigger>
-          </TabsList>
-          <TabsContent value="stats" className="mt-6 space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold mb-3 flex items-center"><UserCircle className="mr-2 h-6 w-6 text-primary" /> Core Stats</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)}
-              </div>
+              
+              {!selectedCharacter.imageUrl && selectedCharacter.avatarSeed && (
+                  <Avatar className="w-48 h-48 rounded-lg border-2 border-primary shadow-lg mt-4">
+                      <AvatarFallback className="text-6xl bg-muted text-muted-foreground">
+                          {selectedCharacter.name.substring(0,2).toUpperCase()}
+                      </AvatarFallback>
+                  </Avatar>
+              )}
             </div>
-            <Separator/>
-            <div>
-                <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <WeaponDisplay weapon={selectedCharacter.meleeWeapon} type="melee" />
-                    <WeaponDisplay weapon={selectedCharacter.rangedWeapon} type="ranged" />
+          
+            <div className="md:col-span-2 space-y-4">
+              {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
+                <div className="p-4 rounded-lg border border-border bg-card/70 backdrop-filter backdrop-blur-sm shadow-md">
+                  <Label className="text-lg font-medium flex items-center">
+                    <Award className="mr-2 h-6 w-6 text-primary" />
+                    Character Points
+                  </Label>
+                  <p className="text-2xl font-bold text-primary mt-1">
+                    {selectedCharacter.characterPoints}
+                  </p>
                 </div>
+              )}
             </div>
-            <Separator />
-             <div>
-              <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
-              {
-                (() => {
-                  const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] || 0) > 0);
-                  if (relevantSkillDefinitions.length === 0) {
-                    return <p className="text-muted-foreground text-center py-4">This character has no skills with a value greater than 0.</p>;
-                  }
-                  return (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {relevantSkillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
-                    </div>
-                  );
-                })()
-              }
-            </div>
-          </TabsContent>
-          <TabsContent value="abilities" className="mt-6">
-            {abilities.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">This character has no special abilities defined.</p>
-            ) : (
-              <div className="space-y-6">
-                {actionAbilities.length > 0 && (
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3 flex items-center"><BookOpen className="mr-2 h-6 w-6 text-primary" /> Actions</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {actionAbilities.map(ability => (
-                        <Card key={ability.id} className="bg-card/60">
-                          <CardHeader>
-                            <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
-                            {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-muted-foreground">{ability.description}</p>
-                            {ability.cooldown && <p className="text-xs text-amber-400 mt-1">Cooldown: {ability.cooldown}</p>}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {interruptAbilities.length > 0 && (
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3 flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" /> Interrupts</h3>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {interruptAbilities.map(ability => (
-                        <Card key={ability.id} className="bg-card/60">
-                          <CardHeader>
-                            <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
-                             {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-muted-foreground">{ability.description}</p>
-                            {ability.cooldown && <p className="text-xs text-amber-400 mt-1">Cooldown: {ability.cooldown}</p>}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {passiveAbilities.length > 0 && (
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3 flex items-center"><ShieldAlert className="mr-2 h-6 w-6 text-primary" /> Passives</h3>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {passiveAbilities.map(ability => (
-                        <Card key={ability.id} className="bg-card/60">
-                          <CardHeader>
-                            <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-muted-foreground">{ability.description}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+          </div>
+          <Separator />
 
-      </CardContent>
-      <CardFooter className="flex justify-end pt-6">
-        <Button size="lg" className="bg-primary hover:bg-primary/90">
-          <Save className="mr-2 h-5 w-5" /> Save Character (Demo)
-        </Button>
-      </CardFooter>
+
+          <Tabs defaultValue="stats" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="stats">Stats & Equipment</TabsTrigger>
+              <TabsTrigger value="abilities">Abilities</TabsTrigger>
+            </TabsList>
+            <TabsContent value="stats" className="mt-6 space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-3 flex items-center"><UserCircle className="mr-2 h-6 w-6 text-primary" /> Core Stats</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)}
+                </div>
+              </div>
+              <Separator/>
+              <div>
+                  <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <WeaponDisplay weapon={selectedCharacter.meleeWeapon} type="melee" />
+                      <WeaponDisplay weapon={selectedCharacter.rangedWeapon} type="ranged" />
+                  </div>
+              </div>
+              <Separator />
+              <div>
+                <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
+                {
+                  (() => {
+                    const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] || 0) > 0);
+                    if (relevantSkillDefinitions.length === 0) {
+                      return <p className="text-muted-foreground text-center py-4 bg-card/70 backdrop-filter backdrop-blur-sm rounded-md">This character has no skills with a value greater than 0.</p>;
+                    }
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {relevantSkillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
+                      </div>
+                    );
+                  })()
+                }
+              </div>
+            </TabsContent>
+            <TabsContent value="abilities" className="mt-6">
+              {abilities.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8 bg-card/70 backdrop-filter backdrop-blur-sm rounded-md">This character has no special abilities defined.</p>
+              ) : (
+                <div className="space-y-6">
+                  {actionAbilities.length > 0 && (
+                    <div>
+                      <h3 className="text-xl font-semibold mb-3 flex items-center"><BookOpen className="mr-2 h-6 w-6 text-primary" /> Actions</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {actionAbilities.map(ability => (
+                          <Card key={ability.id} className="bg-card/70 backdrop-filter backdrop-blur-sm">
+                            <CardHeader>
+                              <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
+                              {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-sm text-muted-foreground">{ability.description}</p>
+                              {ability.cooldown && <p className="text-xs text-amber-400 mt-1">Cooldown: {ability.cooldown}</p>}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {interruptAbilities.length > 0 && (
+                    <div>
+                      <h3 className="text-xl font-semibold mb-3 flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" /> Interrupts</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {interruptAbilities.map(ability => (
+                          <Card key={ability.id} className="bg-card/70 backdrop-filter backdrop-blur-sm">
+                            <CardHeader>
+                              <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
+                              {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-sm text-muted-foreground">{ability.description}</p>
+                              {ability.cooldown && <p className="text-xs text-amber-400 mt-1">Cooldown: {ability.cooldown}</p>}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {passiveAbilities.length > 0 && (
+                    <div>
+                      <h3 className="text-xl font-semibold mb-3 flex items-center"><ShieldAlert className="mr-2 h-6 w-6 text-primary" /> Passives</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {passiveAbilities.map(ability => (
+                          <Card key={ability.id} className="bg-card/70 backdrop-filter backdrop-blur-sm">
+                            <CardHeader>
+                              <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-sm text-muted-foreground">{ability.description}</p>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+        </CardContent>
+        <CardFooter className="flex justify-end pt-6">
+          <Button size="lg" className="bg-primary hover:bg-primary/90">
+            <Save className="mr-2 h-5 w-5" /> Save Character (Demo)
+          </Button>
+        </CardFooter>
+      </div>
     </Card>
   );
 }
-
