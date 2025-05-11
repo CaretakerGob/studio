@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair } from "lucide-react"; // Added Crosshair
-import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon } from "@/types/character";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library } from "lucide-react"; // Added Crosshair, ClipboardList, Leaf, Library
+import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +22,12 @@ const initialBaseStats: Omit<CharacterStats, 'atk' | 'rng'> = {
   sanity: 8, maxSanity: 8,
 };
 
+const initialSkills: Skills = {
+  tactics: 1,
+  survival: 1,
+  knowledge: 1,
+};
+
 const statDefinitions: CharacterStatDefinition[] = [
   { id: 'hp', label: "Health Points (HP)", icon: Heart, description: "Your character's vitality. Reaching 0 HP usually means defeat." },
   { id: 'sanity', label: "Sanity", icon: Brain, description: "Your character's mental stability. Low sanity can have dire consequences." },
@@ -29,11 +35,18 @@ const statDefinitions: CharacterStatDefinition[] = [
   { id: 'def', label: "Defense (DEF)", icon: Shield, description: "Reduces incoming damage." },
 ];
 
+const skillDefinitions: SkillDefinition[] = [
+  { id: 'tactics', label: "Tactics", icon: ClipboardList, description: "Governs strategic planning and combat effectiveness." },
+  { id: 'survival', label: "Survival", icon: Leaf, description: "Represents wilderness survival, tracking, and foraging." },
+  { id: 'knowledge', label: "Knowledge", icon: Library, description: "Measures understanding of lore, rituals, and the occult." },
+];
+
 const charactersData: Character[] = [
   {
     id: 'custom',
     name: 'Custom Character',
     baseStats: initialBaseStats,
+    skills: initialSkills,
     abilities: [],
     avatarSeed: 'customcharacter',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
@@ -43,6 +56,7 @@ const charactersData: Character[] = [
     id: 'gob',
     name: 'Gob',
     baseStats: { hp: 12, maxHp: 12, mv: 2, def: 3, sanity: 7, maxSanity: 7 },
+    skills: { tactics: 3, survival: 2, knowledge: 3 },
     avatarSeed: 'gob',
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
@@ -60,12 +74,14 @@ const charactersData: Character[] = [
 export function CharacterSheetUI() {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>(charactersData[0].id);
   const [stats, setStats] = useState<CharacterStats>(charactersData.find(c => c.id === charactersData[0].id)?.baseStats || initialBaseStats);
+  const [characterSkills, setCharacterSkills] = useState<Skills>(charactersData.find(c => c.id === charactersData[0].id)?.skills || initialSkills);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
 
   useEffect(() => {
     const character = charactersData.find(c => c.id === selectedCharacterId);
     if (character) {
       setStats(character.baseStats);
+      setCharacterSkills(character.skills || initialSkills);
     }
   }, [selectedCharacterId]);
 
@@ -102,6 +118,7 @@ export function CharacterSheetUI() {
     const character = charactersData.find(c => c.id === selectedCharacterId);
     if (character) {
       setStats(character.baseStats);
+      setCharacterSkills(character.skills || initialSkills);
     }
   };
 
@@ -153,6 +170,22 @@ export function CharacterSheetUI() {
             }
           </div>
         )}
+        {def.description && <p className="text-xs text-muted-foreground mt-1">{def.description}</p>}
+      </div>
+    );
+  };
+
+  const SkillDisplayComponent: React.FC<{ def: SkillDefinition }> = ({ def }) => {
+    const skillValue = characterSkills[def.id] || 0;
+    return (
+      <div className="p-3 rounded-lg border border-border bg-card/50 shadow-sm">
+        <div className="flex items-center justify-between">
+          <Label htmlFor={def.id} className="flex items-center text-md font-medium">
+            <def.icon className="mr-2 h-5 w-5 text-primary" />
+            {def.label}
+          </Label>
+          <span className="text-lg font-bold text-primary">{skillValue}</span>
+        </div>
         {def.description && <p className="text-xs text-muted-foreground mt-1">{def.description}</p>}
       </div>
     );
@@ -221,17 +254,27 @@ export function CharacterSheetUI() {
             <TabsTrigger value="stats">Stats & Equipment</TabsTrigger>
             <TabsTrigger value="abilities">Abilities</TabsTrigger>
           </TabsList>
-          <TabsContent value="stats" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)}
+          <TabsContent value="stats" className="mt-6 space-y-6">
+            <div>
+              <h3 className="text-xl font-semibold mb-3 flex items-center"><UserCircle className="mr-2 h-6 w-6 text-primary" /> Core Stats</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)}
+              </div>
             </div>
-            <Separator className="my-6" />
+            <Separator/>
             <div>
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <WeaponDisplay weapon={selectedCharacter.meleeWeapon} type="melee" />
                     <WeaponDisplay weapon={selectedCharacter.rangedWeapon} type="ranged" />
                 </div>
+            </div>
+            <Separator />
+             <div>
+              <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {skillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="abilities" className="mt-6">

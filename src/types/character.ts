@@ -1,4 +1,5 @@
 export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity';
+export type SkillName = 'tactics' | 'survival' | 'knowledge';
 
 export interface CharacterStats {
   hp: number;
@@ -9,8 +10,21 @@ export interface CharacterStats {
   maxSanity: number;
 }
 
+export interface Skills {
+  tactics?: number;
+  survival?: number;
+  knowledge?: number;
+}
+
 export interface CharacterStatDefinition {
   id: StatName;
+  label: string;
+  icon: React.ElementType;
+  description?: string;
+}
+
+export interface SkillDefinition {
+  id: SkillName;
   label: string;
   icon: React.ElementType;
   description?: string;
@@ -43,6 +57,7 @@ export interface Character {
   id: string;
   name: string;
   baseStats: CharacterStats;
+  skills?: Skills; // Added skills
   abilities: Ability[];
   avatarSeed?: string;
   meleeWeapon?: Weapon;
