@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { ChangeEvent } from 'react';
@@ -59,7 +58,6 @@ const charactersData: Character[] = [
     skills: initialSkills,
     abilities: [],
     avatarSeed: 'customcharacter',
-    // No imageUrl for custom, will use avatarSeed for picsum or fallback
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
     characterPoints: 0,
@@ -74,11 +72,11 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
     abilities: [
-      { id: 'vital_shot', name: 'Vital Shot', type: 'Action', description: 'Re-rolls 2 missed Attack Dice.', details: 'A4/R5 - PHYS', cooldown: '2 round CD' },
-      { id: 'wounding_strike', name: 'Wounding Strike', type: 'Action', description: 'Bypasses Targets Armor Effect. Damaged targets are WOUNDED for 2 rounds.', details: 'A3/R1' },
-      { id: 'leadership', name: 'Leadership', type: 'Action', description: 'Roll 1 combat dice. Allies within 2 spaces increase their Attack or Defense by 1 for 1 round on a HIT.' },
-      { id: 'quick_draw', name: 'Quick Draw', type: 'Interrupt', description: 'Push target back 1 space for each HIT.', details: 'A3/R3', cooldown: '2 round CD' },
-      { id: 'flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6' },
+      { id: 'gob_vital_shot', name: 'Vital Shot', type: 'Action', description: 'Re-rolls 2 missed Attack Dice.', details: 'A4/R5 - PHYS', cooldown: '2 round CD' },
+      { id: 'gob_wounding_strike', name: 'Wounding Strike', type: 'Action', description: 'Bypasses Targets Armor Effect. Damaged targets are WOUNDED for 2 rounds.', details: 'A3/R1' },
+      { id: 'gob_leadership', name: 'Leadership', type: 'Action', description: 'Roll 1 combat dice. Allies within 2 spaces increase their Attack or Defense by 1 for 1 round on a HIT.' },
+      { id: 'gob_quick_draw', name: 'Quick Draw', type: 'Interrupt', description: 'Push target back 1 space for each HIT.', details: 'A3/R3', cooldown: '2 round CD' },
+      { id: 'gob_flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6' },
     ],
     characterPoints: 375,
   },
@@ -92,11 +90,11 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Saber", attack: 3 },
     rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
     abilities: [
-      { id: 'death_knell', name: 'Death Knell', type: 'Action', description: 'Roll 1 additional Attack Dice for each HP Cassandra is below her Max HP.', details: 'A3/R3 - NETHER', cooldown: '3 round CD' },
-      { id: 'anoint_weapon', name: 'Anoint Weapon', type: 'Action', description: 'Targets attacks are now of the ETHER element for 2 rounds.', details: 'R4' },
-      { id: 'enrage', name: 'Enrage', type: 'Passive', description: "When Cassie's HP falls to 3 or less she gains the BERSERK buff." },
-      { id: 'curse_x4', name: 'Curse x4', type: 'Interrupt', description: 'Target is inflicted with Hex for 1 round.', details: 'R4' },
-      { id: 'healing_light_x4', name: 'Healing Light x4', type: 'Interrupt', description: 'Target regains 1 HP per HIT.', details: 'A3/R4' },
+      { id: 'cass_death_knell', name: 'Death Knell', type: 'Action', description: 'Roll 1 additional Attack Dice for each HP Cassandra is below her Max HP.', details: 'A3/R3 - NETHER', cooldown: '3 round CD' },
+      { id: 'cass_anoint_weapon', name: 'Anoint Weapon', type: 'Action', description: 'Targets attacks are now of the ETHER element for 2 rounds.', details: 'R4' },
+      { id: 'cass_enrage', name: 'Enrage', type: 'Passive', description: "When Cassie's HP falls to 3 or less she gains the BERSERK buff." },
+      { id: 'cass_curse_x4', name: 'Curse x4', type: 'Interrupt', description: 'Target is inflicted with Hex for 1 round.', details: 'R4' },
+      { id: 'cass_healing_light_x4', name: 'Healing Light x4', type: 'Interrupt', description: 'Target regains 1 HP per HIT.', details: 'A3/R4' },
     ],
     characterPoints: 375,
   },
@@ -108,13 +106,35 @@ export function CharacterSheetUI() {
   const [stats, setStats] = useState<CharacterStats>(charactersData.find(c => c.id === charactersData[0].id)?.baseStats || initialBaseStats);
   const [characterSkills, setCharacterSkills] = useState<Skills>(charactersData.find(c => c.id === charactersData[0].id)?.skills || initialSkills);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
+  const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
+  const [maxAbilityCooldowns, setMaxAbilityCooldowns] = useState<Record<string, number>>({});
 
   const selectedCharacter = charactersData.find(c => c.id === selectedCharacterId) || charactersData[0];
+
+  const parseCooldownRounds = (cooldownString?: string): number | undefined => {
+    if (!cooldownString) return undefined;
+    const match = cooldownString.match(/\d+/);
+    return match ? parseInt(match[0], 10) : undefined;
+  };
 
   useEffect(() => {
     if (selectedCharacter) {
       setStats(selectedCharacter.baseStats);
       setCharacterSkills(selectedCharacter.skills || initialSkills);
+
+      const newCurrentCooldowns: Record<string, number> = {};
+      const newMaxCooldowns: Record<string, number> = {};
+      selectedCharacter.abilities.forEach(ability => {
+        if (ability.type === 'Action' && ability.cooldown) {
+          const maxRounds = parseCooldownRounds(ability.cooldown);
+          if (maxRounds !== undefined) {
+            newMaxCooldowns[ability.id] = maxRounds;
+            newCurrentCooldowns[ability.id] = 0; 
+          }
+        }
+      });
+      setCurrentAbilityCooldowns(newCurrentCooldowns);
+      setMaxAbilityCooldowns(newMaxCooldowns);
     }
   }, [selectedCharacter]);
 
@@ -147,10 +167,34 @@ export function CharacterSheetUI() {
     handleStatChange(statName, (stats[statName] || 0) - 1);
   };
 
+  const handleIncrementCooldown = (abilityId: string) => {
+    setCurrentAbilityCooldowns(prev => ({
+      ...prev,
+      [abilityId]: Math.min((prev[abilityId] || 0) + 1, maxAbilityCooldowns[abilityId] || Infinity),
+    }));
+  };
+  
+  const handleDecrementCooldown = (abilityId: string) => {
+    setCurrentAbilityCooldowns(prev => ({
+      ...prev,
+      [abilityId]: Math.max((prev[abilityId] || 0) - 1, 0),
+    }));
+  };
+
   const resetStats = () => {
     if (selectedCharacter) {
       setStats(selectedCharacter.baseStats);
       setCharacterSkills(selectedCharacter.skills || initialSkills);
+      const newCurrentCooldowns: Record<string, number> = {};
+      selectedCharacter.abilities.forEach(ability => {
+        if (ability.type === 'Action' && ability.cooldown) {
+          const maxRounds = parseCooldownRounds(ability.cooldown);
+          if (maxRounds !== undefined) {
+            newCurrentCooldowns[ability.id] = 0; 
+          }
+        }
+      });
+      setCurrentAbilityCooldowns(newCurrentCooldowns);
     }
   };
 
@@ -249,22 +293,60 @@ export function CharacterSheetUI() {
   const interruptAbilities = abilities.filter(a => a.type === 'Interrupt');
   const passiveAbilities = abilities.filter(a => a.type === 'Passive');
 
-  const AbilityCard: React.FC<{ability: Ability}> = ({ability}) => (
-    <Card className="bg-card/50">
-      <CardHeader>
-        <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
-        {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">{ability.description}</p>
-        {ability.cooldown && (
-          <p className="text-xs text-amber-400 mt-1 flex items-center">
-            <Clock className="mr-1 h-3 w-3" /> Cooldown: {ability.cooldown}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
+  interface AbilityCardProps {
+    ability: Ability;
+    currentCooldown?: number;
+    maxCooldown?: number;
+    onIncrementCooldown?: () => void;
+    onDecrementCooldown?: () => void;
+  }
+  
+  const AbilityCard: React.FC<AbilityCardProps> = ({ ability, currentCooldown, maxCooldown, onIncrementCooldown, onDecrementCooldown }) => {
+    const hasTrackableCooldown = ability.type === 'Action' && ability.cooldown && typeof currentCooldown === 'number' && typeof maxCooldown === 'number' && onIncrementCooldown && onDecrementCooldown;
+  
+    return (
+      <Card className="bg-card/50">
+        <CardHeader>
+          <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
+          {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">{ability.description}</p>
+          {ability.cooldown && !hasTrackableCooldown && (
+            <p className="text-xs text-amber-400 mt-1 flex items-center">
+              <Clock className="mr-1 h-3 w-3" /> Cooldown: {ability.cooldown}
+            </p>
+          )}
+          {hasTrackableCooldown && (
+            <div className="mt-3 pt-3 border-t border-muted-foreground/20">
+              <div className='flex justify-between items-center mb-1'>
+                <Label htmlFor={`${ability.id}-cooldown`} className="text-sm font-medium text-amber-400 flex items-center">
+                  <Clock className="mr-1 h-4 w-4" /> Current Cooldown
+                </Label>
+                 {ability.cooldown && <span className="text-xs text-muted-foreground">({ability.cooldown})</span>}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={onDecrementCooldown} disabled={currentCooldown === 0} className="h-8 w-8">
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Input
+                  id={`${ability.id}-cooldown`}
+                  type="number"
+                  value={currentCooldown}
+                  readOnly
+                  className="w-16 h-8 text-center text-lg font-bold"
+                />
+                <Button variant="outline" size="icon" onClick={onIncrementCooldown} disabled={currentCooldown === maxCooldown} className="h-8 w-8">
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <span className="text-xl font-medium text-muted-foreground">/ {maxCooldown}</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <Card className="w-full max-w-4xl mx-auto shadow-xl relative overflow-hidden">
@@ -337,7 +419,7 @@ export function CharacterSheetUI() {
 
           <Tabs defaultValue="stats" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="stats">Stats & Equipment</TabsTrigger>
+              <TabsTrigger value="stats">Stats &amp; Equipment</TabsTrigger>
               <TabsTrigger value="abilities">Abilities</TabsTrigger>
             </TabsList>
             <TabsContent value="stats" className="mt-6 space-y-6">
@@ -382,9 +464,19 @@ export function CharacterSheetUI() {
                     <div>
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><BookOpen className="mr-2 h-6 w-6 text-primary" /> Actions</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {actionAbilities.map(ability => (
-                          <AbilityCard key={ability.id} ability={ability} />
-                        ))}
+                        {actionAbilities.map(ability => {
+                            const isTrackable = ability.type === 'Action' && ability.cooldown && maxAbilityCooldowns[ability.id] !== undefined && currentAbilityCooldowns[ability.id] !== undefined;
+                            return (
+                                <AbilityCard
+                                key={ability.id}
+                                ability={ability}
+                                currentCooldown={isTrackable ? currentAbilityCooldowns[ability.id] : undefined}
+                                maxCooldown={isTrackable ? maxAbilityCooldowns[ability.id] : undefined}
+                                onIncrementCooldown={isTrackable ? () => handleIncrementCooldown(ability.id) : undefined}
+                                onDecrementCooldown={isTrackable ? () => handleDecrementCooldown(ability.id) : undefined}
+                                />
+                            );
+                        })}
                       </div>
                     </div>
                   )}
@@ -424,3 +516,5 @@ export function CharacterSheetUI() {
   );
 }
 
+
+    
