@@ -289,9 +289,19 @@ export function CharacterSheetUI() {
             <Separator />
              <div>
               <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {skillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
-              </div>
+              {
+                (() => {
+                  const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] || 0) > 0);
+                  if (relevantSkillDefinitions.length === 0) {
+                    return <p className="text-muted-foreground text-center py-4">This character has no skills with a value greater than 0.</p>;
+                  }
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {relevantSkillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
+                    </div>
+                  );
+                })()
+              }
             </div>
           </TabsContent>
           <TabsContent value="abilities" className="mt-6">
@@ -368,6 +378,7 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
 
 
 
