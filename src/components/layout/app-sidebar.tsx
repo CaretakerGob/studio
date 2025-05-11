@@ -30,9 +30,9 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-lg">
       <SidebarHeader className="p-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-          {/* You can replace this with a logo SVG or Image */}
+          {/* Beast Face Icon */}
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-primary">
-            <path d="M11.248 2.544c.285-.488.919-.488 1.204 0l1.895 3.239c.09.154.253.25.43.261l3.51.173c.526.026.741.707.348 1.035l-2.73 2.218c-.132.107-.192.282-.156.449l.89 3.362c.132.498-.394.91-.836.606l-3.016-2.073c-.14-.096-.319-.096-.459 0l-3.016 2.073c-.442.304-.968-.108-.836-.606l.89-3.362c.036-.167-.024-.342-.156-.449l-2.73-2.218c-.393-.328-.178-1.009.348-1.035l3.51-.173c.177-.01.34-.107.43-.261l1.895-3.239zM6 18a1 1 0 00-1 1v1H4a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2H7v-1a1 1 0 00-1-1zm13-1a1 1 0 00-1-1h-1a1 1 0 100 2h1a1 1 0 001-1zm-5 2a1 1 0 100 2 1 1 0 000-2z"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2.5-9c.83 0 1.5-.67 1.5-1.5S10.33 8 9.5 8 8 8.67 8 9.5s.67 1.5 1.5 1.5zm5 0c.83 0 1.5-.67 1.5-1.5S15.33 8 14.5 8s-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-2.5 4c-1.48 0-2.75-.81-3.45-2H15.95c-.7 1.19-1.97 2-3.45 2zm-4.09-4.56c.1-.19.1-.41-.04-.59l-1.17-1.6c-.22-.3-.61-.38-.91-.18-.3.22-.38.61-.18.91l1.18 1.6c.15.2.38.29.59.29.08 0 .17-.02.23-.07zm8.18 0c.06.05.15.07.23.07.21 0 .44-.09.59-.29l1.18-1.6c.2-.3.12-.69-.18-.91-.3-.2-.69-.12-.91.18l-1.17 1.6c-.14.18-.14.41-.04.59z"/>
           </svg>
           <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
         </Link>
