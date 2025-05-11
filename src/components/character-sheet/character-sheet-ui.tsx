@@ -70,7 +70,7 @@ const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
     skills: { tactics: 3, survival: 2, knowledge: 3, occult: 0, empathy: 0, tuner: 0 },
     avatarSeed: 'gob',
-    imageUrl: `https://picsum.photos/seed/gob/400/400`, // Placeholder, replace with actual Gob image if available
+    imageUrl: `https://picsum.photos/seed/gob/400/400`, 
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
     abilities: [
@@ -261,39 +261,40 @@ export function CharacterSheetUI() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          <div className="md:col-span-1 space-y-4">
-            <Label htmlFor="characterName" className="text-lg font-medium">Character</Label>
-            <Select value={selectedCharacterId} onValueChange={handleCharacterChange}>
-              <SelectTrigger id="characterName" className="text-xl p-2">
-                <SelectValue placeholder="Select a character" />
-              </SelectTrigger>
-              <SelectContent>
-                {charactersData.map(char => (
-                  <SelectItem key={char.id} value={char.id}>{char.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="md:col-span-1 space-y-4 flex flex-col items-center">
+            <div className="w-full max-w-xs">
+              <Label htmlFor="characterName" className="text-lg font-medium mb-1 block">Character</Label>
+              <Select value={selectedCharacterId} onValueChange={handleCharacterChange}>
+                <SelectTrigger id="characterName" className="text-xl p-2 w-full">
+                  <SelectValue placeholder="Select a character" />
+                </SelectTrigger>
+                <SelectContent>
+                  {charactersData.map(char => (
+                    <SelectItem key={char.id} value={char.id}>{char.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             {selectedCharacter.imageUrl && (
-              <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-primary shadow-lg">
+              <div className="relative w-full max-w-xs aspect-[3/4] rounded-lg overflow-hidden border border-primary shadow-lg mt-4">
                 <Image 
                   src={selectedCharacter.imageUrl} 
                   alt={selectedCharacter.name} 
                   fill 
-                  style={{ objectFit: 'cover' }}
+                  style={{ objectFit: 'contain' }}
                   data-ai-hint="character portrait"
                   priority
                 />
               </div>
             )}
              {!selectedCharacter.imageUrl && selectedCharacter.avatarSeed && (
-                <Avatar className="w-full h-auto aspect-square rounded-lg border border-primary shadow-lg">
+                <Avatar className="w-full max-w-xs h-auto aspect-square rounded-lg border border-primary shadow-lg mt-4">
                     <AvatarFallback className="text-6xl bg-muted text-muted-foreground">
                         {selectedCharacter.name.substring(0,2).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
             )}
-
           </div>
         
           <div className="md:col-span-2 space-y-4">
