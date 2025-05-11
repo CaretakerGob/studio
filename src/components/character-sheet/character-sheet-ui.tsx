@@ -297,7 +297,7 @@ export function CharacterSheetUI() {
           
             <div className="md:col-span-2 space-y-4">
               {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-                <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md flex flex-col items-end">
+                <div className="ml-auto p-4 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
                   <Label className="text-lg font-medium flex items-center">
                     <Award className="mr-2 h-6 w-6 text-primary" />
                     Character Points
