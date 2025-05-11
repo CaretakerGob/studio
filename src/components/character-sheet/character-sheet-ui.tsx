@@ -129,7 +129,7 @@ export function CharacterSheetUI() {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCooldowns[ability.id] = maxRounds;
-            newCurrentCooldowns[ability.id] = 0; 
+            newCurrentCooldowns[ability.id] = maxRounds; 
           }
         }
       });
@@ -190,7 +190,7 @@ export function CharacterSheetUI() {
         if (ability.type === 'Action' && ability.cooldown) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
-            newCurrentCooldowns[ability.id] = 0; 
+            newCurrentCooldowns[ability.id] = maxRounds; 
           }
         }
       });
