@@ -64,7 +64,7 @@ const charactersData: Character[] = [
     id: 'gob',
     name: 'Gob',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { tactics: 3, survival: 2, knowledge: 3, occult: 1, empathy: 0, tuner: 0 },
+    skills: { tactics: 3, survival: 2, knowledge: 3, occult: 0, empathy: 0, tuner: 0 },
     avatarSeed: 'gob',
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
@@ -394,6 +394,7 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
 
 
 
