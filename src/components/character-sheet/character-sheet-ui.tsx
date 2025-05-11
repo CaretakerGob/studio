@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ChangeEvent } from 'react';
@@ -15,7 +16,7 @@ import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 
 const initialBaseStats: Omit<CharacterStats, 'atk' | 'rng'> = {
@@ -58,6 +59,7 @@ const charactersData: Character[] = [
     skills: initialSkills,
     abilities: [],
     avatarSeed: 'customcharacter',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
     characterPoints: 0,
@@ -473,13 +475,16 @@ export function CharacterSheetUI() {
                 </Select>
               </div>
               
-              {!selectedCharacter.imageUrl && selectedCharacter.avatarSeed && (
-                  <Avatar className="w-48 h-48 rounded-lg border-2 border-primary shadow-lg mt-4">
-                      <AvatarFallback className="text-6xl bg-muted text-muted-foreground">
-                          {selectedCharacter.name.substring(0,2).toUpperCase()}
-                      </AvatarFallback>
-                  </Avatar>
-              )}
+              <Avatar className="w-48 h-48 rounded-lg border-2 border-primary shadow-lg mt-4">
+                {selectedCharacter.imageUrl ? (
+                  <AvatarImage src={selectedCharacter.imageUrl} alt={selectedCharacter.name} data-ai-hint="character portrait"/>
+                ) : selectedCharacter.avatarSeed && (
+                  <AvatarImage src={`https://picsum.photos/seed/${selectedCharacter.avatarSeed}/200/200`} alt={selectedCharacter.name} data-ai-hint="character placeholder"/>
+                )}
+                <AvatarFallback className="text-6xl bg-muted text-muted-foreground">
+                  {selectedCharacter.name.substring(0,2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
             </div>
           
             <div className="md:col-span-2 space-y-4 flex justify-end">
@@ -623,3 +628,4 @@ export function CharacterSheetUI() {
 }
 
     
+
