@@ -154,7 +154,7 @@ export function CharacterSheetUI() {
     const maxValue = def.id === 'hp' ? stats.maxHp : (def.id === 'sanity' ? stats.maxSanity : undefined);
 
     return (
-      <div className={cn("p-4 rounded-lg border border-border bg-card/50 backdrop-filter backdrop-blur-sm transition-all duration-300", highlightedStat === def.id ? "ring-2 ring-primary shadow-lg" : "shadow-md")}>
+      <div className={cn("p-4 rounded-lg border border-border bg-card/50 transition-all duration-300", highlightedStat === def.id ? "ring-2 ring-primary shadow-lg" : "shadow-md")}>
         <div className="flex items-center justify-between mb-2">
           <Label htmlFor={def.id} className="flex items-center text-lg font-medium">
             <def.icon className="mr-2 h-6 w-6 text-primary" />
@@ -204,7 +204,7 @@ export function CharacterSheetUI() {
   const SkillDisplayComponent: React.FC<{ def: SkillDefinition }> = ({ def }) => {
     const skillValue = characterSkills[def.id] || 0;
     return (
-      <div className="p-3 rounded-lg border border-border bg-card/50 backdrop-filter backdrop-blur-sm shadow-sm">
+      <div className="p-3 rounded-lg border border-border bg-card/50 shadow-sm">
         <div className="flex items-center justify-between">
           <Label htmlFor={def.id} className="flex items-center text-md font-medium">
             <def.icon className="mr-2 h-5 w-5 text-primary" />
@@ -223,7 +223,7 @@ export function CharacterSheetUI() {
     const isRanged = 'range' in weapon && weapon.range !== undefined;
 
     return (
-        <div className="p-4 rounded-lg border border-border bg-card/50 backdrop-filter backdrop-blur-sm shadow-md">
+        <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
             <div className="flex items-center mb-2">
                 <Icon className="mr-2 h-6 w-6 text-primary" />
                 <h4 className="text-lg font-medium">{type === 'melee' ? "Melee Weapon" : "Ranged Weapon"}</h4>
@@ -256,7 +256,7 @@ export function CharacterSheetUI() {
           data-ai-hint="character background"
         />
       )}
-      <div className="relative z-10 bg-card/75 backdrop-blur-sm">
+      <div className="relative z-10 bg-card/75">
         <CardHeader>
           <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -297,7 +297,7 @@ export function CharacterSheetUI() {
           
             <div className="md:col-span-2 space-y-4">
               {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-                <div className="p-4 rounded-lg border border-border bg-card/10 backdrop-filter backdrop-blur-sm shadow-md">
+                <div className="p-4 rounded-lg border border-border bg-card/10 shadow-md">
                   <Label className="text-lg font-medium flex items-center">
                     <Award className="mr-2 h-6 w-6 text-primary" />
                     Character Points
@@ -339,7 +339,7 @@ export function CharacterSheetUI() {
                   (() => {
                     const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] || 0) > 0);
                     if (relevantSkillDefinitions.length === 0) {
-                      return <p className="text-muted-foreground text-center py-4 bg-card/50 backdrop-filter backdrop-blur-sm rounded-md">This character has no skills with a value greater than 0.</p>;
+                      return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no skills with a value greater than 0.</p>;
                     }
                     return (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -352,7 +352,7 @@ export function CharacterSheetUI() {
             </TabsContent>
             <TabsContent value="abilities" className="mt-6">
               {abilities.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8 bg-card/50 backdrop-filter backdrop-blur-sm rounded-md">This character has no special abilities defined.</p>
+                <p className="text-muted-foreground text-center py-8 bg-card/50 rounded-md">This character has no special abilities defined.</p>
               ) : (
                 <div className="space-y-6">
                   {actionAbilities.length > 0 && (
@@ -360,7 +360,7 @@ export function CharacterSheetUI() {
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><BookOpen className="mr-2 h-6 w-6 text-primary" /> Actions</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {actionAbilities.map(ability => (
-                          <Card key={ability.id} className="bg-card/50 backdrop-filter backdrop-blur-sm">
+                          <Card key={ability.id} className="bg-card/50">
                             <CardHeader>
                               <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
                               {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
@@ -379,7 +379,7 @@ export function CharacterSheetUI() {
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><Zap className="mr-2 h-6 w-6 text-primary" /> Interrupts</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {interruptAbilities.map(ability => (
-                          <Card key={ability.id} className="bg-card/50 backdrop-filter backdrop-blur-sm">
+                          <Card key={ability.id} className="bg-card/50">
                             <CardHeader>
                               <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
                               {ability.details && <CardDescription className="text-xs">{ability.details}</CardDescription>}
@@ -398,7 +398,7 @@ export function CharacterSheetUI() {
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><ShieldAlert className="mr-2 h-6 w-6 text-primary" /> Passives</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {passiveAbilities.map(ability => (
-                          <Card key={ability.id} className="bg-card/50 backdrop-filter backdrop-blur-sm">
+                          <Card key={ability.id} className="bg-card/50">
                             <CardHeader>
                               <CardTitle className="text-lg text-primary">{ability.name}</CardTitle>
                             </CardHeader>
