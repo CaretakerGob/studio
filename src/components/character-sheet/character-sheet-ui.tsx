@@ -43,9 +43,9 @@ const charactersData: Character[] = [
   },
   {
     id: 'warden',
-    name: 'Warden',
+    name: 'Gob',
     baseStats: { hp: 12, maxHp: 12, mv: 2, def: 3, sanity: 7, maxSanity: 7, atk: 2, rng: 1 },
-    avatarSeed: 'warden',
+    avatarSeed: 'gob', // Changed from 'warden' to 'gob' for consistency
     abilities: [
       { id: 'vital_shot', name: 'Vital Shot', type: 'Action', description: 'Re-rolls 2 missed Attack Dice.', details: 'A4/R5 - PHYS', cooldown: '2 round CD' },
       { id: 'wounding_strike', name: 'Wounding Strike', type: 'Action', description: 'Bypasses Targets Armor Effect. Damaged targets are WOUNDED for 2 rounds.', details: 'A3/R1' },
