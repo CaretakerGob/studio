@@ -63,9 +63,11 @@ const generateClashCards = (): GameCard[] => {
   ];
 
   const newCards: GameCard[] = [];
-  for (let i = 3; i < clashCardImageUrls.length; i++) {
+  // Start loop from 3 if existingCards already covers the first 3 URLs
+  const startIndex = existingCards.length; 
+  for (let i = startIndex; i < clashCardImageUrls.length; i++) {
     newCards.push({
-      id: `cl${i + 1}`,
+      id: `cl${i + 1}`, // Ensure unique ID
       name: `Clash Card ${i + 1}`,
       type: "Clash",
       deck: "Clash Deck",
@@ -82,17 +84,17 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
   {
     name: "Event Deck",
     cards: [
-      { id: "ev1", name: "Sudden Gloom", type: "Event", deck: "Event Deck", description: "Darkness falls. All heroes suffer -1 Sanity.", imageUrl: "https://picsum.photos/300/450?random=1", dataAiHint: "dark event" },
-      { id: "ev2", name: "Whispers in the Dark", type: "Event", deck: "Event Deck", description: "Make a Sanity check (difficulté 3) or lose your next turn.", imageUrl: "https://picsum.photos/300/450?random=2", dataAiHint: "eerie whisper" },
-      { id: "ev3", name: "A Moment of Respite", type: "Event", deck: "Event Deck", description: "A brief calm. All heroes recover 1 HP.", imageUrl: "https://picsum.photos/300/450?random=3", dataAiHint: "calm scene" },
+      { id: "ev1", name: "Sudden Gloom", type: "Event", deck: "Event Deck", description: "Darkness falls. All heroes suffer -1 Sanity.", imageUrl: "https://picsum.photos/700/1000?random=1", dataAiHint: "dark event" },
+      { id: "ev2", name: "Whispers in the Dark", type: "Event", deck: "Event Deck", description: "Make a Sanity check (difficulté 3) or lose your next turn.", imageUrl: "https://picsum.photos/700/1000?random=2", dataAiHint: "eerie whisper" },
+      { id: "ev3", name: "A Moment of Respite", type: "Event", deck: "Event Deck", description: "A brief calm. All heroes recover 1 HP.", imageUrl: "https://picsum.photos/700/1000?random=3", dataAiHint: "calm scene" },
     ],
   },
   {
     name: "Item Deck", 
     cards: [
-      { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://picsum.photos/300/450?random=4", dataAiHint: "old lantern" },
-      { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://picsum.photos/300/450?random=5", dataAiHint: "holy charm" },
-      { id: "it3", name: "Rusty Shiv", type: "Item", deck: "Item Deck", description: "+1 ATK for one combat. Discard after use.", imageUrl: "https://picsum.photos/300/450?random=6", dataAiHint: "rusty knife" },
+      { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://picsum.photos/700/1000?random=4", dataAiHint: "old lantern" },
+      { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://picsum.photos/700/1000?random=5", dataAiHint: "holy charm" },
+      { id: "it3", name: "Rusty Shiv", type: "Item", deck: "Item Deck", description: "+1 ATK for one combat. Discard after use.", imageUrl: "https://picsum.photos/700/1000?random=6", dataAiHint: "rusty knife" },
     ],
   },
   {
@@ -116,15 +118,15 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
   {
     name: "Combat Deck",
     cards: [
-      { id: "cb1", name: "Power Attack", type: "Combat", deck: "Combat Deck", description: "Hero makes an attack with +2 ATK but -1 DEF this round.", imageUrl: "https://picsum.photos/300/450?random=13", dataAiHint: "strong attack" },
-      { id: "cb2", name: "Swift Dodge", type: "Combat", deck: "Combat Deck", description: "Hero gains +2 DEF against the next attack this round.", imageUrl: "https://picsum.photos/300/450?random=14", dataAiHint: "agile movement" },
-      { id: "cb3", name: "Calculated Shot", type: "Combat", deck: "Combat Deck", description: "Hero makes a ranged attack. If successful, +1 damage.", imageUrl: "https://picsum.photos/300/450?random=15", dataAiHint: "precise aim" },
+      { id: "cb1", name: "Power Attack", type: "Combat", deck: "Combat Deck", description: "Hero makes an attack with +2 ATK but -1 DEF this round.", imageUrl: "https://picsum.photos/700/1000?random=13", dataAiHint: "strong attack" },
+      { id: "cb2", name: "Swift Dodge", type: "Combat", deck: "Combat Deck", description: "Hero gains +2 DEF against the next attack this round.", imageUrl: "https://picsum.photos/700/1000?random=14", dataAiHint: "agile movement" },
+      { id: "cb3", name: "Calculated Shot", type: "Combat", deck: "Combat Deck", description: "Hero makes a ranged attack. If successful, +1 damage.", imageUrl: "https://picsum.photos/700/1000?random=15", dataAiHint: "precise aim" },
     ],
   },
 ];
 
 export function CardGeneratorUI() {
-  const [selectedDecks, setSelectedDecks] = useState<string[]>(sampleDecks.map(deck => deck.name));
+  const [selectedDecks, setSelectedDecks] = useState<string[]>([]); // Initialize with no decks selected
   const [generatedCard, setGeneratedCard] = useState<GameCard | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cardKey, setCardKey] = useState(0); 
@@ -145,14 +147,16 @@ export function CardGeneratorUI() {
 
     if (availableCards.length === 0) {
       setIsLoading(false);
+      // Consider using a toast notification here instead of alert for better UX
       alert("Please select at least one deck to draw from."); 
       return;
     }
     
+    // Simulate API call delay
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * availableCards.length);
       setGeneratedCard(availableCards[randomIndex]);
-      setCardKey(prev => prev + 1); 
+      setCardKey(prev => prev + 1); // Force re-render of card image
       setIsLoading(false);
     }, 500); 
   };
@@ -211,14 +215,14 @@ export function CardGeneratorUI() {
               <Skeleton className="h-4 w-5/6 mx-auto" />
             </div>
           ) : generatedCard ? (
-            <Card key={cardKey} className="w-full max-w-[300px] bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500"> 
+            <Card key={cardKey} className="w-full max-w-[300px] sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500"> 
               {generatedCard.imageUrl && (
                 <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-lg"> {/* Adjusted aspect ratio */}
                   <Image
                     src={generatedCard.imageUrl}
                     alt={generatedCard.name}
                     fill
-                    sizes="(max-width: 768px) 90vw, (max-width: 1024px) 50vw, 300px" 
+                    sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 50vw, 300px" // Adjusted sizes
                     style={{ objectFit: "contain" }} 
                     data-ai-hint={generatedCard.dataAiHint}
                     priority={true} 
