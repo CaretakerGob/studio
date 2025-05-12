@@ -451,7 +451,7 @@ export function CharacterSheetUI() {
           alt={`${selectedCharacter.name} background`}
           fill
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
-          className="absolute inset-0 z-0 opacity-[0.12] pointer-events-none"
+          className="absolute inset-0 z-0 opacity-[0.09] pointer-events-none"
           priority
           data-ai-hint={selectedCharacter.name === "Fei" ? "male hunter anime" : "character background"}
         />
@@ -628,6 +628,7 @@ export function CharacterSheetUI() {
 }
 
     
+
 
 
 
