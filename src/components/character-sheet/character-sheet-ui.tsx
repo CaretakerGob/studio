@@ -85,7 +85,7 @@ const charactersData: Character[] = [
     id: 'cassandra',
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { tactics: 0, survival: 0, knowledge: 0, occult: 2, empathy: 2, tuner: 1 },
+    skills: { occult: 2, empathy: 2, tuner: 1, tactics: 0, survival: 0, knowledge: 0 },
     avatarSeed: 'cassandra',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCassandra.png?alt=media&token=6df9b49f-aeb0-45a1-ae75-7f77945ce18c',
     meleeWeapon: { name: "Saber", attack: 3 },
@@ -104,11 +104,19 @@ const charactersData: Character[] = [
     name: 'Fei',
     baseStats: { hp: 5, maxHp: 5, mv: 4, def: 2, sanity: 6, maxSanity: 6 },
     skills: { occult: 4, empathy: 2, knowledge: 2, tactics: 0, survival: 0, tuner: 0 },
-    abilities: [],
     avatarSeed: 'fei',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2Ffei.png?alt=media&token=ec84180b-3734-499e-9767-0846580cdce9',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon." },
+    abilities: [
+        { id: 'fei_flame_thrower', name: 'Flame Thrower', type: 'Action', description: 'Flamethrower action.', details: 'BEAM - A4/R4 - FIRE', cooldown: '2 round CD' },
+        { id: 'fei_shock_grenade', name: 'Shock Grenade', type: 'Action', description: 'Shock grenade action.', details: 'AOE - A3/R4 - ELEC', cooldown: '2 round CD' },
+        { id: 'fei_tricks_trade', name: 'Tricks of the Trade', type: 'Action', description: 'Choose one of the target\'s Abilities to be disabled for 1 round.', details: 'R6' },
+        { id: 'fei_taser_x2', name: 'Taser x2', type: 'Interrupt', description: 'Inflict PARALYZE for 1 round.', details: 'R4', maxQuantity: 2 },
+        { id: 'fei_blind_x3', name: 'Blind x3', type: 'Interrupt', description: 'Target is BLIND for 2 rounds.', details: 'R4', maxQuantity: 3 },
+        { id: 'fei_immobilize_x4', name: 'Immobilize x4', type: 'Interrupt', description: 'IMMOBILIZE value of 6.', details: 'R4', maxQuantity: 4 },
+        { id: 'fei_fanny_pack', name: 'Fanny Pack', type: 'Passive', description: 'Fei can equip 2 Relics or Utility Items without taking up a Gear slot.' },
+      ],
     characterPoints: 375,
   },
 ];
@@ -149,12 +157,12 @@ export function CharacterSheetUI() {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCooldowns[ability.id] = maxRounds;
-            newCurrentCooldowns[ability.id] = maxRounds; 
+            newCurrentCooldowns[ability.id] = maxRounds; // Start cooldown at max
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           newMaxQuantities[ability.id] = ability.maxQuantity;
-          newCurrentQuantities[ability.id] = ability.maxQuantity;
+          newCurrentQuantities[ability.id] = ability.maxQuantity; // Start quantity at max
         }
       });
       setCurrentAbilityCooldowns(newCurrentCooldowns);
@@ -174,10 +182,21 @@ export function CharacterSheetUI() {
 
     setStats(prevStats => {
       const newStats = { ...prevStats, [statName]: numericValue };
+      // Clamp HP and Sanity between 0 and their respective max values
       if (statName === 'hp') newStats.hp = Math.max(0, Math.min(numericValue, newStats.maxHp));
-      if (statName === 'maxHp') newStats.maxHp = Math.max(0, numericValue);
+      if (statName === 'maxHp') newStats.maxHp = Math.max(1, numericValue); // Max HP should be at least 1
       if (statName === 'sanity') newStats.sanity = Math.max(0, Math.min(numericValue, newStats.maxSanity));
-      if (statName === 'maxSanity') newStats.maxSanity = Math.max(0, numericValue);
+      if (statName === 'maxSanity') newStats.maxSanity = Math.max(1, numericValue); // Max Sanity should be at least 1
+      
+      // Ensure HP does not exceed new MaxHP
+      if(statName === 'maxHp' && newStats.hp > newStats.maxHp) {
+        newStats.hp = newStats.maxHp;
+      }
+      // Ensure Sanity does not exceed new MaxSanity
+      if(statName === 'maxSanity' && newStats.sanity > newStats.maxSanity) {
+        newStats.sanity = newStats.maxSanity;
+      }
+      
       return newStats;
     });
 
@@ -186,6 +205,8 @@ export function CharacterSheetUI() {
   };
   
   const incrementStat = (statName: StatName) => {
+     if (statName === 'hp' && stats.hp >= stats.maxHp) return;
+     if (statName === 'sanity' && stats.sanity >= stats.maxSanity) return;
     handleStatChange(statName, (stats[statName] || 0) + 1);
   };
 
@@ -232,11 +253,11 @@ export function CharacterSheetUI() {
         if ((ability.type === 'Action' || ability.type === 'Interrupt') && ability.cooldown) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
-            newCurrentCooldowns[ability.id] = maxRounds; 
+            newCurrentCooldowns[ability.id] = maxRounds; // Reset cooldown to max
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
-          newCurrentQuantities[ability.id] = ability.maxQuantity;
+          newCurrentQuantities[ability.id] = ability.maxQuantity; // Reset quantity to max
         }
       });
       setCurrentAbilityCooldowns(newCurrentCooldowns);
@@ -286,7 +307,7 @@ export function CharacterSheetUI() {
                         value={maxValue}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => handleStatChange(def.id === 'hp' ? 'maxHp' : 'maxSanity', e.target.value)}
                         className="w-20 h-8 text-center"
-                        min="0"
+                        min="1" // Max values should be at least 1
                     />
                 </div>
             }
@@ -314,7 +335,7 @@ export function CharacterSheetUI() {
   };
   
   const WeaponDisplay: React.FC<{ weapon?: Weapon | RangedWeapon, type: 'melee' | 'ranged' }> = ({ weapon, type }) => {
-    if (!weapon) return null;
+    if (!weapon || weapon.name === "None") return null; // Hide if no weapon or name is "None"
     const Icon = type === 'melee' ? Swords : Crosshair;
     const isRanged = 'range' in weapon && weapon.range !== undefined;
 
@@ -451,7 +472,7 @@ export function CharacterSheetUI() {
           alt={`${selectedCharacter.name} background`}
           fill
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
-          className="absolute inset-0 z-0 opacity-[0.09] pointer-events-none"
+          className="absolute inset-0 z-0 opacity-[0.09] pointer-events-none" // Reduced opacity back slightly
           priority
           data-ai-hint={selectedCharacter.name === "Fei" ? "male hunter anime" : "character background"}
         />
@@ -487,18 +508,18 @@ export function CharacterSheetUI() {
               </div>
             </div>
           
-            <div className="md:col-span-2 space-y-4 flex justify-end">
-              {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-                <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
-                  <Label className="text-md font-medium flex items-center">
+             <div className="md:col-span-2 space-y-4 flex justify-end">
+                {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
+                <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end"> {/* Reduced opacity */}
+                    <Label className="text-md font-medium flex items-center">
                     <Award className="mr-2 h-5 w-5 text-primary" />
                     Character Points
-                  </Label>
-                  <p className="text-xl font-bold text-primary mt-1">
+                    </Label>
+                    <p className="text-xl font-bold text-primary mt-1">
                     {selectedCharacter.characterPoints}
-                  </p>
+                    </p>
                 </div>
-              )}
+                )}
             </div>
           </div>
           <Separator />
@@ -529,13 +550,18 @@ export function CharacterSheetUI() {
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
                 {
                   (() => {
-                    const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] || 0) > 0);
-                    if (relevantSkillDefinitions.length === 0 && selectedCharacter.id !== 'custom') { // Show for custom, hide for others if no skills
+                    const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] ?? 0) > 0 || selectedCharacter.id === 'custom'); // Show if skill > 0 or if custom character
+                     
+                    if (relevantSkillDefinitions.length === 0 && selectedCharacter.id !== 'custom') {
                       return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
                     }
-                    if (selectedCharacter.id === 'custom' && relevantSkillDefinitions.length === 0) {
-                       // Potentially allow adding/editing skills for custom characters in future
-                       return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">Define custom skills for this character.</p>;
+                    if (selectedCharacter.id === 'custom') {
+                       // Display all skills for custom, potentially with edit controls in future
+                       return (
+                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                           {skillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
+                         </div>
+                       );
                     }
                     return (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -626,11 +652,3 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
-
-    
-
-
-
-
-
-
