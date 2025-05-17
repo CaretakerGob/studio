@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Layers, Shuffle, RotateCcw, Hand } from 'lucide-react'; // Added Hand icon
+import { Layers, Shuffle, RotateCcw, Hand } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -71,10 +71,10 @@ const generateClashCards = (): GameCard[] => {
   ];
 
   const newCards: GameCard[] = [];
-  const startIndex = existingCards.length; // This will be 3
+  const startIndex = existingCards.length;
   for (let i = startIndex; i < clashCardImageUrls.length; i++) {
-    const cardName = `Clash Card ${i + 1}`; // Starts from Clash Card 4
-    const cardId = `cl${i + 1}`; // Starts from cl4
+    const cardName = `Clash Card ${i + 1}`;
+    const cardId = `cl${i + 1}`;
     newCards.push({
       id: cardId,
       name: cardName,
@@ -169,13 +169,17 @@ export function CardGeneratorUI() {
       const randomIndex = Math.floor(Math.random() * availableCards.length);
       const newCard = availableCards[randomIndex];
 
+      // Always update the main display with the newly drawn card
+      setDrawnCardsHistory(prevHistory => [newCard, ...prevHistory].slice(0, 3));
+      setCardKey(prev => prev + 1);
+
       if (newCard.isHoldable) {
         setHeldCards(prevHeld => [...prevHeld, newCard]);
-        toast({ title: "Card Held", description: `${newCard.name} has been added to your hand.` });
-      } else {
-        setDrawnCardsHistory(prevHistory => [newCard, ...prevHistory].slice(0, 3));
-        setCardKey(prev => prev + 1);
+        toast({ title: "Card Drawn & Held", description: `${newCard.name} shown and added to your hand.` });
       }
+      // Non-holdable cards are already in drawnCardsHistory and will be displayed.
+      // No separate toast needed unless specifically desired.
+
       setIsLoading(false);
     }, 500);
   };
@@ -294,7 +298,7 @@ export function CardGeneratorUI() {
            <CardTitle className="text-2xl">Generated Card</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col items-center justify-start w-full p-4">
-          {isLoading && !latestCard && heldCards.length === 0 ? ( // Show skeleton only if truly initial loading
+          {isLoading && !latestCard && heldCards.length === 0 ? (
             <div className="space-y-4 w-full max-w-xs">
               <Skeleton className="h-[450px] w-[300px] rounded-lg mx-auto" />
               <Skeleton className="h-6 w-3/4 mx-auto" />
