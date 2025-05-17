@@ -95,8 +95,8 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
     name: "Item Deck",
     cards: [
       { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "old lantern", isHoldable: true },
-      { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "holy charm" },
-      { id: "it3", name: "Rusty Shiv", type: "Item", deck: "Item Deck", description: "+1 ATK for one combat. Discard after use.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "rusty knife" },
+      { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "holy charm", isHoldable: true },
+      { id: "it3", name: "Rusty Shiv", type: "Item", deck: "Item Deck", description: "+1 ATK for one combat. Discard after use.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "rusty knife", isHoldable: true },
     ],
   },
   {
