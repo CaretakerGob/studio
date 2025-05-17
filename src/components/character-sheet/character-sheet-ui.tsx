@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { ChangeEvent } from 'react';
@@ -12,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -32,6 +31,9 @@ const initialSkills: Skills = {
   occult: 0,
   empathy: 0,
   tuner: 0,
+  deception: 0,
+  investigate: 0,
+  athletics: 0,
 };
 
 const statDefinitions: CharacterStatDefinition[] = [
@@ -48,6 +50,9 @@ const skillDefinitions: SkillDefinition[] = [
   { id: 'occult', label: "Occult (Occ)", icon: BookMarked, description: "Understanding of forbidden lore, supernatural entities, and dark rituals." },
   { id: 'empathy', label: "Empathy (Emp)", icon: HeartHandshake, description: "Ability to understand and influence the emotions and intentions of others." },
   { id: 'tuner', label: "Tuner (Tun)", icon: SlidersHorizontal, description: "Special ability to manipulate game mechanics or reality to a certain extent." },
+  { id: 'deception', label: "Deception (Dec)", icon: VenetianMask, description: "Skill in misleading, lying, or disguising intentions." },
+  { id: 'investigate', label: "Investigate (Inv)", icon: Search, description: "Ability to find clues, uncover information, and solve mysteries." },
+  { id: 'athletics', label: "Athletics (Ath)", icon: PersonStanding, description: "Proficiency in physical activities like running, jumping, and climbing." },
 ];
 
 const charactersData: Character[] = [
@@ -55,7 +60,7 @@ const charactersData: Character[] = [
     id: 'custom',
     name: 'Custom Character',
     baseStats: { hp: 5, maxHp: 5, mv: 2, def: 2, sanity: 5, maxSanity: 5 },
-    skills: initialSkills,
+    skills: { ...initialSkills },
     abilities: [],
     avatarSeed: 'customcharacter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
@@ -67,7 +72,7 @@ const charactersData: Character[] = [
     id: 'gob',
     name: 'Gob',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { tactics: 3, survival: 2, knowledge: 3, occult: 0, empathy: 0, tuner: 0 },
+    skills: { ...initialSkills, tactics: 3, survival: 2, knowledge: 3 },
     avatarSeed: 'gob',
     imageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FGob.png?alt=media&token=d5d63a0b-0465-4c50-a179-351ac7cc7fa9`,
     meleeWeapon: { name: "Knife", attack: 2 },
@@ -85,7 +90,7 @@ const charactersData: Character[] = [
     id: 'cassandra',
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { tactics: 0, survival: 0, knowledge: 0, occult: 2, empathy: 2, tuner: 1 },
+    skills: { ...initialSkills, occult: 2, empathy: 2, tuner: 1 },
     avatarSeed: 'cassandra',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCassandra.png?alt=media&token=6df9b49f-aeb0-45a1-ae75-7f77945ce18c',
     meleeWeapon: { name: "Saber", attack: 3 },
@@ -103,7 +108,7 @@ const charactersData: Character[] = [
     id: 'fei',
     name: 'Fei',
     baseStats: { hp: 5, maxHp: 5, mv: 4, def: 2, sanity: 6, maxSanity: 6 },
-    skills: { occult: 4, empathy: 2, knowledge: 2, tactics: 0, survival: 0, tuner: 0 },
+    skills: { ...initialSkills, occult: 4, empathy: 2, knowledge: 2 },
     avatarSeed: 'fei',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2Ffei.png?alt=media&token=ec84180b-3734-499e-9767-0846580cdce9',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
@@ -123,7 +128,7 @@ const charactersData: Character[] = [
     id: 'michael',
     name: 'Michael',
     baseStats: { hp: 6, maxHp: 6, mv: 5, def: 3, sanity: 5, maxSanity: 5 },
-    skills: { tactics: 0, survival: 0, knowledge: 0, occult: 0, empathy: 2, tuner: 0 },
+    skills: { ...initialSkills, empathy: 2, deception: 3, investigate: 2, athletics: 3 },
     avatarSeed: 'michael',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%2FMichael%20front%201.png?alt=media&token=dabb1217-30f9-4a67-a0c8-a501740060a5',
     meleeWeapon: { name: "Kunai", attack: 3 },
@@ -331,7 +336,7 @@ export function CharacterSheetUI() {
   };
 
   const SkillDisplayComponent: React.FC<{ def: SkillDefinition }> = ({ def }) => {
-    const skillValue = characterSkills[def.id] || 0;
+    const skillValue = (characterSkills as Skills)[def.id as SkillName] || 0;
     return (
       <div className="p-3 rounded-lg border border-border bg-card/50 shadow-sm">
         <div className="flex items-center justify-between">
@@ -566,7 +571,7 @@ export function CharacterSheetUI() {
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
                 {
                   (() => {
-                    const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] ?? 0) > 0 || selectedCharacter.id === 'custom'); 
+                    const relevantSkillDefinitions = skillDefinitions.filter(def => ((characterSkills as Skills)[def.id as SkillName] ?? 0) > 0 || selectedCharacter.id === 'custom'); 
                      
                     if (relevantSkillDefinitions.length === 0 && selectedCharacter.id !== 'custom') {
                       return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
@@ -667,4 +672,3 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
-
