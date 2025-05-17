@@ -88,6 +88,7 @@ export function DiceRollerUI() {
   const [numCombatDice, setNumCombatDice] = useState(1);
   const [rollHistory, setRollHistory] = useState<RollResult[]>([]);
   const [latestRoll, setLatestRoll] = useState<RollResult | null>(null);
+  const [latestRollKey, setLatestRollKey] = useState(0); // Key for re-triggering animation
 
   const recordRoll = (rolls: (number | CombatDieFace)[], total: number | string, diceNotation: string) => {
     const newRollResult: RollResult = {
@@ -97,6 +98,7 @@ export function DiceRollerUI() {
       timestamp: new Date(),
     };
     setLatestRoll(newRollResult);
+    setLatestRollKey(prevKey => prevKey + 1); // Increment key to re-trigger animation
     setRollHistory(prev => [newRollResult, ...prev].slice(0, 20));
   };
 
@@ -284,7 +286,10 @@ export function DiceRollerUI() {
           </div>
 
           {latestRoll && (
-            <Card className="mt-6 bg-card/50 border-primary shadow-md transition-all animate-in fade-in duration-500">
+            <Card 
+              key={latestRollKey}
+              className="mt-6 bg-card/50 border-primary shadow-md transition-all animate-in fade-in duration-500"
+            >
               <CardHeader>
                 <CardTitle className="text-xl flex items-center">
                   Latest Roll: <Badge variant="secondary" className="ml-2">{latestRoll.diceNotation}</Badge>
