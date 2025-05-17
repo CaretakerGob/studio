@@ -2,19 +2,20 @@
 "use client";
 
 import type { ChangeEvent } from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useToast } from "@/hooks/use-toast";
 
 
 const initialBaseStats: CharacterStats = {
@@ -25,19 +26,7 @@ const initialBaseStats: CharacterStats = {
 };
 
 const initialSkills: Skills = {
-  ath: 0,
-  cpu: 0,
-  dare: 0,
-  dec: 0,
-  emp: 0,
-  eng: 0,
-  inv: 0,
-  kno: 0,
-  occ: 0,
-  pers: 0,
-  sur: 0,
-  tac: 0,
-  tun: 0,
+  ath: 0, cpu: 0, dare: 0, dec: 0, emp: 0, eng: 0, inv: 0, kno: 0, occ: 0, pers: 0, sur: 0, tac: 0, tun: 0,
 };
 
 const statDefinitions: CharacterStatDefinition[] = [
@@ -75,7 +64,7 @@ const charactersData: Character[] = [
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
-    characterPoints: 0,
+    characterPoints: 375, // Starting CP budget for custom character
   },
   {
     id: 'gob',
@@ -125,7 +114,7 @@ const charactersData: Character[] = [
     abilities: [
         { id: 'fei_flame_thrower', name: 'Flame Thrower', type: 'Action', description: 'Flamethrower action.', details: 'BEAM - A4/R4 - FIRE', cooldown: '2 round CD' },
         { id: 'fei_shock_grenade', name: 'Shock Grenade', type: 'Action', description: 'Shock grenade action.', details: 'AOE - A3/R4 - ELEC', cooldown: '2 round CD' },
-        { id: 'fei_tricks_trade', name: 'Tricks of the Trade', type: 'Action', description: 'Choose one of the target\'s Abilities to be disabled for 1 round.', details: 'R6' },
+        { id: 'fei_tricks_trade_action', name: 'Tricks of the Trade', type: 'Action', description: 'Choose one of the target\'s Abilities to be disabled for 1 round.', details: 'R6' },
         { id: 'fei_taser_x2', name: 'Taser x2', type: 'Interrupt', description: 'Inflict PARALYZE for 1 round.', details: 'R4', maxQuantity: 2 },
         { id: 'fei_blind_x3', name: 'Blind x3', type: 'Interrupt', description: 'Target is BLIND for 2 rounds.', details: 'R4', maxQuantity: 3 },
         { id: 'fei_immobilize_x4', name: 'Immobilize x4', type: 'Interrupt', description: 'IMMOBILIZE value of 6.', details: 'R4', maxQuantity: 4 },
@@ -200,29 +189,45 @@ const charactersData: Character[] = [
     abilities: [
       { id: 'blake_mark_target', name: 'Mark Target', type: 'Action', details: 'R8', description: 'Target is MARKED for 1 round.'},
       { id: 'blake_restock', name: 'Restock', type: 'Action', description: "Restock one of Blake's Interrupts by 1. Cannot exceed initial count."},
-      { id: 'blake_shotgun', name: 'Shotgun x2', type: 'Interrupt', details: 'BEAM - A4/R3 - PHYS', description: 'Interrupt Attack.', maxQuantity: 2},
-      { id: 'blake_barricade', name: 'Barricade x1', type: 'Interrupt', details: 'R2', description: 'Any allies adjacent of the Barricade gain the COVER Buff for 2 rounds.', maxQuantity: 1},
-      { id: 'blake_tricks_trade', name: 'Tricks of the Trade x1', type: 'Interrupt', details: 'R4', description: 'Inflict TRICKS OF THE TRADE for 1 round.', maxQuantity: 1},
+      { id: 'blake_shotgun_x2', name: 'Shotgun x2', type: 'Interrupt', details: 'BEAM - A4/R3 - PHYS', description: 'Interrupt Attack.', maxQuantity: 2},
+      { id: 'blake_barricade_x1', name: 'Barricade x1', type: 'Interrupt', details: 'R2', description: 'Any allies adjacent of the Barricade gain the COVER Buff for 2 rounds.', maxQuantity: 1},
+      { id: 'blake_tricks_trade_x1', name: 'Tricks of the Trade x1', type: 'Interrupt', details: 'R4', description: 'Inflict TRICKS OF THE TRADE for 1 round.', maxQuantity: 1},
       { id: 'blake_multi_attack', name: 'Multi-Attack', type: 'Passive', description: 'Re-roll 1 missed Attack dice. Max once per round.'},
     ],
     characterPoints: 375,
   },
 ];
 
+type AbilityWithCost = Ability & { cost: number };
+
+const allUniqueAbilities: AbilityWithCost[] = (() => {
+  const abilitiesMap = new Map<string, AbilityWithCost>();
+  charactersData.forEach(character => {
+    if (character.id === 'custom') return; // Don't include custom character's (potentially dynamic) abilities
+    character.abilities.forEach(ability => {
+      if (!abilitiesMap.has(ability.id)) {
+        abilitiesMap.set(ability.id, { ...ability, cost: 50 }); // Default cost 50 CP
+      }
+    });
+  });
+  return Array.from(abilitiesMap.values());
+})();
+
 
 export function CharacterSheetUI() {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>(charactersData[0].id);
-  const [stats, setStats] = useState<CharacterStats>(charactersData.find(c => c.id === charactersData[0].id)?.baseStats || initialBaseStats);
-  const [characterSkills, setCharacterSkills] = useState<Skills>(charactersData.find(c => c.id === charactersData[0].id)?.skills || initialSkills);
+  const [editableCharacterData, setEditableCharacterData] = useState<Character | null>(null);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
+  const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
+  const { toast } = useToast();
+
+  const stats = useMemo(() => editableCharacterData?.baseStats || initialBaseStats, [editableCharacterData]);
+  const characterSkills = useMemo(() => editableCharacterData?.skills || initialSkills, [editableCharacterData]);
   
   const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
   const [maxAbilityCooldowns, setMaxAbilityCooldowns] = useState<Record<string, number>>({});
   const [currentAbilityQuantities, setCurrentAbilityQuantities] = useState<Record<string, number>>({});
   const [maxAbilityQuantities, setMaxAbilityQuantities] = useState<Record<string, number>>({});
-
-
-  const selectedCharacter = charactersData.find(c => c.id === selectedCharacterId) || charactersData[0];
 
   const parseCooldownRounds = useCallback((cooldownString?: string): number | undefined => {
     if (!cooldownString) return undefined;
@@ -231,26 +236,31 @@ export function CharacterSheetUI() {
   }, []);
 
   useEffect(() => {
-    if (selectedCharacter) {
-      setStats(selectedCharacter.baseStats);
-      setCharacterSkills(selectedCharacter.skills || initialSkills);
+    const character = charactersData.find(c => c.id === selectedCharacterId);
+    if (character) {
+      // Deep clone to prevent direct mutation of charactersData
+      setEditableCharacterData(JSON.parse(JSON.stringify(character)));
+    }
+  }, [selectedCharacterId]);
 
+  useEffect(() => {
+    if (editableCharacterData) {
       const newCurrentCooldowns: Record<string, number> = {};
       const newMaxCooldowns: Record<string, number> = {};
       const newCurrentQuantities: Record<string, number> = {};
       const newMaxQuantities: Record<string, number> = {};
 
-      selectedCharacter.abilities.forEach(ability => {
+      (editableCharacterData.abilities || []).forEach(ability => {
         if (ability.cooldown && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCooldowns[ability.id] = maxRounds;
-            newCurrentCooldowns[ability.id] = maxRounds; // Start cooldown at max
+            newCurrentCooldowns[ability.id] = currentAbilityCooldowns[ability.id] ?? maxRounds; // Preserve existing or set to max
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           newMaxQuantities[ability.id] = ability.maxQuantity;
-          newCurrentQuantities[ability.id] = ability.maxQuantity; // Start quantity at max
+          newCurrentQuantities[ability.id] = currentAbilityQuantities[ability.id] ?? ability.maxQuantity; // Preserve existing or set to max
         }
       });
       setCurrentAbilityCooldowns(newCurrentCooldowns);
@@ -258,34 +268,32 @@ export function CharacterSheetUI() {
       setCurrentAbilityQuantities(newCurrentQuantities);
       setMaxAbilityQuantities(newMaxQuantities);
     }
-  }, [selectedCharacter, parseCooldownRounds]);
+  }, [editableCharacterData, parseCooldownRounds, currentAbilityCooldowns, currentAbilityQuantities]);
+
 
   const handleCharacterChange = (id: string) => {
     setSelectedCharacterId(id);
+     // Reset ability selection dropdown when character changes
+    setAbilityToAddId(undefined);
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
+    if (!editableCharacterData) return;
     const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (isNaN(numericValue)) return;
 
-    setStats(prevStats => {
-      const newStats = { ...prevStats, [statName]: numericValue };
-      // Clamp HP and Sanity between 0 and their respective max values
+    setEditableCharacterData(prevData => {
+      if (!prevData) return null;
+      const newStats = { ...prevData.baseStats, [statName]: numericValue };
       if (statName === 'hp') newStats.hp = Math.max(0, Math.min(numericValue, newStats.maxHp));
-      if (statName === 'maxHp') newStats.maxHp = Math.max(1, numericValue); // Max HP should be at least 1
+      if (statName === 'maxHp') newStats.maxHp = Math.max(1, numericValue);
       if (statName === 'sanity') newStats.sanity = Math.max(0, Math.min(numericValue, newStats.maxSanity));
-      if (statName === 'maxSanity') newStats.maxSanity = Math.max(1, numericValue); // Max Sanity should be at least 1
+      if (statName === 'maxSanity') newStats.maxSanity = Math.max(1, numericValue);
       
-      // Ensure HP does not exceed new MaxHP
-      if(statName === 'maxHp' && newStats.hp > newStats.maxHp) {
-        newStats.hp = newStats.maxHp;
-      }
-      // Ensure Sanity does not exceed new MaxSanity
-      if(statName === 'maxSanity' && newStats.sanity > newStats.maxSanity) {
-        newStats.sanity = newStats.maxSanity;
-      }
+      if(statName === 'maxHp' && newStats.hp > newStats.maxHp) newStats.hp = newStats.maxHp;
+      if(statName === 'maxSanity' && newStats.sanity > newStats.maxSanity) newStats.sanity = newStats.maxSanity;
       
-      return newStats;
+      return { ...prevData, baseStats: newStats };
     });
 
     setHighlightedStat(statName);
@@ -293,13 +301,16 @@ export function CharacterSheetUI() {
   };
   
   const incrementStat = (statName: StatName) => {
-     if (statName === 'hp' && stats.hp >= stats.maxHp) return;
-     if (statName === 'sanity' && stats.sanity >= stats.maxSanity) return;
-    handleStatChange(statName, (stats[statName] || 0) + 1);
+     if (!editableCharacterData) return;
+     const currentStats = editableCharacterData.baseStats;
+     if (statName === 'hp' && currentStats.hp >= currentStats.maxHp) return;
+     if (statName === 'sanity' && currentStats.sanity >= currentStats.maxSanity) return;
+    handleStatChange(statName, (currentStats[statName] || 0) + 1);
   };
 
   const decrementStat = (statName: StatName) => {
-    handleStatChange(statName, (stats[statName] || 0) - 1);
+    if (!editableCharacterData) return;
+    handleStatChange(statName, (editableCharacterData.baseStats[statName] || 0) - 1);
   };
 
   const handleIncrementCooldown = (abilityId: string) => {
@@ -330,28 +341,47 @@ export function CharacterSheetUI() {
     }));
   };
 
-
   const resetStats = () => {
-    if (selectedCharacter) {
-      setStats(selectedCharacter.baseStats);
-      setCharacterSkills(selectedCharacter.skills || initialSkills);
-      const newCurrentCooldowns: Record<string, number> = {};
-      const newCurrentQuantities: Record<string, number> = {};
-      selectedCharacter.abilities.forEach(ability => {
-        if ((ability.type === 'Action' || ability.type === 'Interrupt') && ability.cooldown) {
-          const maxRounds = parseCooldownRounds(ability.cooldown);
-          if (maxRounds !== undefined) {
-            newCurrentCooldowns[ability.id] = maxRounds; // Reset cooldown to max
-          }
-        }
-        if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
-          newCurrentQuantities[ability.id] = ability.maxQuantity; // Reset quantity to max
-        }
-      });
-      setCurrentAbilityCooldowns(newCurrentCooldowns);
-      setCurrentAbilityQuantities(newCurrentQuantities);
+    const originalCharacter = charactersData.find(c => c.id === selectedCharacterId);
+    if (originalCharacter) {
+      setEditableCharacterData(JSON.parse(JSON.stringify(originalCharacter))); // Reset to original
+       // Cooldowns and quantities will be reset by the useEffect hook listening to editableCharacterData
+       toast({ title: "Stats Reset", description: `${originalCharacter.name}'s stats and abilities have been reset to default.` });
     }
   };
+
+  const handleAddAbilityToCustomCharacter = () => {
+    if (!editableCharacterData || editableCharacterData.id !== 'custom' || !abilityToAddId) return;
+
+    const abilityInfo = allUniqueAbilities.find(a => a.id === abilityToAddId);
+    if (!abilityInfo) {
+        toast({ title: "Error", description: "Selected ability not found.", variant: "destructive" });
+        return;
+    }
+    
+    // Check if ability already added
+    if (editableCharacterData.abilities.some(a => a.id === abilityInfo.id)) {
+        toast({ title: "Ability Exists", description: `${abilityInfo.name} is already added.`, variant: "destructive" });
+        return;
+    }
+
+    if ((editableCharacterData.characterPoints || 0) < abilityInfo.cost) {
+        toast({ title: "Not Enough CP", description: `You need ${abilityInfo.cost} CP to add ${abilityInfo.name}. You have ${editableCharacterData.characterPoints || 0}.`, variant: "destructive" });
+        return;
+    }
+
+    setEditableCharacterData(prevData => {
+        if (!prevData) return null;
+        const { cost, ...abilityToAdd } = abilityInfo; // Exclude cost from the ability object being added
+        const newAbilities = [...prevData.abilities, abilityToAdd];
+        const newCharacterPoints = (prevData.characterPoints || 0) - cost;
+        
+        toast({ title: "Ability Added", description: `${abilityInfo.name} added to Custom Character for ${cost} CP.` });
+        return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
+    });
+    setAbilityToAddId(undefined); // Reset dropdown
+  };
+
 
   const StatInputComponent: React.FC<{ def: CharacterStatDefinition }> = ({ def }) => {
     const isProgressStat = def.id === 'hp' || def.id === 'sanity';
@@ -395,7 +425,7 @@ export function CharacterSheetUI() {
                         value={maxValue}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => handleStatChange(def.id === 'hp' ? 'maxHp' : 'maxSanity', e.target.value)}
                         className="w-20 h-8 text-center"
-                        min="1" // Max values should be at least 1
+                        min="1"
                     />
                 </div>
             }
@@ -423,7 +453,7 @@ export function CharacterSheetUI() {
   };
   
   const WeaponDisplay: React.FC<{ weapon?: Weapon | RangedWeapon, type: 'melee' | 'ranged' }> = ({ weapon, type }) => {
-    if (!weapon || weapon.name === "None") return null; // Hide if no weapon or name is "None"
+    if (!weapon || weapon.name === "None") return null;
     const Icon = type === 'melee' ? Swords : Crosshair;
     const isRanged = 'range' in weapon && weapon.range !== undefined;
 
@@ -438,15 +468,15 @@ export function CharacterSheetUI() {
             {isRanged && <p><span className="font-semibold">RNG:</span> {(weapon as RangedWeapon).range}</p>}
             {weapon.flavorText && <p className="text-xs text-muted-foreground mt-1">{weapon.flavorText}</p>}
             {type === 'ranged' && isRanged && <p className="text-sm text-primary mt-1">Formatted: A{weapon.attack}/R{(weapon as RangedWeapon).range}</p>}
-             {type === 'melee' && <p className="text-sm text-primary mt-1">{weapon.attack} attack dmg</p>}
+            {type === 'melee' && <p className="text-sm text-primary mt-1">{weapon.attack} attack dmg</p>}
         </div>
     );
   };
 
-  const abilities = selectedCharacter.abilities;
-  const actionAbilities = abilities.filter(a => a.type === 'Action');
-  const interruptAbilities = abilities.filter(a => a.type === 'Interrupt');
-  const passiveAbilities = abilities.filter(a => a.type === 'Passive');
+  const currentCharacterAbilities = editableCharacterData?.abilities || [];
+  const actionAbilities = currentCharacterAbilities.filter(a => a.type === 'Action');
+  const interruptAbilities = currentCharacterAbilities.filter(a => a.type === 'Interrupt');
+  const passiveAbilities = currentCharacterAbilities.filter(a => a.type === 'Passive');
 
   interface AbilityCardProps {
     ability: Ability;
@@ -472,7 +502,7 @@ export function CharacterSheetUI() {
                                  onIncrementQuantity && 
                                  onDecrementQuantity;
 
-    const hasTrackableCooldown = !hasTrackableQuantity && // Prioritize quantity display if both defined
+    const hasTrackableCooldown = !hasTrackableQuantity && 
                                  ability.cooldown && 
                                  typeof currentCooldown === 'number' && 
                                  typeof maxCooldown === 'number' && 
@@ -552,23 +582,33 @@ export function CharacterSheetUI() {
     );
   };
 
+  if (!editableCharacterData) {
+    // Render loading state or null
+    return (
+        <Card className="w-full max-w-4xl mx-auto shadow-xl p-10 text-center">
+            <CardTitle>Loading Character Data...</CardTitle>
+            <CardDescription>Please wait a moment.</CardDescription>
+        </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-4xl mx-auto shadow-xl relative overflow-hidden">
-      {selectedCharacter.imageUrl && (
+      {editableCharacterData.imageUrl && (
         <Image
-          src={selectedCharacter.imageUrl}
-          alt={`${selectedCharacter.name} background`}
+          src={editableCharacterData.imageUrl}
+          alt={`${editableCharacterData.name} background`}
           fill
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
           className="absolute inset-0 z-0 opacity-[0.07] pointer-events-none" 
           priority
           data-ai-hint={
-             selectedCharacter.name === "Fei" ? "male hunter anime" : 
-             selectedCharacter.name === "Michael" ? "male soldier urban" :
-             selectedCharacter.name === "Custom Character" ? "silhouette mysterious" :
-             selectedCharacter.name === "Tamara" ? "female adventurer jungle" :
-             selectedCharacter.name === "Trish" ? "female warrior katana" :
-             selectedCharacter.name === "Blake" ? "male hunter bandana" :
+             editableCharacterData.name === "Fei" ? "male hunter anime" : 
+             editableCharacterData.name === "Michael" ? "male soldier urban" :
+             editableCharacterData.name === "Custom Character" ? "silhouette mysterious" :
+             editableCharacterData.name === "Tamara" ? "female adventurer jungle" :
+             editableCharacterData.name === "Trish" ? "female warrior katana" :
+             editableCharacterData.name === "Blake" ? "male hunter bandana" :
              "character background"
           }
         />
@@ -605,20 +645,58 @@ export function CharacterSheetUI() {
             </div>
           
              <div className="md:col-span-2 space-y-4 flex justify-end">
-                {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
+                {editableCharacterData && editableCharacterData.characterPoints !== undefined && (
                 <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
                     <Label className="text-md font-medium flex items-center">
                     <Award className="mr-2 h-5 w-5 text-primary" />
                     Character Points
                     </Label>
                     <p className="text-xl font-bold text-primary mt-1">
-                    {selectedCharacter.characterPoints}
+                    {editableCharacterData.characterPoints}
                     </p>
                 </div>
                 )}
             </div>
           </div>
           <Separator />
+
+          {editableCharacterData.id === 'custom' && (
+            <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30">
+              <h3 className="text-lg font-semibold text-primary flex items-center">
+                <ShoppingCart className="mr-2 h-5 w-5" /> Custom Ability Selection
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
+                <div className="w-full">
+                  <Label htmlFor="abilitySelect" className="text-sm text-muted-foreground">Choose an ability to add:</Label>
+                  <Select value={abilityToAddId} onValueChange={setAbilityToAddId}>
+                    <SelectTrigger id="abilitySelect">
+                      <SelectValue placeholder="Select an ability" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Available Abilities</SelectLabel>
+                        {allUniqueAbilities.map(ability => (
+                          <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
+                            {ability.name} ({ability.type}) - {ability.cost} CP
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={handleAddAbilityToCustomCharacter} 
+                  disabled={!abilityToAddId || (editableCharacterData.characterPoints || 0) < (allUniqueAbilities.find(a=>a.id === abilityToAddId)?.cost || Infinity)}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Add Ability
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Selected abilities will appear in the 'Abilities' tab below.
+              </p>
+            </div>
+          )}
 
 
           <Tabs defaultValue="stats" className="w-full">
@@ -637,8 +715,8 @@ export function CharacterSheetUI() {
               <div>
                   <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <WeaponDisplay weapon={selectedCharacter.meleeWeapon} type="melee" />
-                      <WeaponDisplay weapon={selectedCharacter.rangedWeapon} type="ranged" />
+                      <WeaponDisplay weapon={editableCharacterData.meleeWeapon} type="melee" />
+                      <WeaponDisplay weapon={editableCharacterData.rangedWeapon} type="ranged" />
                   </div>
               </div>
               <Separator />
@@ -646,12 +724,12 @@ export function CharacterSheetUI() {
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
                 {
                   (() => {
-                    const relevantSkillDefinitions = skillDefinitions.filter(def => ((characterSkills as Skills)[def.id as SkillName] ?? 0) > 0 || selectedCharacter.id === 'custom'); 
+                    const relevantSkillDefinitions = skillDefinitions.filter(def => ((characterSkills as Skills)[def.id as SkillName] ?? 0) > 0 || editableCharacterData.id === 'custom'); 
                      
-                    if (relevantSkillDefinitions.length === 0 && selectedCharacter.id !== 'custom') {
+                    if (relevantSkillDefinitions.length === 0 && editableCharacterData.id !== 'custom') {
                       return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
                     }
-                    if (selectedCharacter.id === 'custom') {
+                    if (editableCharacterData.id === 'custom') {
                        return (
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                            {skillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
@@ -668,8 +746,8 @@ export function CharacterSheetUI() {
               </div>
             </TabsContent>
             <TabsContent value="abilities" className="mt-6">
-              {abilities.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8 bg-card/50 rounded-md">This character has no special abilities defined.</p>
+              {currentCharacterAbilities.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8 bg-card/50 rounded-md">This character has no special abilities defined{editableCharacterData.id === 'custom' ? ' or selected' : ''}.</p>
               ) : (
                 <div className="space-y-6">
                   {actionAbilities.length > 0 && (
