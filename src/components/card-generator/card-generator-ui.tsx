@@ -59,17 +59,22 @@ const clashCardImageUrls = [
 ];
 
 const generateClashCards = (): GameCard[] => {
+  const holdableClashCardIds = new Set([
+    'cl3', 'cl4', 'cl7', 'cl8', 'cl13', 'cl16', 'cl17', 'cl19', 
+    'cl20', 'cl22', 'cl23', 'cl24', 'cl25', 'cl26', 'cl27'
+  ]);
+
   const existingCards: GameCard[] = [
-    { id: "cl1", name: "Sudden Strike", type: "Clash", deck: "Clash Deck", description: "The Beast lashes out unexpectedly. The targeted hero must defend or suffer 2 damage.", imageUrl: clashCardImageUrls[0], dataAiHint: "beast attack" },
-    { id: "cl2", name: "Feint", type: "Clash", deck: "Clash Deck", description: "The Beast attempts to trick a hero. If successful, the hero loses their next action.", imageUrl: clashCardImageUrls[1], dataAiHint: "cunning beast" },
-    { id: "cl3", name: "Desperate Claw", type: "Clash", deck: "Clash Deck", description: "A wild attack from the Beast. +1 ATK for this clash.", imageUrl: clashCardImageUrls[2], dataAiHint: "sharp claws" },
+    { id: "cl1", name: "Sudden Strike", type: "Clash", deck: "Clash Deck", description: "The Beast lashes out unexpectedly. The targeted hero must defend or suffer 2 damage.", imageUrl: clashCardImageUrls[0], dataAiHint: "beast attack", isHoldable: holdableClashCardIds.has("cl1") },
+    { id: "cl2", name: "Feint", type: "Clash", deck: "Clash Deck", description: "The Beast attempts to trick a hero. If successful, the hero loses their next action.", imageUrl: clashCardImageUrls[1], dataAiHint: "cunning beast", isHoldable: holdableClashCardIds.has("cl2") },
+    { id: "cl3", name: "Desperate Claw", type: "Clash", deck: "Clash Deck", description: "A wild attack from the Beast. +1 ATK for this clash.", imageUrl: clashCardImageUrls[2], dataAiHint: "sharp claws", isHoldable: holdableClashCardIds.has("cl3") },
   ];
 
   const newCards: GameCard[] = [];
-  const startIndex = existingCards.length;
+  const startIndex = existingCards.length; // This will be 3
   for (let i = startIndex; i < clashCardImageUrls.length; i++) {
-    const cardName = `Clash Card ${i + 1}`;
-    const cardId = `cl${i + 1}`;
+    const cardName = `Clash Card ${i + 1}`; // Starts from Clash Card 4
+    const cardId = `cl${i + 1}`; // Starts from cl4
     newCards.push({
       id: cardId,
       name: cardName,
@@ -78,7 +83,7 @@ const generateClashCards = (): GameCard[] => {
       description: "A mysterious clash card has been drawn.",
       imageUrl: clashCardImageUrls[i],
       dataAiHint: "clash beast",
-      isHoldable: cardName === "Clash Card 10" ? true : undefined,
+      isHoldable: holdableClashCardIds.has(cardId),
     });
   }
   return [...existingCards, ...newCards];
