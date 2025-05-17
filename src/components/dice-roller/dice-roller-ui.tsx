@@ -38,12 +38,12 @@ const combatDieFaceImages: Record<CombatDieFace, CombatDieFaceDetails> = {
   swordandshield: {
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fshields%20and%20sword%20188x188%20sticker.jpg?alt=media&token=7b8120cd-3495-4592-828d-9310534784f8',
     dataAiHint: 'shield sword',
-    altText: 'Shield and Sword Face'
+    altText: 'Sword and Shield Face'
   },
   'double-sword': {
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fcrossed%20swords%20188x188.jpg?alt=media&token=6e1e277e-462d-4777-af3b-e7a6e7b89789',
     dataAiHint: 'crossed swords',
-    altText: 'Crossed Swords Face'
+    altText: 'Double Sword Face'
   },
   blank: {
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fblank%20188x188%20sticker.png?alt=media&token=08ff6336-a822-4615-8873-0291733210bc',
@@ -162,7 +162,7 @@ export function DiceRollerUI() {
       newRolls.push(face);
       faceCounts[face]++;
     }
-    const currentTotal = `Shields: ${faceCounts.swordandshield}, Swords: ${faceCounts['double-sword']}, Blanks: ${faceCounts.blank}`;
+    const currentTotal = `sword&shield: ${faceCounts.swordandshield}, double sword: ${faceCounts['double-sword']}, blank: ${faceCounts.blank}`;
 
     recordRoll(newRolls, currentTotal, currentDiceNotation);
   };
