@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Dices, Layers, UserCircle, Users, Home, Settings, PanelLeft, List } from 'lucide-react'; // Added List, Settings & PanelLeft
+import { Dices, Layers, UserCircle, Users, Home, Settings, PanelLeft, List, CalendarDays } from 'lucide-react'; // Added CalendarDays
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -22,6 +22,7 @@ const navItems = [
   { href: '/card-generator', label: 'Card Generator', icon: Layers },
   { href: '/turn-tracker', label: 'Turn Tracker', icon: Users },
   { href: '/item-list', label: 'Item List', icon: List },
+  { href: '/events', label: 'Events', icon: CalendarDays }, // New Events link
 ];
 
 export function AppSidebar() {
@@ -31,7 +32,6 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-lg">
       <SidebarHeader className="p-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-          {/* Beast Face Icon Removed */}
           <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
         </Link>
         <SidebarTrigger asChild className="md:hidden">
