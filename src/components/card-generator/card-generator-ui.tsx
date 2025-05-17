@@ -63,11 +63,10 @@ const generateClashCards = (): GameCard[] => {
   ];
 
   const newCards: GameCard[] = [];
-  // Start loop from 3 if existingCards already covers the first 3 URLs
-  const startIndex = existingCards.length; 
+  const startIndex = existingCards.length;
   for (let i = startIndex; i < clashCardImageUrls.length; i++) {
     newCards.push({
-      id: `cl${i + 1}`, // Ensure unique ID
+      id: `cl${i + 1}`,
       name: `Clash Card ${i + 1}`,
       type: "Clash",
       deck: "Clash Deck",
@@ -84,17 +83,17 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
   {
     name: "Event Deck",
     cards: [
-      { id: "ev1", name: "Sudden Gloom", type: "Event", deck: "Event Deck", description: "Darkness falls. All heroes suffer -1 Sanity.", imageUrl: "https://picsum.photos/700/1000?random=1", dataAiHint: "dark event" },
-      { id: "ev2", name: "Whispers in the Dark", type: "Event", deck: "Event Deck", description: "Make a Sanity check (difficulté 3) or lose your next turn.", imageUrl: "https://picsum.photos/700/1000?random=2", dataAiHint: "eerie whisper" },
-      { id: "ev3", name: "A Moment of Respite", type: "Event", deck: "Event Deck", description: "A brief calm. All heroes recover 1 HP.", imageUrl: "https://picsum.photos/700/1000?random=3", dataAiHint: "calm scene" },
+      { id: "ev1", name: "Sudden Gloom", type: "Event", deck: "Event Deck", description: "Darkness falls. All heroes suffer -1 Sanity.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "dark event" },
+      { id: "ev2", name: "Whispers in the Dark", type: "Event", deck: "Event Deck", description: "Make a Sanity check (difficulté 3) or lose your next turn.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "eerie whisper" },
+      { id: "ev3", name: "A Moment of Respite", type: "Event", deck: "Event Deck", description: "A brief calm. All heroes recover 1 HP.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "calm scene" },
     ],
   },
   {
-    name: "Item Deck", 
+    name: "Item Deck",
     cards: [
-      { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://picsum.photos/700/1000?random=4", dataAiHint: "old lantern" },
-      { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://picsum.photos/700/1000?random=5", dataAiHint: "holy charm" },
-      { id: "it3", name: "Rusty Shiv", type: "Item", deck: "Item Deck", description: "+1 ATK for one combat. Discard after use.", imageUrl: "https://picsum.photos/700/1000?random=6", dataAiHint: "rusty knife" },
+      { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "old lantern" },
+      { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "holy charm" },
+      { id: "it3", name: "Rusty Shiv", type: "Item", deck: "Item Deck", description: "+1 ATK for one combat. Discard after use.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "rusty knife" },
     ],
   },
   {
@@ -118,18 +117,21 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
   {
     name: "Combat Deck",
     cards: [
-      { id: "cb1", name: "Power Attack", type: "Combat", deck: "Combat Deck", description: "Hero makes an attack with +2 ATK but -1 DEF this round.", imageUrl: "https://picsum.photos/700/1000?random=13", dataAiHint: "strong attack" },
-      { id: "cb2", name: "Swift Dodge", type: "Combat", deck: "Combat Deck", description: "Hero gains +2 DEF against the next attack this round.", imageUrl: "https://picsum.photos/700/1000?random=14", dataAiHint: "agile movement" },
-      { id: "cb3", name: "Calculated Shot", type: "Combat", deck: "Combat Deck", description: "Hero makes a ranged attack. If successful, +1 damage.", imageUrl: "https://picsum.photos/700/1000?random=15", dataAiHint: "precise aim" },
+      { id: "cb1", name: "Power Attack", type: "Combat", deck: "Combat Deck", description: "Hero makes an attack with +2 ATK but -1 DEF this round.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "strong attack" },
+      { id: "cb2", name: "Swift Dodge", type: "Combat", deck: "Combat Deck", description: "Hero gains +2 DEF against the next attack this round.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "agile movement" },
+      { id: "cb3", name: "Calculated Shot", type: "Combat", deck: "Combat Deck", description: "Hero makes a ranged attack. If successful, +1 damage.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "precise aim" },
     ],
   },
 ];
 
 export function CardGeneratorUI() {
-  const [selectedDecks, setSelectedDecks] = useState<string[]>([]); // Initialize with no decks selected
-  const [generatedCard, setGeneratedCard] = useState<GameCard | null>(null);
+  const [selectedDecks, setSelectedDecks] = useState<string[]>([]);
+  const [drawnCardsHistory, setDrawnCardsHistory] = useState<GameCard[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [cardKey, setCardKey] = useState(0); 
+  const [cardKey, setCardKey] = useState(0);
+
+  const latestCard = drawnCardsHistory.length > 0 ? drawnCardsHistory[0] : null;
+  const previousCards = drawnCardsHistory.slice(1); // Elements at index 1 and 2
 
   const handleDeckSelection = (deckName: string) => {
     setSelectedDecks(prev =>
@@ -139,7 +141,6 @@ export function CardGeneratorUI() {
 
   const generateCard = () => {
     setIsLoading(true);
-    setGeneratedCard(null); 
 
     const availableCards = sampleDecks
       .filter(deck => selectedDecks.includes(deck.name))
@@ -147,23 +148,22 @@ export function CardGeneratorUI() {
 
     if (availableCards.length === 0) {
       setIsLoading(false);
-      // Consider using a toast notification here instead of alert for better UX
-      alert("Please select at least one deck to draw from."); 
+      alert("Please select at least one deck to draw from.");
       return;
     }
-    
-    // Simulate API call delay
+
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * availableCards.length);
-      setGeneratedCard(availableCards[randomIndex]);
-      setCardKey(prev => prev + 1); // Force re-render of card image
+      const newCard = availableCards[randomIndex];
+      setDrawnCardsHistory(prevHistory => [newCard, ...prevHistory].slice(0, 3));
+      setCardKey(prev => prev + 1);
       setIsLoading(false);
-    }, 500); 
+    }, 500);
   };
 
   const resetGenerator = () => {
-    setSelectedDecks([]); // Unselect all decks
-    setGeneratedCard(null);
+    setSelectedDecks([]);
+    setDrawnCardsHistory([]);
     setIsLoading(false);
   }
 
@@ -206,39 +206,72 @@ export function CardGeneratorUI() {
         <CardHeader className="w-full text-center">
            <CardTitle className="text-2xl">Generated Card</CardTitle>
         </CardHeader>
-        <CardContent className="flex-grow flex items-center justify-center w-full p-4">
+        <CardContent className="flex-grow flex flex-col items-center justify-start w-full p-4">
           {isLoading ? (
             <div className="space-y-4 w-full max-w-xs">
-              <Skeleton className="h-[450px] w-[300px] rounded-lg mx-auto" /> 
+              <Skeleton className="h-[450px] w-[300px] rounded-lg mx-auto" />
               <Skeleton className="h-6 w-3/4 mx-auto" />
               <Skeleton className="h-4 w-full mx-auto" />
               <Skeleton className="h-4 w-5/6 mx-auto" />
             </div>
-          ) : generatedCard ? (
-            <Card key={cardKey} className="w-full max-w-[300px] sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500"> 
-              {generatedCard.imageUrl && (
-                <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-lg"> {/* Adjusted aspect ratio */}
-                  <Image
-                    src={generatedCard.imageUrl}
-                    alt={generatedCard.name}
-                    fill
-                    sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 50vw, 300px" // Adjusted sizes
-                    style={{ objectFit: "contain" }} 
-                    data-ai-hint={generatedCard.dataAiHint}
-                    priority={true} 
-                  />
+          ) : latestCard ? (
+            <>
+              <Card key={cardKey} className="w-full max-w-[300px] sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
+                {latestCard.imageUrl && (
+                  <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-lg">
+                    <Image
+                      src={latestCard.imageUrl}
+                      alt={latestCard.name}
+                      fill
+                      sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 50vw, 300px"
+                      style={{ objectFit: "contain" }}
+                      data-ai-hint={latestCard.dataAiHint}
+                      priority={true}
+                    />
+                  </div>
+                )}
+                <CardHeader className="pt-4">
+                  <CardTitle className="text-xl text-primary">{latestCard.name}</CardTitle>
+                  <CardDescription className="text-sm">Type: {latestCard.type} (From: {latestCard.deck})</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">{latestCard.description}</p>
+                </CardContent>
+              </Card>
+
+              {previousCards.length > 0 && (
+                <div className="w-full max-w-xl mt-8">
+                  <h4 className="text-lg font-semibold mb-3 text-center text-muted-foreground">Previously Drawn</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {previousCards.map((card, index) => (
+                      <Card key={`${card.id}-hist-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden">
+                        {card.imageUrl && (
+                          <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-md">
+                            <Image
+                              src={card.imageUrl}
+                              alt={card.name}
+                              fill
+                              sizes="(max-width: 640px) 40vw, 150px"
+                              style={{ objectFit: "contain" }}
+                              data-ai-hint={`${card.dataAiHint} history`}
+                            />
+                          </div>
+                        )}
+                        <CardHeader className="p-2">
+                          <CardTitle className="text-sm text-primary truncate">{card.name}</CardTitle>
+                          <CardDescription className="text-xs">Type: {card.type}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-2 pt-0">
+                          <p className="text-xs text-muted-foreground truncate">{card.description}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               )}
-              <CardHeader className="pt-4">
-                <CardTitle className="text-xl text-primary">{generatedCard.name}</CardTitle>
-                <CardDescription className="text-sm">Type: {generatedCard.type} (From: {generatedCard.deck})</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{generatedCard.description}</p>
-              </CardContent>
-            </Card>
+            </>
           ) : (
-            <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50">
+            <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50 mt-10">
               <Layers className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <AlertTitle>No Card Drawn Yet</AlertTitle>
               <AlertDescription>
@@ -251,4 +284,3 @@ export function CardGeneratorUI() {
     </div>
   );
 }
-
