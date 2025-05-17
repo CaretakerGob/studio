@@ -85,7 +85,7 @@ const charactersData: Character[] = [
     id: 'cassandra',
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { occult: 2, empathy: 2, tuner: 1, tactics: 0, survival: 0, knowledge: 0 },
+    skills: { tactics: 0, survival: 0, knowledge: 0, occult: 2, empathy: 2, tuner: 1 },
     avatarSeed: 'cassandra',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCassandra.png?alt=media&token=6df9b49f-aeb0-45a1-ae75-7f77945ce18c',
     meleeWeapon: { name: "Saber", attack: 3 },
@@ -122,14 +122,14 @@ const charactersData: Character[] = [
   {
     id: 'michael',
     name: 'Michael',
-    baseStats: { hp: 6, maxHp: 6, mv: 3, def: 3, sanity: 5, maxSanity: 5 }, // Placeholder stats
-    skills: { tactics: 1, survival: 1, knowledge: 1, occult: 1, empathy: 1, tuner: 0 }, // Placeholder skills
+    baseStats: { hp: 6, maxHp: 6, mv: 5, def: 3, sanity: 5, maxSanity: 5 },
+    skills: { tactics: 0, survival: 0, knowledge: 0, occult: 0, empathy: 2, tuner: 0 },
     avatarSeed: 'michael',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%2FMichael%20front%201.png?alt=media&token=dabb1217-30f9-4a67-a0c8-a501740060a5',
-    meleeWeapon: { name: "Standard Issue Sword", attack: 2, flavorText: "Reliable steel." }, // Placeholder weapon
-    rangedWeapon: { name: "Service Pistol", attack: 2, range: 4, flavorText: "Standard firearm." }, // Placeholder weapon
-    abilities: [], // Placeholder abilities
-    characterPoints: 350, // Placeholder points
+    meleeWeapon: { name: "Kunai", attack: 3 },
+    rangedWeapon: { name: "Kunai", attack: 4, range: 2 },
+    abilities: [],
+    characterPoints: 375,
   },
 ];
 
