@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Layers, Shuffle, RotateCcw, Hand } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -136,7 +136,7 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
 ];
 
 export function CardGeneratorUI() {
-  const [selectedDecks, setSelectedDecks] = useState<string[]>([]);
+  const [selectedDeck, setSelectedDeck] = useState<string | undefined>(undefined);
   const [drawnCardsHistory, setDrawnCardsHistory] = useState<GameCard[]>([]);
   const [heldCards, setHeldCards] = useState<GameCard[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -146,40 +146,43 @@ export function CardGeneratorUI() {
   const latestCard = drawnCardsHistory.length > 0 ? drawnCardsHistory[0] : null;
   const previousCards = drawnCardsHistory.slice(1); 
 
-  const handleDeckSelection = (deckName: string) => {
-    setSelectedDecks(prev =>
-      prev.includes(deckName) ? prev.filter(name => name !== deckName) : [...prev, deckName]
-    );
+  const handleDeckSelection = (deckName: string | undefined) => {
+    setSelectedDeck(deckName);
   };
 
   const generateCard = () => {
     setIsLoading(true);
 
-    const availableCards = sampleDecks
-      .filter(deck => selectedDecks.includes(deck.name))
-      .flatMap(deck => deck.cards);
-
-    if (availableCards.length === 0) {
+    if (!selectedDeck) {
       setIsLoading(false);
-      toast({ title: "No Decks Selected", description: "Please select at least one deck to draw from.", variant: "destructive" });
+      toast({ title: "No Deck Selected", description: "Please select a deck to draw from.", variant: "destructive" });
       return;
     }
+
+    const currentDeck = sampleDecks.find(deck => deck.name === selectedDeck);
+
+    if (!currentDeck || currentDeck.cards.length === 0) {
+      setIsLoading(false);
+      toast({ title: "Empty Deck", description: `The selected deck "${selectedDeck}" is empty.`, variant: "destructive" });
+      return;
+    }
+
+    const availableCards = currentDeck.cards;
 
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * availableCards.length);
       const newCard = availableCards[randomIndex];
 
-      // Always update the main display with the newly drawn card
       setDrawnCardsHistory(prevHistory => [newCard, ...prevHistory].slice(0, 3));
       setCardKey(prev => prev + 1);
 
       if (newCard.isHoldable) {
         setHeldCards(prevHeld => [...prevHeld, newCard]);
         toast({ title: "Card Drawn & Held", description: `${newCard.name} shown and added to your hand.` });
+      } else {
+        toast({ title: "Card Drawn", description: `${newCard.name} has been drawn.` });
       }
-      // Non-holdable cards are already in drawnCardsHistory and will be displayed.
-      // No separate toast needed unless specifically desired.
-
+      
       setIsLoading(false);
     }, 500);
   };
@@ -192,11 +195,11 @@ export function CardGeneratorUI() {
   };
 
   const resetGenerator = () => {
-    setSelectedDecks([]);
+    setSelectedDeck(undefined);
     setDrawnCardsHistory([]);
     setHeldCards([]);
     setIsLoading(false);
-    toast({ title: "Generator Reset", description: "Decks, drawn cards, and held cards have been cleared." });
+    toast({ title: "Generator Reset", description: "Deck selection, drawn cards, and held cards have been cleared." });
   }
 
   return (
@@ -207,25 +210,25 @@ export function CardGeneratorUI() {
              <Layers className="mr-3 h-8 w-8 text-primary" />
             <CardTitle className="text-2xl">Card Decks</CardTitle>
           </div>
-          <CardDescription>Select which decks to include in the draw pile.</CardDescription>
+          <CardDescription>Select which deck to draw from.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {sampleDecks.map(deck => (
-            <div key={deck.name} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
-              <Checkbox
-                id={deck.name}
-                checked={selectedDecks.includes(deck.name)}
-                onCheckedChange={() => handleDeckSelection(deck.name)}
-                aria-label={`Select ${deck.name}`}
-              />
-              <Label htmlFor={deck.name} className="text-base cursor-pointer flex-grow">
-                {deck.name} <span className="text-xs text-muted-foreground">({deck.cards.length} cards)</span>
-              </Label>
-            </div>
-          ))}
+          <Label htmlFor="deck-select">Select a Deck:</Label>
+          <Select value={selectedDeck} onValueChange={handleDeckSelection}>
+            <SelectTrigger id="deck-select" className="w-full">
+              <SelectValue placeholder="Choose a deck..." />
+            </SelectTrigger>
+            <SelectContent>
+              {sampleDecks.map(deck => (
+                <SelectItem key={deck.name} value={deck.name}>
+                  {deck.name} ({deck.cards.length} cards)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 pt-4">
-          <Button onClick={generateCard} size="lg" className="w-full bg-primary hover:bg-primary/90" disabled={selectedDecks.length === 0 || isLoading}>
+          <Button onClick={generateCard} size="lg" className="w-full bg-primary hover:bg-primary/90" disabled={!selectedDeck || isLoading}>
             <Shuffle className="mr-2 h-5 w-5" /> {isLoading ? "Drawing..." : "Draw Random Card"}
           </Button>
            <Button variant="outline" onClick={resetGenerator} className="w-full">
