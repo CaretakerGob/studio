@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dices, ChevronsRight, RotateCcw, PlusCircle, XCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -79,8 +79,8 @@ interface CombatDiceResult {
 
 interface LatestRollData {
   type: 'numbered' | 'combat';
-  groups: Array<NumberedDiceGroupResult | CombatDiceResult>; // Array for numbered, single element for combat
-  overallTotal?: number; // Sum of totals for numbered dice
+  groups: Array<NumberedDiceGroupResult | CombatDiceResult>; 
+  overallTotal?: number; 
   timestamp: Date;
 }
 
@@ -102,15 +102,22 @@ const CombatDieFaceImage: React.FC<{ face: CombatDieFace, className?: string, si
 };
 
 export function DiceRollerUI() {
-  const [numberedDiceConfigs, setNumberedDiceConfigs] = useState<NumberedDiceConfig[]>([
-    { id: Date.now().toString(), numDice: 1, diceSides: '6', customSides: '' }
-  ]);
+  const [numberedDiceConfigs, setNumberedDiceConfigs] = useState<NumberedDiceConfig[]>([]);
   const [numCombatDice, setNumCombatDice] = useState(1);
   const [rollHistory, setRollHistory] = useState<LatestRollData[]>([]);
   const [latestRoll, setLatestRoll] = useState<LatestRollData | null>(null);
   const [latestRollKey, setLatestRollKey] = useState(0);
 
   const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 9);
+
+  useEffect(() => {
+    // Initialize default dice configuration on client mount to avoid hydration mismatch
+    if (numberedDiceConfigs.length === 0) {
+      setNumberedDiceConfigs([
+        { id: generateId(), numDice: 1, diceSides: '6', customSides: '' }
+      ]);
+    }
+  }, []); // Empty dependency array ensures this runs only once on client mount
 
   const addNumberedDiceConfig = () => {
     setNumberedDiceConfigs(prev => [
@@ -138,6 +145,10 @@ export function DiceRollerUI() {
   };
 
   const handleNumberedRoll = () => {
+    if (numberedDiceConfigs.length === 0) {
+        alert("Please add at least one dice type to roll.");
+        return;
+    }
     const groupResults: NumberedDiceGroupResult[] = [];
     let overallTotal = 0;
 
@@ -147,11 +158,16 @@ export function DiceRollerUI() {
       let currentDiceNotation: string;
       const numDice = config.numDice;
 
+      if (numDice < 1) {
+          alert(`Number of dice must be at least 1 for configuration: ${config.id}.`);
+          return; // Skip this group if numDice is invalid
+      }
+      
       if (config.diceSides === 'custom') {
         const sides = parseInt(config.customSides);
         if (isNaN(sides) || sides < 2) {
-          alert(`Invalid custom sides for one of the dice groups: ${config.customSides}. Must be a number greater than 1.`);
-          return; // Skip this group
+          alert(`Invalid custom sides for dice group: ${config.customSides}. Must be a number greater than 1.`);
+          return; 
         }
         currentDiceNotation = `${numDice}d${sides}`;
         for (let i = 0; i < numDice; i++) {
@@ -168,9 +184,9 @@ export function DiceRollerUI() {
         }
       } else {
         const sides = parseInt(config.diceSides);
-        if (isNaN(sides) || sides < 2 || numDice < 1) {
-          alert(`Invalid input for one of the dice groups: ${numDice}d${sides}.`);
-          return; // Skip this group
+        if (isNaN(sides) || sides < 2) {
+          alert(`Invalid dice type selected for one of the groups.`);
+          return; 
         }
         currentDiceNotation = `${numDice}d${sides}`;
         for (let i = 0; i < numDice; i++) {
@@ -251,7 +267,7 @@ export function DiceRollerUI() {
         <CardContent className="space-y-6">
           <div>
             <h4 className="text-lg font-medium mb-2 text-primary">Numbered Dice</h4>
-            {numberedDiceConfigs.map((config, index) => (
+            {numberedDiceConfigs.map((config) => (
               <div key={config.id} className="grid grid-cols-[1fr_1fr_auto] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 items-end mb-2 p-2 border border-muted-foreground/20 rounded-md">
                 <div>
                   <Label htmlFor={`numDice-${config.id}`}># Dice</Label>
@@ -278,7 +294,7 @@ export function DiceRollerUI() {
                   </Select>
                 </div>
                 {config.diceSides === 'custom' && (
-                  <div className="sm:col-span-1">
+                  <div className="sm:col-span-1"> {/* Ensure customSides input aligns correctly */}
                     <Label htmlFor={`customSides-${config.id}`}>Sides</Label>
                     <Input
                       id={`customSides-${config.id}`}
@@ -291,7 +307,8 @@ export function DiceRollerUI() {
                     />
                   </div>
                 )}
-                {config.diceSides !== 'custom' && <div className="hidden sm:block"></div>} {/* Placeholder for alignment */}
+                {/* Ensure consistent grid columns even when customSides is not shown */}
+                {config.diceSides !== 'custom' && <div className="hidden sm:block"></div>} 
                 <Button
                   variant="ghost"
                   size="icon"
@@ -307,7 +324,7 @@ export function DiceRollerUI() {
             <Button onClick={addNumberedDiceConfig} variant="outline" size="sm" className="mt-2">
               <PlusCircle className="mr-2 h-4 w-4" /> Add Dice Type
             </Button>
-            <Button onClick={handleNumberedRoll} size="lg" className="w-full text-lg bg-primary hover:bg-primary/90 mt-4">
+            <Button onClick={handleNumberedRoll} size="lg" className="w-full text-lg bg-primary hover:bg-primary/90 mt-4" disabled={numberedDiceConfigs.length === 0}>
               <ChevronsRight className="mr-2 h-6 w-6" /> Roll All Numbered Dice
             </Button>
           </div>
@@ -411,7 +428,7 @@ export function DiceRollerUI() {
           <CardDescription>Last 20 rolls are stored here.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[300px] pr-3">
+          <ScrollArea className="h-[300px] pr-3"> {/* Adjusted from h-[calc(100vh-220px)] to a fixed height */}
             {rollHistory.length === 0 ? (
               <p className="text-muted-foreground text-center py-10">No rolls yet. Make your first roll!</p>
             ) : (
@@ -442,7 +459,7 @@ export function DiceRollerUI() {
                           })}
                         </div>
                       </>
-                    ) : ( // Combat roll
+                    ) : ( 
                        <>
                         <div className="flex justify-between w-full items-center mb-1">
                            <span className="font-medium">{(r.groups[0] as CombatDiceResult).notation}</span>
@@ -472,6 +489,3 @@ export function DiceRollerUI() {
     </div>
   );
 }
-
-
-    
