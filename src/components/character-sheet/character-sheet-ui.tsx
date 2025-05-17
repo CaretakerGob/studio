@@ -194,7 +194,7 @@ const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 5, maxSanity: 5 },
     skills: { ...initialSkills, eng: 2, sur: 2, tac: 2 },
     avatarSeed: 'blake',
-    imageUrl: 'https://placehold.co/600x800.png',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FBlake%202.png?alt=media&token=6992782d-124a-44ff-8eec-be9cfd0221f2',
     meleeWeapon: { name: "Kukri", attack: 4 },
     rangedWeapon: { name: "Outlaw .44", attack: 3, range: 3 },
     abilities: [],
