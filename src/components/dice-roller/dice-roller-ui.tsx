@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -167,7 +168,7 @@ export function DiceRollerUI() {
                   {latestRoll.rolls.length > 10 && <Badge variant="outline">...and {latestRoll.rolls.length - 10} more</Badge>}
                 </div>
                  <p className="text-3xl font-bold text-center text-primary flex items-center justify-center">
-                  <Sigma className="h-8 w-8 mr-2"/> Total: {latestRoll.total}
+                   Total: {latestRoll.total}
                 </p>
               </CardContent>
             </Card>
@@ -216,3 +217,4 @@ export function DiceRollerUI() {
     </div>
   );
 }
+
