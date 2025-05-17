@@ -137,7 +137,7 @@ const charactersData: Character[] = [
     id: 'michael',
     name: 'Michael',
     baseStats: { hp: 6, maxHp: 6, mv: 5, def: 3, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills, emp: 2, dec: 3, inv: 2, ath: 3 },
+    skills: { ...initialSkills, emp: 2, dec: 2, inv: 2, ath: 2 },
     avatarSeed: 'michael',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FMichael.png?alt=media&token=4674d3b6-5f0e-494c-97cb-b768b84f17fe',
     meleeWeapon: { name: "Kunai", attack: 3 },
