@@ -152,6 +152,18 @@ const charactersData: Character[] = [
     ],
     characterPoints: 375,
   },
+  {
+    id: 'tamara',
+    name: 'Tamara',
+    baseStats: { hp: 7, maxHp: 7, mv: 5, def: 4, sanity: 6, maxSanity: 6 },
+    skills: { ...initialSkills, emp: 4, pers: 2 },
+    avatarSeed: 'tamara',
+    imageUrl: 'https://placehold.co/600x800.png', // Placeholder, user to provide actual URL
+    meleeWeapon: { name: "Martial Arts", attack: 2 },
+    rangedWeapon: { name: "M7", attack: 3, range: 3 },
+    abilities: [], // User to provide abilities
+    characterPoints: 375,
+  },
 ];
 
 
@@ -511,6 +523,7 @@ export function CharacterSheetUI() {
              selectedCharacter.name === "Fei" ? "male hunter anime" : 
              selectedCharacter.name === "Michael" ? "male soldier urban" :
              selectedCharacter.name === "Custom Character" ? "silhouette mysterious" :
+             selectedCharacter.name === "Tamara" ? "female adventurer jungle" :
              "character background"
           }
         />
