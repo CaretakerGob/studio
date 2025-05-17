@@ -22,7 +22,7 @@ interface GameCard {
   description: string;
   imageUrl?: string;
   dataAiHint: string;
-  isHoldable?: boolean; // New property
+  isHoldable?: boolean;
 }
 
 const clashCardImageUrls = [
@@ -68,14 +68,17 @@ const generateClashCards = (): GameCard[] => {
   const newCards: GameCard[] = [];
   const startIndex = existingCards.length;
   for (let i = startIndex; i < clashCardImageUrls.length; i++) {
+    const cardName = `Clash Card ${i + 1}`;
+    const cardId = `cl${i + 1}`;
     newCards.push({
-      id: `cl${i + 1}`,
-      name: `Clash Card ${i + 1}`,
+      id: cardId,
+      name: cardName,
       type: "Clash",
       deck: "Clash Deck",
       description: "A mysterious clash card has been drawn.",
       imageUrl: clashCardImageUrls[i],
       dataAiHint: "clash beast",
+      isHoldable: cardName === "Clash Card 10" ? true : undefined,
     });
   }
   return [...existingCards, ...newCards];
