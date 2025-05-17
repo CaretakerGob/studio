@@ -264,7 +264,7 @@ export function CardGeneratorUI() {
                     onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') playHeldCard(card); }}
                   >
                     {card.imageUrl && (
-                      <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-md">
+                      <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-md">
                         <Image
                           src={card.imageUrl}
                           alt={card.name}
@@ -300,7 +300,7 @@ export function CardGeneratorUI() {
         <CardContent className="flex-grow flex flex-col items-center justify-start w-full p-4">
           {isLoading && !latestCard && heldCards.length === 0 ? (
             <div className="space-y-4 w-full max-w-xs">
-              <Skeleton className="h-[450px] w-[300px] rounded-lg mx-auto" />
+              <Skeleton className="h-[420px] w-[300px] rounded-lg mx-auto aspect-[5/7]" />
               <Skeleton className="h-6 w-3/4 mx-auto" />
               <Skeleton className="h-4 w-full mx-auto" />
               <Skeleton className="h-4 w-5/6 mx-auto" />
@@ -309,7 +309,7 @@ export function CardGeneratorUI() {
             <>
               <Card key={cardKey} className="w-full max-w-[300px] sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
                 {latestCard.imageUrl && (
-                  <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-lg">
+                  <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-lg">
                     <Image
                       src={latestCard.imageUrl}
                       alt={latestCard.name}
@@ -337,7 +337,7 @@ export function CardGeneratorUI() {
                     {previousCards.map((card, index) => (
                       <Card key={`${card.id}-hist-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden">
                         {card.imageUrl && (
-                          <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-md">
+                          <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-md">
                             <Image
                               src={card.imageUrl}
                               alt={card.name}
