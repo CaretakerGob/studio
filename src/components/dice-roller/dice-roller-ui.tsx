@@ -27,8 +27,8 @@ const numberedDiceTypes = [
 
 const combatDiceType = { value: 'combat', label: 'Combat Dice (Symbolic)' };
 
-type CombatDieFace = 'shield' | 'double-sword' | 'blank';
-const combatDieFaces: CombatDieFace[] = ['shield', 'shield', 'shield', 'double-sword', 'blank', 'blank'];
+type CombatDieFace = 'swordandshield' | 'double-sword' | 'blank';
+const combatDieFaces: CombatDieFace[] = ['swordandshield', 'swordandshield', 'swordandshield', 'double-sword', 'blank', 'blank'];
 
 interface CombatDieFaceDetails {
   imageUrl: string;
@@ -37,7 +37,7 @@ interface CombatDieFaceDetails {
 }
 
 const combatDieFaceImages: Record<CombatDieFace, CombatDieFaceDetails> = {
-  shield: { 
+  swordandshield: { 
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fshields%20and%20sword%20188x188%20sticker.jpg?alt=media&token=7b8120cd-3495-4592-828d-9310534784f8', 
     dataAiHint: 'shield sword', 
     altText: 'Shield and Sword Face' 
@@ -91,14 +91,14 @@ export function DiceRollerUI() {
 
     if (diceSides === 'combat') {
       currentDiceNotation = `${numDice}x Combat Dice`;
-      const faceCounts: Record<CombatDieFace, number> = { shield: 0, 'double-sword': 0, blank: 0 };
+      const faceCounts: Record<CombatDieFace, number> = { swordandshield: 0, 'double-sword': 0, blank: 0 };
       for (let i = 0; i < numDice; i++) {
         const rollIndex = Math.floor(Math.random() * 6); // 0-5
         const face = combatDieFaces[rollIndex];
         newRolls.push(face);
         faceCounts[face]++;
       }
-      currentTotal = `Shields: ${faceCounts.shield}, Swords: ${faceCounts['double-sword']}, Blanks: ${faceCounts.blank}`;
+      currentTotal = `Shields: ${faceCounts.swordandshield}, Swords: ${faceCounts['double-sword']}, Blanks: ${faceCounts.blank}`;
     } else if (diceSides === 'custom') {
       const sides = parseInt(customSides);
       if (isNaN(sides) || sides < 2) {
