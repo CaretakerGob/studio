@@ -99,7 +99,7 @@ const charactersData: Character[] = [
     id: 'cassandra',
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { ...initialSkills, occ: 2, emp: 2, tun: 1, ath: 0, cpu: 0, dare: 0, dec: 0, eng: 0, inv: 0, kno: 0, pers: 0, sur: 0, tac: 0 },
+    skills: { ...initialSkills, occ: 2, emp: 2, tun: 1 },
     avatarSeed: 'cassandra',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCassandra.png?alt=media&token=6df9b49f-aeb0-45a1-ae75-7f77945ce18c',
     meleeWeapon: { name: "Saber", attack: 3 },
@@ -117,7 +117,7 @@ const charactersData: Character[] = [
     id: 'fei',
     name: 'Fei',
     baseStats: { hp: 5, maxHp: 5, mv: 4, def: 2, sanity: 6, maxSanity: 6 },
-    skills: { ...initialSkills, occ: 4, emp: 2, kno: 2, ath: 0, cpu: 0, dare: 0, dec: 0, eng: 0, inv: 0, pers: 0, sur: 0, tac: 0, tun: 0 },
+    skills: { ...initialSkills, occ: 4, emp: 2, kno: 2 },
     avatarSeed: 'fei',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2Ffei.png?alt=media&token=ec84180b-3734-499e-9767-0846580cdce9',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
@@ -137,7 +137,7 @@ const charactersData: Character[] = [
     id: 'michael',
     name: 'Michael',
     baseStats: { hp: 6, maxHp: 6, mv: 5, def: 3, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills, emp: 2, dec: 2, inv: 2, ath: 2, cpu: 0, dare: 0, eng: 0, kno: 0, occ: 0, pers: 0, sur: 0, tac: 0, tun: 0 },
+    skills: { ...initialSkills, emp: 2, dec: 2, inv: 2, ath: 2 },
     avatarSeed: 'michael',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FMichael.png?alt=media&token=4674d3b6-5f0e-494c-97cb-b768b84f17fe',
     meleeWeapon: { name: "Kunai", attack: 3 },
@@ -156,7 +156,7 @@ const charactersData: Character[] = [
     id: 'tamara',
     name: 'Tamara',
     baseStats: { hp: 7, maxHp: 7, mv: 5, def: 4, sanity: 6, maxSanity: 6 },
-    skills: { ...initialSkills, emp: 4, pers: 2, ath: 0, cpu: 0, dare: 0, dec: 0, eng: 0, inv: 0, kno: 0, occ: 0, sur: 0, tac: 0, tun: 0 },
+    skills: { ...initialSkills, emp: 4, pers: 2 },
     avatarSeed: 'tamara',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FEnhanced%20Tamara%20new.png?alt=media&token=f3408528-8abe-4ed5-b518-47e375ca09fb',
     meleeWeapon: { name: "Martial Arts", attack: 2 },
@@ -168,6 +168,18 @@ const charactersData: Character[] = [
       { id: 'tamara_team_player', name: 'Team Player', type: 'Interrupt', description: 'Friendly target can use any of their Actions as a Free Action.', details: 'R6', cooldown: '2 round CD' },
       { id: 'tamara_bloody_knuckles', name: 'Bloody Knuckles', type: 'Passive', description: "Using a Melee Attack lowers all of Tammy's cooldowns by 1 round. Tammy is immune to Attacks of Opportunity." },
     ],
+    characterPoints: 375,
+  },
+  {
+    id: 'trish',
+    name: 'Trish',
+    baseStats: { hp: 7, maxHp: 7, mv: 5, def: 3, sanity: 4, maxSanity: 4 },
+    skills: { ...initialSkills, ath: 3, pers: 2 },
+    avatarSeed: 'trish',
+    imageUrl: 'https://placehold.co/600x800.png', // Placeholder image
+    meleeWeapon: { name: "Katana", attack: 4 },
+    rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
+    abilities: [],
     characterPoints: 375,
   },
 ];
@@ -530,6 +542,7 @@ export function CharacterSheetUI() {
              selectedCharacter.name === "Michael" ? "male soldier urban" :
              selectedCharacter.name === "Custom Character" ? "silhouette mysterious" :
              selectedCharacter.name === "Tamara" ? "female adventurer jungle" :
+             selectedCharacter.name === "Trish" ? "female warrior katana" :
              "character background"
           }
         />
