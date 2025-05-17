@@ -231,7 +231,15 @@ export function CharacterSheetUI() {
   const [editableCharacterData, setEditableCharacterData] = useState<Character | null>(null);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
+  
   const { toast } = useToast();
+
+  const showToastHelper = useCallback((options: { title: string; description: string; variant?: "default" | "destructive" }) => {
+    setTimeout(() => {
+        toast(options);
+    }, 0);
+  }, [toast]);
+
 
   const stats = useMemo(() => editableCharacterData?.baseStats || initialBaseStats, [editableCharacterData]);
   const characterSkills = useMemo(() => editableCharacterData?.skills || initialSkills, [editableCharacterData]);
@@ -285,7 +293,7 @@ export function CharacterSheetUI() {
       setMaxAbilityQuantities({});
       setCurrentAbilityQuantities({});
     }
-  }, [editableCharacterData?.id, editableCharacterData?.abilities, parseCooldownRounds]);
+  }, [editableCharacterData, parseCooldownRounds]);
 
 
   const handleCharacterChange = (id: string) => {
@@ -361,7 +369,7 @@ export function CharacterSheetUI() {
     const originalCharacter = charactersData.find(c => c.id === selectedCharacterId);
     if (originalCharacter) {
       setEditableCharacterData(JSON.parse(JSON.stringify(originalCharacter))); 
-       toast({ title: "Stats Reset", description: `${originalCharacter.name}'s stats and abilities have been reset to default.` });
+      showToastHelper({ title: "Stats Reset", description: `${originalCharacter.name}'s stats and abilities have been reset to default.` });
     }
   };
 
@@ -370,19 +378,22 @@ export function CharacterSheetUI() {
 
     const abilityInfo = allUniqueAbilities.find(a => a.id === abilityToAddId);
     if (!abilityInfo) {
-        toast({ title: "Error", description: "Selected ability not found.", variant: "destructive" });
+        showToastHelper({ title: "Error", description: "Selected ability not found.", variant: "destructive" });
         return;
     }
     
     if (editableCharacterData.abilities.some(a => a.id === abilityInfo.id)) {
-        toast({ title: "Ability Exists", description: `${abilityInfo.name} is already added.`, variant: "destructive" });
+        showToastHelper({ title: "Ability Exists", description: `${abilityInfo.name} is already added.`, variant: "destructive" });
         return;
     }
 
     if ((editableCharacterData.characterPoints || 0) < abilityInfo.cost) {
-        toast({ title: "Not Enough CP", description: `You need ${abilityInfo.cost} CP to add ${abilityInfo.name}. You have ${editableCharacterData.characterPoints || 0}.`, variant: "destructive" });
+        showToastHelper({ title: "Not Enough CP", description: `You need ${abilityInfo.cost} CP to add ${abilityInfo.name}. You have ${editableCharacterData.characterPoints || 0}.`, variant: "destructive" });
         return;
     }
+    
+    const abilityNameForToast = abilityInfo.name;
+    const abilityCostForToast = abilityInfo.cost;
 
     setEditableCharacterData(prevData => {
         if (!prevData) return null;
@@ -390,10 +401,10 @@ export function CharacterSheetUI() {
         const { cost, ...abilityToAdd } = abilityInfo; 
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability];
         const newCharacterPoints = (prevData.characterPoints || 0) - abilityInfo.cost;
-        
-        toast({ title: "Ability Added", description: `${abilityInfo.name} added to Custom Character for ${abilityInfo.cost} CP.` });
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
+    
+    showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCostForToast} CP.` });
     setAbilityToAddId(undefined); 
   };
 
