@@ -176,7 +176,7 @@ const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 5, def: 3, sanity: 4, maxSanity: 4 },
     skills: { ...initialSkills, ath: 3, pers: 2 },
     avatarSeed: 'trish',
-    imageUrl: 'https://placehold.co/600x800.png', // Placeholder image
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FTrish%20Black%20Shoes.png?alt=media&token=6bb82bb4-c06f-40b1-bd55-5c86a78cedb5',
     meleeWeapon: { name: "Katana", attack: 4 },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [],
