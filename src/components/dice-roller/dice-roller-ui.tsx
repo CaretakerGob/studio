@@ -52,6 +52,12 @@ const combatDieFaceImages: Record<CombatDieFace, CombatDieFaceDetails> = {
   },
 };
 
+const faceTypeLabels: Record<CombatDieFace, string> = {
+  swordandshield: 'Sword & Shield',
+  'double-sword': 'Double Sword',
+  blank: 'Blank',
+};
+
 interface RollResult {
   rolls: (number | CombatDieFace)[];
   total: number | string; // Can be a sum or a summary string for combat dice
@@ -289,9 +295,28 @@ export function DiceRollerUI() {
                   {renderRolls(latestRoll.rolls)}
                   {latestRoll.rolls.length > 10 && <Badge variant="outline" className="mt-2">...and {latestRoll.rolls.length - 10} more</Badge>}
                 </div>
-                 <p className="text-2xl font-bold text-center text-primary">
-                   {typeof latestRoll.total === 'string' ? latestRoll.total : `Total: ${latestRoll.total}`}
-                </p>
+                 
+                {typeof latestRoll.total === 'string' && Array.isArray(latestRoll.rolls) && latestRoll.rolls.every(r => typeof r === 'string') ? (
+                  // Combat Roll Summary
+                  <div className="flex justify-around items-start text-center mt-4 space-x-2">
+                    {(['swordandshield', 'double-sword', 'blank'] as CombatDieFace[]).map(faceKey => {
+                      const count = (latestRoll.rolls as CombatDieFace[]).filter(r => r === faceKey).length;
+                      const label = faceTypeLabels[faceKey];
+                      return (
+                        <div key={faceKey} className="flex flex-col items-center p-2 rounded-md bg-muted/30 flex-1 min-w-0">
+                          <CombatDieFaceImage face={faceKey} size={40} className="mb-1" />
+                          <p className="text-sm font-medium text-foreground">{label}</p>
+                          <p className="text-lg font-bold text-primary">{count}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // Numbered Roll Total
+                  <p className="text-2xl font-bold text-center text-primary">
+                    Total: {latestRoll.total}
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}
