@@ -64,7 +64,7 @@ const charactersData: Character[] = [
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
-    characterPoints: 375, // Starting CP budget for custom character
+    characterPoints: 375, 
   },
   {
     id: 'gob',
@@ -203,10 +203,10 @@ type AbilityWithCost = Ability & { cost: number };
 const allUniqueAbilities: AbilityWithCost[] = (() => {
   const abilitiesMap = new Map<string, AbilityWithCost>();
   charactersData.forEach(character => {
-    if (character.id === 'custom') return; // Don't include custom character's (potentially dynamic) abilities
+    if (character.id === 'custom') return; 
     character.abilities.forEach(ability => {
       if (!abilitiesMap.has(ability.id)) {
-        abilitiesMap.set(ability.id, { ...ability, cost: 50 }); // Default cost 50 CP
+        abilitiesMap.set(ability.id, { ...ability, cost: 50 }); 
       }
     });
   });
@@ -238,42 +238,47 @@ export function CharacterSheetUI() {
   useEffect(() => {
     const character = charactersData.find(c => c.id === selectedCharacterId);
     if (character) {
-      // Deep clone to prevent direct mutation of charactersData
       setEditableCharacterData(JSON.parse(JSON.stringify(character)));
     }
   }, [selectedCharacterId]);
 
   useEffect(() => {
     if (editableCharacterData) {
-      const newCurrentCooldowns: Record<string, number> = {};
-      const newMaxCooldowns: Record<string, number> = {};
-      const newCurrentQuantities: Record<string, number> = {};
-      const newMaxQuantities: Record<string, number> = {};
+      const newMaxCDs: Record<string, number> = {};
+      const newInitialCurrentCDs: Record<string, number> = {};
+      const newMaxQTs: Record<string, number> = {};
+      const newInitialCurrentQTs: Record<string, number> = {};
 
       (editableCharacterData.abilities || []).forEach(ability => {
         if (ability.cooldown && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
-            newMaxCooldowns[ability.id] = maxRounds;
-            newCurrentCooldowns[ability.id] = currentAbilityCooldowns[ability.id] ?? maxRounds; // Preserve existing or set to max
+            newMaxCDs[ability.id] = maxRounds;
+            newInitialCurrentCDs[ability.id] = maxRounds; // Initialize to max
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
-          newMaxQuantities[ability.id] = ability.maxQuantity;
-          newCurrentQuantities[ability.id] = currentAbilityQuantities[ability.id] ?? ability.maxQuantity; // Preserve existing or set to max
+          newMaxQTs[ability.id] = ability.maxQuantity;
+          newInitialCurrentQTs[ability.id] = ability.maxQuantity; // Initialize to max
         }
       });
-      setCurrentAbilityCooldowns(newCurrentCooldowns);
-      setMaxAbilityCooldowns(newMaxCooldowns);
-      setCurrentAbilityQuantities(newCurrentQuantities);
-      setMaxAbilityQuantities(newMaxQuantities);
+
+      setMaxAbilityCooldowns(newMaxCDs);
+      setCurrentAbilityCooldowns(newInitialCurrentCDs);
+      setMaxAbilityQuantities(newMaxQTs);
+      setCurrentAbilityQuantities(newInitialCurrentQTs);
+    } else {
+      // If no character data, clear the trackers
+      setMaxAbilityCooldowns({});
+      setCurrentAbilityCooldowns({});
+      setMaxAbilityQuantities({});
+      setCurrentAbilityQuantities({});
     }
-  }, [editableCharacterData, parseCooldownRounds, currentAbilityCooldowns, currentAbilityQuantities]);
+  }, [editableCharacterData, parseCooldownRounds]);
 
 
   const handleCharacterChange = (id: string) => {
     setSelectedCharacterId(id);
-     // Reset ability selection dropdown when character changes
     setAbilityToAddId(undefined);
   };
 
@@ -344,8 +349,7 @@ export function CharacterSheetUI() {
   const resetStats = () => {
     const originalCharacter = charactersData.find(c => c.id === selectedCharacterId);
     if (originalCharacter) {
-      setEditableCharacterData(JSON.parse(JSON.stringify(originalCharacter))); // Reset to original
-       // Cooldowns and quantities will be reset by the useEffect hook listening to editableCharacterData
+      setEditableCharacterData(JSON.parse(JSON.stringify(originalCharacter))); 
        toast({ title: "Stats Reset", description: `${originalCharacter.name}'s stats and abilities have been reset to default.` });
     }
   };
@@ -359,7 +363,6 @@ export function CharacterSheetUI() {
         return;
     }
     
-    // Check if ability already added
     if (editableCharacterData.abilities.some(a => a.id === abilityInfo.id)) {
         toast({ title: "Ability Exists", description: `${abilityInfo.name} is already added.`, variant: "destructive" });
         return;
@@ -372,14 +375,14 @@ export function CharacterSheetUI() {
 
     setEditableCharacterData(prevData => {
         if (!prevData) return null;
-        const { cost, ...abilityToAdd } = abilityInfo; // Exclude cost from the ability object being added
+        const { cost, ...abilityToAdd } = abilityInfo; 
         const newAbilities = [...prevData.abilities, abilityToAdd];
         const newCharacterPoints = (prevData.characterPoints || 0) - cost;
         
         toast({ title: "Ability Added", description: `${abilityInfo.name} added to Custom Character for ${cost} CP.` });
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
-    setAbilityToAddId(undefined); // Reset dropdown
+    setAbilityToAddId(undefined); 
   };
 
 
@@ -583,7 +586,6 @@ export function CharacterSheetUI() {
   };
 
   if (!editableCharacterData) {
-    // Render loading state or null
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-xl p-10 text-center">
             <CardTitle>Loading Character Data...</CardTitle>
@@ -825,4 +827,3 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
-
