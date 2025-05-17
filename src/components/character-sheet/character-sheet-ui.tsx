@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart } from "lucide-react";
-import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
+import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition, AbilityType } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -254,12 +254,12 @@ export function CharacterSheetUI() {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
-            newInitialCurrentCDs[ability.id] = maxRounds; // Initialize to max
+            newInitialCurrentCDs[ability.id] = maxRounds; 
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           newMaxQTs[ability.id] = ability.maxQuantity;
-          newInitialCurrentQTs[ability.id] = ability.maxQuantity; // Initialize to max
+          newInitialCurrentQTs[ability.id] = ability.maxQuantity; 
         }
       });
 
@@ -268,13 +268,13 @@ export function CharacterSheetUI() {
       setMaxAbilityQuantities(newMaxQTs);
       setCurrentAbilityQuantities(newInitialCurrentQTs);
     } else {
-      // If no character data, clear the trackers
       setMaxAbilityCooldowns({});
       setCurrentAbilityCooldowns({});
       setMaxAbilityQuantities({});
       setCurrentAbilityQuantities({});
     }
-  }, [editableCharacterData, parseCooldownRounds]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editableCharacterData?.id, editableCharacterData?.abilities, parseCooldownRounds]);
 
 
   const handleCharacterChange = (id: string) => {
@@ -375,15 +375,36 @@ export function CharacterSheetUI() {
 
     setEditableCharacterData(prevData => {
         if (!prevData) return null;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { cost, ...abilityToAdd } = abilityInfo; 
-        const newAbilities = [...prevData.abilities, abilityToAdd];
-        const newCharacterPoints = (prevData.characterPoints || 0) - cost;
+        const newAbilities = [...prevData.abilities, abilityToAdd as Ability];
+        const newCharacterPoints = (prevData.characterPoints || 0) - abilityInfo.cost;
         
-        toast({ title: "Ability Added", description: `${abilityInfo.name} added to Custom Character for ${cost} CP.` });
+        toast({ title: "Ability Added", description: `${abilityInfo.name} added to Custom Character for ${abilityInfo.cost} CP.` });
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
     setAbilityToAddId(undefined); 
   };
+
+  const categorizedAbilities = useMemo(() => {
+    const actions: AbilityWithCost[] = [];
+    const interrupts: AbilityWithCost[] = [];
+    const passives: AbilityWithCost[] = [];
+
+    allUniqueAbilities.forEach(ability => {
+      if (ability.type === 'Action') actions.push(ability);
+      else if (ability.type === 'Interrupt') interrupts.push(ability);
+      else if (ability.type === 'Passive') passives.push(ability);
+    });
+
+    const sortFn = (a: AbilityWithCost, b: AbilityWithCost) => a.name.localeCompare(b.name);
+
+    return {
+      actions: actions.sort(sortFn),
+      interrupts: interrupts.sort(sortFn),
+      passives: passives.sort(sortFn),
+    };
+  }, []);
 
 
   const StatInputComponent: React.FC<{ def: CharacterStatDefinition }> = ({ def }) => {
@@ -675,14 +696,36 @@ export function CharacterSheetUI() {
                       <SelectValue placeholder="Select an ability" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Available Abilities</SelectLabel>
-                        {allUniqueAbilities.map(ability => (
-                          <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
-                            {ability.name} ({ability.type}) - {ability.cost} CP
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
+                      {categorizedAbilities.actions.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Actions</SelectLabel>
+                          {categorizedAbilities.actions.map(ability => (
+                            <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
+                              {ability.name} ({ability.type}) - {ability.cost} CP
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
+                       {categorizedAbilities.interrupts.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Interrupts</SelectLabel>
+                          {categorizedAbilities.interrupts.map(ability => (
+                            <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
+                              {ability.name} ({ability.type}) - {ability.cost} CP
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
+                       {categorizedAbilities.passives.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Passives</SelectLabel>
+                          {categorizedAbilities.passives.map(ability => (
+                            <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
+                              {ability.name} ({ability.type}) - {ability.cost} CP
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -827,3 +870,4 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
