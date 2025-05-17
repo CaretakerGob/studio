@@ -202,7 +202,7 @@ const charactersData: Character[] = [
     baseStats: { hp: 9, maxHp: 9, mv: 4, def: 4, sanity: 5, maxSanity: 5 },
     skills: { ...initialSkills, dare: 2, cpu: 2, pers: 2 },
     avatarSeed: 'walter',
-    imageUrl: 'https://placehold.co/600x800.png',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FWalter.png?alt=media&token=0f5ccd9d-7f35-4400-b9a4-c5d4f5e051e7',
     meleeWeapon: { name: "Mace", attack: 3 },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [],
