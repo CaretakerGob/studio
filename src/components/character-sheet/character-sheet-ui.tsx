@@ -64,7 +64,7 @@ const charactersData: Character[] = [
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
-    characterPoints: 375, 
+    characterPoints: 375,
   },
   {
     id: 'gob',
@@ -196,6 +196,18 @@ const charactersData: Character[] = [
     ],
     characterPoints: 375,
   },
+  {
+    id: 'walter',
+    name: 'Walter',
+    baseStats: { hp: 9, maxHp: 9, mv: 4, def: 4, sanity: 5, maxSanity: 5 },
+    skills: { ...initialSkills, dare: 2, cpu: 2, pers: 2 },
+    avatarSeed: 'walter',
+    imageUrl: 'https://placehold.co/600x800.png',
+    meleeWeapon: { name: "Mace", attack: 3 },
+    rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
+    abilities: [],
+    characterPoints: 375,
+  },
 ];
 
 type AbilityWithCost = Ability & { cost: number };
@@ -273,7 +285,6 @@ export function CharacterSheetUI() {
       setMaxAbilityQuantities({});
       setCurrentAbilityQuantities({});
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editableCharacterData?.id, editableCharacterData?.abilities, parseCooldownRounds]);
 
 
@@ -632,6 +643,7 @@ export function CharacterSheetUI() {
              editableCharacterData.name === "Tamara" ? "female adventurer jungle" :
              editableCharacterData.name === "Trish" ? "female warrior katana" :
              editableCharacterData.name === "Blake" ? "male hunter bandana" :
+             editableCharacterData.name === "Walter" ? "male hunter leather jacket" :
              "character background"
           }
         />
