@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Dices, Layers, UserCircle, Users, Home, Settings, PanelLeft } from 'lucide-react'; // Added Settings & PanelLeft
+import { Dices, Layers, UserCircle, Users, Home, Settings, PanelLeft, List } from 'lucide-react'; // Added List, Settings & PanelLeft
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -21,6 +21,7 @@ const navItems = [
   { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
   { href: '/card-generator', label: 'Card Generator', icon: Layers },
   { href: '/turn-tracker', label: 'Turn Tracker', icon: Users },
+  { href: '/item-list', label: 'Item List', icon: List },
 ];
 
 export function AppSidebar() {
@@ -66,4 +67,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
