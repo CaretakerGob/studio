@@ -181,11 +181,23 @@ const charactersData: Character[] = [
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [
       { id: 'trish_clean_cut', name: 'Clean Cut', type: 'Action', details: 'R1', description: 'Inflicts 4 damage, cannot Critically Hit or be used with Double Attack.'},
-      { id: 'trish_counter_strike', name: 'Counter Strike x2', type: 'Interrupt', description: 'Reverse melee attack targetting Trish back to the attacker.', maxQuantity: 2},
-      { id: 'trish_deflection', name: 'Deflection x2', type: 'Interrupt', description: 'Negate Ranged Attack targeting Trish or an adjacent ally.', maxQuantity: 2},
+      { id: 'trish_counter_strike_x2', name: 'Counter Strike x2', type: 'Interrupt', description: 'Reverse melee attack targetting Trish back to the attacker.', maxQuantity: 2},
+      { id: 'trish_deflection_x2', name: 'Deflection x2', type: 'Interrupt', description: 'Negate Ranged Attack targeting Trish or an adjacent ally.', maxQuantity: 2},
       { id: 'trish_double_attack', name: 'Double Attack', type: 'Passive', description: 'If Trish has not taken a Move Action this round she can make a second Melee Attack.'},
       { id: 'trish_iron_will', name: 'Iron Will', type: 'Passive', description: 'Everytime Trish inflicts damage she can restore the use of 1 of her Interrupts by 1. This cannot exceed initial count.'},
     ],
+    characterPoints: 375,
+  },
+  {
+    id: 'blake',
+    name: 'Blake',
+    baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 5, maxSanity: 5 },
+    skills: { ...initialSkills, eng: 2, sur: 2, tac: 2 },
+    avatarSeed: 'blake',
+    imageUrl: 'https://placehold.co/600x800.png',
+    meleeWeapon: { name: "Kukri", attack: 4 },
+    rangedWeapon: { name: "Outlaw .44", attack: 3, range: 3 },
+    abilities: [],
     characterPoints: 375,
   },
 ];
@@ -549,6 +561,7 @@ export function CharacterSheetUI() {
              selectedCharacter.name === "Custom Character" ? "silhouette mysterious" :
              selectedCharacter.name === "Tamara" ? "female adventurer jungle" :
              selectedCharacter.name === "Trish" ? "female warrior katana" :
+             selectedCharacter.name === "Blake" ? "male hunter bandana" :
              "character background"
           }
         />
