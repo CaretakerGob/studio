@@ -204,7 +204,89 @@ export function CardGeneratorUI() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-      <Card className="md:col-span-1 shadow-xl">
+      {/* Generated Card Display - First in DOM for mobile, right column on desktop */}
+      <Card className="md:col-start-2 md:col-span-2 shadow-xl min-h-[500px] flex flex-col justify-start items-center">
+        <CardHeader className="w-full text-center">
+           <CardTitle className="text-2xl">Generated Card</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow flex flex-col items-center justify-start w-full p-4">
+          {isLoading && !latestCard && heldCards.length === 0 ? (
+            <div className="space-y-4 w-full max-w-xs">
+              <Skeleton className="h-[420px] w-[300px] rounded-lg mx-auto aspect-[5/7]" />
+              <Skeleton className="h-6 w-3/4 mx-auto" />
+              <Skeleton className="h-4 w-full mx-auto" />
+              <Skeleton className="h-4 w-5/6 mx-auto" />
+            </div>
+          ) : latestCard ? (
+            <>
+              <Card key={cardKey} className="w-full max-w-[300px] sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
+                {latestCard.imageUrl && (
+                  <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-lg">
+                    <Image
+                      src={latestCard.imageUrl}
+                      alt={latestCard.name}
+                      fill
+                      sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 50vw, 300px"
+                      style={{ objectFit: "contain" }}
+                      data-ai-hint={latestCard.dataAiHint}
+                      priority={true}
+                    />
+                  </div>
+                )}
+                <CardHeader className="pt-4">
+                  <CardTitle className="text-xl text-primary">{latestCard.name}</CardTitle>
+                  <CardDescription className="text-sm">Type: {latestCard.type} (From: {latestCard.deck})</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">{latestCard.description}</p>
+                </CardContent>
+              </Card>
+
+              {previousCards.length > 0 && (
+                <div className="w-full max-w-xl mt-8">
+                  <h4 className="text-lg font-semibold mb-3 text-center text-muted-foreground">Previously Drawn</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {previousCards.map((card, index) => (
+                      <Card key={`${card.id}-hist-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden">
+                        {card.imageUrl && (
+                          <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-md">
+                            <Image
+                              src={card.imageUrl}
+                              alt={card.name}
+                              fill
+                              sizes="(max-width: 640px) 40vw, 150px"
+                              style={{ objectFit: "contain" }}
+                              data-ai-hint={`${card.dataAiHint} history`}
+                            />
+                          </div>
+                        )}
+                        <CardHeader className="p-2">
+                          <CardTitle className="text-sm text-primary truncate">{card.name}</CardTitle>
+                          <CardDescription className="text-xs">Type: {card.type}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-2 pt-0">
+                          <p className="text-xs text-muted-foreground truncate">{card.description}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+             <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50 mt-10">
+              <Layers className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <AlertTitle>No Card Drawn Yet</AlertTitle>
+              <AlertDescription>
+                Select decks and click "Draw Random Card", or play a card from your hand.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Card Decks & Held Cards - Second in DOM for mobile, left column on desktop */}
+      <Card className="md:col-start-1 md:col-span-1 md:row-start-1 shadow-xl">
         <CardHeader>
           <div className="flex items-center">
              <Layers className="mr-3 h-8 w-8 text-primary" />
@@ -296,85 +378,6 @@ export function CardGeneratorUI() {
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2 shadow-xl min-h-[500px] flex flex-col justify-start items-center">
-        <CardHeader className="w-full text-center">
-           <CardTitle className="text-2xl">Generated Card</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-grow flex flex-col items-center justify-start w-full p-4">
-          {isLoading && !latestCard && heldCards.length === 0 ? (
-            <div className="space-y-4 w-full max-w-xs">
-              <Skeleton className="h-[420px] w-[300px] rounded-lg mx-auto aspect-[5/7]" />
-              <Skeleton className="h-6 w-3/4 mx-auto" />
-              <Skeleton className="h-4 w-full mx-auto" />
-              <Skeleton className="h-4 w-5/6 mx-auto" />
-            </div>
-          ) : latestCard ? (
-            <>
-              <Card key={cardKey} className="w-full max-w-[300px] sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
-                {latestCard.imageUrl && (
-                  <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-lg">
-                    <Image
-                      src={latestCard.imageUrl}
-                      alt={latestCard.name}
-                      fill
-                      sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 50vw, 300px"
-                      style={{ objectFit: "contain" }}
-                      data-ai-hint={latestCard.dataAiHint}
-                      priority={true}
-                    />
-                  </div>
-                )}
-                <CardHeader className="pt-4">
-                  <CardTitle className="text-xl text-primary">{latestCard.name}</CardTitle>
-                  <CardDescription className="text-sm">Type: {latestCard.type} (From: {latestCard.deck})</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{latestCard.description}</p>
-                </CardContent>
-              </Card>
-
-              {previousCards.length > 0 && (
-                <div className="w-full max-w-xl mt-8">
-                  <h4 className="text-lg font-semibold mb-3 text-center text-muted-foreground">Previously Drawn</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {previousCards.map((card, index) => (
-                      <Card key={`${card.id}-hist-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden">
-                        {card.imageUrl && (
-                          <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-md">
-                            <Image
-                              src={card.imageUrl}
-                              alt={card.name}
-                              fill
-                              sizes="(max-width: 640px) 40vw, 150px"
-                              style={{ objectFit: "contain" }}
-                              data-ai-hint={`${card.dataAiHint} history`}
-                            />
-                          </div>
-                        )}
-                        <CardHeader className="p-2">
-                          <CardTitle className="text-sm text-primary truncate">{card.name}</CardTitle>
-                          <CardDescription className="text-xs">Type: {card.type}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-2 pt-0">
-                          <p className="text-xs text-muted-foreground truncate">{card.description}</p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-             <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50 mt-10">
-              <Layers className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <AlertTitle>No Card Drawn Yet</AlertTitle>
-              <AlertDescription>
-                Select decks and click "Draw Random Card", or play a card from your hand.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
