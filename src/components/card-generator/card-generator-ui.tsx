@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Layers, Shuffle, RotateCcw } from 'lucide-react';
+import { Layers, Shuffle, RotateCcw, Hand } from 'lucide-react'; // Added Hand icon
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 interface GameCard {
   id: string;
@@ -20,6 +22,7 @@ interface GameCard {
   description: string;
   imageUrl?: string;
   dataAiHint: string;
+  isHoldable?: boolean; // New property
 }
 
 const clashCardImageUrls = [
@@ -91,7 +94,7 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
   {
     name: "Item Deck",
     cards: [
-      { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "old lantern" },
+      { id: "it1", name: "Ancient Lantern", type: "Item", deck: "Item Deck", description: "Grants +1 to exploration rolls in dark areas.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "old lantern", isHoldable: true },
       { id: "it2", name: "Blessed Charm", type: "Item", deck: "Item Deck", description: "Once per game, reroll a failed Sanity check.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "holy charm" },
       { id: "it3", name: "Rusty Shiv", type: "Item", deck: "Item Deck", description: "+1 ATK for one combat. Discard after use.", imageUrl: "https://placehold.co/700x1000.png", dataAiHint: "rusty knife" },
     ],
@@ -127,11 +130,13 @@ const sampleDecks: { name: string; cards: GameCard[] }[] = [
 export function CardGeneratorUI() {
   const [selectedDecks, setSelectedDecks] = useState<string[]>([]);
   const [drawnCardsHistory, setDrawnCardsHistory] = useState<GameCard[]>([]);
+  const [heldCards, setHeldCards] = useState<GameCard[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [cardKey, setCardKey] = useState(0);
+  const { toast } = useToast();
 
   const latestCard = drawnCardsHistory.length > 0 ? drawnCardsHistory[0] : null;
-  const previousCards = drawnCardsHistory.slice(1); // Elements at index 1 and 2
+  const previousCards = drawnCardsHistory.slice(1); 
 
   const handleDeckSelection = (deckName: string) => {
     setSelectedDecks(prev =>
@@ -148,23 +153,38 @@ export function CardGeneratorUI() {
 
     if (availableCards.length === 0) {
       setIsLoading(false);
-      alert("Please select at least one deck to draw from.");
+      toast({ title: "No Decks Selected", description: "Please select at least one deck to draw from.", variant: "destructive" });
       return;
     }
 
     setTimeout(() => {
       const randomIndex = Math.floor(Math.random() * availableCards.length);
       const newCard = availableCards[randomIndex];
-      setDrawnCardsHistory(prevHistory => [newCard, ...prevHistory].slice(0, 3));
-      setCardKey(prev => prev + 1);
+
+      if (newCard.isHoldable) {
+        setHeldCards(prevHeld => [...prevHeld, newCard]);
+        toast({ title: "Card Held", description: `${newCard.name} has been added to your hand.` });
+      } else {
+        setDrawnCardsHistory(prevHistory => [newCard, ...prevHistory].slice(0, 3));
+        setCardKey(prev => prev + 1);
+      }
       setIsLoading(false);
     }, 500);
+  };
+
+  const playHeldCard = (cardToPlay: GameCard) => {
+    setHeldCards(prevHeld => prevHeld.filter(card => card.id !== cardToPlay.id));
+    setDrawnCardsHistory(prevHistory => [cardToPlay, ...prevHistory].slice(0, 3));
+    setCardKey(prev => prev + 1);
+    toast({ title: "Card Played", description: `${cardToPlay.name} has been played from your hand.` });
   };
 
   const resetGenerator = () => {
     setSelectedDecks([]);
     setDrawnCardsHistory([]);
+    setHeldCards([]);
     setIsLoading(false);
+    toast({ title: "Generator Reset", description: "Decks, drawn cards, and held cards have been cleared." });
   }
 
   return (
@@ -200,6 +220,65 @@ export function CardGeneratorUI() {
             <RotateCcw className="mr-2 h-4 w-4" /> Reset
           </Button>
         </CardFooter>
+
+        <Separator className="my-4 mx-6" />
+
+        <CardHeader className="pt-0 px-6">
+          <div className="flex items-center">
+            <Hand className="mr-3 h-7 w-7 text-primary" />
+            <CardTitle className="text-xl">Held Cards</CardTitle>
+          </div>
+          <CardDescription>Cards you can play later.</CardDescription>
+        </CardHeader>
+        <CardContent className="px-6 pb-6">
+          {heldCards.length === 0 ? (
+            <Alert variant="default" className="text-center border-dashed border-muted-foreground/50">
+              <Hand className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+              <AlertTitle className="text-sm">No Cards Held</AlertTitle>
+              <AlertDescription className="text-xs">
+                Cards marked as "holdable" will appear here when drawn.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <ScrollArea className="h-[250px] pr-3">
+              <div className="space-y-3">
+                {heldCards.map((card, index) => (
+                  <Card 
+                    key={`${card.id}-held-${index}`} 
+                    className="bg-card/80 border-primary/60 shadow-md hover:shadow-primary/40 transition-all duration-200 ease-in-out transform hover:scale-105 cursor-pointer group"
+                    onClick={() => playHeldCard(card)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') playHeldCard(card); }}
+                  >
+                    {card.imageUrl && (
+                      <div className="relative w-full aspect-[700/1000] overflow-hidden rounded-t-md">
+                        <Image
+                          src={card.imageUrl}
+                          alt={card.name}
+                          fill
+                          sizes="150px"
+                          style={{ objectFit: "contain" }}
+                          data-ai-hint={`${card.dataAiHint} held`}
+                        />
+                      </div>
+                    )}
+                    <CardHeader className="p-2 pb-1">
+                      <CardTitle className="text-base text-primary truncate group-hover:underline">{card.name}</CardTitle>
+                      <CardDescription className="text-xs">Type: {card.type}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-2 pt-0">
+                      <p className="text-xs text-muted-foreground truncate mb-1">{card.description}</p>
+                       <Button variant="link" size="sm" className="p-0 h-auto text-xs text-accent group-hover:text-accent-foreground" tabIndex={-1}>
+                         Click to Play
+                       </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
       </Card>
 
       <Card className="md:col-span-2 shadow-xl min-h-[500px] flex flex-col justify-start items-center">
@@ -207,7 +286,7 @@ export function CardGeneratorUI() {
            <CardTitle className="text-2xl">Generated Card</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col items-center justify-start w-full p-4">
-          {isLoading ? (
+          {isLoading && !latestCard && heldCards.length === 0 ? ( // Show skeleton only if truly initial loading
             <div className="space-y-4 w-full max-w-xs">
               <Skeleton className="h-[450px] w-[300px] rounded-lg mx-auto" />
               <Skeleton className="h-6 w-3/4 mx-auto" />
@@ -271,11 +350,11 @@ export function CardGeneratorUI() {
               )}
             </>
           ) : (
-            <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50 mt-10">
+             <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50 mt-10">
               <Layers className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <AlertTitle>No Card Drawn Yet</AlertTitle>
               <AlertDescription>
-                Select your decks and click "Draw Random Card" to reveal your fate.
+                Select decks and click "Draw Random Card", or play a card from your hand.
               </AlertDescription>
             </Alert>
           )}
@@ -284,3 +363,4 @@ export function CardGeneratorUI() {
     </div>
   );
 }
+
