@@ -38,19 +38,19 @@ interface CombatDieFaceDetails {
 
 const combatDieFaceImages: Record<CombatDieFace, CombatDieFaceDetails> = {
   shield: { 
-    imageUrl: 'https://placehold.co/50x50.png', 
-    dataAiHint: 'shield medieval', 
-    altText: 'Shield Face' 
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fshields%20and%20sword%20188x188%20sticker.jpg?alt=media&token=7b8120cd-3495-4592-828d-9310534784f8', 
+    dataAiHint: 'shield sword', 
+    altText: 'Shield and Sword Face' 
   },
   'double-sword': { 
-    imageUrl: 'https://placehold.co/50x50.png', 
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fcrossed%20swords%20188x188.jpg?alt=media&token=6e1e277e-462d-4777-af3b-e7a6e7b89789', 
     dataAiHint: 'crossed swords', 
-    altText: 'Double Sword Face' 
+    altText: 'Crossed Swords Face' 
   },
   blank: { 
-    imageUrl: 'https://placehold.co/50x50.png', 
-    dataAiHint: 'empty square', 
-    altText: 'Blank Face' 
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fblank%20188x188%20sticker.png?alt=media&token=08ff6336-a822-4615-8873-0291733210bc', 
+    dataAiHint: 'blank die', 
+    altText: 'Blank Die Face' 
   },
 };
 
