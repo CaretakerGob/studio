@@ -61,7 +61,7 @@ const clashCardImageUrls = [
 const generateClashCards = (): GameCard[] => {
   const holdableClashCardIds = new Set([
     'cl3', 'cl4', 'cl7', 'cl8', 'cl13', 'cl16', 'cl17', 'cl19', 
-    'cl20', 'cl22', 'cl23', 'cl24', 'cl25', 'cl26', 'cl27'
+    'cl20', 'cl21', 'cl22', 'cl23', 'cl24', 'cl25', 'cl26', 'cl27'
   ]);
 
   const existingCards: GameCard[] = [
