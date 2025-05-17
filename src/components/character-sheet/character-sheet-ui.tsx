@@ -142,7 +142,14 @@ const charactersData: Character[] = [
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%2FMichael%20front%201.png?alt=media&token=dabb1217-30f9-4a67-a0c8-a501740060a5',
     meleeWeapon: { name: "Kunai", attack: 3 },
     rangedWeapon: { name: "Kunai", attack: 4, range: 2 },
-    abilities: [],
+    abilities: [
+      { id: 'michael_sneak_attack', name: 'Sneak Attack', type: 'Action', description: 'Target can roll max of 1 Defense from this Attack.', details: 'A2/R2' },
+      { id: 'michael_whip_maneuver', name: 'Whip Maneuver', type: 'Action', description: 'Roll 3 combat dice. Move target 1 space for each HIT.', details: 'R3' },
+      { id: 'michael_disarm', name: 'Disarm', type: 'Interrupt', description: 'Target is DISARMED for 1 round.', details: 'R3', cooldown: '2 round CD' },
+      { id: 'michael_morphine_x3', name: 'Morphine x3', type: 'Interrupt', description: 'Target gains a WARD of 2 but loses 1 Sanity.', details: 'R3', maxQuantity: 3 },
+      { id: 'michael_shady', name: 'Shady', type: 'Passive', description: 'Michael gains the STEALTH buff. Critical Hits triggered by Michael inflict 1 BLEED Point on the target.' },
+      { id: 'michael_nimble_fingers', name: 'Nimble Fingers', type: 'Passive', description: 'Michael can use 2 Interrupt Actions per round.' },
+    ],
     characterPoints: 375,
   },
 ];
@@ -682,3 +689,4 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
