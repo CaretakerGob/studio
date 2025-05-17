@@ -25,7 +25,7 @@ const numberedDiceTypes = [
   { value: 'custom', label: 'Custom Sides' },
 ];
 
-const combatDiceType = { value: 'combat', label: 'Combat Dice (Symbolic)' };
+// Combat dice functionality is now separate
 
 type CombatDieFace = 'swordandshield' | 'double-sword' | 'blank';
 const combatDieFaces: CombatDieFace[] = ['swordandshield', 'swordandshield', 'swordandshield', 'double-sword', 'blank', 'blank'];
@@ -79,27 +79,28 @@ const CombatDieFaceImage: React.FC<{ face: CombatDieFace, className?: string, si
 
 export function DiceRollerUI() {
   const [numDice, setNumDice] = useState(1);
-  const [diceSides, setDiceSides] = useState('6'); // Default to d6
+  const [diceSides, setDiceSides] = useState('6'); // Default to d6 for numbered dice
   const [customSides, setCustomSides] = useState('');
   const [rollHistory, setRollHistory] = useState<RollResult[]>([]);
   const [latestRoll, setLatestRoll] = useState<RollResult | null>(null);
 
-  const handleRoll = () => {
-    let currentDiceNotation: string;
-    const newRolls: (number | CombatDieFace)[] = [];
-    let currentTotal: number | string = 0;
+  const recordRoll = (rolls: (number | CombatDieFace)[], total: number | string, diceNotation: string) => {
+    const newRollResult: RollResult = {
+      rolls,
+      total,
+      diceNotation,
+      timestamp: new Date(),
+    };
+    setLatestRoll(newRollResult);
+    setRollHistory(prev => [newRollResult, ...prev].slice(0, 20));
+  };
 
-    if (diceSides === 'combat') {
-      currentDiceNotation = `${numDice}x Combat Dice`;
-      const faceCounts: Record<CombatDieFace, number> = { swordandshield: 0, 'double-sword': 0, blank: 0 };
-      for (let i = 0; i < numDice; i++) {
-        const rollIndex = Math.floor(Math.random() * 6); // 0-5
-        const face = combatDieFaces[rollIndex];
-        newRolls.push(face);
-        faceCounts[face]++;
-      }
-      currentTotal = `Shields: ${faceCounts.swordandshield}, Swords: ${faceCounts['double-sword']}, Blanks: ${faceCounts.blank}`;
-    } else if (diceSides === 'custom') {
+  const handleNumberedRoll = () => {
+    let currentDiceNotation: string;
+    const newRolls: number[] = [];
+    let currentTotal: number = 0;
+
+    if (diceSides === 'custom') {
       const sides = parseInt(customSides);
       if (isNaN(sides) || sides < 2) {
         alert("Invalid custom sides. Must be a number greater than 1.");
@@ -110,7 +111,7 @@ export function DiceRollerUI() {
         const roll = Math.floor(Math.random() * sides) + 1;
         newRolls.push(roll);
       }
-      currentTotal = (newRolls as number[]).reduce((sum, roll) => sum + roll, 0);
+      currentTotal = newRolls.reduce((sum, roll) => sum + roll, 0);
     } else if (diceSides === '100') {
       currentDiceNotation = `${numDice}d%`;
       let grandTotal = 0;
@@ -126,7 +127,7 @@ export function DiceRollerUI() {
          const rollValue = newRolls[0];
          const d10TensValue = Math.floor(rollValue / 10) * 10;
          const d10UnitsValue = rollValue % 10;
-         const actualD10TensDisplay = d10TensValue === 100 ? '00' : (d10TensValue === 0 ? '00' : d10TensValue);
+         const actualD10TensDisplay = d10TensValue === 100 ? '00' : (d10TensValue === 0 ? '00' : d10TensValue.toString().padStart(2, '0'));
          const actualD10UnitsDisplay = rollValue === 100 ? '0' : d10UnitsValue;
 
          currentDiceNotation = `1d% (Rolled ${actualD10TensDisplay} & ${actualD10UnitsDisplay})`;
@@ -142,18 +143,25 @@ export function DiceRollerUI() {
         const roll = Math.floor(Math.random() * sides) + (diceSides === '10' ? 0 : 1); // d10 is 0-9
         newRolls.push(roll);
       }
-      currentTotal = (newRolls as number[]).reduce((sum, roll) => sum + roll, 0);
+      currentTotal = newRolls.reduce((sum, roll) => sum + roll, 0);
     }
     
-    const newRollResult: RollResult = {
-      rolls: newRolls,
-      total: currentTotal,
-      diceNotation: currentDiceNotation,
-      timestamp: new Date(),
-    };
+    recordRoll(newRolls, currentTotal, currentDiceNotation);
+  };
 
-    setLatestRoll(newRollResult);
-    setRollHistory(prev => [newRollResult, ...prev].slice(0, 20));
+  const handleCombatRoll = () => {
+    const currentDiceNotation = `${numDice}x Combat Dice`;
+    const newRolls: CombatDieFace[] = [];
+    const faceCounts: Record<CombatDieFace, number> = { swordandshield: 0, 'double-sword': 0, blank: 0 };
+    for (let i = 0; i < numDice; i++) {
+      const rollIndex = Math.floor(Math.random() * 6); // 0-5
+      const face = combatDieFaces[rollIndex];
+      newRolls.push(face);
+      faceCounts[face]++;
+    }
+    const currentTotal = `Shields: ${faceCounts.swordandshield}, Swords: ${faceCounts['double-sword']}, Blanks: ${faceCounts.blank}`;
+    
+    recordRoll(newRolls, currentTotal, currentDiceNotation);
   };
 
   const clearHistory = () => {
@@ -203,7 +211,7 @@ export function DiceRollerUI() {
               />
             </div>
             <div>
-              <Label htmlFor="diceType">Type of Dice</Label>
+              <Label htmlFor="diceType">Type of Numbered Dice</Label>
               <Select value={diceSides} onValueChange={setDiceSides}>
                 <SelectTrigger id="diceType" className="mt-1">
                   <SelectValue placeholder="Select dice type" />
@@ -214,10 +222,6 @@ export function DiceRollerUI() {
                     {numberedDiceTypes.map(type => (
                       <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                     ))}
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Combat Dice</SelectLabel>
-                    <SelectItem value={combatDiceType.value}>{combatDiceType.label}</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -237,8 +241,14 @@ export function DiceRollerUI() {
               />
             </div>
           )}
-          <Button onClick={handleRoll} size="lg" className="w-full text-lg bg-primary hover:bg-primary/90">
-            <ChevronsRight className="mr-2 h-6 w-6" /> Roll Dice
+          <Button onClick={handleNumberedRoll} size="lg" className="w-full text-lg bg-primary hover:bg-primary/90">
+            <ChevronsRight className="mr-2 h-6 w-6" /> Roll Numbered Dice
+          </Button>
+          
+          <Separator />
+
+          <Button onClick={handleCombatRoll} size="lg" className="w-full text-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground">
+            <Dices className="mr-2 h-6 w-6" /> Roll {numDice} Combat Dice
           </Button>
           
           {latestRoll && (
