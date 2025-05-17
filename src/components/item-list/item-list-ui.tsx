@@ -13,29 +13,21 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { List } from "lucide-react";
 
-// Updated Item interface
-interface Item {
-  id: string | number;
-  color: string;
-  type: string;
-  description: string;
+// Define the expected structure of an item from the CSV
+export interface ItemData {
+  Color: string;
+  Type: string;
+  Description: string;
+  // Add other columns from your CSV here if they exist
 }
 
-// Updated sample data
-const sampleItems: Item[] = [
-  { id: 1, color: "Red", type: "Potion", description: "Heals a small amount of HP." },
-  { id: 2, color: "Blue", type: "Scroll", description: "Casts a minor illusion spell." },
-  { id: 3, color: "Green", type: "Herb", description: "Cures poison status effect." },
-  { id: 'q4', color: "Gold", type: "Amulet", description: "Provides +1 to Defense.", },
-  { id: 5, color: "Black", type: "Dagger", description: "A short, sharp blade." },
-];
+interface ItemListUIProps {
+  items: ItemData[];
+}
 
-export function ItemListUI() {
-  const items = sampleItems;
-  const headers = items.length > 0 ? Object.keys(items[0]) : [];
-
-  // Filter out 'id' from headers to display, as it's an internal identifier
-  const displayHeaders = headers.filter(header => header !== 'id');
+export function ItemListUI({ items }: ItemListUIProps) {
+  // Determine headers dynamically from the first item, or use fixed if structure is known
+  const headers = items.length > 0 ? Object.keys(items[0]) : ["Color", "Type", "Description"];
 
   return (
     <Card className="shadow-xl">
@@ -44,27 +36,28 @@ export function ItemListUI() {
           <List className="mr-3 h-8 w-8 text-primary" />
           <CardTitle className="text-2xl">Item List</CardTitle>
         </div>
-        <CardDescription>Browse through the available items. (Data is currently placeholder)</CardDescription>
+        <CardDescription>Browse through the available items. (Data sourced from CSV)</CardDescription>
       </CardHeader>
       <CardContent>
-        {items.length > 0 ? (
+        {items.length > 0 && !(items.length === 1 && items[0].Type === 'System' && items[0].Color === 'Error') ? (
           <Table>
-            <TableCaption>A list of items. Please provide your full Excel data to populate this table.</TableCaption>
+            <TableCaption>A list of items loaded from items.csv. Ensure `public/data/items.csv` exists and is formatted correctly.</TableCaption>
             <TableHeader>
               <TableRow>
-                {displayHeaders.map((header) => (
+                {headers.map((header) => (
                   <TableHead key={header} className="capitalize">
-                    {header.replace(/([A-Z])/g, ' $1').trim()} {/* Add space before caps for display */}
+                    {/* Simple way to add space before caps for display */}
+                    {header.replace(/([A-Z])/g, ' $1').trim()} 
                   </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  {displayHeaders.map((header) => (
-                    <TableCell key={`${item.id}-${header}`}>
-                      {String(item[header as keyof Omit<Item, 'id'>] ?? '')}
+              {items.map((item, index) => (
+                <TableRow key={`item-${index}`}> {/* Use index as key since CSV rows might not have unique IDs */}
+                  {headers.map((header) => (
+                    <TableCell key={`${header}-${index}`}>
+                      {String(item[header as keyof ItemData] ?? '')}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -72,7 +65,12 @@ export function ItemListUI() {
             </TableBody>
           </Table>
         ) : (
-          <p className="text-muted-foreground text-center py-4">No item data to display. Please provide a sample of your Excel data.</p>
+          <p className="text-muted-foreground text-center py-4">
+            {items.length > 0 && items[0].Type === 'System' && items[0].Color === 'Error' 
+              ? items[0].Description 
+              : "No item data to display. Please ensure `public/data/items.csv` is set up correctly and contains data."
+            }
+          </p>
         )}
       </CardContent>
     </Card>
