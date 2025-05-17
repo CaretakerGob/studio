@@ -119,6 +119,18 @@ const charactersData: Character[] = [
       ],
     characterPoints: 375,
   },
+  {
+    id: 'michael',
+    name: 'Michael',
+    baseStats: { hp: 6, maxHp: 6, mv: 3, def: 3, sanity: 5, maxSanity: 5 }, // Placeholder stats
+    skills: { tactics: 1, survival: 1, knowledge: 1, occult: 1, empathy: 1, tuner: 0 }, // Placeholder skills
+    avatarSeed: 'michael',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%2FMichael%20front%201.png?alt=media&token=dabb1217-30f9-4a67-a0c8-a501740060a5',
+    meleeWeapon: { name: "Standard Issue Sword", attack: 2, flavorText: "Reliable steel." }, // Placeholder weapon
+    rangedWeapon: { name: "Service Pistol", attack: 2, range: 4, flavorText: "Standard firearm." }, // Placeholder weapon
+    abilities: [], // Placeholder abilities
+    characterPoints: 350, // Placeholder points
+  },
 ];
 
 
@@ -472,9 +484,13 @@ export function CharacterSheetUI() {
           alt={`${selectedCharacter.name} background`}
           fill
           style={{ objectFit: 'contain', objectPosition: 'center top' }} 
-          className="absolute inset-0 z-0 opacity-[0.09] pointer-events-none" // Reduced opacity back slightly
+          className="absolute inset-0 z-0 opacity-[0.07] pointer-events-none" 
           priority
-          data-ai-hint={selectedCharacter.name === "Fei" ? "male hunter anime" : "character background"}
+          data-ai-hint={
+             selectedCharacter.name === "Fei" ? "male hunter anime" : 
+             selectedCharacter.name === "Michael" ? "male soldier urban" :
+             "character background"
+          }
         />
       )}
       <div className="relative z-10 bg-transparent">
@@ -510,7 +526,7 @@ export function CharacterSheetUI() {
           
              <div className="md:col-span-2 space-y-4 flex justify-end">
                 {selectedCharacter && selectedCharacter.characterPoints !== undefined && (
-                <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end"> {/* Reduced opacity */}
+                <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
                     <Label className="text-md font-medium flex items-center">
                     <Award className="mr-2 h-5 w-5 text-primary" />
                     Character Points
@@ -550,13 +566,12 @@ export function CharacterSheetUI() {
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
                 {
                   (() => {
-                    const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] ?? 0) > 0 || selectedCharacter.id === 'custom'); // Show if skill > 0 or if custom character
+                    const relevantSkillDefinitions = skillDefinitions.filter(def => (characterSkills[def.id] ?? 0) > 0 || selectedCharacter.id === 'custom'); 
                      
                     if (relevantSkillDefinitions.length === 0 && selectedCharacter.id !== 'custom') {
                       return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
                     }
                     if (selectedCharacter.id === 'custom') {
-                       // Display all skills for custom, potentially with edit controls in future
                        return (
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                            {skillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
@@ -652,3 +667,4 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
