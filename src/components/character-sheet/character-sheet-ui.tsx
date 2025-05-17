@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -25,15 +25,19 @@ const initialBaseStats: CharacterStats = {
 };
 
 const initialSkills: Skills = {
-  tactics: 0,
-  survival: 0,
-  knowledge: 0,
-  occult: 0,
-  empathy: 0,
-  tuner: 0,
-  deception: 0,
-  investigate: 0,
-  athletics: 0,
+  ath: 0,
+  cpu: 0,
+  dare: 0,
+  dec: 0,
+  emp: 0,
+  eng: 0,
+  inv: 0,
+  kno: 0,
+  occ: 0,
+  pers: 0,
+  sur: 0,
+  tac: 0,
+  tun: 0,
 };
 
 const statDefinitions: CharacterStatDefinition[] = [
@@ -44,16 +48,21 @@ const statDefinitions: CharacterStatDefinition[] = [
 ];
 
 const skillDefinitions: SkillDefinition[] = [
-  { id: 'tactics', label: "Tactics", icon: ClipboardList, description: "Governs strategic planning and combat effectiveness." },
-  { id: 'survival', label: "Survival", icon: Leaf, description: "Represents wilderness survival, tracking, and foraging." },
-  { id: 'knowledge', label: "Knowledge", icon: Library, description: "Measures understanding of lore, rituals, and general information." },
-  { id: 'occult', label: "Occult (Occ)", icon: BookMarked, description: "Understanding of forbidden lore, supernatural entities, and dark rituals." },
-  { id: 'empathy', label: "Empathy (Emp)", icon: HeartHandshake, description: "Ability to understand and influence the emotions and intentions of others." },
-  { id: 'tuner', label: "Tuner (Tun)", icon: SlidersHorizontal, description: "Special ability to manipulate game mechanics or reality to a certain extent." },
-  { id: 'deception', label: "Deception (Dec)", icon: VenetianMask, description: "Skill in misleading, lying, or disguising intentions." },
-  { id: 'investigate', label: "Investigate (Inv)", icon: Search, description: "Ability to find clues, uncover information, and solve mysteries." },
-  { id: 'athletics', label: "Athletics (Ath)", icon: PersonStanding, description: "Proficiency in physical activities like running, jumping, and climbing." },
+  { id: 'ath', label: "Athletics (ATH)", icon: PersonStanding, description: "Prowess at swimming, running, tumbling, and parkour." },
+  { id: 'cpu', label: "Computer Use (CPU)", icon: Laptop, description: "Adept at hacking, online research, and navigating networks." },
+  { id: 'dare', label: "Dare Devil (DARE)", icon: Star, description: "Fearless and skilled driver/pilot, performs spectacular stunts." },
+  { id: 'dec', label: "Deception (DEC)", icon: VenetianMask, description: "Skill in lying, manipulation, sleight of hand, and stealth." },
+  { id: 'emp', label: "Empathy (EMP)", icon: HeartHandshake, description: "Ability to triage, tutor, handle animals, and sense motives." },
+  { id: 'eng', label: "Engineer (ENG)", icon: Wrench, description: "Proficiency in crafting, repairing, using machinery, and disabling devices." },
+  { id: 'inv', label: "Investigate (INV)", icon: Search, description: "Ability to gather info, find clues, and research." },
+  { id: 'kno', label: "Knowledge (KNO)", icon: Library, description: "Filled with useful facts on various subjects (not Occult, Eng, CPU)." },
+  { id: 'occ', label: "Occult (OCC)", icon: BookMarked, description: "Knowledge of rituals, demonology, alchemy, and ancient scripts." },
+  { id: 'pers', label: "Personality (PERS)", icon: Smile, description: "Inner willpower and charisma (Inspirational or Intimidating)." },
+  { id: 'sur', label: "Survivalist (SUR)", icon: Leaf, description: "Skilled at living off the land, tracking, and navigation." },
+  { id: 'tac', label: "Tactician (TAC)", icon: ClipboardList, description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts." },
+  { id: 'tun', label: "Tuner (TUN)", icon: SlidersHorizontal, description: "Rare individuals born with or acquired skill for visions, sensing danger." },
 ];
+
 
 const charactersData: Character[] = [
   {
@@ -72,7 +81,7 @@ const charactersData: Character[] = [
     id: 'gob',
     name: 'Gob',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { ...initialSkills, tactics: 3, survival: 2, knowledge: 3 },
+    skills: { ...initialSkills, tac: 3, sur: 2, kno: 3 },
     avatarSeed: 'gob',
     imageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FGob.png?alt=media&token=d5d63a0b-0465-4c50-a179-351ac7cc7fa9`,
     meleeWeapon: { name: "Knife", attack: 2 },
@@ -90,7 +99,7 @@ const charactersData: Character[] = [
     id: 'cassandra',
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { ...initialSkills, occult: 2, empathy: 2, tuner: 1 },
+    skills: { ...initialSkills, occ: 2, emp: 2, tun: 1 },
     avatarSeed: 'cassandra',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCassandra.png?alt=media&token=6df9b49f-aeb0-45a1-ae75-7f77945ce18c',
     meleeWeapon: { name: "Saber", attack: 3 },
@@ -108,7 +117,7 @@ const charactersData: Character[] = [
     id: 'fei',
     name: 'Fei',
     baseStats: { hp: 5, maxHp: 5, mv: 4, def: 2, sanity: 6, maxSanity: 6 },
-    skills: { ...initialSkills, occult: 4, empathy: 2, knowledge: 2 },
+    skills: { ...initialSkills, occ: 4, emp: 2, kno: 2 },
     avatarSeed: 'fei',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2Ffei.png?alt=media&token=ec84180b-3734-499e-9767-0846580cdce9',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
@@ -128,7 +137,7 @@ const charactersData: Character[] = [
     id: 'michael',
     name: 'Michael',
     baseStats: { hp: 6, maxHp: 6, mv: 5, def: 3, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills, empathy: 2, deception: 3, investigate: 2, athletics: 3 },
+    skills: { ...initialSkills, emp: 2, dec: 3, inv: 2, ath: 3 },
     avatarSeed: 'michael',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%2FMichael%20front%201.png?alt=media&token=dabb1217-30f9-4a67-a0c8-a501740060a5',
     meleeWeapon: { name: "Kunai", attack: 3 },
@@ -494,6 +503,7 @@ export function CharacterSheetUI() {
           data-ai-hint={
              selectedCharacter.name === "Fei" ? "male hunter anime" : 
              selectedCharacter.name === "Michael" ? "male soldier urban" :
+             selectedCharacter.name === "Custom Character" ? "silhouette mysterious" :
              "character background"
           }
         />

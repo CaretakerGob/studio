@@ -1,15 +1,20 @@
 
+
 export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity';
 export type SkillName = 
-  'tactics' | 
-  'survival' | 
-  'knowledge' | 
-  'occult' | 
-  'empathy' | 
-  'tuner' |
-  'deception' |
-  'investigate' |
-  'athletics';
+  'ath' | 
+  'cpu' |
+  'dare' |
+  'dec' | 
+  'emp' | 
+  'eng' |
+  'inv' |
+  'kno' | 
+  'occ' | 
+  'pers' |
+  'sur' | 
+  'tac' | 
+  'tun';
 
 export interface CharacterStats {
   hp: number;
@@ -21,15 +26,19 @@ export interface CharacterStats {
 }
 
 export interface Skills {
-  tactics?: number;
-  survival?: number;
-  knowledge?: number;
-  occult?: number;
-  empathy?: number;
-  tuner?: number;
-  deception?: number;
-  investigate?: number;
-  athletics?: number;
+  ath?: number;
+  cpu?: number;
+  dare?: number;
+  dec?: number;
+  emp?: number;
+  eng?: number;
+  inv?: number;
+  kno?: number;
+  occ?: number;
+  pers?: number;
+  sur?: number;
+  tac?: number;
+  tun?: number;
 }
 
 export interface CharacterStatDefinition {
@@ -82,3 +91,4 @@ export interface Character {
   rangedWeapon?: RangedWeapon;
   characterPoints?: number;
 }
+
