@@ -2,11 +2,12 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dices, ChevronsRight, RotateCcw, ShieldIcon, SwordsIcon, MinusSquareIcon } from 'lucide-react';
+import { Dices, ChevronsRight, RotateCcw } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,30 @@ const combatDiceType = { value: 'combat', label: 'Combat Dice (Symbolic)' };
 type CombatDieFace = 'shield' | 'double-sword' | 'blank';
 const combatDieFaces: CombatDieFace[] = ['shield', 'shield', 'shield', 'double-sword', 'blank', 'blank'];
 
+interface CombatDieFaceDetails {
+  imageUrl: string;
+  dataAiHint: string;
+  altText: string;
+}
+
+const combatDieFaceImages: Record<CombatDieFace, CombatDieFaceDetails> = {
+  shield: { 
+    imageUrl: 'https://placehold.co/50x50.png', 
+    dataAiHint: 'shield medieval', 
+    altText: 'Shield Face' 
+  },
+  'double-sword': { 
+    imageUrl: 'https://placehold.co/50x50.png', 
+    dataAiHint: 'crossed swords', 
+    altText: 'Double Sword Face' 
+  },
+  blank: { 
+    imageUrl: 'https://placehold.co/50x50.png', 
+    dataAiHint: 'empty square', 
+    altText: 'Blank Face' 
+  },
+};
+
 interface RollResult {
   rolls: (number | CombatDieFace)[];
   total: number | string; // Can be a sum or a summary string for combat dice
@@ -36,17 +61,20 @@ interface RollResult {
   timestamp: Date;
 }
 
-const CombatDieIcon: React.FC<{ face: CombatDieFace, className?: string }> = ({ face, className }) => {
-  switch (face) {
-    case 'shield':
-      return <ShieldIcon className={cn("h-6 w-6 text-blue-500", className)} />;
-    case 'double-sword':
-      return <SwordsIcon className={cn("h-6 w-6 text-red-500", className)} />;
-    case 'blank':
-      return <MinusSquareIcon className={cn("h-6 w-6 text-gray-400", className)} />;
-    default:
-      return null;
-  }
+const CombatDieFaceImage: React.FC<{ face: CombatDieFace, className?: string, size?: number }> = ({ face, className, size = 24 }) => {
+  const faceDetails = combatDieFaceImages[face];
+  if (!faceDetails) return null;
+
+  return (
+    <Image
+      src={faceDetails.imageUrl}
+      alt={faceDetails.altText}
+      width={size}
+      height={size}
+      data-ai-hint={faceDetails.dataAiHint}
+      className={cn("inline-block", className)}
+    />
+  );
 };
 
 export function DiceRollerUI() {
@@ -90,15 +118,18 @@ export function DiceRollerUI() {
         const d10Tens = Math.floor(Math.random() * 10) * 10;
         const d10Units = Math.floor(Math.random() * 10);
         const result = (d10Tens === 0 && d10Units === 0) ? 100 : d10Tens + d10Units;
-        newRolls.push(result); // Store individual d100 results if numDice > 1
+        newRolls.push(result); 
         grandTotal += result;
       }
-       currentTotal = numDice > 1 ? grandTotal : newRolls[0]; // if multiple d100, sum them, else show single d100
-       if (numDice === 1) {
-         const d10Tens = Math.floor(newRolls[0] / 10) * 10;
-         const d10Units = newRolls[0] % 10;
-         const actualD10Tens = d10Tens === 100 ? 0 : d10Tens / 10; // e.g. for 100, tens die is '00'
-         currentDiceNotation = `1d% (Rolled ${actualD10Tens === 0 ? '00': actualD10Tens*10} & ${d10Units === 0 && newRolls[0] === 100 ? 0 : newRolls[0] %10 })`;
+       currentTotal = numDice > 1 ? grandTotal : newRolls[0]; 
+       if (numDice === 1 && newRolls.length > 0 && typeof newRolls[0] === 'number') {
+         const rollValue = newRolls[0];
+         const d10TensValue = Math.floor(rollValue / 10) * 10;
+         const d10UnitsValue = rollValue % 10;
+         const actualD10TensDisplay = d10TensValue === 100 ? '00' : (d10TensValue === 0 ? '00' : d10TensValue);
+         const actualD10UnitsDisplay = rollValue === 100 ? '0' : d10UnitsValue;
+
+         currentDiceNotation = `1d% (Rolled ${actualD10TensDisplay} & ${actualD10UnitsDisplay})`;
        }
     } else {
       const sides = parseInt(diceSides);
@@ -132,11 +163,15 @@ export function DiceRollerUI() {
 
   const renderRolls = (rolls: (number | CombatDieFace)[]) => {
     return rolls.slice(0, 10).map((roll, index) => {
-      if (typeof roll === 'string') {
-        return <CombatDieIcon key={index} face={roll} className="mx-1" />;
+      if (typeof roll === 'string') { // CombatDieFace
+        return (
+          <div key={index} className="inline-block mx-1 align-middle">
+            <CombatDieFaceImage face={roll} size={32} />
+          </div>
+        );
       }
-      return (
-        <Badge key={index} variant="default" className="text-lg px-3 py-1 bg-primary/20 text-primary-foreground border border-primary">
+      return ( // Numbered die
+        <Badge key={index} variant="default" className="text-lg px-3 py-1 bg-primary/20 text-primary-foreground border border-primary align-middle">
           {roll}
         </Badge>
       );
@@ -214,11 +249,11 @@ export function DiceRollerUI() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-center space-x-2 mb-3 flex-wrap">
+                <div className="flex items-center justify-center space-x-2 mb-3 flex-wrap min-h-[40px]">
                   {renderRolls(latestRoll.rolls)}
                   {latestRoll.rolls.length > 10 && <Badge variant="outline" className="mt-2">...and {latestRoll.rolls.length - 10} more</Badge>}
                 </div>
-                 <p className="text-2xl font-bold text-center text-primary flex items-center justify-center">
+                 <p className="text-2xl font-bold text-center text-primary">
                    {typeof latestRoll.total === 'string' ? latestRoll.total : `Total: ${latestRoll.total}`}
                 </p>
               </CardContent>
@@ -255,22 +290,22 @@ export function DiceRollerUI() {
                       </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground mb-1">
-                      {typeof r.total === 'string' ? r.total : `Rolls: ${r.rolls.join(', ')}`}
+                      {typeof r.total === 'string' ? r.total : `Rolls: ${r.rolls.map(roll => typeof roll === 'string' ? roll.charAt(0).toUpperCase() + roll.slice(1) : roll).join(', ')}`}
                     </div>
-                    {typeof r.total !== 'string' && typeof r.rolls[0] !== 'string' && (
+                    {typeof r.rolls[0] === 'string' && ( // Combat dice
+                       <div className="flex flex-wrap gap-1 mb-1">
+                        {(r.rolls as CombatDieFace[]).slice(0,5).map((face, i) => (
+                          <CombatDieFaceImage key={i} face={face} size={16} className="mx-0.5"/>
+                        ))}
+                        {r.rolls.length > 5 && <span className="text-xs">...</span>}
+                      </div>
+                    )}
+                    {typeof r.rolls[0] !== 'string' && ( // Numbered dice
                        <div className="flex flex-wrap gap-1 mb-1">
                         {r.rolls.slice(0,5).map((rollVal, i) => (
                           <Badge key={i} variant="outline" className="text-xs">{rollVal}</Badge>
                         ))}
                         {r.rolls.length > 5 && <Badge variant="outline" className="text-xs">...</Badge>}
-                      </div>
-                    )}
-                     {typeof r.rolls[0] === 'string' && (
-                      <div className="flex flex-wrap gap-1 mb-1">
-                        {(r.rolls as CombatDieFace[]).slice(0,5).map((face, i) => (
-                          <CombatDieIcon key={i} face={face} className="h-4 w-4"/>
-                        ))}
-                        {r.rolls.length > 5 && <span className="text-xs">...</span>}
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground/70 self-end">{r.timestamp.toLocaleTimeString()}</p>
@@ -284,3 +319,4 @@ export function DiceRollerUI() {
     </div>
   );
 }
+
