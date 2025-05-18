@@ -161,7 +161,7 @@ export function InvestigationsUI({ investigations }: InvestigationsUIProps) {
               <p><strong className="text-muted-foreground">Goals:</strong> {currentEncounter.Goals}</p>
               <p><strong className="text-muted-foreground">Passive:</strong> {currentEncounter.Passive}</p>
               {currentEncounter.Description && currentEncounter.Description.trim() !== '' && (
-                 <p><strong className="text-muted-foreground">Description:</strong> {currentEncounter.Description}</p>
+                 <p className="whitespace-pre-line"><strong className="text-muted-foreground">Description:</strong> {currentEncounter.Description}</p>
               )}
             </div>
           ) : (
