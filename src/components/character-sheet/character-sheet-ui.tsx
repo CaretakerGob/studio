@@ -48,7 +48,7 @@ const statDefinitions: CharacterStatDefinition[] = [
 ];
 
 const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity'>, { cost: number; max: number; base: number }> = {
-  hp: { cost: 5, max: 7, base: 1 }, // Base is now 1, meaning first point is "free" or part of starting package
+  hp: { cost: 5, max: 7, base: 1 },
   sanity: { cost: 10, max: 5, base: 1 },
   mv: { cost: 2, max: 6, base: 1 },
   def: { cost: 5, max: 3, base: 1 },
@@ -76,14 +76,14 @@ const charactersData: Character[] = [
   {
     id: 'custom',
     name: 'Custom Character',
-    baseStats: { ...initialCustomCharacterStats }, // Uses the new baseline stats
+    baseStats: { ...initialCustomCharacterStats },
     skills: { ...initialSkills },
     abilities: [],
     avatarSeed: 'customcharacter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
-    characterPoints: 375, // Starting CP after baseline stats
+    characterPoints: 375,
   },
   {
     id: 'gob',
@@ -343,13 +343,13 @@ export function CharacterSheetUI() {
       if(setAuthError) setAuthError(null);
 
       let characterToLoad: Character | undefined = undefined;
-      let docSnap; // Declare docSnap here to check its existence later
+      let docSnap; 
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (currentUser && auth.currentUser) {
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
-          docSnap = await getDoc(characterRef); // Assign to docSnap
+          docSnap = await getDoc(characterRef); 
 
           if (docSnap.exists()) {
             characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
@@ -384,7 +384,6 @@ export function CharacterSheetUI() {
           if (!characterToLoad.skills || Object.keys(characterToLoad.skills).length === 0) {
              characterToLoad.skills = { ...initialSkills };
           }
-           // Check if docSnap exists before resetting baseStats for custom character
           if (!characterToLoad.baseStats || (Object.values(characterToLoad.baseStats).every(v => v === 0 || v === undefined) && !docSnap?.exists())) {
              characterToLoad.baseStats = { ...initialCustomCharacterStats };
           }
@@ -442,7 +441,7 @@ export function CharacterSheetUI() {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id,
+      editableCharacterData?.id, // Added character ID to re-run when character actually changes
       abilitiesJSONKey,
       savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
@@ -464,7 +463,7 @@ export function CharacterSheetUI() {
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
-    if (!editableCharacterData || editableCharacterData.id === 'custom') return; // Prevent for custom character
+    if (!editableCharacterData || editableCharacterData.id === 'custom') return; 
     const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (isNaN(numericValue)) return;
 
@@ -538,7 +537,7 @@ export function CharacterSheetUI() {
     const currentVal = editableCharacterData.baseStats[statKey];
     const currentPoints = editableCharacterData.characterPoints || 0;
   
-    if (currentVal <= 1) { // Prevents going below the initial baseline of 1
+    if (currentVal <= 1) { 
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -595,8 +594,8 @@ export function CharacterSheetUI() {
          characterToSet.name = originalCharacter.name; 
          characterToSet.skills = { ...initialSkills }; 
          characterToSet.abilities = []; 
-         characterToSet.baseStats = { ...initialCustomCharacterStats }; // Reset to new baseline
-         characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; // Reset CP
+         characterToSet.baseStats = { ...initialCustomCharacterStats }; 
+         characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; 
        }
       setEditableCharacterData(characterToSet);
       showToastHelper({ title: "Stats Reset", description: `${characterToSet.name}'s stats, skills, and abilities have been reset to default template.` });
@@ -1174,7 +1173,7 @@ export function CharacterSheetUI() {
                     <SelectContent>
                       {categorizedAbilities.actions.length > 0 && (
                         <SelectGroup>
-                          <SelectLabel>Actions</SelectLabel>
+                          <SelectLabel className="text-base text-primary">Actions</SelectLabel>
                           {categorizedAbilities.actions.map(ability => (
                             <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
                               {ability.name} ({ability.type}) - {ability.cost} CP
@@ -1184,7 +1183,7 @@ export function CharacterSheetUI() {
                       )}
                        {categorizedAbilities.interrupts.length > 0 && (
                         <SelectGroup>
-                          <SelectLabel>Interrupts</SelectLabel>
+                          <SelectLabel className="text-base text-primary">Interrupts</SelectLabel>
                           {categorizedAbilities.interrupts.map(ability => (
                             <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
                               {ability.name} ({ability.type}) - {ability.cost} CP
@@ -1194,7 +1193,7 @@ export function CharacterSheetUI() {
                       )}
                        {categorizedAbilities.passives.length > 0 && (
                         <SelectGroup>
-                          <SelectLabel>Passives</SelectLabel>
+                          <SelectLabel className="text-base text-primary">Passives</SelectLabel>
                           {categorizedAbilities.passives.map(ability => (
                             <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
                               {ability.name} ({ability.type}) - {ability.cost} CP
