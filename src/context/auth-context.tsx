@@ -2,7 +2,7 @@
 "use client";
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { 
   type User, 
   onAuthStateChanged, 
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signUp = async ({ email, password, displayName }: SignUpCredentials): Promise<User | null> => {
+  const signUp = useCallback(async ({ email, password, displayName }: SignUpCredentials): Promise<User | null> => {
     if (!auth) {
       setError("Firebase Auth is not initialized. Cannot sign up.");
       return null;
@@ -70,7 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (userCredential.user && displayName) {
         await updateProfile(userCredential.user, { displayName });
         // Refresh user to get updated profile
-        setCurrentUser({ ...userCredential.user, displayName }); 
+        setCurrentUser(prevUser => ({ ...userCredential.user, displayName })); 
+      } else {
+        setCurrentUser(userCredential.user);
       }
       setLoading(false);
       return userCredential.user;
@@ -79,9 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return null;
     }
-  };
+  }, []);
 
-  const login = async ({ email, password }: AuthCredentials): Promise<User | null> => {
+  const login = useCallback(async ({ email, password }: AuthCredentials): Promise<User | null> => {
     if (!auth) {
       setError("Firebase Auth is not initialized. Cannot log in.");
       return null;
@@ -92,14 +94,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       setLoading(false);
       return userCredential.user;
-    } catch (err: any) {
+    } catch (err: any)
+ {
       setError(err.message || "Failed to log in.");
       setLoading(false);
       return null;
     }
-  };
+  }, []);
 
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     if (!auth) {
       setError("Firebase Auth is not initialized. Cannot log out.");
       return;
@@ -110,9 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: any) {
       setError(err.message || "Failed to log out.");
     }
-  };
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     currentUser,
     loading,
     error,
@@ -120,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     login,
     logout,
-  };
+  }), [currentUser, loading, error, signUp, login, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
