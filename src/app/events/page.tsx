@@ -12,16 +12,23 @@ export const metadata: Metadata = {
 async function getEventsFromGoogleSheet(): Promise<EventData[]> {
   const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, EVENTS_GOOGLE_SHEET_ID, EVENTS_GOOGLE_SHEET_RANGE } = process.env;
 
-  if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY || !EVENTS_GOOGLE_SHEET_ID || !EVENTS_GOOGLE_SHEET_RANGE) {
-    console.error("Events Google Sheets API environment variables are not configured.");
-    return [{ eventName: 'Error', date: '', location: 'System', description: 'Events Google Sheets API environment variables are not configured. Please ensure `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `EVENTS_GOOGLE_SHEET_ID`, and `EVENTS_GOOGLE_SHEET_RANGE` are all correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.', outcome: '' }];
+  const missingVars: string[] = [];
+  if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) missingVars.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+  if (!GOOGLE_PRIVATE_KEY) missingVars.push('GOOGLE_PRIVATE_KEY');
+  if (!EVENTS_GOOGLE_SHEET_ID) missingVars.push('EVENTS_GOOGLE_SHEET_ID');
+  if (!EVENTS_GOOGLE_SHEET_RANGE) missingVars.push('EVENTS_GOOGLE_SHEET_RANGE');
+
+  if (missingVars.length > 0) {
+    const detailedErrorMessage = `Events Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, EVENTS_GOOGLE_SHEET_ID, EVENTS_GOOGLE_SHEET_RANGE) are correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.`;
+    console.error(detailedErrorMessage);
+    return [{ eventName: 'Error', date: '', location: 'System', description: detailedErrorMessage, outcome: '' }];
   }
 
   try {
     const auth = new google.auth.JWT(
       GOOGLE_SERVICE_ACCOUNT_EMAIL,
       undefined,
-      GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'), // Add ! since we've checked it's defined
       ['https://www.googleapis.com/auth/spreadsheets.readonly']
     );
 
@@ -35,13 +42,13 @@ async function getEventsFromGoogleSheet(): Promise<EventData[]> {
     const rows = response.data.values;
 
     if (!rows || rows.length === 0) {
-      console.warn("No data found in Events Google Sheet or sheet is empty.");
-      return [{ eventName: 'Warning', date: '', location: 'System', description: `No data found in Events Google Sheet ID: ${EVENTS_GOOGLE_SHEET_ID} at range: ${EVENTS_GOOGLE_SHEET_RANGE}.`, outcome: '' }];
+      console.warn(`No data found in Events Google Sheet ID: ${EVENTS_GOOGLE_SHEET_ID} at range: ${EVENTS_GOOGLE_SHEET_RANGE}.`);
+      return [{ eventName: 'Warning', date: '', location: 'System', description: `No data found in Events Google Sheet ID: ${EVENTS_GOOGLE_SHEET_ID} at range: ${EVENTS_GOOGLE_SHEET_RANGE}. The sheet might be empty or the range incorrect.`, outcome: '' }];
     }
 
     const headers = rows[0] as string[];
     // Sanitize headers to camelCase for mapping to EventData interface
-    const sanitizedHeaders = headers.map(h => h.trim().toLowerCase().replace(/\s+(.)/g, (match, chr) => chr.toUpperCase()));
+    const sanitizedHeaders = headers.map(h => h.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase()));
     
     const eventNameIndex = sanitizedHeaders.indexOf('eventName');
     const dateIndex = sanitizedHeaders.indexOf('date');
@@ -50,8 +57,12 @@ async function getEventsFromGoogleSheet(): Promise<EventData[]> {
     const outcomeIndex = sanitizedHeaders.indexOf('outcome');
 
     if (eventNameIndex === -1 || dateIndex === -1 || locationIndex === -1 || descriptionIndex === -1 || outcomeIndex === -1) {
-      console.error("Required headers (Event Name, Date, Location, Description, Outcome) not found or mismatch in Events Google Sheet.");
-      return [{ eventName: 'Error', date: '', location: 'System', description: 'Required headers (Event Name, Date, Location, Description, Outcome) not found or mismatch in the Events Google Sheet. Please check the sheet headers and range. Expected headers: Event Name, Date, Location, Description, Outcome.', outcome: '' }];
+      const missingHeaderFields = ['Event Name', 'Date', 'Location', 'Description', 'Outcome'].filter(expectedHeader => 
+        !sanitizedHeaders.includes(expectedHeader.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase()))
+      );
+      const errorMessage = `Required headers (Event Name, Date, Location, Description, Outcome) not found or mismatch in Events Google Sheet. Missing or mismatched headers: ${missingHeaderFields.join(', ') || 'Unknown (please check column order and naming)'}. Please check the sheet headers and range. Expected headers: Event Name, Date, Location, Description, Outcome.`;
+      console.error(errorMessage);
+      return [{ eventName: 'Error', date: '', location: 'System', description: errorMessage, outcome: '' }];
     }
 
     return rows.slice(1).map((row: any[]): EventData => ({
@@ -64,8 +75,8 @@ async function getEventsFromGoogleSheet(): Promise<EventData[]> {
 
   } catch (error) {
     console.error("Error fetching data from Events Google Sheets API:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return [{ eventName: 'Error', date: '', location: 'System', description: `Could not load events from Google Sheets. Error: ${errorMessage}`, outcome: '' }];
+    const errorMessageContent = error instanceof Error ? error.message : String(error);
+    return [{ eventName: 'Error', date: '', location: 'System', description: `Could not load events from Google Sheets. Error: ${errorMessageContent}`, outcome: '' }];
   }
 }
 
