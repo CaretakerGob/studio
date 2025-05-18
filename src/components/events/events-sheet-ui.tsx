@@ -5,12 +5,13 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectSeparator } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { List, Shuffle, AlertCircle, RotateCcw } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from '@/components/ui/separator';
 
 export interface EventsSheetData {
   Insert?: string;
@@ -47,8 +48,13 @@ const RANDOM_ORDER_EVENT = "random_order_event";
 
 
 export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIProps) {
-  const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
-  const [availableColors, setAvailableColors] = useState<string[]>([]);
+  const [selectedRandomType, setSelectedRandomType] = useState<string | undefined>(undefined);
+  const [selectedChaosColor, setSelectedChaosColor] = useState<string | undefined>(undefined);
+  const [selectedOrderColor, setSelectedOrderColor] = useState<string | undefined>(undefined);
+  
+  const [availableChaosColors, setAvailableChaosColors] = useState<string[]>([]);
+  const [availableOrderColors, setAvailableOrderColors] = useState<string[]>([]);
+  
   const [drawnEventsHistory, setDrawnEventsHistory] = useState<EventsSheetData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [eventKey, setEventKey] = useState(0); 
@@ -61,21 +67,39 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
   useEffect(() => {
     if (items && items.length > 0) {
       const uniqueColors = Array.from(new Set(items.map(item => item.Color).filter(Boolean) as string[]));
-      setAvailableColors(uniqueColors.sort());
+      setAvailableChaosColors(uniqueColors.filter(color => color.includes("Chaos")).sort());
+      setAvailableOrderColors(uniqueColors.filter(color => color.includes("Order")).sort());
     } else {
-      setAvailableColors([]);
+      setAvailableChaosColors([]);
+      setAvailableOrderColors([]);
     }
   }, [items]);
 
-  const handleColorChange = (value: string) => {
-    setSelectedColor(value);
+  const handleRandomTypeChange = (value: string | undefined) => {
+    setSelectedRandomType(value);
+    setSelectedChaosColor(undefined);
+    setSelectedOrderColor(undefined);
+  };
+
+  const handleChaosColorChange = (value: string | undefined) => {
+    setSelectedChaosColor(value);
+    setSelectedRandomType(undefined);
+    setSelectedOrderColor(undefined);
+  };
+
+  const handleOrderColorChange = (value: string | undefined) => {
+    setSelectedOrderColor(value);
+    setSelectedRandomType(undefined);
+    setSelectedChaosColor(undefined);
   };
 
   const handleGenerateRandomEvent = () => {
-    if (!selectedColor) {
+    const activeSelection = selectedRandomType || selectedChaosColor || selectedOrderColor;
+
+    if (!activeSelection) {
       toast({
         title: "No Selection Made",
-        description: "Please select a color or random type to generate an event from.",
+        description: "Please select a random type or a specific color to generate an event.",
         variant: "destructive",
       });
       return;
@@ -84,22 +108,25 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     setIsLoading(true);
 
     let filteredItems: EventsSheetData[] = [];
-    let toastMessageTitle = "Event Generated!";
     let toastMessageDescription = "";
 
-    if (selectedColor === RANDOM_ANY_COLOR) {
-      filteredItems = items.filter(item => item.Type !== 'System'); // Exclude system messages
-      toastMessageDescription = "A random event from all colors has been drawn.";
-    } else if (selectedColor === RANDOM_CHAOS_EVENT) {
-      filteredItems = items.filter(item => item.Color.includes("Chaos") && item.Type !== 'System');
-      toastMessageDescription = "A random Chaos event has been drawn.";
-    } else if (selectedColor === RANDOM_ORDER_EVENT) {
-      filteredItems = items.filter(item => item.Color.includes("Order") && item.Type !== 'System');
-      toastMessageDescription = "A random Order event has been drawn.";
-    } else {
-      // Specific color selected
-      filteredItems = items.filter(item => item.Color === selectedColor && item.Type !== 'System');
-      toastMessageDescription = `A random event for "${selectedColor}" has been drawn.`;
+    if (selectedRandomType) {
+      if (selectedRandomType === RANDOM_ANY_COLOR) {
+        filteredItems = items.filter(item => item.Type !== 'System');
+        toastMessageDescription = "A random event from all colors has been drawn.";
+      } else if (selectedRandomType === RANDOM_CHAOS_EVENT) {
+        filteredItems = items.filter(item => item.Color.includes("Chaos") && item.Type !== 'System');
+        toastMessageDescription = "A random Chaos event has been drawn.";
+      } else if (selectedRandomType === RANDOM_ORDER_EVENT) {
+        filteredItems = items.filter(item => item.Color.includes("Order") && item.Type !== 'System');
+        toastMessageDescription = "A random Order event has been drawn.";
+      }
+    } else if (selectedChaosColor) {
+      filteredItems = items.filter(item => item.Color === selectedChaosColor && item.Type !== 'System');
+      toastMessageDescription = `A random event for "${selectedChaosColor}" has been drawn.`;
+    } else if (selectedOrderColor) {
+      filteredItems = items.filter(item => item.Color === selectedOrderColor && item.Type !== 'System');
+      toastMessageDescription = `A random event for "${selectedOrderColor}" has been drawn.`;
     }
     
     setTimeout(() => {
@@ -115,7 +142,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
         setDrawnEventsHistory(prevHistory => [newEvent, ...prevHistory].slice(0, 3));
         setEventKey(prev => prev + 1); 
         toast({
-          title: toastMessageTitle,
+          title: "Event Generated!",
           description: toastMessageDescription,
         });
       }
@@ -124,7 +151,9 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
   };
 
   const resetEventsHistory = () => {
-    setSelectedColor(undefined);
+    setSelectedRandomType(undefined);
+    setSelectedChaosColor(undefined);
+    setSelectedOrderColor(undefined);
     setDrawnEventsHistory([]);
     setIsLoading(false);
     toast({ title: "Events Reset", description: "Selection and event history cleared." });
@@ -132,6 +161,8 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
   
   const systemError = items.length === 1 && items[0].Type === 'System' && items[0].Color === 'Error';
   const currentEventBgImage = latestEvent ? eventBackgroundImages[latestEvent.Color] : undefined;
+
+  const isGenerateButtonDisabled = (!selectedRandomType && !selectedChaosColor && !selectedOrderColor) || isLoading || systemError || items.length === 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -141,21 +172,33 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
             <Shuffle className="mr-3 h-8 w-8 text-primary" />
             <CardTitle className="text-2xl">Event Controls</CardTitle>
           </div>
-          <CardDescription>Select a color or type and generate an event.</CardDescription>
+          <CardDescription>Select a type or color and generate an event.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="color-select" className="text-lg font-medium">Filter by Color or Type:</Label>
-            <Select value={selectedColor || ""} onValueChange={handleColorChange} disabled={systemError || items.length === 0}>
-              <SelectTrigger id="color-select" className="w-full mt-1">
-                <SelectValue placeholder="Select a Color or Random Type..." />
+            <Label htmlFor="random-type-select" className="text-md font-medium">Random Event Type:</Label>
+            <Select value={selectedRandomType || ""} onValueChange={handleRandomTypeChange} disabled={systemError || items.length === 0}>
+              <SelectTrigger id="random-type-select" className="w-full mt-1">
+                <SelectValue placeholder="Select Random Type..." />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={RANDOM_ANY_COLOR}>Random Event (Any Color)</SelectItem>
                 <SelectItem value={RANDOM_CHAOS_EVENT}>Random Chaos Event</SelectItem>
                 <SelectItem value={RANDOM_ORDER_EVENT}>Random Order Event</SelectItem>
-                {availableColors.length > 0 && <SelectSeparator />}
-                {availableColors.map(color => (
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
+          <div>
+            <Label htmlFor="chaos-color-select" className="text-md font-medium">Chaos Colors:</Label>
+            <Select value={selectedChaosColor || ""} onValueChange={handleChaosColorChange} disabled={systemError || items.length === 0 || availableChaosColors.length === 0}>
+              <SelectTrigger id="chaos-color-select" className="w-full mt-1">
+                <SelectValue placeholder="Select Chaos Color..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableChaosColors.map(color => (
                   <SelectItem key={color} value={color}>
                     {color}
                   </SelectItem>
@@ -163,10 +206,31 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
               </SelectContent>
             </Select>
           </div>
+
+          <Separator />
+
+          <div>
+            <Label htmlFor="order-color-select" className="text-md font-medium">Order Colors:</Label>
+            <Select value={selectedOrderColor || ""} onValueChange={handleOrderColorChange} disabled={systemError || items.length === 0 || availableOrderColors.length === 0}>
+              <SelectTrigger id="order-color-select" className="w-full mt-1">
+                <SelectValue placeholder="Select Order Color..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableOrderColors.map(color => (
+                  <SelectItem key={color} value={color}>
+                    {color}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Separator />
+
           <Button 
             onClick={handleGenerateRandomEvent} 
-            className="w-full bg-primary hover:bg-primary/90"
-            disabled={!selectedColor || isLoading || systemError || items.length === 0}
+            className="w-full bg-primary hover:bg-primary/90 mt-4" // Added mt-4 for spacing
+            disabled={isGenerateButtonDisabled}
           >
             <Shuffle className="mr-2 h-5 w-5" />
             {isLoading ? "Generating..." : "Generate Random Event"}
@@ -233,7 +297,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
                 <List className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <AlertTitle>No Event Generated</AlertTitle>
                 <AlertDescription>
-                  {items.length === 0 ? "No event data loaded." : "Select a color or random type and click 'Generate Random Event' to see an event."}
+                  {items.length === 0 ? "No event data loaded." : "Select a type or color and click 'Generate Random Event' to see an event."}
                 </AlertDescription>
               </Alert>
             )}
@@ -280,3 +344,5 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
   );
 }
 
+
+    
