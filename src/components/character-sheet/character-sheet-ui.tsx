@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context"; 
 import { auth, db } from "@/lib/firebase"; 
-import { doc, setDoc, getDoc } from "firebase/firestore"; 
+import { doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore"; 
 
 
 const initialBaseStats: CharacterStats = {
@@ -239,6 +239,7 @@ const allUniqueAbilities: AbilityWithCost[] = (() => {
 export function CharacterSheetUI() {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>(charactersData[0].id);
   const [editableCharacterData, setEditableCharacterData] = useState<Character | null>(null);
+  const [userSavedCharacters, setUserSavedCharacters] = useState<Character[]>([]);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
@@ -247,13 +248,11 @@ export function CharacterSheetUI() {
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
 
-
   const showToastHelper = useCallback((options: { title: string; description: string; variant?: "default" | "destructive" }) => {
     setTimeout(() => {
         toast(options);
     }, 0);
   }, [toast]);
-
 
   const stats = useMemo(() => editableCharacterData?.baseStats || initialBaseStats, [editableCharacterData]);
   const characterSkills = useMemo(() => editableCharacterData?.skills || initialSkills, [editableCharacterData]);
@@ -269,6 +268,44 @@ export function CharacterSheetUI() {
     return match ? parseInt(match[0], 10) : undefined;
   }, []);
 
+  // Effect to fetch user's saved characters list for the dropdown
+  useEffect(() => {
+    const fetchUserSavedCharacters = async () => {
+      if (currentUser && auth.currentUser) {
+        try {
+          const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
+          const querySnapshot = await getDocs(charactersCollectionRef);
+          const savedChars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Character));
+          setUserSavedCharacters(savedChars);
+        } catch (err) {
+          console.error("Error fetching user's saved characters:", err);
+          showToastHelper({ title: "Load Error", description: "Could not fetch list of saved characters.", variant: "destructive"});
+          setUserSavedCharacters([]);
+        }
+      } else {
+        setUserSavedCharacters([]); // Clear if no user
+      }
+    };
+    fetchUserSavedCharacters();
+  }, [currentUser, showToastHelper]);
+
+
+  const characterDropdownOptions = useMemo(() => {
+    const options = [...charactersData]; // Start with default templates
+    userSavedCharacters.forEach(savedChar => {
+      // Only add saved characters if they have an ID not present in default templates
+      // or to allow users to see their custom named characters distinctly.
+      // For now, let's just ensure default templates are always there and saved ones can be loaded by ID.
+      // If a saved char has a unique ID, add it.
+      if (!options.some(opt => opt.id === savedChar.id)) {
+        options.push(savedChar);
+      }
+    });
+    // Sort alphabetically by name
+    return options.sort((a, b) => a.name.localeCompare(b.name));
+  }, [userSavedCharacters]);
+
+
   useEffect(() => {
     const loadCharacterData = async () => {
       if (!selectedCharacterId) {
@@ -277,48 +314,54 @@ export function CharacterSheetUI() {
       }
 
       setIsLoadingCharacter(true);
-      if(setAuthError) setAuthError(null);
+      if(setAuthError) setAuthError(null); // Clear previous auth errors
 
-      const defaultCharacter = charactersData.find(c => c.id === selectedCharacterId);
-      if (!defaultCharacter) {
-        setIsLoadingCharacter(false);
-        showToastHelper({ title: "Error", description: "Selected character template not found.", variant: "destructive" });
-        return;
-      }
+      let characterToLoad: Character | undefined = undefined;
 
       if (currentUser && auth.currentUser) {
         try {
+          // Attempt to load from user's saved characters first
           const characterRef = doc(db, "userCharacters", auth.currentUser.uid, "characters", selectedCharacterId);
           const docSnap = await getDoc(characterRef);
 
           if (docSnap.exists()) {
-            const savedData = docSnap.data() as Character;
-            setEditableCharacterData(JSON.parse(JSON.stringify(savedData))); // Deep clone
-            showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${savedData.name}.` });
-          } else {
-            setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter))); // Deep clone
-            showToastHelper({ title: "Character Loaded", description: `Loaded default version of ${defaultCharacter.name}. No saved data found for this user.` });
+            characterToLoad = docSnap.data() as Character;
+            showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name}.` });
           }
         } catch (err: any) {
           console.error("Error loading character from Firestore:", err);
-          showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default version.", variant: "destructive" });
-          setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter))); // Deep clone
-          if(setAuthError) setAuthError("Failed to load character data. Loading default.");
+          // Don't set authError here, just means saved version wasn't found or load failed
+          showToastHelper({ title: "Load Failed", description: "Could not load saved data. Checking default.", variant: "destructive" });
         }
-      } else {
-        setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter))); // Deep clone
       }
-      setAbilityToAddId(undefined);
+
+      // If not loaded from user data (or no user), load from default templates
+      if (!characterToLoad) {
+        characterToLoad = charactersData.find(c => c.id === selectedCharacterId);
+        if (characterToLoad) {
+           if (currentUser) { // Only show this specific toast if user was logged in but no saved data found
+             showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad.name}. No saved data found.` });
+           }
+        } else {
+          showToastHelper({ title: "Error", description: "Selected character template not found.", variant: "destructive" });
+          setIsLoadingCharacter(false);
+          return; // No character found at all
+        }
+      }
+      
+      setEditableCharacterData(JSON.parse(JSON.stringify(characterToLoad))); // Deep clone
+      setAbilityToAddId(undefined); // Reset custom ability selection
       setIsLoadingCharacter(false);
     };
 
     loadCharacterData();
   }, [selectedCharacterId, currentUser, showToastHelper, setAuthError]);
 
-  // Memoized stringified keys for complex dependencies
+
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedCooldowns), [(editableCharacterData as any)?.savedCooldowns]);
   const savedQuantitiesJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedQuantities), [(editableCharacterData as any)?.savedQuantities]);
+
 
   useEffect(() => {
     if (editableCharacterData && editableCharacterData.abilities) {
@@ -356,9 +399,9 @@ export function CharacterSheetUI() {
     }
   }, [
       editableCharacterData?.id, 
-      abilitiesJSONKey, // Use memoized stringified key
-      savedCooldownsJSONKey, // Use memoized stringified key
-      savedQuantitiesJSONKey, // Use memoized stringified key
+      abilitiesJSONKey, 
+      savedCooldownsJSONKey, 
+      savedQuantitiesJSONKey,
       parseCooldownRounds
   ]);
 
@@ -519,6 +562,13 @@ export function CharacterSheetUI() {
       const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", editableCharacterData.id);
       await setDoc(characterRef, characterToSave, { merge: true });
       showToastHelper({ title: "Character Saved!", description: `${editableCharacterData.name} has been saved successfully.` });
+      
+      // Refresh the list of saved characters for the dropdown
+       const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
+       const querySnapshot = await getDocs(charactersCollectionRef);
+       const savedChars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Character));
+       setUserSavedCharacters(savedChars);
+
     } catch (error) {
       console.error("Error saving character: ", error);
       showToastHelper({ title: "Save Failed", description: "Could not save character data. Please try again.", variant: "destructive" });
@@ -803,8 +853,11 @@ export function CharacterSheetUI() {
                     <SelectValue placeholder="Select a character" />
                   </SelectTrigger>
                   <SelectContent>
-                    {charactersData.map(char => (
-                      <SelectItem key={char.id} value={char.id}>{char.name}</SelectItem>
+                    {characterDropdownOptions.map(char => (
+                       <SelectItem key={char.id} value={char.id}>
+                         {char.name}
+                         {userSavedCharacters.some(savedChar => savedChar.id === char.id) && char.id !== 'custom' && ' (Saved)'}
+                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1021,3 +1074,4 @@ export function CharacterSheetUI() {
   );
 }
 
+    
