@@ -16,9 +16,9 @@ import type { CharacterStats, CharacterStatDefinition, StatName, Character, Abil
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/auth-context"; // Import useAuth
-import { db } from "@/lib/firebase"; // Import Firestore instance
-import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
+import { useAuth } from "@/context/auth-context"; 
+import { auth, db } from "@/lib/firebase"; 
+import { doc, setDoc, getDoc } from "firebase/firestore"; 
 
 
 const initialBaseStats: CharacterStats = {
@@ -61,7 +61,7 @@ const charactersData: Character[] = [
     id: 'custom',
     name: 'Custom Character',
     baseStats: { hp: 5, maxHp: 5, mv: 2, def: 2, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills, ath: 0, cpu: 0, dare: 0, dec: 0, emp: 0, eng: 0, inv: 0, kno: 0, occ: 0, pers: 0, sur: 0, tac: 0, tun: 0 },
+    skills: { ...initialSkills },
     abilities: [],
     avatarSeed: 'customcharacter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
@@ -73,7 +73,7 @@ const charactersData: Character[] = [
     id: 'gob',
     name: 'Gob',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { ...initialSkills, tac: 3, sur: 2, kno: 3, ath: 0, cpu: 0, dare: 0, dec: 0, emp: 0, eng: 0, inv: 0, occ: 0, pers: 0, tun: 0 },
+    skills: { ...initialSkills, tac: 3, sur: 2, kno: 3 },
     avatarSeed: 'gob',
     imageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FGob.png?alt=media&token=d5d63a0b-0465-4c50-a179-351ac7cc7fa9`,
     meleeWeapon: { name: "Knife", attack: 2 },
@@ -241,10 +241,11 @@ export function CharacterSheetUI() {
   const [editableCharacterData, setEditableCharacterData] = useState<Character | null>(null);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
-  const [isSaving, setIsSaving] = useState(false); // For save button loading state
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true); // New state for loading character
   
   const { toast } = useToast();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
 
 
   const showToastHelper = useCallback((options: { title: string; description: string; variant?: "default" | "destructive" }) => {
@@ -269,11 +270,54 @@ export function CharacterSheetUI() {
   }, []);
 
   useEffect(() => {
-    const character = charactersData.find(c => c.id === selectedCharacterId);
-    if (character) {
-      setEditableCharacterData(JSON.parse(JSON.stringify(character)));
-    }
-  }, [selectedCharacterId]);
+    const loadCharacterData = async () => {
+      if (!selectedCharacterId) {
+          setIsLoadingCharacter(false);
+          return;
+      }
+
+      setIsLoadingCharacter(true);
+      if(setAuthError) setAuthError(null);
+
+      const defaultCharacter = charactersData.find(c => c.id === selectedCharacterId);
+      if (!defaultCharacter) {
+        setIsLoadingCharacter(false);
+        showToastHelper({ title: "Error", description: "Selected character template not found.", variant: "destructive" });
+        return;
+      }
+
+      if (currentUser && auth.currentUser) {
+        try {
+          const characterRef = doc(db, "userCharacters", auth.currentUser.uid, "characters", selectedCharacterId);
+          const docSnap = await getDoc(characterRef);
+
+          if (docSnap.exists()) {
+            const savedData = docSnap.data() as Character;
+            setEditableCharacterData(JSON.parse(JSON.stringify(savedData)));
+            showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${savedData.name}.` });
+          } else {
+            setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter)));
+            showToastHelper({ title: "Character Loaded", description: `Loaded default version of ${defaultCharacter.name}. No saved data found for this user.` });
+          }
+        } catch (err: any) {
+          console.error("Error loading character from Firestore:", err);
+          showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default version.", variant: "destructive" });
+          setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter)));
+          if(setAuthError) setAuthError("Failed to load character data. Loading default.");
+        }
+      } else {
+        // Not logged in, or currentUser from context not yet fully available
+        setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter)));
+        // Optionally, inform user they need to log in to load saved data.
+        // For now, it just loads the default silently if not logged in.
+      }
+      setAbilityToAddId(undefined);
+      setIsLoadingCharacter(false);
+    };
+
+    loadCharacterData();
+  }, [selectedCharacterId, currentUser, showToastHelper, setAuthError]);
+
 
   useEffect(() => {
     if (editableCharacterData) {
@@ -287,12 +331,12 @@ export function CharacterSheetUI() {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
-            newInitialCurrentCDs[ability.id] = maxRounds; 
+            newInitialCurrentCDs[ability.id] = currentAbilityCooldowns[ability.id] !== undefined ? currentAbilityCooldowns[ability.id] : maxRounds; 
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           newMaxQTs[ability.id] = ability.maxQuantity;
-          newInitialCurrentQTs[ability.id] = ability.maxQuantity; 
+          newInitialCurrentQTs[ability.id] = currentAbilityQuantities[ability.id] !== undefined ? currentAbilityQuantities[ability.id] : ability.maxQuantity;
         }
       });
 
@@ -306,12 +350,12 @@ export function CharacterSheetUI() {
       setMaxAbilityQuantities({});
       setCurrentAbilityQuantities({});
     }
-  }, [editableCharacterData, parseCooldownRounds]);
+  }, [editableCharacterData, parseCooldownRounds, currentAbilityCooldowns, currentAbilityQuantities]);
 
 
-  const handleCharacterChange = (id: string) => {
+  const handleCharacterDropdownChange = (id: string) => {
     setSelectedCharacterId(id);
-    setAbilityToAddId(undefined);
+    // The useEffect hook watching selectedCharacterId and currentUser will handle loading.
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
@@ -381,8 +425,9 @@ export function CharacterSheetUI() {
   const resetStats = () => {
     const originalCharacter = charactersData.find(c => c.id === selectedCharacterId);
     if (originalCharacter) {
+      // Resetting to the default template, not any potentially saved state.
       setEditableCharacterData(JSON.parse(JSON.stringify(originalCharacter))); 
-      showToastHelper({ title: "Stats Reset", description: `${originalCharacter.name}'s stats and abilities have been reset to default.` });
+      showToastHelper({ title: "Stats Reset", description: `${originalCharacter.name}'s stats and abilities have been reset to default template.` });
     }
   };
 
@@ -414,6 +459,31 @@ export function CharacterSheetUI() {
         const { cost, ...abilityToAdd } = abilityInfo; 
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability];
         const newCharacterPoints = (prevData.characterPoints || 0) - abilityInfo.cost;
+        
+        // After updating abilities, re-initialize cooldowns and quantities
+        const newMaxCDs: Record<string, number> = {};
+        const newInitialCurrentCDs: Record<string, number> = {};
+        const newMaxQTs: Record<string, number> = {};
+        const newInitialCurrentQTs: Record<string, number> = {};
+
+        newAbilities.forEach(ability => {
+            if (ability.cooldown && (ability.type === 'Action' || ability.type === 'Interrupt')) {
+                const maxRounds = parseCooldownRounds(ability.cooldown);
+                if (maxRounds !== undefined) {
+                newMaxCDs[ability.id] = maxRounds;
+                newInitialCurrentCDs[ability.id] = maxRounds; 
+                }
+            }
+            if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
+                newMaxQTs[ability.id] = ability.maxQuantity;
+                newInitialCurrentQTs[ability.id] = ability.maxQuantity;
+            }
+        });
+        setMaxAbilityCooldowns(newMaxCDs);
+        setCurrentAbilityCooldowns(newInitialCurrentCDs);
+        setMaxAbilityQuantities(newMaxQTs);
+        setCurrentAbilityQuantities(newInitialCurrentQTs);
+
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
     
@@ -432,13 +502,21 @@ export function CharacterSheetUI() {
     }
 
     setIsSaving(true);
+    if(setAuthError) setAuthError(null);
     try {
+      const characterToSave = {
+        ...editableCharacterData,
+        // Store current cooldowns and quantities with the saved character data
+        savedCooldowns: currentAbilityCooldowns,
+        savedQuantities: currentAbilityQuantities,
+      };
       const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", editableCharacterData.id);
-      await setDoc(characterRef, editableCharacterData, { merge: true });
+      await setDoc(characterRef, characterToSave, { merge: true });
       showToastHelper({ title: "Character Saved!", description: `${editableCharacterData.name} has been saved successfully.` });
     } catch (error) {
       console.error("Error saving character: ", error);
       showToastHelper({ title: "Save Failed", description: "Could not save character data. Please try again.", variant: "destructive" });
+      if(setAuthError) setAuthError("Failed to save character data.");
     } finally {
       setIsSaving(false);
     }
@@ -665,7 +743,7 @@ export function CharacterSheetUI() {
     );
   };
 
-  if (authLoading || !editableCharacterData) {
+  if (authLoading || isLoadingCharacter || !editableCharacterData) {
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-xl p-10 text-center">
             <CardTitle>Loading Character Data...</CardTitle>
@@ -714,7 +792,7 @@ export function CharacterSheetUI() {
             <div className="md:col-span-1 space-y-4">
               <div className="w-full">
                 <Label htmlFor="characterName" className="text-lg font-medium mb-1 block">Character</Label>
-                <Select value={selectedCharacterId} onValueChange={handleCharacterChange}>
+                <Select value={selectedCharacterId} onValueChange={handleCharacterDropdownChange}>
                   <SelectTrigger id="characterName" className="text-xl p-2 w-full">
                     <SelectValue placeholder="Select a character" />
                   </SelectTrigger>
@@ -936,4 +1014,3 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
-
