@@ -162,7 +162,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
                   alt={`${randomlySelectedEvent.Color} event background`}
                   fill
                   style={{ objectFit: 'cover' }}
-                  className="absolute inset-0 z-0 opacity-30 pointer-events-none"
+                  className="absolute inset-0 z-0 opacity-90 pointer-events-none"
                   data-ai-hint="event background texture"
                 />
               )}
