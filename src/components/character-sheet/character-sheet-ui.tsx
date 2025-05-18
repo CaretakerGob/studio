@@ -55,19 +55,19 @@ const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity'>,
 
 
 const skillDefinitions: SkillDefinition[] = [
-  { id: 'ath', label: "Athletics", icon: PersonStanding, description: "Prowess at swimming, running, tumbling, and parkour." },
-  { id: 'cpu', label: "Computer Use", icon: Laptop, description: "Adept at hacking, online research, and navigating networks." },
-  { id: 'dare', label: "Dare Devil", icon: Star, description: "Fearless and skilled driver/pilot, performs spectacular stunts." },
-  { id: 'dec', label: "Deception", icon: VenetianMask, description: "Skill in lying, manipulation, sleight of hand, and stealth." },
-  { id: 'emp', label: "Empathy", icon: HeartHandshake, description: "Ability to triage, tutor, handle animals, and sense motives." },
-  { id: 'eng', label: "Engineer", icon: Wrench, description: "Proficiency in crafting, repairing, using machinery, and disabling devices." },
-  { id: 'inv', label: "Investigate", icon: Search, description: "Ability to gather info, find clues, and research." },
-  { id: 'kno', label: "Knowledge", icon: Library, description: "Filled with useful facts on various subjects (not Occult, Eng, CPU)." },
-  { id: 'occ', label: "Occult", icon: BookMarked, description: "Knowledge of rituals, demonology, alchemy, and ancient scripts." },
-  { id: 'pers', label: "Personality", icon: Smile, description: "Inner willpower and charisma (Inspirational or Intimidating)." },
-  { id: 'sur', label: "Survivalist", icon: Leaf, description: "Skilled at living off the land, tracking, and navigation." },
-  { id: 'tac', label: "Tactician", icon: ClipboardList, description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts." },
-  { id: 'tun', label: "Tuner", icon: SlidersHorizontal, description: "Rare individuals born with or acquired skill for visions, sensing danger." },
+  { id: 'ath', label: "Athletics (ATH)", icon: PersonStanding, description: "Prowess at swimming, running, tumbling, and parkour." },
+  { id: 'cpu', label: "Computer Use (CPU)", icon: Laptop, description: "Adept at hacking, online research, and navigating networks." },
+  { id: 'dare', label: "Dare Devil (DARE)", icon: Star, description: "Fearless and skilled driver/pilot, performs spectacular stunts." },
+  { id: 'dec', label: "Deception (DEC)", icon: VenetianMask, description: "Skill in lying, manipulation, sleight of hand, and stealth." },
+  { id: 'emp', label: "Empathy (EMP)", icon: HeartHandshake, description: "Ability to triage, tutor, handle animals, and sense motives." },
+  { id: 'eng', label: "Engineer (ENG)", icon: Wrench, description: "Proficiency in crafting, repairing, using machinery, and disabling devices." },
+  { id: 'inv', label: "Investigate (INV)", icon: Search, description: "Ability to gather info, find clues, and research." },
+  { id: 'kno', label: "Knowledge (KNO)", icon: Library, description: "Filled with useful facts on various subjects (not Occult, Eng, CPU)." },
+  { id: 'occ', label: "Occult (OCC)", icon: BookMarked, description: "Knowledge of rituals, demonology, alchemy, and ancient scripts." },
+  { id: 'pers', label: "Personality (PERS)", icon: Smile, description: "Inner willpower and charisma (Inspirational or Intimidating)." },
+  { id: 'sur', label: "Survivalist (SUR)", icon: Leaf, description: "Skilled at living off the land, tracking, and navigation." },
+  { id: 'tac', label: "Tactician (TAC)", icon: ClipboardList, description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts." },
+  { id: 'tun', label: "Tuner (TUN)", icon: SlidersHorizontal, description: "Rare individuals born with or acquired skill for visions, sensing danger." },
 ];
 
 
@@ -440,7 +440,7 @@ export function CharacterSheetUI() {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id, // Added ID to re-trigger if character changes
+      editableCharacterData?.id, 
       abilitiesJSONKey,
       savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
@@ -531,23 +531,24 @@ export function CharacterSheetUI() {
 
   const handleSellStatPoint = (statKey: Exclude<StatName, 'maxHp' | 'maxSanity'>) => {
     if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
-
+  
     const config = customStatPointBuyConfig[statKey];
     const currentVal = editableCharacterData.baseStats[statKey];
     const currentPoints = editableCharacterData.characterPoints || 0;
-
-    if (currentVal <= config.base) { // Use base from config (0)
-      showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below ${config.base}.`, variant: "destructive" });
+  
+    // Ensure stat cannot go below 1 if it has been bought
+    if (currentVal <= 1) {
+      showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
-
+  
     setEditableCharacterData(prev => {
       if (!prev) return null;
       const newStats = { ...prev.baseStats };
       newStats[statKey] = currentVal - 1;
       if (statKey === 'hp') newStats.maxHp = currentVal - 1;
       if (statKey === 'sanity') newStats.maxSanity = currentVal - 1;
-
+  
       return {
         ...prev,
         baseStats: newStats,
@@ -593,7 +594,7 @@ export function CharacterSheetUI() {
          characterToSet.name = originalCharacter.name; 
          characterToSet.skills = { ...initialSkills }; 
          characterToSet.abilities = []; 
-         characterToSet.baseStats = { ...initialCustomCharacterStats }; // Reset stats to 0 for custom
+         characterToSet.baseStats = { ...initialCustomCharacterStats }; 
          characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; 
        }
       setEditableCharacterData(characterToSet);
@@ -891,7 +892,7 @@ export function CharacterSheetUI() {
             {label}
           </Label>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => handleSellStatPoint(statKey)} disabled={currentValue <= config.base} className="h-8 w-8">
+            <Button variant="outline" size="icon" onClick={() => handleSellStatPoint(statKey)} disabled={currentValue <= 1} className="h-8 w-8">
               <Minus className="h-4 w-4" />
             </Button>
             <span className="w-12 h-8 text-center text-lg font-bold flex items-center justify-center">{currentValue}</span>
