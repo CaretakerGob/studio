@@ -242,7 +242,7 @@ export function CharacterSheetUI() {
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true); // New state for loading character
+  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true); 
   
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
@@ -293,23 +293,20 @@ export function CharacterSheetUI() {
 
           if (docSnap.exists()) {
             const savedData = docSnap.data() as Character;
-            setEditableCharacterData(JSON.parse(JSON.stringify(savedData)));
+            setEditableCharacterData(JSON.parse(JSON.stringify(savedData))); // Deep clone
             showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${savedData.name}.` });
           } else {
-            setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter)));
+            setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter))); // Deep clone
             showToastHelper({ title: "Character Loaded", description: `Loaded default version of ${defaultCharacter.name}. No saved data found for this user.` });
           }
         } catch (err: any) {
           console.error("Error loading character from Firestore:", err);
           showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default version.", variant: "destructive" });
-          setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter)));
+          setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter))); // Deep clone
           if(setAuthError) setAuthError("Failed to load character data. Loading default.");
         }
       } else {
-        // Not logged in, or currentUser from context not yet fully available
-        setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter)));
-        // Optionally, inform user they need to log in to load saved data.
-        // For now, it just loads the default silently if not logged in.
+        setEditableCharacterData(JSON.parse(JSON.stringify(defaultCharacter))); // Deep clone
       }
       setAbilityToAddId(undefined);
       setIsLoadingCharacter(false);
@@ -318,25 +315,32 @@ export function CharacterSheetUI() {
     loadCharacterData();
   }, [selectedCharacterId, currentUser, showToastHelper, setAuthError]);
 
+  // Memoized stringified keys for complex dependencies
+  const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
+  const savedCooldownsJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedCooldowns), [(editableCharacterData as any)?.savedCooldowns]);
+  const savedQuantitiesJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedQuantities), [(editableCharacterData as any)?.savedQuantities]);
 
   useEffect(() => {
-    if (editableCharacterData) {
+    if (editableCharacterData && editableCharacterData.abilities) {
       const newMaxCDs: Record<string, number> = {};
       const newInitialCurrentCDs: Record<string, number> = {};
       const newMaxQTs: Record<string, number> = {};
       const newInitialCurrentQTs: Record<string, number> = {};
 
-      (editableCharacterData.abilities || []).forEach(ability => {
+      const savedCDs = (editableCharacterData as any).savedCooldowns as Record<string, number> | undefined;
+      const savedQTs = (editableCharacterData as any).savedQuantities as Record<string, number> | undefined;
+
+      editableCharacterData.abilities.forEach(ability => {
         if (ability.cooldown && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
-            newInitialCurrentCDs[ability.id] = currentAbilityCooldowns[ability.id] !== undefined ? currentAbilityCooldowns[ability.id] : maxRounds; 
+            newInitialCurrentCDs[ability.id] = (savedCDs && savedCDs[ability.id] !== undefined) ? savedCDs[ability.id] : maxRounds; 
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
           newMaxQTs[ability.id] = ability.maxQuantity;
-          newInitialCurrentQTs[ability.id] = currentAbilityQuantities[ability.id] !== undefined ? currentAbilityQuantities[ability.id] : ability.maxQuantity;
+          newInitialCurrentQTs[ability.id] = (savedQTs && savedQTs[ability.id] !== undefined) ? savedQTs[ability.id] : ability.maxQuantity;
         }
       });
 
@@ -350,12 +354,17 @@ export function CharacterSheetUI() {
       setMaxAbilityQuantities({});
       setCurrentAbilityQuantities({});
     }
-  }, [editableCharacterData, parseCooldownRounds, currentAbilityCooldowns, currentAbilityQuantities]);
+  }, [
+      editableCharacterData?.id, 
+      abilitiesJSONKey, // Use memoized stringified key
+      savedCooldownsJSONKey, // Use memoized stringified key
+      savedQuantitiesJSONKey, // Use memoized stringified key
+      parseCooldownRounds
+  ]);
 
 
   const handleCharacterDropdownChange = (id: string) => {
     setSelectedCharacterId(id);
-    // The useEffect hook watching selectedCharacterId and currentUser will handle loading.
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
@@ -425,7 +434,6 @@ export function CharacterSheetUI() {
   const resetStats = () => {
     const originalCharacter = charactersData.find(c => c.id === selectedCharacterId);
     if (originalCharacter) {
-      // Resetting to the default template, not any potentially saved state.
       setEditableCharacterData(JSON.parse(JSON.stringify(originalCharacter))); 
       showToastHelper({ title: "Stats Reset", description: `${originalCharacter.name}'s stats and abilities have been reset to default template.` });
     }
@@ -460,7 +468,6 @@ export function CharacterSheetUI() {
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability];
         const newCharacterPoints = (prevData.characterPoints || 0) - abilityInfo.cost;
         
-        // After updating abilities, re-initialize cooldowns and quantities
         const newMaxCDs: Record<string, number> = {};
         const newInitialCurrentCDs: Record<string, number> = {};
         const newMaxQTs: Record<string, number> = {};
@@ -506,7 +513,6 @@ export function CharacterSheetUI() {
     try {
       const characterToSave = {
         ...editableCharacterData,
-        // Store current cooldowns and quantities with the saved character data
         savedCooldowns: currentAbilityCooldowns,
         savedQuantities: currentAbilityQuantities,
       };
@@ -1014,3 +1020,4 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
