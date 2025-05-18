@@ -13,16 +13,16 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Dices, Layers, UserCircle, Users, Home, Settings, PanelLeft, List, CalendarDays } from 'lucide-react';
+import { Dices, Layers, UserCircle, Home, Settings, PanelLeft, List, CalendarDays } from 'lucide-react'; // Removed Users icon
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/character-sheet', label: 'Character Sheet', icon: UserCircle },
   { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
   { href: '/card-generator', label: 'Card Generator', icon: Layers },
-  { href: '/turn-tracker', label: 'Turn Tracker', icon: Users },
-  { href: '/events', label: 'Item List', icon: List }, // Swapped: Item List now points to /events
-  { href: '/item-list', label: 'Events', icon: CalendarDays }, // Swapped: Events now points to /item-list
+  // { href: '/turn-tracker', label: 'Turn Tracker', icon: Users }, // Commented out Turn Tracker
+  { href: '/events', label: 'Item List', icon: List },
+  { href: '/item-list', label: 'Events', icon: CalendarDays },
 ];
 
 export function AppSidebar() {

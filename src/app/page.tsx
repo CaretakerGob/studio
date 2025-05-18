@@ -1,6 +1,7 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices, Layers, UserCircle, Users } from "lucide-react";
+import { Dices, Layers, UserCircle } from "lucide-react"; // Removed Users icon
 import Link from "next/link";
 
 export default function HomePage() {
@@ -8,7 +9,7 @@ export default function HomePage() {
     { name: "Character Sheet", href: "/character-sheet", icon: UserCircle, description: "Track your hero's stats and progress." },
     { name: "Dice Roller", href: "/dice-roller", icon: Dices, description: "Roll various dice for your game actions." },
     { name: "Card Generator", href: "/card-generator", icon: Layers, description: "Draw random cards from selected decks." },
-    { name: "Turn Tracker", href: "/turn-tracker", icon: Users, description: "Manage player turns and game flow." },
+    // { name: "Turn Tracker", href: "/turn-tracker", icon: Users, description: "Manage player turns and game flow." }, // Commented out Turn Tracker
   ];
 
   return (
