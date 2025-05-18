@@ -151,7 +151,9 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
             <Card key={eventKey} className="w-full max-w-lg bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
               <CardHeader>
                 <CardTitle className="text-xl text-primary">{randomlySelectedEvent.Type || 'Event'}</CardTitle>
-                <CardDescription className="text-sm">Color: {randomlySelectedEvent.Color} {randomlySelectedEvent.Insert && `(Insert: ${randomlySelectedEvent.Insert})`} {randomlySelectedEvent.Count && `(Count: ${randomlySelectedEvent.Count})`}</CardDescription>
+                <CardDescription className="text-sm">
+                  Color: {randomlySelectedEvent.Color}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground whitespace-pre-line">{randomlySelectedEvent.Description}</p>
