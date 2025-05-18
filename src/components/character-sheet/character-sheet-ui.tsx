@@ -268,7 +268,6 @@ export function CharacterSheetUI() {
     return match ? parseInt(match[0], 10) : undefined;
   }, []);
 
-  // Effect to fetch user's saved characters list for the dropdown
   useEffect(() => {
     const fetchUserSavedCharacters = async () => {
       if (currentUser && auth.currentUser) {
@@ -283,26 +282,36 @@ export function CharacterSheetUI() {
           setUserSavedCharacters([]);
         }
       } else {
-        setUserSavedCharacters([]); // Clear if no user
+        setUserSavedCharacters([]); 
       }
     };
     fetchUserSavedCharacters();
-  }, [currentUser, showToastHelper]);
+  }, [currentUser, showToastHelper, isSaving]); // Added isSaving to refresh dropdown after save
 
 
   const characterDropdownOptions = useMemo(() => {
-    const options = [...charactersData]; // Start with default templates
-    userSavedCharacters.forEach(savedChar => {
-      // Only add saved characters if they have an ID not present in default templates
-      // or to allow users to see their custom named characters distinctly.
-      // For now, let's just ensure default templates are always there and saved ones can be loaded by ID.
-      // If a saved char has a unique ID, add it.
-      if (!options.some(opt => opt.id === savedChar.id)) {
-        options.push(savedChar);
+    return charactersData.map(templateChar => {
+      const savedUserVersion = userSavedCharacters.find(savedChar => savedChar.id === templateChar.id);
+      let displayLabel = templateChar.name; 
+  
+      if (savedUserVersion) {
+        if (templateChar.id === 'custom') {
+          if (savedUserVersion.name && savedUserVersion.name !== templateChar.name) {
+            displayLabel = `${savedUserVersion.name} (${templateChar.name})`; 
+          } else {
+            displayLabel = `${templateChar.name} (Saved)`;
+          }
+        } else {
+          displayLabel = `${templateChar.name} (Saved)`;
+        }
       }
-    });
-    // Sort alphabetically by name
-    return options.sort((a, b) => a.name.localeCompare(b.name));
+  
+      return {
+        id: templateChar.id,
+        name: templateChar.name, 
+        displayNameInDropdown: displayLabel,
+      };
+    }).sort((a, b) => a.displayNameInDropdown.localeCompare(b.displayNameInDropdown));
   }, [userSavedCharacters]);
 
 
@@ -314,43 +323,41 @@ export function CharacterSheetUI() {
       }
 
       setIsLoadingCharacter(true);
-      if(setAuthError) setAuthError(null); // Clear previous auth errors
+      if(setAuthError) setAuthError(null);
 
       let characterToLoad: Character | undefined = undefined;
+      const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (currentUser && auth.currentUser) {
         try {
-          // Attempt to load from user's saved characters first
-          const characterRef = doc(db, "userCharacters", auth.currentUser.uid, "characters", selectedCharacterId);
+          const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
           const docSnap = await getDoc(characterRef);
 
           if (docSnap.exists()) {
-            characterToLoad = docSnap.data() as Character;
+            characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
             showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name}.` });
           }
         } catch (err: any) {
           console.error("Error loading character from Firestore:", err);
-          // Don't set authError here, just means saved version wasn't found or load failed
           showToastHelper({ title: "Load Failed", description: "Could not load saved data. Checking default.", variant: "destructive" });
         }
       }
 
-      // If not loaded from user data (or no user), load from default templates
       if (!characterToLoad) {
-        characterToLoad = charactersData.find(c => c.id === selectedCharacterId);
+        characterToLoad = defaultTemplate;
         if (characterToLoad) {
-           if (currentUser) { // Only show this specific toast if user was logged in but no saved data found
+           if (currentUser) { 
              showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad.name}. No saved data found.` });
            }
         } else {
           showToastHelper({ title: "Error", description: "Selected character template not found.", variant: "destructive" });
           setIsLoadingCharacter(false);
-          return; // No character found at all
+          return; 
         }
       }
       
-      setEditableCharacterData(JSON.parse(JSON.stringify(characterToLoad))); // Deep clone
-      setAbilityToAddId(undefined); // Reset custom ability selection
+      setEditableCharacterData(JSON.parse(JSON.stringify(characterToLoad))); 
+      setAbilityToAddId(undefined); 
       setIsLoadingCharacter(false);
     };
 
@@ -563,12 +570,6 @@ export function CharacterSheetUI() {
       await setDoc(characterRef, characterToSave, { merge: true });
       showToastHelper({ title: "Character Saved!", description: `${editableCharacterData.name} has been saved successfully.` });
       
-      // Refresh the list of saved characters for the dropdown
-       const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
-       const querySnapshot = await getDocs(charactersCollectionRef);
-       const savedChars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Character));
-       setUserSavedCharacters(savedChars);
-
     } catch (error) {
       console.error("Error saving character: ", error);
       showToastHelper({ title: "Save Failed", description: "Could not save character data. Please try again.", variant: "destructive" });
@@ -853,10 +854,9 @@ export function CharacterSheetUI() {
                     <SelectValue placeholder="Select a character" />
                   </SelectTrigger>
                   <SelectContent>
-                    {characterDropdownOptions.map(char => (
-                       <SelectItem key={char.id} value={char.id}>
-                         {char.name}
-                         {userSavedCharacters.some(savedChar => savedChar.id === char.id) && char.id !== 'custom' && ' (Saved)'}
+                    {characterDropdownOptions.map(charOpt => (
+                       <SelectItem key={charOpt.id} value={charOpt.id}>
+                         {charOpt.displayNameInDropdown}
                        </SelectItem>
                     ))}
                   </SelectContent>
