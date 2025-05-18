@@ -1,5 +1,5 @@
 
-import { ItemListUI, type ItemData } from "@/components/item-list/item-list-ui"; // Still using ItemListUI for structure
+import { EventsSheetUI, type EventsSheetData } from "@/components/events/events-sheet-ui"; // Updated import
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -8,14 +8,14 @@ export const metadata: Metadata = {
 };
 
 // This page is for the "/events" route, which is linked by "Item List" in the sidebar.
-// It will display an empty item list for now.
+// It will display an empty item list for now, using the renamed component.
 export default async function EmptyItemListPage() {
-  const items: ItemData[] = []; // Empty array for items
+  const items: EventsSheetData[] = []; // Use the new type
   return (
     <div className="w-full">
-      <ItemListUI 
+      <EventsSheetUI // Updated component usage
         items={items} 
-        title="Item List"
+        title="Item List" // This page is titled "Item List"
         cardDescription="View a list of items."
       />
     </div>

@@ -1,16 +1,16 @@
 
 import { google } from 'googleapis';
-import { ItemListUI, type ItemData } from "@/components/item-list/item-list-ui";
+import { EventsSheetUI, type EventsSheetData } from "@/components/events/events-sheet-ui"; // Updated import
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Events - Beast Companion', // Changed title
-  description: 'View game events loaded from Google Sheets.', // Changed description
+  title: 'Events - Beast Companion', // This page displays the Google Sheet data, which the user calls "Events"
+  description: 'View game events loaded from Google Sheets.',
 };
 
 // This page is for the "/item-list" route, which is linked by "Events" in the sidebar.
 // It will display the ITEM data from the Google Sheet (which the user refers to as Events).
-async function getItemsFromGoogleSheet(): Promise<ItemData[]> {
+async function getSheetData(): Promise<EventsSheetData[]> { // Renamed function and return type
   const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID, GOOGLE_SHEET_RANGE } = process.env;
 
   const missingVars: string[] = [];
@@ -67,7 +67,7 @@ async function getItemsFromGoogleSheet(): Promise<ItemData[]> {
         return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: errorMessage }];
     }
 
-    return rows.slice(1).map((row: any[]): ItemData => ({
+    return rows.slice(1).map((row: any[]): EventsSheetData => ({ // Updated return type
       Insert: row[insertIndex] || '',
       Count: row[countIndex] || '',
       Color: row[colorIndex] || '',
@@ -83,12 +83,12 @@ async function getItemsFromGoogleSheet(): Promise<ItemData[]> {
 }
 
 export default async function DisplayEventsFromSheetPage() { 
-  const eventsData = await getItemsFromGoogleSheet(); // Using existing function, data structure is ItemData
+  const eventsData = await getSheetData(); // Renamed variable
   return (
     <div className="w-full">
-      <ItemListUI 
-        items={eventsData} 
-        title="Events"
+      <EventsSheetUI // Updated component usage
+        items={eventsData} // Prop name is items, but data is eventsData
+        title="Events" // This page is titled "Events"
         cardDescription="Browse through game events loaded from Google Sheets."
       />
     </div>
