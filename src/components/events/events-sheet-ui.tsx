@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +25,11 @@ interface EventsSheetUIProps {
   title: string;
   cardDescription: string;
 }
+
+const eventBackgroundImages: Record<string, string> = {
+  "Black Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FBlack%20Chaos%20BG.png?alt=media&token=bdde52e0-a4ed-4ca7-829a-15e76738d1f7",
+  // Add other color/type to image URL mappings here
+};
 
 export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIProps) {
   const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
@@ -59,7 +65,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     }
 
     setIsLoading(true);
-    setRandomlySelectedEvent(null); // Clear previous before generating new
+    setRandomlySelectedEvent(null); 
 
     const filteredItems = items.filter(item => item.Color === selectedColor);
 
@@ -75,22 +81,21 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
         const randomIndex = Math.floor(Math.random() * filteredItems.length);
         const newEvent = filteredItems[randomIndex];
         setRandomlySelectedEvent(newEvent);
-        setEventKey(prev => prev + 1); // Trigger animation
+        setEventKey(prev => prev + 1); 
         toast({
           title: "Event Generated!",
           description: `A random event from "${selectedColor}" has been drawn.`,
         });
       }
       setIsLoading(false);
-    }, 500); // Simulate loading
+    }, 500); 
   };
   
   const systemError = items.length === 1 && items[0].Type === 'System' && items[0].Color === 'Error';
-
+  const currentEventBgImage = randomlySelectedEvent ? eventBackgroundImages[randomlySelectedEvent.Color] : undefined;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-      {/* Controls Card */}
       <Card className="md:col-span-1 shadow-xl">
         <CardHeader>
           <div className="flex items-center">
@@ -126,7 +131,6 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
         </CardContent>
       </Card>
 
-      {/* Display Card for Random Event */}
       <Card className="md:col-span-2 shadow-xl min-h-[300px] flex flex-col justify-start items-center">
         <CardHeader className="w-full text-center">
           <CardTitle className="text-2xl">{title}</CardTitle>
@@ -148,16 +152,31 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
               <Skeleton className="h-20 w-full" />
             </div>
           ) : randomlySelectedEvent ? (
-            <Card key={eventKey} className="w-full max-w-lg bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
-              <CardHeader>
-                <CardTitle className="text-xl text-primary">{randomlySelectedEvent.Type || 'Event'}</CardTitle>
-                <CardDescription className="text-sm">
-                  Color: {randomlySelectedEvent.Color}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground whitespace-pre-line">{randomlySelectedEvent.Description}</p>
-              </CardContent>
+            <Card 
+              key={eventKey} 
+              className="w-full max-w-lg bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500 relative overflow-hidden"
+            >
+              {currentEventBgImage && (
+                <Image
+                  src={currentEventBgImage}
+                  alt={`${randomlySelectedEvent.Color} event background`}
+                  fill
+                  style={{ objectFit: 'cover' }}
+                  className="absolute inset-0 z-0 opacity-20 pointer-events-none"
+                  data-ai-hint="event background texture"
+                />
+              )}
+              <div className="relative z-10 bg-card/70 p-1 rounded-lg"> {/* Added a semi-transparent bg for content */}
+                <CardHeader>
+                  <CardTitle className="text-xl text-primary">{randomlySelectedEvent.Type || 'Event'}</CardTitle>
+                  <CardDescription className="text-sm">
+                    Color: {randomlySelectedEvent.Color}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground whitespace-pre-line">{randomlySelectedEvent.Description}</p>
+                </CardContent>
+              </div>
             </Card>
           ) : (
             <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50">
