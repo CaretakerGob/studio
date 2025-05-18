@@ -30,6 +30,9 @@ const eventBackgroundImages: Record<string, string> = {
   "Black Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FBlack%20Chaos%20BG.png?alt=media&token=bdde52e0-a4ed-4ca7-829a-15e76738d1f7",
   "Blue Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FBlue%20Chaos%20BG.png?alt=media&token=3dc71f42-2bc3-4346-ae47-06c40f3d0c7d",
   "Gray Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FGray%20Chaos%20BG.png?alt=media&token=711fbd2f-460e-4544-a817-90ce4bd44777",
+  "Green Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FGreen%20Chaos%20BG.png?alt=media&token=1715a5cf-d6e0-4c2e-9312-4692cc151cb2",
+  "Red Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FRed%20Chaos%20BG.png?alt=media&token=0a3782a4-deeb-4239-b58e-2ad618471154",
+  "White Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FWhite%20Chaos%20BG.png?alt=media&token=e561d02f-7cf9-4b74-8c1f-ecd06954dff0",
   // Add other color/type to image URL mappings here
 };
 
