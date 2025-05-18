@@ -1,13 +1,7 @@
+import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
+// import { getFirestore, type Firestore } from "firebase/firestore"; // We'll use this later
 
-// This is a placeholder for Firebase initialization code.
-// In a real Firebase project, you would initialize the Firebase app here
-// using your Firebase project configuration.
-
-// import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-// import { getAuth, type Auth } from "firebase/auth";
-// import { getFirestore, type Firestore } from "firebase/firestore";
-
-/*
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -19,23 +13,26 @@ const firebaseConfig = {
 
 let app: FirebaseApp;
 let auth: Auth;
-let db: Firestore;
+// let db: Firestore; // We'll use this later
 
+// Initialize Firebase only on the client side and only once
 if (typeof window !== 'undefined' && !getApps().length) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    // db = getFirestore(app); // We'll initialize Firestore later
+    console.log("Firebase initialized successfully.");
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
+    // Optionally, provide a more user-friendly error or fallback
+  }
 } else if (getApps().length > 0) {
   app = getApps()[0];
   auth = getAuth(app);
-  db = getFirestore(app);
+  // db = getFirestore(app); // We'll initialize Firestore later
 }
 
-// Export the Firebase services if they are initialized
-// export { app, auth, db };
-*/
-
-// For now, this file is just a placeholder.
-// console.log("Firebase placeholder initialized (actual initialization would be here).");
-
-export {}; // Ensures this file is treated as a module.
+// Export the Firebase services. Ensure auth is exported even if initialization fails,
+// so app doesn't break, but auth-dependent features would need handling.
+// @ts-ignore
+export { app, auth }; // Add db here later
