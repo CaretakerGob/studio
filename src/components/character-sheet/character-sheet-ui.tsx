@@ -28,11 +28,12 @@ const initialBaseStats: CharacterStats = {
   sanity: 5, maxSanity: 5,
 };
 
+// Updated initial stats for Custom Character
 const initialCustomCharacterStats: CharacterStats = {
-  hp: 0, maxHp: 0,
-  mv: 0,
-  def: 0,
-  sanity: 0, maxSanity: 0,
+  hp: 1, maxHp: 1,
+  mv: 1,
+  def: 1,
+  sanity: 1, maxSanity: 1,
 };
 
 const initialSkills: Skills = {
@@ -46,11 +47,11 @@ const statDefinitions: CharacterStatDefinition[] = [
   { id: 'def', label: "Defense (DEF)", icon: Shield, description: "Reduces incoming damage." },
 ];
 
-const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity'>, { cost: number; max: number; base: 0 }> = {
-  hp: { cost: 5, max: 7, base: 0 },
-  sanity: { cost: 10, max: 5, base: 0 },
-  mv: { cost: 2, max: 6, base: 0 },
-  def: { cost: 5, max: 3, base: 0 },
+const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity'>, { cost: number; max: number; base: number }> = {
+  hp: { cost: 5, max: 7, base: 1 }, // Base is now 1, meaning first point is "free" or part of starting package
+  sanity: { cost: 10, max: 5, base: 1 },
+  mv: { cost: 2, max: 6, base: 1 },
+  def: { cost: 5, max: 3, base: 1 },
 };
 
 
@@ -75,14 +76,14 @@ const charactersData: Character[] = [
   {
     id: 'custom',
     name: 'Custom Character',
-    baseStats: { ...initialCustomCharacterStats },
-    skills: { ...initialSkills }, 
+    baseStats: { ...initialCustomCharacterStats }, // Uses the new baseline stats
+    skills: { ...initialSkills },
     abilities: [],
     avatarSeed: 'customcharacter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
-    characterPoints: 375, 
+    characterPoints: 375, // Starting CP after baseline stats
   },
   {
     id: 'gob',
@@ -342,12 +343,13 @@ export function CharacterSheetUI() {
       if(setAuthError) setAuthError(null);
 
       let characterToLoad: Character | undefined = undefined;
+      let docSnap; // Declare docSnap here to check its existence later
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (currentUser && auth.currentUser) {
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
-          const docSnap = await getDoc(characterRef);
+          docSnap = await getDoc(characterRef); // Assign to docSnap
 
           if (docSnap.exists()) {
             characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
@@ -363,7 +365,6 @@ export function CharacterSheetUI() {
         characterToLoad = defaultTemplate;
         if (characterToLoad) {
            if (currentUser) {
-             // Don't show "default loaded" if it's the custom character, as its base is always "default" until modified.
              if (characterToLoad.id !== 'custom') {
                 showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad.name}. No saved data found.` });
              }
@@ -383,7 +384,8 @@ export function CharacterSheetUI() {
           if (!characterToLoad.skills || Object.keys(characterToLoad.skills).length === 0) {
              characterToLoad.skills = { ...initialSkills };
           }
-          if (!characterToLoad.baseStats || Object.values(characterToLoad.baseStats).every(v => v === 0 || v === undefined) && characterToLoad.id === 'custom' && !docSnap?.exists() ) { // only if no saved data
+           // Check if docSnap exists before resetting baseStats for custom character
+          if (!characterToLoad.baseStats || (Object.values(characterToLoad.baseStats).every(v => v === 0 || v === undefined) && !docSnap?.exists())) {
              characterToLoad.baseStats = { ...initialCustomCharacterStats };
           }
       }
@@ -397,7 +399,7 @@ export function CharacterSheetUI() {
 
     loadCharacterData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError]); // Removed showToastHelper to break potential loop
+  }, [selectedCharacterId, currentUser, setAuthError]);
 
 
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
@@ -440,7 +442,7 @@ export function CharacterSheetUI() {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id, 
+      editableCharacterData?.id,
       abilitiesJSONKey,
       savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
@@ -536,8 +538,7 @@ export function CharacterSheetUI() {
     const currentVal = editableCharacterData.baseStats[statKey];
     const currentPoints = editableCharacterData.characterPoints || 0;
   
-    // Ensure stat cannot go below 1 if it has been bought
-    if (currentVal <= 1) {
+    if (currentVal <= 1) { // Prevents going below the initial baseline of 1
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -594,8 +595,8 @@ export function CharacterSheetUI() {
          characterToSet.name = originalCharacter.name; 
          characterToSet.skills = { ...initialSkills }; 
          characterToSet.abilities = []; 
-         characterToSet.baseStats = { ...initialCustomCharacterStats }; 
-         characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; 
+         characterToSet.baseStats = { ...initialCustomCharacterStats }; // Reset to new baseline
+         characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; // Reset CP
        }
       setEditableCharacterData(characterToSet);
       showToastHelper({ title: "Stats Reset", description: `${characterToSet.name}'s stats, skills, and abilities have been reset to default template.` });
