@@ -1,89 +1,94 @@
 
 import { google } from 'googleapis';
-import { EventsUI } from "@/components/events/events-ui";
-import type { EventData } from "@/types/event";
+import { ItemListUI, type ItemData } from "@/components/item-list/item-list-ui";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Game Events - Riddle of the Beast Companion',
-  description: 'Track and manage game events from Google Sheets.',
+  title: 'Game Data from Sheet - Beast Companion', // Changed title
+  description: 'View game data loaded from Google Sheets.', // Changed description
 };
 
-async function getEventsFromGoogleSheet(): Promise<EventData[]> {
-  const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, EVENTS_GOOGLE_SHEET_ID, EVENTS_GOOGLE_SHEET_RANGE } = process.env;
+// This page is for the "/item-list" route, which is linked by "Events" in the sidebar.
+// It will display the ITEM data from the Google Sheet.
+async function getItemsFromGoogleSheet(): Promise<ItemData[]> {
+  const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID, GOOGLE_SHEET_RANGE } = process.env;
 
   const missingVars: string[] = [];
   if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) missingVars.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
   if (!GOOGLE_PRIVATE_KEY) missingVars.push('GOOGLE_PRIVATE_KEY');
-  if (!EVENTS_GOOGLE_SHEET_ID) missingVars.push('EVENTS_GOOGLE_SHEET_ID');
-  if (!EVENTS_GOOGLE_SHEET_RANGE) missingVars.push('EVENTS_GOOGLE_SHEET_RANGE');
+  if (!GOOGLE_SHEET_ID) missingVars.push('GOOGLE_SHEET_ID'); // This is for the item sheet
+  if (!GOOGLE_SHEET_RANGE) missingVars.push('GOOGLE_SHEET_RANGE'); // This is for the item sheet range
 
   if (missingVars.length > 0) {
-    const detailedErrorMessage = `Events Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, EVENTS_GOOGLE_SHEET_ID, EVENTS_GOOGLE_SHEET_RANGE) are correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.`;
+    const detailedErrorMessage = `Item List Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID, GOOGLE_SHEET_RANGE) are correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.`;
     console.error(detailedErrorMessage);
-    return [{ eventName: 'Error', date: '', location: 'System', description: detailedErrorMessage, outcome: '' }];
+    // Return structure expected by ItemListUI for error display
+    return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: detailedErrorMessage }];
   }
 
   try {
     const auth = new google.auth.JWT(
       GOOGLE_SERVICE_ACCOUNT_EMAIL,
       undefined,
-      GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+      GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'), 
       ['https://www.googleapis.com/auth/spreadsheets.readonly']
     );
 
     const sheets = google.sheets({ version: 'v4', auth });
 
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: EVENTS_GOOGLE_SHEET_ID,
-      range: EVENTS_GOOGLE_SHEET_RANGE,
+      spreadsheetId: GOOGLE_SHEET_ID, // Using GOOGLE_SHEET_ID for items
+      range: GOOGLE_SHEET_RANGE, // Using GOOGLE_SHEET_RANGE for items
     });
 
     const rows = response.data.values;
 
     if (!rows || rows.length === 0) {
-      console.warn(`No data found in Events Google Sheet ID: ${EVENTS_GOOGLE_SHEET_ID} at range: ${EVENTS_GOOGLE_SHEET_RANGE}.`);
-      return [{ eventName: 'Warning', date: '', location: 'System', description: `No data found in Events Google Sheet ID: ${EVENTS_GOOGLE_SHEET_ID} at range: ${EVENTS_GOOGLE_SHEET_RANGE}. The sheet might be empty or the range incorrect.`, outcome: '' }];
+      console.warn(`No data found in Item Google Sheet ID: ${GOOGLE_SHEET_ID} at range: ${GOOGLE_SHEET_RANGE}.`);
+      return [{ Insert: '', Count: '', Color: 'Warning', Type: 'System', Description: `No data found in Item Google Sheet ID: ${GOOGLE_SHEET_ID} at range: ${GOOGLE_SHEET_RANGE}.` }];
     }
 
     const headers = rows[0] as string[];
-    const sanitizedHeaders = headers.map(h => h.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase()));
+    // Sanitize headers: trim, lowercase, then camelCase for 'Event Name' -> 'eventName'
+    const sanitizedHeaders = headers.map(h => 
+      h.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase())
+    );
     
-    const eventNameIndex = sanitizedHeaders.indexOf('eventName');
-    const dateIndex = sanitizedHeaders.indexOf('date');
-    const locationIndex = sanitizedHeaders.indexOf('location');
+    const insertIndex = sanitizedHeaders.indexOf('insert');
+    const countIndex = sanitizedHeaders.indexOf('count');
+    const colorIndex = sanitizedHeaders.indexOf('color');
+    const typeIndex = sanitizedHeaders.indexOf('type');
     const descriptionIndex = sanitizedHeaders.indexOf('description');
-    const outcomeIndex = sanitizedHeaders.indexOf('outcome');
 
-    if (eventNameIndex === -1 || dateIndex === -1 || locationIndex === -1 || descriptionIndex === -1 || outcomeIndex === -1) {
-      const missingHeaderFields = ['Event Name', 'Date', 'Location', 'Description', 'Outcome'].filter(expectedHeader => 
-        !sanitizedHeaders.includes(expectedHeader.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase()))
-      );
-      const errorMessage = `Required headers (Event Name, Date, Location, Description, Outcome) not found or mismatch in Events Google Sheet. Missing or mismatched headers: ${missingHeaderFields.join(', ') || 'Unknown (please check column order and naming)'}. Please check the sheet headers and range. Expected headers: Event Name, Date, Location, Description, Outcome.`;
-      console.error(errorMessage);
-      return [{ eventName: 'Error', date: '', location: 'System', description: errorMessage, outcome: '' }];
+    if (insertIndex === -1 || countIndex === -1 || colorIndex === -1 || typeIndex === -1 || descriptionIndex === -1) {
+        const missingHeaderFields = ['Insert', 'Count', 'Color', 'Type', 'Description'].filter(expectedHeader => 
+            !sanitizedHeaders.includes(expectedHeader.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase()))
+        );
+        const errorMessage = `Required headers (Insert, Count, Color, Type, Description) not found or mismatch in Item Google Sheet. Missing or mismatched: ${missingHeaderFields.join(', ') || 'Unknown'}. Please check sheet headers and range.`;
+        console.error(errorMessage);
+        return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: errorMessage }];
     }
 
-    return rows.slice(1).map((row: any[]): EventData => ({
-      eventName: row[eventNameIndex] || '',
-      date: row[dateIndex] || '',
-      location: row[locationIndex] || '',
-      description: row[descriptionIndex] || '',
-      outcome: row[outcomeIndex] || '',
+    return rows.slice(1).map((row: any[]): ItemData => ({
+      Insert: row[insertIndex] || '',
+      Count: row[countIndex] || '',
+      Color: row[colorIndex] || '',
+      Type: row[typeIndex] || '',
+      Description: row[descriptionIndex] || '',
     }));
 
   } catch (error) {
-    console.error("Error fetching data from Events Google Sheets API:", error);
-    const errorMessageContent = error instanceof Error ? error.message : String(error);
-    return [{ eventName: 'Error', date: '', location: 'System', description: `Could not load events from Google Sheets. Error: ${errorMessageContent}`, outcome: '' }];
+    console.error("Error fetching data from Item Google Sheets API:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: `Could not load items from Google Sheets. Error: ${errorMessage}` }];
   }
 }
 
-export default async function ItemListPageAsEventsPage() { // Renamed function to avoid conflict, will be used for events
-  const events = await getEventsFromGoogleSheet();
+export default async function DisplayItemsFromSheetPage() { 
+  const items = await getItemsFromGoogleSheet();
   return (
     <div className="w-full">
-      <EventsUI events={events} />
+      <ItemListUI items={items} />
     </div>
   );
 }
