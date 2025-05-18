@@ -64,8 +64,6 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
 
   const handleColorChange = (value: string) => {
     setSelectedColor(value === "all" ? undefined : value);
-    // Optionally clear history when color changes, or let user generate new
-    // setDrawnEventsHistory([]); 
   };
 
   const handleGenerateRandomEvent = () => {
@@ -89,8 +87,6 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
           description: `No events found for the color "${selectedColor}".`,
           variant: "destructive",
         });
-        // Optionally clear displayed event if no new one is found
-        // setDrawnEventsHistory(prev => prev.length > 0 ? [prev[0]] : []); // or set to []
       } else {
         const randomIndex = Math.floor(Math.random() * filteredItems.length);
         const newEvent = filteredItems[randomIndex];
@@ -225,7 +221,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
               {previousEvents.map((event, index) => {
                 const historicEventBgImage = eventBackgroundImages[event.Color];
                 return (
-                  <Card key={`${event.Insert || event.Description.slice(0,10)}-hist-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden relative aspect-[5/7]">
+                  <Card key={`${event.Color}-${event.Type}-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden relative aspect-[5/7]">
                     {historicEventBgImage && (
                        <Image
                         src={historicEventBgImage}
@@ -243,7 +239,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
                             <CardDescription className="text-xs">Color: {event.Color}</CardDescription>
                             </CardHeader>
                             <CardContent className="p-1 pt-0">
-                            <p className="text-xs text-muted-foreground truncate">{event.Description}</p>
+                            <p className="text-xs text-muted-foreground whitespace-pre-line">{event.Description}</p>
                             </CardContent>
                         </div>
                     </div>
@@ -257,3 +253,4 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     </div>
   );
 }
+
