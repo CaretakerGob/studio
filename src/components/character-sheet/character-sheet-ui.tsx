@@ -11,14 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2 } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition, AbilityType } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/auth-context"; 
-import { auth, db } from "@/lib/firebase"; 
-import { doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore"; 
+import { useAuth } from "@/context/auth-context";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore";
 
 
 const initialBaseStats: CharacterStats = {
@@ -225,10 +225,10 @@ type AbilityWithCost = Ability & { cost: number };
 const allUniqueAbilities: AbilityWithCost[] = (() => {
   const abilitiesMap = new Map<string, AbilityWithCost>();
   charactersData.forEach(character => {
-    if (character.id === 'custom') return; 
+    if (character.id === 'custom') return;
     character.abilities.forEach(ability => {
       if (!abilitiesMap.has(ability.id)) {
-        abilitiesMap.set(ability.id, { ...ability, cost: 50 }); 
+        abilitiesMap.set(ability.id, { ...ability, cost: 50 });
       }
     });
   });
@@ -243,8 +243,8 @@ export function CharacterSheetUI() {
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true); 
-  
+  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true);
+
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
 
@@ -256,7 +256,7 @@ export function CharacterSheetUI() {
 
   const stats = useMemo(() => editableCharacterData?.baseStats || initialBaseStats, [editableCharacterData]);
   const characterSkills = useMemo(() => editableCharacterData?.skills || initialSkills, [editableCharacterData]);
-  
+
   const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
   const [maxAbilityCooldowns, setMaxAbilityCooldowns] = useState<Record<string, number>>({});
   const [currentAbilityQuantities, setCurrentAbilityQuantities] = useState<Record<string, number>>({});
@@ -282,7 +282,7 @@ export function CharacterSheetUI() {
           setUserSavedCharacters([]);
         }
       } else {
-        setUserSavedCharacters([]); 
+        setUserSavedCharacters([]);
       }
     };
     fetchUserSavedCharacters();
@@ -292,23 +292,18 @@ export function CharacterSheetUI() {
   const characterDropdownOptions = useMemo(() => {
     return charactersData.map(templateChar => {
       const savedUserVersion = userSavedCharacters.find(savedChar => savedChar.id === templateChar.id);
-      let displayLabel = templateChar.name; 
-  
+      let displayLabel = templateChar.name;
+
       if (savedUserVersion) {
-        if (templateChar.id === 'custom') {
-          if (savedUserVersion.name && savedUserVersion.name !== templateChar.name) {
-            displayLabel = `${savedUserVersion.name} (${templateChar.name})`; 
-          } else {
-            displayLabel = `${templateChar.name} (Saved)`;
-          }
+        if (templateChar.id === 'custom' && savedUserVersion.name && savedUserVersion.name !== templateChar.name) {
+          displayLabel = `${savedUserVersion.name} (${templateChar.name})`;
         } else {
           displayLabel = `${templateChar.name} (Saved)`;
         }
       }
-  
       return {
         id: templateChar.id,
-        name: templateChar.name, 
+        name: templateChar.name,
         displayNameInDropdown: displayLabel,
       };
     }).sort((a, b) => a.displayNameInDropdown.localeCompare(b.displayNameInDropdown));
@@ -346,18 +341,18 @@ export function CharacterSheetUI() {
       if (!characterToLoad) {
         characterToLoad = defaultTemplate;
         if (characterToLoad) {
-           if (currentUser) { 
+           if (currentUser) {
              showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad.name}. No saved data found.` });
            }
         } else {
           showToastHelper({ title: "Error", description: "Selected character template not found.", variant: "destructive" });
           setIsLoadingCharacter(false);
-          return; 
+          return;
         }
       }
-      
-      setEditableCharacterData(JSON.parse(JSON.stringify(characterToLoad))); 
-      setAbilityToAddId(undefined); 
+
+      setEditableCharacterData(JSON.parse(JSON.stringify(characterToLoad)));
+      setAbilityToAddId(undefined);
       setIsLoadingCharacter(false);
     };
 
@@ -385,7 +380,7 @@ export function CharacterSheetUI() {
           const maxRounds = parseCooldownRounds(ability.cooldown);
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
-            newInitialCurrentCDs[ability.id] = (savedCDs && savedCDs[ability.id] !== undefined) ? savedCDs[ability.id] : maxRounds; 
+            newInitialCurrentCDs[ability.id] = (savedCDs && savedCDs[ability.id] !== undefined) ? savedCDs[ability.id] : maxRounds;
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
@@ -405,9 +400,9 @@ export function CharacterSheetUI() {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id, 
-      abilitiesJSONKey, 
-      savedCooldownsJSONKey, 
+      editableCharacterData?.id,
+      abilitiesJSONKey,
+      savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
       parseCooldownRounds
   ]);
@@ -415,6 +410,15 @@ export function CharacterSheetUI() {
 
   const handleCharacterDropdownChange = (id: string) => {
     setSelectedCharacterId(id);
+  };
+
+  const handleCustomCharacterNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (editableCharacterData?.id === 'custom') {
+      setEditableCharacterData(prevData => {
+        if (!prevData) return null;
+        return { ...prevData, name: e.target.value };
+      });
+    }
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
@@ -429,17 +433,17 @@ export function CharacterSheetUI() {
       if (statName === 'maxHp') newStats.maxHp = Math.max(1, numericValue);
       if (statName === 'sanity') newStats.sanity = Math.max(0, Math.min(numericValue, newStats.maxSanity));
       if (statName === 'maxSanity') newStats.maxSanity = Math.max(1, numericValue);
-      
+
       if(statName === 'maxHp' && newStats.hp > newStats.maxHp) newStats.hp = newStats.maxHp;
       if(statName === 'maxSanity' && newStats.sanity > newStats.maxSanity) newStats.sanity = newStats.maxSanity;
-      
+
       return { ...prevData, baseStats: newStats };
     });
 
     setHighlightedStat(statName);
     setTimeout(() => setHighlightedStat(null), 300);
   };
-  
+
   const incrementStat = (statName: StatName) => {
      if (!editableCharacterData) return;
      const currentStats = editableCharacterData.baseStats;
@@ -459,7 +463,7 @@ export function CharacterSheetUI() {
       [abilityId]: Math.min((prev[abilityId] || 0) + 1, maxAbilityCooldowns[abilityId] || Infinity),
     }));
   };
-  
+
   const handleDecrementCooldown = (abilityId: string) => {
     setCurrentAbilityCooldowns(prev => ({
       ...prev,
@@ -484,8 +488,13 @@ export function CharacterSheetUI() {
   const resetStats = () => {
     const originalCharacter = charactersData.find(c => c.id === selectedCharacterId);
     if (originalCharacter) {
-      setEditableCharacterData(JSON.parse(JSON.stringify(originalCharacter))); 
-      showToastHelper({ title: "Stats Reset", description: `${originalCharacter.name}'s stats and abilities have been reset to default template.` });
+      // Ensure we reset the name for the custom character as well
+      const characterToSet = JSON.parse(JSON.stringify(originalCharacter));
+       if (characterToSet.id === 'custom' && originalCharacter.id === 'custom') {
+         characterToSet.name = originalCharacter.name; // Reset to default "Custom Character" name
+       }
+      setEditableCharacterData(characterToSet);
+      showToastHelper({ title: "Stats Reset", description: `${characterToSet.name}'s stats and abilities have been reset to default template.` });
     }
   };
 
@@ -497,7 +506,7 @@ export function CharacterSheetUI() {
         showToastHelper({ title: "Error", description: "Selected ability not found.", variant: "destructive" });
         return;
     }
-    
+
     if (editableCharacterData.abilities.some(a => a.id === abilityInfo.id)) {
         showToastHelper({ title: "Ability Exists", description: `${abilityInfo.name} is already added.`, variant: "destructive" });
         return;
@@ -507,17 +516,17 @@ export function CharacterSheetUI() {
         showToastHelper({ title: "Not Enough CP", description: `You need ${abilityInfo.cost} CP to add ${abilityInfo.name}. You have ${editableCharacterData.characterPoints || 0}.`, variant: "destructive" });
         return;
     }
-    
+
     const abilityNameForToast = abilityInfo.name;
     const abilityCostForToast = abilityInfo.cost;
 
     setEditableCharacterData(prevData => {
         if (!prevData) return null;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { cost, ...abilityToAdd } = abilityInfo; 
+        const { cost, ...abilityToAdd } = abilityInfo;
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability];
         const newCharacterPoints = (prevData.characterPoints || 0) - abilityInfo.cost;
-        
+
         const newMaxCDs: Record<string, number> = {};
         const newInitialCurrentCDs: Record<string, number> = {};
         const newMaxQTs: Record<string, number> = {};
@@ -528,7 +537,7 @@ export function CharacterSheetUI() {
                 const maxRounds = parseCooldownRounds(ability.cooldown);
                 if (maxRounds !== undefined) {
                 newMaxCDs[ability.id] = maxRounds;
-                newInitialCurrentCDs[ability.id] = maxRounds; 
+                newInitialCurrentCDs[ability.id] = maxRounds;
                 }
             }
             if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt')) {
@@ -543,9 +552,9 @@ export function CharacterSheetUI() {
 
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
-    
+
     showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCostForToast} CP.` });
-    setAbilityToAddId(undefined); 
+    setAbilityToAddId(undefined);
   };
 
   const handleSaveCharacter = async () => {
@@ -569,7 +578,7 @@ export function CharacterSheetUI() {
       const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", editableCharacterData.id);
       await setDoc(characterRef, characterToSave, { merge: true });
       showToastHelper({ title: "Character Saved!", description: `${editableCharacterData.name} has been saved successfully.` });
-      
+
     } catch (error) {
       console.error("Error saving character: ", error);
       showToastHelper({ title: "Save Failed", description: "Could not save character data. Please try again.", variant: "destructive" });
@@ -669,7 +678,7 @@ export function CharacterSheetUI() {
       </div>
     );
   };
-  
+
   const WeaponDisplay: React.FC<{ weapon?: Weapon | RangedWeapon, type: 'melee' | 'ranged' }> = ({ weapon, type }) => {
     if (!weapon || weapon.name === "None") return null;
     const Icon = type === 'melee' ? Swords : Crosshair;
@@ -707,26 +716,26 @@ export function CharacterSheetUI() {
     onIncrementQuantity?: () => void;
     onDecrementQuantity?: () => void;
   }
-  
-  const AbilityCard: React.FC<AbilityCardProps> = ({ 
-    ability, 
+
+  const AbilityCard: React.FC<AbilityCardProps> = ({
+    ability,
     currentCooldown, maxCooldown, onIncrementCooldown, onDecrementCooldown,
-    currentQuantity, maxQuantity, onIncrementQuantity, onDecrementQuantity 
+    currentQuantity, maxQuantity, onIncrementQuantity, onDecrementQuantity
   }) => {
-    
-    const hasTrackableQuantity = ability.maxQuantity !== undefined && 
-                                 typeof currentQuantity === 'number' && 
-                                 typeof maxQuantity === 'number' && 
-                                 onIncrementQuantity && 
+
+    const hasTrackableQuantity = ability.maxQuantity !== undefined &&
+                                 typeof currentQuantity === 'number' &&
+                                 typeof maxQuantity === 'number' &&
+                                 onIncrementQuantity &&
                                  onDecrementQuantity;
 
-    const hasTrackableCooldown = !hasTrackableQuantity && 
-                                 ability.cooldown && 
-                                 typeof currentCooldown === 'number' && 
-                                 typeof maxCooldown === 'number' && 
-                                 onIncrementCooldown && 
+    const hasTrackableCooldown = !hasTrackableQuantity &&
+                                 ability.cooldown &&
+                                 typeof currentCooldown === 'number' &&
+                                 typeof maxCooldown === 'number' &&
+                                 onIncrementCooldown &&
                                  onDecrementCooldown;
-  
+
     return (
       <Card className="bg-card/50">
         <CardHeader>
@@ -789,7 +798,7 @@ export function CharacterSheetUI() {
               </div>
             </div>
           )}
-          
+
           {!hasTrackableQuantity && !hasTrackableCooldown && ability.cooldown && (
             <p className="text-xs text-amber-400 mt-1 flex items-center">
               <Clock className="mr-1 h-3 w-3" /> Cooldown: {ability.cooldown}
@@ -816,11 +825,11 @@ export function CharacterSheetUI() {
           src={editableCharacterData.imageUrl}
           alt={`${editableCharacterData.name} background`}
           fill
-          style={{ objectFit: 'contain', objectPosition: 'center top' }} 
-          className="absolute inset-0 z-0 opacity-[0.07] pointer-events-none" 
+          style={{ objectFit: 'contain', objectPosition: 'center top' }}
+          className="absolute inset-0 z-0 opacity-[0.07] pointer-events-none"
           priority
           data-ai-hint={
-             editableCharacterData.name === "Fei" ? "male hunter anime" : 
+             editableCharacterData.name === "Fei" ? "male hunter anime" :
              editableCharacterData.name === "Michael" ? "male soldier urban" :
              editableCharacterData.name === "Custom Character" ? "silhouette mysterious" :
              editableCharacterData.name === "Tamara" ? "female adventurer jungle" :
@@ -848,7 +857,7 @@ export function CharacterSheetUI() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             <div className="md:col-span-1 space-y-4">
               <div className="w-full">
-                <Label htmlFor="characterName" className="text-lg font-medium mb-1 block">Character</Label>
+                <Label htmlFor="characterName" className="text-lg font-medium mb-1 block">Character Template</Label>
                 <Select value={selectedCharacterId} onValueChange={handleCharacterDropdownChange}>
                   <SelectTrigger id="characterName" className="text-xl p-2 w-full">
                     <SelectValue placeholder="Select a character" />
@@ -862,8 +871,26 @@ export function CharacterSheetUI() {
                   </SelectContent>
                 </Select>
               </div>
+               {editableCharacterData?.id === 'custom' && (
+                <div className="w-full">
+                  <Label htmlFor="customCharacterName" className="text-lg font-medium mb-1 block">
+                    Character Name
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="customCharacterName"
+                      type="text"
+                      value={editableCharacterData.name}
+                      onChange={handleCustomCharacterNameChange}
+                      placeholder="Enter custom name"
+                      className="text-lg p-2 flex-grow"
+                    />
+                     <Edit2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </div>
+              )}
             </div>
-          
+
              <div className="md:col-span-2 space-y-4 flex justify-end">
                 {editableCharacterData && editableCharacterData.characterPoints !== undefined && (
                 <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
@@ -926,8 +953,8 @@ export function CharacterSheetUI() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button 
-                  onClick={handleAddAbilityToCustomCharacter} 
+                <Button
+                  onClick={handleAddAbilityToCustomCharacter}
                   disabled={!abilityToAddId || (editableCharacterData.characterPoints || 0) < (allUniqueAbilities.find(a=>a.id === abilityToAddId)?.cost || Infinity)}
                   className="bg-primary hover:bg-primary/90"
                 >
@@ -966,8 +993,8 @@ export function CharacterSheetUI() {
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
                 {
                   (() => {
-                    const relevantSkillDefinitions = skillDefinitions.filter(def => ((characterSkills as Skills)[def.id as SkillName] ?? 0) > 0 || editableCharacterData.id === 'custom'); 
-                     
+                    const relevantSkillDefinitions = skillDefinitions.filter(def => ((characterSkills as Skills)[def.id as SkillName] ?? 0) > 0 || editableCharacterData.id === 'custom');
+
                     if (relevantSkillDefinitions.length === 0 && editableCharacterData.id !== 'custom') {
                       return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
                     }
@@ -1059,13 +1086,13 @@ export function CharacterSheetUI() {
 
         </CardContent>
         <CardFooter className="flex justify-end pt-6">
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="bg-primary hover:bg-primary/90"
             onClick={handleSaveCharacter}
             disabled={!currentUser || !editableCharacterData || authLoading || isSaving}
           >
-            <Save className="mr-2 h-5 w-5" /> 
+            <Save className="mr-2 h-5 w-5" />
             {isSaving ? "Saving..." : "Save Character"}
           </Button>
         </CardFooter>
@@ -1073,5 +1100,3 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
-
-    
