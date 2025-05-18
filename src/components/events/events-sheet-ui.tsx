@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { List, Shuffle, AlertCircle } from "lucide-react";
+import { List, Shuffle, AlertCircle, RotateCcw } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,11 +44,14 @@ const eventBackgroundImages: Record<string, string> = {
 export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIProps) {
   const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
-  const [randomlySelectedEvent, setRandomlySelectedEvent] = useState<EventsSheetData | null>(null);
+  const [drawnEventsHistory, setDrawnEventsHistory] = useState<EventsSheetData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [eventKey, setEventKey] = useState(0); // For re-triggering animation
+  const [eventKey, setEventKey] = useState(0); 
 
   const { toast } = useToast();
+
+  const latestEvent = drawnEventsHistory.length > 0 ? drawnEventsHistory[0] : null;
+  const previousEvents = drawnEventsHistory.slice(1);
 
   useEffect(() => {
     if (items && items.length > 0) {
@@ -61,7 +64,8 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
 
   const handleColorChange = (value: string) => {
     setSelectedColor(value === "all" ? undefined : value);
-    setRandomlySelectedEvent(null); // Clear previous event when color changes
+    // Optionally clear history when color changes, or let user generate new
+    // setDrawnEventsHistory([]); 
   };
 
   const handleGenerateRandomEvent = () => {
@@ -75,7 +79,6 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     }
 
     setIsLoading(true);
-    setRandomlySelectedEvent(null); 
 
     const filteredItems = items.filter(item => item.Color === selectedColor);
 
@@ -86,23 +89,31 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
           description: `No events found for the color "${selectedColor}".`,
           variant: "destructive",
         });
-        setRandomlySelectedEvent(null);
+        // Optionally clear displayed event if no new one is found
+        // setDrawnEventsHistory(prev => prev.length > 0 ? [prev[0]] : []); // or set to []
       } else {
         const randomIndex = Math.floor(Math.random() * filteredItems.length);
         const newEvent = filteredItems[randomIndex];
-        setRandomlySelectedEvent(newEvent);
+        setDrawnEventsHistory(prevHistory => [newEvent, ...prevHistory].slice(0, 3));
         setEventKey(prev => prev + 1); 
         toast({
           title: "Event Generated!",
-          description: `A random event from "${selectedColor}" has been drawn.`,
+          description: `A random event for "${selectedColor}" has been drawn.`,
         });
       }
       setIsLoading(false);
     }, 500); 
   };
+
+  const resetEventsHistory = () => {
+    setSelectedColor(undefined);
+    setDrawnEventsHistory([]);
+    setIsLoading(false);
+    toast({ title: "Events Reset", description: "Color selection and event history cleared." });
+  };
   
   const systemError = items.length === 1 && items[0].Type === 'System' && items[0].Color === 'Error';
-  const currentEventBgImage = randomlySelectedEvent ? eventBackgroundImages[randomlySelectedEvent.Color] : undefined;
+  const currentEventBgImage = latestEvent ? eventBackgroundImages[latestEvent.Color] : undefined;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -138,71 +149,111 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
             <Shuffle className="mr-2 h-5 w-5" />
             {isLoading ? "Generating..." : "Generate Random Event"}
           </Button>
+           <Button variant="outline" onClick={resetEventsHistory} className="w-full">
+            <RotateCcw className="mr-2 h-4 w-4" /> Reset Events
+          </Button>
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2 shadow-xl min-h-[300px] flex flex-col justify-start items-center">
-        <CardHeader className="w-full text-center">
-          <CardTitle className="text-2xl">{title}</CardTitle>
-          <CardDescription>{cardDescription}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow flex flex-col items-center justify-center w-full p-4">
-          {systemError ? (
-             <Alert variant="destructive" className="max-w-lg text-center">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                <AlertTitle>System Error</AlertTitle>
+      <div className="md:col-span-2 space-y-6">
+        <Card className="shadow-xl min-h-[300px] flex flex-col justify-start items-center">
+          <CardHeader className="w-full text-center">
+            <CardTitle className="text-2xl">{title}</CardTitle>
+            <CardDescription>{cardDescription}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow flex flex-col items-center justify-center w-full p-4">
+            {systemError ? (
+              <Alert variant="destructive" className="max-w-lg text-center">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                  <AlertTitle>System Error</AlertTitle>
+                  <AlertDescription>
+                    {items[0].Description}
+                  </AlertDescription>
+                </Alert>
+            ) : isLoading && !latestEvent ? (
+              <div className="space-y-3 w-full max-w-md aspect-[5/7] flex flex-col justify-center items-center">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ) : latestEvent ? (
+              <Card 
+                key={eventKey} 
+                className="w-full max-w-lg bg-transparent border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500 relative overflow-hidden aspect-[5/7]"
+              >
+                {currentEventBgImage && (
+                  <Image
+                    src={currentEventBgImage}
+                    alt={`${latestEvent.Color} event background`}
+                    fill
+                    style={{ objectFit: 'contain' }} 
+                    className="absolute inset-0 z-0 opacity-90 pointer-events-none"
+                    data-ai-hint="event background texture"
+                    priority
+                  />
+                )}
+                <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-4 sm:p-6">
+                  <div className="bg-card/80 p-4 sm:p-6 rounded-lg shadow-md text-center max-w-full overflow-y-auto max-h-[90%]">
+                    <CardHeader className="p-0 pb-2">
+                      <CardTitle className="text-xl text-primary">{latestEvent.Type || 'Event'}</CardTitle>
+                      <CardDescription className="text-sm">
+                        Color: {latestEvent.Color}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line">{latestEvent.Description}</p>
+                    </CardContent>
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50">
+                <List className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <AlertTitle>No Event Generated</AlertTitle>
                 <AlertDescription>
-                  {items[0].Description}
+                  {items.length === 0 ? "No event data loaded." : "Select a color and click 'Generate Random Event' to see an event."}
                 </AlertDescription>
               </Alert>
-          ) : isLoading ? (
-            <div className="space-y-3 w-full max-w-md">
-              <Skeleton className="h-8 w-3/4 mx-auto" />
-              <Skeleton className="h-6 w-1/2 mx-auto" />
-              <Skeleton className="h-20 w-full" />
+            )}
+          </CardContent>
+        </Card>
+
+        {previousEvents.length > 0 && (
+          <div className="w-full mt-4">
+            <h4 className="text-lg font-semibold mb-3 text-center text-muted-foreground">Previously Drawn Events</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {previousEvents.map((event, index) => {
+                const historicEventBgImage = eventBackgroundImages[event.Color];
+                return (
+                  <Card key={`${event.Insert || event.Description.slice(0,10)}-hist-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden relative aspect-[5/7]">
+                    {historicEventBgImage && (
+                       <Image
+                        src={historicEventBgImage}
+                        alt={`${event.Color} event background`}
+                        fill
+                        style={{ objectFit: 'contain' }}
+                        className="absolute inset-0 z-0 opacity-70 pointer-events-none"
+                        data-ai-hint="event background texture small"
+                      />
+                    )}
+                    <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-2">
+                        <div className="bg-card/70 p-2 rounded-md shadow-sm text-center max-w-full overflow-y-auto max-h-[90%]">
+                            <CardHeader className="p-1 pb-1">
+                            <CardTitle className="text-sm text-primary truncate">{event.Type || 'Event'}</CardTitle>
+                            <CardDescription className="text-xs">Color: {event.Color}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-1 pt-0">
+                            <p className="text-xs text-muted-foreground truncate">{event.Description}</p>
+                            </CardContent>
+                        </div>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
-          ) : randomlySelectedEvent ? (
-            <Card 
-              key={eventKey} 
-              className="w-full max-w-lg bg-transparent border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500 relative overflow-hidden aspect-[5/7]"
-            >
-              {currentEventBgImage && (
-                <Image
-                  src={currentEventBgImage}
-                  alt={`${randomlySelectedEvent.Color} event background`}
-                  fill
-                  style={{ objectFit: 'contain' }} 
-                  className="absolute inset-0 z-0 opacity-90 pointer-events-none"
-                  data-ai-hint="event background texture"
-                  priority
-                />
-              )}
-              <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-4 sm:p-6">
-                <div className="bg-card/80 p-4 sm:p-6 rounded-lg shadow-md text-center max-w-full overflow-y-auto max-h-[90%]">
-                  <CardHeader className="p-0 pb-2">
-                    <CardTitle className="text-xl text-primary">{randomlySelectedEvent.Type || 'Event'}</CardTitle>
-                    <CardDescription className="text-sm">
-                      Color: {randomlySelectedEvent.Color}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line">{randomlySelectedEvent.Description}</p>
-                  </CardContent>
-                </div>
-              </div>
-            </Card>
-          ) : (
-            <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50">
-              <List className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <AlertTitle>No Event Generated</AlertTitle>
-              <AlertDescription>
-                {items.length === 0 ? "No event data loaded." : "Select a color and click 'Generate Random Event' to see an event."}
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
