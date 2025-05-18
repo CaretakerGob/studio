@@ -16,6 +16,9 @@ import type { CharacterStats, CharacterStatDefinition, StatName, Character, Abil
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/auth-context"; // Import useAuth
+import { db } from "@/lib/firebase"; // Import Firestore instance
+import { doc, setDoc } from "firebase/firestore"; // Import Firestore functions
 
 
 const initialBaseStats: CharacterStats = {
@@ -58,7 +61,7 @@ const charactersData: Character[] = [
     id: 'custom',
     name: 'Custom Character',
     baseStats: { hp: 5, maxHp: 5, mv: 2, def: 2, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills },
+    skills: { ...initialSkills, ath: 0, cpu: 0, dare: 0, dec: 0, emp: 0, eng: 0, inv: 0, kno: 0, occ: 0, pers: 0, sur: 0, tac: 0, tun: 0 },
     abilities: [],
     avatarSeed: 'customcharacter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
@@ -238,8 +241,11 @@ export function CharacterSheetUI() {
   const [editableCharacterData, setEditableCharacterData] = useState<Character | null>(null);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
+  const [isSaving, setIsSaving] = useState(false); // For save button loading state
   
   const { toast } = useToast();
+  const { currentUser, loading: authLoading } = useAuth();
+
 
   const showToastHelper = useCallback((options: { title: string; description: string; variant?: "default" | "destructive" }) => {
     setTimeout(() => {
@@ -414,6 +420,30 @@ export function CharacterSheetUI() {
     showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCostForToast} CP.` });
     setAbilityToAddId(undefined); 
   };
+
+  const handleSaveCharacter = async () => {
+    if (!currentUser) {
+      showToastHelper({ title: "Not Logged In", description: "You must be logged in to save a character.", variant: "destructive" });
+      return;
+    }
+    if (!editableCharacterData) {
+      showToastHelper({ title: "No Character Data", description: "No character data to save.", variant: "destructive" });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", editableCharacterData.id);
+      await setDoc(characterRef, editableCharacterData, { merge: true });
+      showToastHelper({ title: "Character Saved!", description: `${editableCharacterData.name} has been saved successfully.` });
+    } catch (error) {
+      console.error("Error saving character: ", error);
+      showToastHelper({ title: "Save Failed", description: "Could not save character data. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
   const categorizedAbilities = useMemo(() => {
     const actions: AbilityWithCost[] = [];
@@ -635,7 +665,7 @@ export function CharacterSheetUI() {
     );
   };
 
-  if (!editableCharacterData) {
+  if (authLoading || !editableCharacterData) {
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-xl p-10 text-center">
             <CardTitle>Loading Character Data...</CardTitle>
@@ -892,8 +922,14 @@ export function CharacterSheetUI() {
 
         </CardContent>
         <CardFooter className="flex justify-end pt-6">
-          <Button size="lg" className="bg-primary hover:bg-primary/90">
-            <Save className="mr-2 h-5 w-5" /> Save Character (Demo)
+          <Button 
+            size="lg" 
+            className="bg-primary hover:bg-primary/90"
+            onClick={handleSaveCharacter}
+            disabled={!currentUser || !editableCharacterData || authLoading || isSaving}
+          >
+            <Save className="mr-2 h-5 w-5" /> 
+            {isSaving ? "Saving..." : "Save Character"}
           </Button>
         </CardFooter>
       </div>
