@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Dices, Layers, UserCircle, Users, Home, Settings, PanelLeft, List, CalendarDays } from 'lucide-react'; // Added CalendarDays
+import { Dices, Layers, UserCircle, Users, Home, Settings, PanelLeft, List, CalendarDays } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -21,8 +21,8 @@ const navItems = [
   { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
   { href: '/card-generator', label: 'Card Generator', icon: Layers },
   { href: '/turn-tracker', label: 'Turn Tracker', icon: Users },
-  { href: '/item-list', label: 'Item List', icon: List },
-  { href: '/events', label: 'Events', icon: CalendarDays }, // New Events link
+  { href: '/events', label: 'Item List', icon: List }, // Swapped: Item List now points to /events
+  { href: '/item-list', label: 'Events', icon: CalendarDays }, // Swapped: Events now points to /item-list
 ];
 
 export function AppSidebar() {
@@ -32,6 +32,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-lg">
       <SidebarHeader className="p-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+          {/* You can add an SVG icon here if desired */}
           <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
         </Link>
         <SidebarTrigger asChild className="md:hidden">
