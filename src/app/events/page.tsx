@@ -14,7 +14,7 @@ async function getEventsFromGoogleSheet(): Promise<EventData[]> {
 
   if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY || !EVENTS_GOOGLE_SHEET_ID || !EVENTS_GOOGLE_SHEET_RANGE) {
     console.error("Events Google Sheets API environment variables are not configured.");
-    return [{ eventName: 'Error', date: '', location: 'System', description: 'Events Google Sheets environment variables not configured. Please check your .env.local file (EVENTS_GOOGLE_SHEET_ID, EVENTS_GOOGLE_SHEET_RANGE).', outcome: '' }];
+    return [{ eventName: 'Error', date: '', location: 'System', description: 'Events Google Sheets API environment variables are not configured. Please ensure `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `EVENTS_GOOGLE_SHEET_ID`, and `EVENTS_GOOGLE_SHEET_RANGE` are all correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.', outcome: '' }];
   }
 
   try {
