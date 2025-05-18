@@ -28,6 +28,7 @@ interface EventsSheetUIProps {
 
 const eventBackgroundImages: Record<string, string> = {
   "Black Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FBlack%20Chaos%20BG.png?alt=media&token=bdde52e0-a4ed-4ca7-829a-15e76738d1f7",
+  "Blue Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FBlue%20Chaos%20BG.png?alt=media&token=3dc71f42-2bc3-4346-ae47-06c40f3d0c7d",
   // Add other color/type to image URL mappings here
 };
 
@@ -164,6 +165,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
                   style={{ objectFit: 'contain' }} 
                   className="absolute inset-0 z-0 opacity-90 pointer-events-none"
                   data-ai-hint="event background texture"
+                  priority
                 />
               )}
               <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-4 sm:p-6">
@@ -194,3 +196,4 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     </div>
   );
 }
+
