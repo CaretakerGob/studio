@@ -33,7 +33,12 @@ const eventBackgroundImages: Record<string, string> = {
   "Green Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FGreen%20Chaos%20BG.png?alt=media&token=1715a5cf-d6e0-4c2e-9312-4692cc151cb2",
   "Red Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FRed%20Chaos%20BG.png?alt=media&token=0a3782a4-deeb-4239-b58e-2ad618471154",
   "White Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FWhite%20Chaos%20BG.png?alt=media&token=e561d02f-7cf9-4b74-8c1f-ecd06954dff0",
-  // Add other color/type to image URL mappings here
+  "Black Order": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FOrder%2FBlack%20Order%20BG.png?alt=media&token=28fac667-df9e-43a4-b2c6-8c149b1c5dc1",
+  "Blue Order": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FOrder%2FBlue%20Order%20BG.png?alt=media&token=b69450cc-8fb2-48e0-86a4-497022f1b8ff",
+  "Gray Order": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FOrder%2FGray%20Order%20BG.png?alt=media&token=d05e8dec-7b7a-4947-bd45-8f89c5512b45",
+  "Green Order": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FOrder%2FGreen%20Order%20BG.png?alt=media&token=eb9c8de0-6433-4b7f-b388-78e49db563a8",
+  "Red Order": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FOrder%2FRed%20Order%20BG.png?alt=media&token=cbf43571-69b6-489e-b157-225ea477928c",
+  "White Order": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FOrder%2FWhite%20order%20BG.png?alt=media&token=14a87a73-3d27-459d-bcb8-b73287ae6368",
 };
 
 export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIProps) {
