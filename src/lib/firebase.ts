@@ -1,6 +1,7 @@
+
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-// import { getFirestore, type Firestore } from "firebase/firestore"; // We'll use this later
+import { getStorage, type FirebaseStorage } from "firebase/storage"; // Import Firebase Storage
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,26 +14,24 @@ const firebaseConfig = {
 
 let app: FirebaseApp;
 let auth: Auth;
-// let db: Firestore; // We'll use this later
+let storage: FirebaseStorage; // Declare storage
 
 // Initialize Firebase only on the client side and only once
 if (typeof window !== 'undefined' && !getApps().length) {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    // db = getFirestore(app); // We'll initialize Firestore later
-    console.log("Firebase initialized successfully.");
+    storage = getStorage(app); // Initialize storage
+    console.log("Firebase initialized successfully with Auth and Storage.");
   } catch (error) {
     console.error("Firebase initialization error:", error);
-    // Optionally, provide a more user-friendly error or fallback
   }
 } else if (getApps().length > 0) {
   app = getApps()[0];
   auth = getAuth(app);
-  // db = getFirestore(app); // We'll initialize Firestore later
+  storage = getStorage(app); // Get existing storage instance
 }
 
-// Export the Firebase services. Ensure auth is exported even if initialization fails,
-// so app doesn't break, but auth-dependent features would need handling.
+// Export the Firebase services.
 // @ts-ignore
-export { app, auth }; // Add db here later
+export { app, auth, storage }; // Export storage

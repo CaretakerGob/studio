@@ -1,25 +1,29 @@
 
 "use client";
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
+import Image from 'next/image'; // Import next/image for preview
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { User, Edit3, Save, LogOut, LogIn, UserPlus, ShieldCheck } from "lucide-react";
+import { User, Edit3, Save, LogOut, LogIn, UserPlus, ShieldCheck, UploadCloud } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/auth-context"; // Import useAuth
+import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { AuthCredentials, SignUpCredentials } from '@/types/auth';
+import { auth, storage } from '@/lib/firebase'; // Import storage
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { updateProfile } from "firebase/auth";
 
 export function ProfileUI() {
   const { toast } = useToast();
-  const { currentUser, loading, error, setError, signUp, login, logout } = useAuth(); // Use auth context
+  const { currentUser, loading, error, setError, signUp, login, logout } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [isSigningUp, setIsSigningUp] = useState(false); // To toggle between login and signup forms
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   const [formData, setFormData] = useState<SignUpCredentials>({
     email: "",
@@ -27,26 +31,51 @@ export function ProfileUI() {
     passwordConfirmation: "",
     displayName: "",
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
       setFormData({
         displayName: currentUser.displayName || "",
         email: currentUser.email || "",
-        password: "", // Clear password fields on user change
+        password: "",
         passwordConfirmation: ""
       });
-      setIsEditing(false); // Exit edit mode if user logs in/out
-      setIsSigningUp(false); // Reset to login form
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setIsEditing(false);
+      setIsSigningUp(false);
     } else {
       setFormData({ email: "", password: "", passwordConfirmation: "", displayName: "" });
+      setSelectedFile(null);
+      setPreviewUrl(null);
     }
   }, [currentUser]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (error) setError(null); // Clear error when user starts typing
+    if (error) setError(null);
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({ title: "File Too Large", description: "Please select an image smaller than 5MB.", variant: "destructive" });
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        e.target.value = ""; // Clear the input
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setSelectedFile(null);
+      setPreviewUrl(null);
+    }
   };
 
   const handleEditToggle = () => {
@@ -58,24 +87,64 @@ export function ProfileUI() {
         password: "",
         passwordConfirmation: "",
       });
+      setSelectedFile(null);
+      setPreviewUrl(null);
     }
   };
 
   const handleSaveChanges = async (e: FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return;
-    // In a real app, this would call a function to update the user's profile in Firebase
-    // For example, using updateProfile from 'firebase/auth' for displayName
-    // and potentially a separate function to update email if that's allowed/implemented.
-    // For now, we just simulate and update local state if needed.
-    console.log("Saving changes (simulated):", { displayName: formData.displayName });
-    // await updateProfile(currentUser, { displayName: formData.displayName }); // Example
-    toast({
-      title: "Profile Updated (Simulated)",
-      description: "Your display name has been updated.",
-    });
-    setIsEditing(false);
+    if (!currentUser || !auth.currentUser) {
+      setError("Not authenticated. Please log in again.");
+      return;
+    }
+
+    setIsUploading(true);
+    setError(null);
+    let newPhotoURL = currentUser.photoURL;
+    let displayNameChanged = formData.displayName !== (currentUser.displayName || "");
+
+    try {
+      if (selectedFile) {
+        const fileRef = storageRef(storage, `profileImages/${currentUser.uid}/${selectedFile.name}`);
+        await uploadBytes(fileRef, selectedFile);
+        newPhotoURL = await getDownloadURL(fileRef);
+        toast({ title: "Profile Image Updated", description: "Your new profile image has been saved." });
+      }
+
+      if (displayNameChanged || (selectedFile && newPhotoURL !== currentUser.photoURL)) {
+        const profileUpdates: { displayName?: string; photoURL?: string } = {};
+        if (displayNameChanged) {
+          profileUpdates.displayName = formData.displayName;
+        }
+        if (selectedFile && newPhotoURL) {
+          profileUpdates.photoURL = newPhotoURL;
+        }
+        
+        if (Object.keys(profileUpdates).length > 0) {
+          await updateProfile(auth.currentUser, profileUpdates);
+          if (displayNameChanged && !selectedFile) {
+             toast({ title: "Display Name Updated", description: "Your display name has been saved." });
+          } else if (!displayNameChanged && selectedFile) {
+            // Toast for image update already shown
+          } else if (displayNameChanged && selectedFile) {
+            toast({ title: "Profile Updated", description: "Display name and image saved." });
+          }
+        }
+      }
+      
+      setIsEditing(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+    } catch (uploadError: any) {
+      console.error("Error updating profile:", uploadError);
+      setError(uploadError.message || "Failed to update profile.");
+      toast({ title: "Update Failed", description: uploadError.message || "Could not save changes.", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
   };
+
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -121,7 +190,7 @@ export function ProfileUI() {
     });
   };
 
-  if (loading) {
+  if (loading && !currentUser) { // Show loading only if no user yet, to avoid flicker on profile update
     return (
       <Card className="w-full max-w-md mx-auto shadow-xl p-10 text-center">
         <CardTitle>Loading...</CardTitle>
@@ -215,12 +284,34 @@ export function ProfileUI() {
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-xl">
       <CardHeader className="text-center">
-        <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
-          <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png`} alt={currentUser.displayName || "User"} data-ai-hint="user avatar placeholder" />
+        <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg relative group">
+          <AvatarImage 
+            src={previewUrl || currentUser.photoURL || `https://placehold.co/128x128.png`} 
+            alt={currentUser.displayName || "User"} 
+            data-ai-hint="user avatar placeholder" 
+          />
           <AvatarFallback className="text-4xl bg-muted">
             {currentUser.displayName ? currentUser.displayName.charAt(0).toUpperCase() : (currentUser.email ? currentUser.email.charAt(0).toUpperCase() : "U")}
           </AvatarFallback>
+          {isEditing && (
+            <label 
+              htmlFor="profileImageUpload" 
+              className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+            >
+              <UploadCloud className="h-8 w-8" />
+              <span className="sr-only">Upload new image</span>
+            </label>
+          )}
         </Avatar>
+         {isEditing && (
+            <Input 
+                id="profileImageUpload" 
+                type="file" 
+                accept="image/*" 
+                onChange={handleFileChange} 
+                className="hidden" // Hidden by default, triggered by label click
+            />
+        )}
         <CardTitle className="text-3xl">{currentUser.displayName || currentUser.email || "User Profile"}</CardTitle>
         <CardDescription>Manage your account details and saved game data.</CardDescription>
       </CardHeader>
@@ -236,31 +327,37 @@ export function ProfileUI() {
             <Label htmlFor="profileDisplayName">Display Name</Label>
             <Input
               id="profileDisplayName"
-              name="displayName" // Ensure name matches formData key
+              name="displayName"
               value={formData.displayName || ""}
               onChange={handleInputChange}
-              disabled={!isEditing || loading}
+              disabled={!isEditing || isUploading || loading}
               className="mt-1"
             />
           </div>
+           {isEditing && selectedFile && previewUrl && (
+            <div className="space-y-2">
+                <Label>New Profile Image Preview:</Label>
+                <Image src={previewUrl} alt="New profile image preview" width={100} height={100} className="rounded-md border" data-ai-hint="image preview"/>
+            </div>
+          )}
           <div>
             <Label htmlFor="profileEmail">Email Address</Label>
             <Input
               id="profileEmail"
-              name="email" // Ensure name matches formData key
+              name="email"
               type="email"
               value={formData.email || ""}
-              readOnly // Email change usually requires re-authentication, keep it simple for now
-              disabled 
+              readOnly
+              disabled
               className="mt-1 bg-muted/50"
             />
           </div>
           <div className="flex justify-end space-x-3">
             {isEditing ? (
               <>
-                <Button type="button" variant="outline" onClick={handleEditToggle} disabled={loading}>Cancel</Button>
-                <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={loading}>
-                  <Save className="mr-2 h-4 w-4" /> {loading ? "Saving..." : "Save Changes"}
+                <Button type="button" variant="outline" onClick={handleEditToggle} disabled={isUploading || loading}>Cancel</Button>
+                <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isUploading || loading || (!selectedFile && formData.displayName === (currentUser.displayName || ""))}>
+                  <Save className="mr-2 h-4 w-4" /> {isUploading ? "Saving..." : "Save Changes"}
                 </Button>
               </>
             ) : (
@@ -289,7 +386,7 @@ export function ProfileUI() {
            <Button variant="outline" className="w-full flex items-center justify-center" disabled>
             <ShieldCheck className="mr-2 h-4 w-4" /> Change Password (Placeholder)
           </Button>
-          <Button variant="destructive" onClick={handleLogout} className="w-full flex items-center justify-center" disabled={loading}>
+          <Button variant="destructive" onClick={handleLogout} className="w-full flex items-center justify-center" disabled={isUploading || loading}>
             <LogOut className="mr-2 h-4 w-4" /> {loading ? "Logging out..." : "Log Out"}
           </Button>
         </div>
