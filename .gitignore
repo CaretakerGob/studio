@@ -43,3 +43,11 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+
+# .gitignore
+# ... other entries ...
+
+# Local environment variables
+.env.local
+.env.*.local
