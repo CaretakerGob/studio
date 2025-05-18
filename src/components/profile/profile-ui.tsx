@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { User, Edit3, Save, ShieldCheck, LogOut } from "lucide-react";
+import { User, Edit3, Save, ShieldCheck, LogOut, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Placeholder for user data structure
@@ -19,21 +19,21 @@ interface UserProfile {
   avatarUrl?: string;
 }
 
+const placeholderUser: UserProfile = {
+  uid: "placeholder-uid-123",
+  email: "user@example.com",
+  displayName: "Beast Hunter",
+  avatarUrl: "https://placehold.co/128x128.png"
+};
+
 export function ProfileUI() {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Placeholder: In a real app, this would come from your authentication state
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>({
-    uid: "placeholder-uid-123",
-    email: "user@example.com",
-    displayName: "Beast Hunter",
-    avatarUrl: "https://placehold.co/128x128.png"
-  });
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null); // Start as logged out
 
   const [formData, setFormData] = useState({
-    displayName: currentUser?.displayName || "",
-    email: currentUser?.email || "",
+    displayName: "",
+    email: "",
   });
 
   useEffect(() => {
@@ -42,6 +42,9 @@ export function ProfileUI() {
         displayName: currentUser.displayName || "",
         email: currentUser.email || "",
       });
+    } else {
+      // Clear form data when logged out
+      setFormData({ displayName: "", email: "" });
     }
   }, [currentUser]);
 
@@ -71,10 +74,19 @@ export function ProfileUI() {
     });
   };
 
+  const handleLogin = () => {
+    // Simulate login
+    setCurrentUser(placeholderUser);
+    toast({
+      title: "Logged In (Simulated)",
+      description: `Welcome back, ${placeholderUser.displayName}!`,
+    });
+  };
+
   const handleLogout = () => {
-    // Placeholder: In a real app, this would sign the user out using Firebase Auth
-    console.log("User logged out (Simulated)");
-    setCurrentUser(null); // Simulate logout
+    // Simulate logout
+    setCurrentUser(null);
+    setIsEditing(false); // Exit edit mode on logout
     toast({
       title: "Logged Out (Simulated)",
       description: "You have been successfully logged out.",
@@ -86,11 +98,11 @@ export function ProfileUI() {
       <Card className="w-full max-w-md mx-auto shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center"><User className="mr-2" /> User Profile</CardTitle>
-          <CardDescription>Please log in to view your profile.</CardDescription>
+          <CardDescription>Please log in to view and manage your profile.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button className="w-full bg-primary hover:bg-primary/90">
-            Log In (Placeholder)
+          <Button onClick={handleLogin} className="w-full bg-primary hover:bg-primary/90">
+            <LogIn className="mr-2 h-4 w-4" /> Log In (Simulated)
           </Button>
         </CardContent>
       </Card>
@@ -166,11 +178,11 @@ export function ProfileUI() {
         <Separator />
 
         <div className="space-y-3">
-           <Button variant="outline" className="w-full flex items-center justify-center">
+           <Button variant="outline" className="w-full flex items-center justify-center" disabled>
             <ShieldCheck className="mr-2 h-4 w-4" /> Change Password (Placeholder)
           </Button>
           <Button variant="destructive" onClick={handleLogout} className="w-full flex items-center justify-center">
-            <LogOut className="mr-2 h-4 w-4" /> Log Out (Placeholder)
+            <LogOut className="mr-2 h-4 w-4" /> Log Out
           </Button>
         </div>
       </CardContent>
