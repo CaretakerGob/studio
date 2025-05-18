@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2 } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2, Trash2 } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition, AbilityType } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -40,19 +40,19 @@ const statDefinitions: CharacterStatDefinition[] = [
 ];
 
 const skillDefinitions: SkillDefinition[] = [
-  { id: 'ath', label: "Athletics (ATH)", icon: PersonStanding, description: "Prowess at swimming, running, tumbling, and parkour." },
-  { id: 'cpu', label: "Computer Use (CPU)", icon: Laptop, description: "Adept at hacking, online research, and navigating networks." },
-  { id: 'dare', label: "Dare Devil (DARE)", icon: Star, description: "Fearless and skilled driver/pilot, performs spectacular stunts." },
-  { id: 'dec', label: "Deception (DEC)", icon: VenetianMask, description: "Skill in lying, manipulation, sleight of hand, and stealth." },
-  { id: 'emp', label: "Empathy (EMP)", icon: HeartHandshake, description: "Ability to triage, tutor, handle animals, and sense motives." },
-  { id: 'eng', label: "Engineer (ENG)", icon: Wrench, description: "Proficiency in crafting, repairing, using machinery, and disabling devices." },
-  { id: 'inv', label: "Investigate (INV)", icon: Search, description: "Ability to gather info, find clues, and research." },
-  { id: 'kno', label: "Knowledge (KNO)", icon: Library, description: "Filled with useful facts on various subjects (not Occult, Eng, CPU)." },
-  { id: 'occ', label: "Occult (OCC)", icon: BookMarked, description: "Knowledge of rituals, demonology, alchemy, and ancient scripts." },
-  { id: 'pers', label: "Personality (PERS)", icon: Smile, description: "Inner willpower and charisma (Inspirational or Intimidating)." },
-  { id: 'sur', label: "Survivalist (SUR)", icon: Leaf, description: "Skilled at living off the land, tracking, and navigation." },
-  { id: 'tac', label: "Tactician (TAC)", icon: ClipboardList, description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts." },
-  { id: 'tun', label: "Tuner (TUN)", icon: SlidersHorizontal, description: "Rare individuals born with or acquired skill for visions, sensing danger." },
+  { id: 'ath', label: "Athletics", icon: PersonStanding, description: "Prowess at swimming, running, tumbling, and parkour." },
+  { id: 'cpu', label: "Computer Use", icon: Laptop, description: "Adept at hacking, online research, and navigating networks." },
+  { id: 'dare', label: "Dare Devil", icon: Star, description: "Fearless and skilled driver/pilot, performs spectacular stunts." },
+  { id: 'dec', label: "Deception", icon: VenetianMask, description: "Skill in lying, manipulation, sleight of hand, and stealth." },
+  { id: 'emp', label: "Empathy", icon: HeartHandshake, description: "Ability to triage, tutor, handle animals, and sense motives." },
+  { id: 'eng', label: "Engineer", icon: Wrench, description: "Proficiency in crafting, repairing, using machinery, and disabling devices." },
+  { id: 'inv', label: "Investigate", icon: Search, description: "Ability to gather info, find clues, and research." },
+  { id: 'kno', label: "Knowledge", icon: Library, description: "Filled with useful facts on various subjects (not Occult, Eng, CPU)." },
+  { id: 'occ', label: "Occult", icon: BookMarked, description: "Knowledge of rituals, demonology, alchemy, and ancient scripts." },
+  { id: 'pers', label: "Personality", icon: Smile, description: "Inner willpower and charisma (Inspirational or Intimidating)." },
+  { id: 'sur', label: "Survivalist", icon: Leaf, description: "Skilled at living off the land, tracking, and navigation." },
+  { id: 'tac', label: "Tactician", icon: ClipboardList, description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts." },
+  { id: 'tun', label: "Tuner", icon: SlidersHorizontal, description: "Rare individuals born with or acquired skill for visions, sensing danger." },
 ];
 
 
@@ -60,14 +60,14 @@ const charactersData: Character[] = [
   {
     id: 'custom',
     name: 'Custom Character',
-    baseStats: { hp: 5, maxHp: 5, mv: 2, def: 2, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills },
+    baseStats: { ...initialBaseStats },
+    skills: { ...initialSkills }, // All skills start at 0 for custom
     abilities: [],
     avatarSeed: 'customcharacter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
-    characterPoints: 375,
+    characterPoints: 375, // Example starting CP
   },
   {
     id: 'gob',
@@ -235,6 +235,11 @@ const allUniqueAbilities: AbilityWithCost[] = (() => {
   return Array.from(abilitiesMap.values());
 })();
 
+const SKILL_COST_LEVEL_1 = 10;
+const SKILL_COST_LEVEL_2 = 5; // Additional cost to go from 1 to 2
+const SKILL_COST_LEVEL_3 = 10; // Additional cost to go from 2 to 3
+const MAX_SKILL_LEVEL = 3;
+
 
 export function CharacterSheetUI() {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>(charactersData[0].id);
@@ -242,6 +247,7 @@ export function CharacterSheetUI() {
   const [userSavedCharacters, setUserSavedCharacters] = useState<Character[]>([]);
   const [highlightedStat, setHighlightedStat] = useState<StatName | null>(null);
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
+  const [skillToPurchase, setSkillToPurchase] = useState<SkillName | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingCharacter, setIsLoadingCharacter] = useState(true);
 
@@ -286,7 +292,7 @@ export function CharacterSheetUI() {
       }
     };
     fetchUserSavedCharacters();
-  }, [currentUser, showToastHelper, isSaving]); // Added isSaving to refresh dropdown after save
+  }, [currentUser, showToastHelper, isSaving]);
 
 
   const characterDropdownOptions = useMemo(() => {
@@ -350,9 +356,20 @@ export function CharacterSheetUI() {
           return;
         }
       }
+      
+      // Ensure skills is an object, even if undefined in loaded data (especially for older saved data)
+      if (characterToLoad && !characterToLoad.skills) {
+        characterToLoad.skills = { ...initialSkills };
+      }
+      // Ensure custom character always starts with initialSkills if it's a fresh load or no saved skill data
+      if (characterToLoad && characterToLoad.id === 'custom' && !Object.keys(characterToLoad.skills || {}).length) {
+          characterToLoad.skills = { ...initialSkills };
+      }
+
 
       setEditableCharacterData(JSON.parse(JSON.stringify(characterToLoad)));
       setAbilityToAddId(undefined);
+      setSkillToPurchase(undefined);
       setIsLoadingCharacter(false);
     };
 
@@ -488,13 +505,15 @@ export function CharacterSheetUI() {
   const resetStats = () => {
     const originalCharacter = charactersData.find(c => c.id === selectedCharacterId);
     if (originalCharacter) {
-      // Ensure we reset the name for the custom character as well
-      const characterToSet = JSON.parse(JSON.stringify(originalCharacter));
+      let characterToSet = JSON.parse(JSON.stringify(originalCharacter));
        if (characterToSet.id === 'custom' && originalCharacter.id === 'custom') {
-         characterToSet.name = originalCharacter.name; // Reset to default "Custom Character" name
+         characterToSet.name = originalCharacter.name; 
+         characterToSet.skills = { ...initialSkills }; // Reset skills to all 0s
+         characterToSet.abilities = []; // Reset abilities
+         characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; // Reset CP
        }
       setEditableCharacterData(characterToSet);
-      showToastHelper({ title: "Stats Reset", description: `${characterToSet.name}'s stats and abilities have been reset to default template.` });
+      showToastHelper({ title: "Stats Reset", description: `${characterToSet.name}'s stats, skills, and abilities have been reset to default template.` });
     }
   };
 
@@ -556,6 +575,112 @@ export function CharacterSheetUI() {
     showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCostForToast} CP.` });
     setAbilityToAddId(undefined);
   };
+
+  // --- Custom Character Skill Management ---
+  const handlePurchaseSkill = () => {
+    if (!editableCharacterData || editableCharacterData.id !== 'custom' || !skillToPurchase) return;
+    const currentSkills = editableCharacterData.skills || { ...initialSkills };
+    const currentSkillLevel = currentSkills[skillToPurchase] || 0;
+
+    if (currentSkillLevel > 0) {
+      showToastHelper({ title: "Skill Already Added", description: "This skill is already part of your character. Use +/- to adjust its level.", variant: "destructive" });
+      return;
+    }
+
+    if ((editableCharacterData.characterPoints || 0) < SKILL_COST_LEVEL_1) {
+      showToastHelper({ title: "Not Enough CP", description: `You need ${SKILL_COST_LEVEL_1} CP to add this skill.`, variant: "destructive" });
+      return;
+    }
+
+    const skillDef = skillDefinitions.find(s => s.id === skillToPurchase);
+
+    setEditableCharacterData(prevData => {
+      if (!prevData) return null;
+      const newSkills = { ...prevData.skills, [skillToPurchase!]: 1 };
+      const newCharacterPoints = (prevData.characterPoints || 0) - SKILL_COST_LEVEL_1;
+      return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
+    });
+    showToastHelper({ title: "Skill Added", description: `${skillDef?.label || skillToPurchase} added at level 1.` });
+    setSkillToPurchase(undefined);
+  };
+
+  const handleIncreaseSkillLevel = (skillId: SkillName) => {
+    if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
+    const currentLevel = (editableCharacterData.skills && editableCharacterData.skills[skillId]) || 0;
+    if (currentLevel >= MAX_SKILL_LEVEL) {
+      showToastHelper({ title: "Max Level Reached", description: "This skill is already at its maximum level.", variant: "destructive" });
+      return;
+    }
+
+    let cost = 0;
+    if (currentLevel === 0) cost = SKILL_COST_LEVEL_1; // Should not happen if using dedicated Add button
+    else if (currentLevel === 1) cost = SKILL_COST_LEVEL_2;
+    else if (currentLevel === 2) cost = SKILL_COST_LEVEL_3;
+
+    if ((editableCharacterData.characterPoints || 0) < cost) {
+      showToastHelper({ title: "Not Enough CP", description: `You need ${cost} CP to upgrade this skill.`, variant: "destructive" });
+      return;
+    }
+
+    const skillDef = skillDefinitions.find(s => s.id === skillId);
+    setEditableCharacterData(prevData => {
+      if (!prevData) return null;
+      const newSkills = { ...prevData.skills, [skillId]: currentLevel + 1 };
+      const newCharacterPoints = (prevData.characterPoints || 0) - cost;
+      return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
+    });
+    showToastHelper({ title: "Skill Upgraded", description: `${skillDef?.label || skillId} upgraded to level ${currentLevel + 1}.` });
+  };
+
+  const handleDecreaseSkillLevel = (skillId: SkillName) => {
+    if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
+    const currentLevel = (editableCharacterData.skills && editableCharacterData.skills[skillId]) || 0;
+    if (currentLevel <= 1) { // If level 1, use "Remove Skill" instead.
+        handleRemoveSkill(skillId);
+        return;
+    }
+
+    let refund = 0;
+    if (currentLevel === MAX_SKILL_LEVEL) refund = SKILL_COST_LEVEL_3;
+    else if (currentLevel === 2) refund = SKILL_COST_LEVEL_2;
+
+    const skillDef = skillDefinitions.find(s => s.id === skillId);
+    setEditableCharacterData(prevData => {
+      if (!prevData) return null;
+      const newSkills = { ...prevData.skills, [skillId]: currentLevel - 1 };
+      const newCharacterPoints = (prevData.characterPoints || 0) + refund;
+      return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
+    });
+    showToastHelper({ title: "Skill Downgraded", description: `${skillDef?.label || skillId} downgraded to level ${currentLevel - 1}.` });
+  };
+
+  const handleRemoveSkill = (skillId: SkillName) => {
+    if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
+    const currentLevel = (editableCharacterData.skills && editableCharacterData.skills[skillId]) || 0;
+    if (currentLevel === 0) return;
+
+    let totalRefund = 0;
+    if (currentLevel === 1) totalRefund = SKILL_COST_LEVEL_1;
+    else if (currentLevel === 2) totalRefund = SKILL_COST_LEVEL_1 + SKILL_COST_LEVEL_2;
+    else if (currentLevel === 3) totalRefund = SKILL_COST_LEVEL_1 + SKILL_COST_LEVEL_2 + SKILL_COST_LEVEL_3;
+    
+    const skillDef = skillDefinitions.find(s => s.id === skillId);
+    setEditableCharacterData(prevData => {
+      if (!prevData) return null;
+      const newSkills = { ...prevData.skills, [skillId]: 0 }; // Set to 0 or delete key
+      const newCharacterPoints = (prevData.characterPoints || 0) + totalRefund;
+      return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
+    });
+    showToastHelper({ title: "Skill Removed", description: `${skillDef?.label || skillId} removed. ${totalRefund} CP refunded.` });
+  };
+
+  const purchasedSkills = useMemo(() => {
+    if (editableCharacterData?.id === 'custom' && editableCharacterData.skills) {
+      return skillDefinitions.filter(def => (editableCharacterData.skills?.[def.id] || 0) > 0);
+    }
+    return [];
+  }, [editableCharacterData]);
+
 
   const handleSaveCharacter = async () => {
     if (!currentUser) {
@@ -908,13 +1033,14 @@ export function CharacterSheetUI() {
           <Separator />
 
           {editableCharacterData.id === 'custom' && (
+            <>
             <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30">
               <h3 className="text-lg font-semibold text-primary flex items-center">
                 <ShoppingCart className="mr-2 h-5 w-5" /> Custom Ability Selection
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
                 <div className="w-full">
-                  <Label htmlFor="abilitySelect" className="text-sm text-muted-foreground">Choose an ability to add:</Label>
+                  <Label htmlFor="abilitySelect" className="text-sm text-muted-foreground">Choose an ability to add (Cost: 50 CP):</Label>
                   <Select value={abilityToAddId} onValueChange={setAbilityToAddId}>
                     <SelectTrigger id="abilitySelect">
                       <SelectValue placeholder="Select an ability" />
@@ -961,16 +1087,16 @@ export function CharacterSheetUI() {
                   Add Ability
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Selected abilities will appear in the 'Abilities' tab below.
-              </p>
             </div>
+             <Separator />
+            </>
           )}
 
 
           <Tabs defaultValue="stats" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3"> {/* Changed grid-cols-2 to grid-cols-3 */}
               <TabsTrigger value="stats">Stats &amp; Equipment</TabsTrigger>
+              <TabsTrigger value="skills">Skills</TabsTrigger> {/* New Skills Tab */}
               <TabsTrigger value="abilities">Abilities</TabsTrigger>
             </TabsList>
             <TabsContent value="stats" className="mt-6 space-y-6">
@@ -988,31 +1114,116 @@ export function CharacterSheetUI() {
                       <WeaponDisplay weapon={editableCharacterData.rangedWeapon} type="ranged" />
                   </div>
               </div>
-              <Separator />
-              <div>
-                <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
-                {
-                  (() => {
-                    const relevantSkillDefinitions = skillDefinitions.filter(def => ((characterSkills as Skills)[def.id as SkillName] ?? 0) > 0 || editableCharacterData.id === 'custom');
-
-                    if (relevantSkillDefinitions.length === 0 && editableCharacterData.id !== 'custom') {
-                      return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
-                    }
-                    if (editableCharacterData.id === 'custom') {
-                       return (
-                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                           {skillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
-                         </div>
-                       );
-                    }
-                    return (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {relevantSkillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
-                      </div>
-                    );
-                  })()
-                }
-              </div>
+            </TabsContent>
+            <TabsContent value="skills" className="mt-6 space-y-6"> {/* New Skills Tab Content */}
+              {editableCharacterData.id === 'custom' ? (
+                // Custom Character Skill Management UI
+                <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30">
+                  <h3 className="text-xl font-semibold text-primary flex items-center">
+                    <Library className="mr-2 h-6 w-6" /> Manage Custom Skills
+                  </h3>
+                   <p className="text-sm text-muted-foreground">Available CP: {editableCharacterData.characterPoints}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
+                    <div className="w-full">
+                      <Label htmlFor="skillPurchaseSelect" className="text-sm text-muted-foreground">Choose a skill to add (Cost: {SKILL_COST_LEVEL_1} CP for Level 1):</Label>
+                      <Select value={skillToPurchase} onValueChange={(value) => setSkillToPurchase(value as SkillName)}>
+                        <SelectTrigger id="skillPurchaseSelect">
+                          <SelectValue placeholder="Select a skill to purchase" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {skillDefinitions
+                            .filter(def => (characterSkills[def.id] || 0) === 0) // Only show skills not yet purchased
+                            .map(def => (
+                            <SelectItem key={def.id} value={def.id} disabled={(editableCharacterData.characterPoints || 0) < SKILL_COST_LEVEL_1}>
+                              {def.label} - {SKILL_COST_LEVEL_1} CP
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={handlePurchaseSkill}
+                      disabled={!skillToPurchase || (editableCharacterData.characterPoints || 0) < SKILL_COST_LEVEL_1}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      Add Skill
+                    </Button>
+                  </div>
+                  <Separator className="my-4"/>
+                  {purchasedSkills.length > 0 ? (
+                    <div className="space-y-3">
+                      <h4 className="text-md font-semibold text-muted-foreground">Purchased Skills:</h4>
+                      {purchasedSkills.map(skillDef => {
+                        const currentLevel = characterSkills[skillDef.id] || 0;
+                        let upgradeCost = 0;
+                        if (currentLevel === 1) upgradeCost = SKILL_COST_LEVEL_2;
+                        else if (currentLevel === 2) upgradeCost = SKILL_COST_LEVEL_3;
+                        
+                        return (
+                          <Card key={skillDef.id} className="p-3 bg-card/60">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <skillDef.icon className="mr-2 h-5 w-5 text-primary" />
+                                <span className="font-medium">{skillDef.label} - Level {currentLevel}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-7 w-7"
+                                  onClick={() => handleDecreaseSkillLevel(skillDef.id)}
+                                  disabled={currentLevel <= 1} // Decrease to 0 handled by remove
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-7 w-7"
+                                  onClick={() => handleIncreaseSkillLevel(skillDef.id)}
+                                  disabled={currentLevel >= MAX_SKILL_LEVEL || (editableCharacterData.characterPoints || 0) < upgradeCost}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive/80"
+                                  onClick={() => handleRemoveSkill(skillDef.id)}
+                                >
+                                    <Trash2 className="h-4 w-4"/>
+                                </Button>
+                              </div>
+                            </div>
+                            {currentLevel < MAX_SKILL_LEVEL && <p className="text-xs text-muted-foreground mt-1">Next Level Cost: {upgradeCost} CP</p>}
+                             <p className="text-xs text-muted-foreground mt-1">{skillDef.description}</p>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">No skills purchased yet.</p>
+                  )}
+                </div>
+              ) : (
+                // Default Skill Display for non-custom characters
+                <div>
+                  <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
+                  {
+                    (() => {
+                      const relevantSkillDefinitions = skillDefinitions.filter(def => ((characterSkills as Skills)[def.id as SkillName] ?? 0) > 0);
+                      if (relevantSkillDefinitions.length === 0) {
+                        return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
+                      }
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {relevantSkillDefinitions.map(def => <SkillDisplayComponent key={def.id} def={def} />)}
+                        </div>
+                      );
+                    })()
+                  }
+                </div>
+              )}
             </TabsContent>
             <TabsContent value="abilities" className="mt-6">
               {currentCharacterAbilities.length === 0 ? (
@@ -1100,3 +1311,4 @@ export function CharacterSheetUI() {
     </Card>
   );
 }
+
