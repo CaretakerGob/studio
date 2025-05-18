@@ -141,7 +141,7 @@ export function ProfileUI() {
             {isSigningUp ? "Sign up to get started." : "Please log in to view and manage your profile."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4" asChild>
+        <CardContent className="space-y-4">
           <form onSubmit={isSigningUp ? handleSignUp : handleLogin}>
             {error && (
               <Alert variant="destructive">
