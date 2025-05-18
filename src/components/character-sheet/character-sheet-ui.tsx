@@ -28,6 +28,13 @@ const initialBaseStats: CharacterStats = {
   sanity: 5, maxSanity: 5,
 };
 
+const initialCustomCharacterStats: CharacterStats = {
+  hp: 0, maxHp: 0,
+  mv: 0,
+  def: 0,
+  sanity: 0, maxSanity: 0,
+};
+
 const initialSkills: Skills = {
   ath: 0, cpu: 0, dare: 0, dec: 0, emp: 0, eng: 0, inv: 0, kno: 0, occ: 0, pers: 0, sur: 0, tac: 0, tun: 0,
 };
@@ -38,6 +45,14 @@ const statDefinitions: CharacterStatDefinition[] = [
   { id: 'mv', label: "Movement (MV)", icon: Footprints, description: "How many spaces your character can move." },
   { id: 'def', label: "Defense (DEF)", icon: Shield, description: "Reduces incoming damage." },
 ];
+
+const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity'>, { cost: number; max: number; base: 0 }> = {
+  hp: { cost: 5, max: 7, base: 0 },
+  sanity: { cost: 10, max: 5, base: 0 },
+  mv: { cost: 2, max: 6, base: 0 },
+  def: { cost: 5, max: 3, base: 0 },
+};
+
 
 const skillDefinitions: SkillDefinition[] = [
   { id: 'ath', label: "Athletics", icon: PersonStanding, description: "Prowess at swimming, running, tumbling, and parkour." },
@@ -60,14 +75,14 @@ const charactersData: Character[] = [
   {
     id: 'custom',
     name: 'Custom Character',
-    baseStats: { ...initialBaseStats },
-    skills: { ...initialSkills }, // All skills start at 0 for custom
+    baseStats: { ...initialCustomCharacterStats },
+    skills: { ...initialSkills }, 
     abilities: [],
     avatarSeed: 'customcharacter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
-    characterPoints: 375, // Example starting CP
+    characterPoints: 375, 
   },
   {
     id: 'gob',
@@ -348,7 +363,10 @@ export function CharacterSheetUI() {
         characterToLoad = defaultTemplate;
         if (characterToLoad) {
            if (currentUser) {
-             showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad.name}. No saved data found.` });
+             // Don't show "default loaded" if it's the custom character, as its base is always "default" until modified.
+             if (characterToLoad.id !== 'custom') {
+                showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad.name}. No saved data found.` });
+             }
            }
         } else {
           showToastHelper({ title: "Error", description: "Selected character template not found.", variant: "destructive" });
@@ -357,13 +375,17 @@ export function CharacterSheetUI() {
         }
       }
       
-      // Ensure skills is an object, even if undefined in loaded data (especially for older saved data)
       if (characterToLoad && !characterToLoad.skills) {
         characterToLoad.skills = { ...initialSkills };
       }
-      // Ensure custom character always starts with initialSkills if it's a fresh load or no saved skill data
-      if (characterToLoad && characterToLoad.id === 'custom' && !Object.keys(characterToLoad.skills || {}).length) {
-          characterToLoad.skills = { ...initialSkills };
+      
+      if (characterToLoad && characterToLoad.id === 'custom') {
+          if (!characterToLoad.skills || Object.keys(characterToLoad.skills).length === 0) {
+             characterToLoad.skills = { ...initialSkills };
+          }
+          if (!characterToLoad.baseStats || Object.values(characterToLoad.baseStats).every(v => v === 0 || v === undefined) && characterToLoad.id === 'custom' && !docSnap?.exists() ) { // only if no saved data
+             characterToLoad.baseStats = { ...initialCustomCharacterStats };
+          }
       }
 
 
@@ -374,7 +396,8 @@ export function CharacterSheetUI() {
     };
 
     loadCharacterData();
-  }, [selectedCharacterId, currentUser, showToastHelper, setAuthError]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCharacterId, currentUser, setAuthError]); // Removed showToastHelper to break potential loop
 
 
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
@@ -417,7 +440,7 @@ export function CharacterSheetUI() {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id,
+      editableCharacterData?.id, // Added ID to re-trigger if character changes
       abilitiesJSONKey,
       savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
@@ -439,7 +462,7 @@ export function CharacterSheetUI() {
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
-    if (!editableCharacterData) return;
+    if (!editableCharacterData || editableCharacterData.id === 'custom') return; // Prevent for custom character
     const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (isNaN(numericValue)) return;
 
@@ -462,7 +485,7 @@ export function CharacterSheetUI() {
   };
 
   const incrementStat = (statName: StatName) => {
-     if (!editableCharacterData) return;
+     if (!editableCharacterData || editableCharacterData.id === 'custom') return;
      const currentStats = editableCharacterData.baseStats;
      if (statName === 'hp' && currentStats.hp >= currentStats.maxHp) return;
      if (statName === 'sanity' && currentStats.sanity >= currentStats.maxSanity) return;
@@ -470,9 +493,69 @@ export function CharacterSheetUI() {
   };
 
   const decrementStat = (statName: StatName) => {
-    if (!editableCharacterData) return;
+    if (!editableCharacterData || editableCharacterData.id === 'custom') return;
     handleStatChange(statName, (editableCharacterData.baseStats[statName] || 0) - 1);
   };
+
+
+  const handleBuyStatPoint = (statKey: Exclude<StatName, 'maxHp' | 'maxSanity'>) => {
+    if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
+
+    const config = customStatPointBuyConfig[statKey];
+    const currentVal = editableCharacterData.baseStats[statKey];
+    const currentPoints = editableCharacterData.characterPoints || 0;
+
+    if (currentVal >= config.max) {
+      showToastHelper({ title: "Max Reached", description: `Maximum for ${statKey.toUpperCase()} is ${config.max}.`, variant: "destructive" });
+      return;
+    }
+    if (currentPoints < config.cost) {
+      showToastHelper({ title: "Not Enough CP", description: `Need ${config.cost} CP for +1 ${statKey.toUpperCase()}.`, variant: "destructive" });
+      return;
+    }
+
+    setEditableCharacterData(prev => {
+      if (!prev) return null;
+      const newStats = { ...prev.baseStats };
+      newStats[statKey] = currentVal + 1;
+      if (statKey === 'hp') newStats.maxHp = currentVal + 1;
+      if (statKey === 'sanity') newStats.maxSanity = currentVal + 1;
+      
+      return {
+        ...prev,
+        baseStats: newStats,
+        characterPoints: currentPoints - config.cost,
+      };
+    });
+  };
+
+  const handleSellStatPoint = (statKey: Exclude<StatName, 'maxHp' | 'maxSanity'>) => {
+    if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
+
+    const config = customStatPointBuyConfig[statKey];
+    const currentVal = editableCharacterData.baseStats[statKey];
+    const currentPoints = editableCharacterData.characterPoints || 0;
+
+    if (currentVal <= config.base) { // Use base from config (0)
+      showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below ${config.base}.`, variant: "destructive" });
+      return;
+    }
+
+    setEditableCharacterData(prev => {
+      if (!prev) return null;
+      const newStats = { ...prev.baseStats };
+      newStats[statKey] = currentVal - 1;
+      if (statKey === 'hp') newStats.maxHp = currentVal - 1;
+      if (statKey === 'sanity') newStats.maxSanity = currentVal - 1;
+
+      return {
+        ...prev,
+        baseStats: newStats,
+        characterPoints: currentPoints + config.cost,
+      };
+    });
+  };
+
 
   const handleIncrementCooldown = (abilityId: string) => {
     setCurrentAbilityCooldowns(prev => ({
@@ -508,9 +591,10 @@ export function CharacterSheetUI() {
       let characterToSet = JSON.parse(JSON.stringify(originalCharacter));
        if (characterToSet.id === 'custom' && originalCharacter.id === 'custom') {
          characterToSet.name = originalCharacter.name; 
-         characterToSet.skills = { ...initialSkills }; // Reset skills to all 0s
-         characterToSet.abilities = []; // Reset abilities
-         characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; // Reset CP
+         characterToSet.skills = { ...initialSkills }; 
+         characterToSet.abilities = []; 
+         characterToSet.baseStats = { ...initialCustomCharacterStats }; // Reset stats to 0 for custom
+         characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; 
        }
       setEditableCharacterData(characterToSet);
       showToastHelper({ title: "Stats Reset", description: `${characterToSet.name}'s stats, skills, and abilities have been reset to default template.` });
@@ -576,7 +660,6 @@ export function CharacterSheetUI() {
     setAbilityToAddId(undefined);
   };
 
-  // --- Custom Character Skill Management ---
   const handlePurchaseSkill = () => {
     if (!editableCharacterData || editableCharacterData.id !== 'custom' || !skillToPurchase) return;
     const currentSkills = editableCharacterData.skills || { ...initialSkills };
@@ -613,7 +696,7 @@ export function CharacterSheetUI() {
     }
 
     let cost = 0;
-    if (currentLevel === 0) cost = SKILL_COST_LEVEL_1; // Should not happen if using dedicated Add button
+    if (currentLevel === 0) cost = SKILL_COST_LEVEL_1; 
     else if (currentLevel === 1) cost = SKILL_COST_LEVEL_2;
     else if (currentLevel === 2) cost = SKILL_COST_LEVEL_3;
 
@@ -635,7 +718,7 @@ export function CharacterSheetUI() {
   const handleDecreaseSkillLevel = (skillId: SkillName) => {
     if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
     const currentLevel = (editableCharacterData.skills && editableCharacterData.skills[skillId]) || 0;
-    if (currentLevel <= 1) { // If level 1, use "Remove Skill" instead.
+    if (currentLevel <= 1) { 
         handleRemoveSkill(skillId);
         return;
     }
@@ -667,7 +750,7 @@ export function CharacterSheetUI() {
     const skillDef = skillDefinitions.find(s => s.id === skillId);
     setEditableCharacterData(prevData => {
       if (!prevData) return null;
-      const newSkills = { ...prevData.skills, [skillId]: 0 }; // Set to 0 or delete key
+      const newSkills = { ...prevData.skills, [skillId]: 0 }; 
       const newCharacterPoints = (prevData.characterPoints || 0) + totalRefund;
       return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
     });
@@ -787,6 +870,47 @@ export function CharacterSheetUI() {
       </div>
     );
   };
+
+  const CustomStatPointBuyComponent: React.FC<{
+    statKey: Exclude<StatName, 'maxHp' | 'maxSanity'>;
+    label: string;
+    Icon: React.ElementType;
+   }> = ({ statKey, label, Icon }) => {
+    if (!editableCharacterData || editableCharacterData.id !== 'custom') return null;
+
+    const config = customStatPointBuyConfig[statKey];
+    const currentValue = editableCharacterData.baseStats[statKey];
+    const isProgress = statKey === 'hp' || statKey === 'sanity';
+    const currentCP = editableCharacterData.characterPoints || 0;
+
+    return (
+      <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+        <div className="flex items-center justify-between mb-2">
+          <Label className="flex items-center text-lg font-medium">
+            <Icon className="mr-2 h-6 w-6 text-primary" />
+            {label}
+          </Label>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => handleSellStatPoint(statKey)} disabled={currentValue <= config.base} className="h-8 w-8">
+              <Minus className="h-4 w-4" />
+            </Button>
+            <span className="w-12 h-8 text-center text-lg font-bold flex items-center justify-center">{currentValue}</span>
+            <Button variant="outline" size="icon" onClick={() => handleBuyStatPoint(statKey)} disabled={currentValue >= config.max || currentCP < config.cost} className="h-8 w-8">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+         <p className="text-xs text-muted-foreground">Max: {config.max} | Cost: {config.cost} CP per point</p>
+        {isProgress && (
+          <div className="mt-2">
+            <Progress value={(currentValue / config.max) * 100 || 0} className="h-3 [&>div]:bg-primary" />
+            <p className="text-xs text-muted-foreground text-right mt-1">{currentValue} / {config.max}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
 
   const SkillDisplayComponent: React.FC<{ def: SkillDefinition }> = ({ def }) => {
     const skillValue = (characterSkills as Skills)[def.id as SkillName] || 0;
@@ -1094,16 +1218,33 @@ export function CharacterSheetUI() {
 
 
           <Tabs defaultValue="stats" className="w-full">
-            <TabsList className="grid w-full grid-cols-3"> {/* Changed grid-cols-2 to grid-cols-3 */}
+            <TabsList className="grid w-full grid-cols-3"> 
               <TabsTrigger value="stats">Stats &amp; Equipment</TabsTrigger>
-              <TabsTrigger value="skills">Skills</TabsTrigger> {/* New Skills Tab */}
+              <TabsTrigger value="skills">Skills</TabsTrigger> 
               <TabsTrigger value="abilities">Abilities</TabsTrigger>
             </TabsList>
             <TabsContent value="stats" className="mt-6 space-y-6">
               <div>
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><UserCircle className="mr-2 h-6 w-6 text-primary" /> Core Stats</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)}
+                  {editableCharacterData.id === 'custom' ? (
+                    <>
+                      {(Object.keys(customStatPointBuyConfig) as Array<Exclude<StatName, 'maxHp' | 'maxSanity'>>).map(statKey => {
+                          const statDef = statDefinitions.find(s => s.id === statKey);
+                          if (!statDef) return null;
+                          return (
+                            <CustomStatPointBuyComponent
+                              key={statKey}
+                              statKey={statKey}
+                              label={statDef.label}
+                              Icon={statDef.icon}
+                            />
+                          );
+                      })}
+                    </>
+                  ) : (
+                    statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)
+                  )}
                 </div>
               </div>
               <Separator/>
@@ -1115,9 +1256,8 @@ export function CharacterSheetUI() {
                   </div>
               </div>
             </TabsContent>
-            <TabsContent value="skills" className="mt-6 space-y-6"> {/* New Skills Tab Content */}
+            <TabsContent value="skills" className="mt-6 space-y-6"> 
               {editableCharacterData.id === 'custom' ? (
-                // Custom Character Skill Management UI
                 <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30">
                   <h3 className="text-xl font-semibold text-primary flex items-center">
                     <Library className="mr-2 h-6 w-6" /> Manage Custom Skills
@@ -1132,7 +1272,7 @@ export function CharacterSheetUI() {
                         </SelectTrigger>
                         <SelectContent>
                           {skillDefinitions
-                            .filter(def => (characterSkills[def.id] || 0) === 0) // Only show skills not yet purchased
+                            .filter(def => (characterSkills[def.id] || 0) === 0) 
                             .map(def => (
                             <SelectItem key={def.id} value={def.id} disabled={(editableCharacterData.characterPoints || 0) < SKILL_COST_LEVEL_1}>
                               {def.label} - {SKILL_COST_LEVEL_1} CP
@@ -1172,7 +1312,7 @@ export function CharacterSheetUI() {
                                   size="icon" 
                                   className="h-7 w-7"
                                   onClick={() => handleDecreaseSkillLevel(skillDef.id)}
-                                  disabled={currentLevel <= 1} // Decrease to 0 handled by remove
+                                  disabled={currentLevel <= 0} 
                                 >
                                   <Minus className="h-4 w-4" />
                                 </Button>
@@ -1190,12 +1330,13 @@ export function CharacterSheetUI() {
                                   size="icon"
                                   className="h-7 w-7 text-destructive hover:text-destructive/80"
                                   onClick={() => handleRemoveSkill(skillDef.id)}
+                                  disabled={currentLevel === 0}
                                 >
                                     <Trash2 className="h-4 w-4"/>
                                 </Button>
                               </div>
                             </div>
-                            {currentLevel < MAX_SKILL_LEVEL && <p className="text-xs text-muted-foreground mt-1">Next Level Cost: {upgradeCost} CP</p>}
+                            {currentLevel < MAX_SKILL_LEVEL && currentLevel > 0 && <p className="text-xs text-muted-foreground mt-1">Next Level Cost: {upgradeCost} CP</p>}
                              <p className="text-xs text-muted-foreground mt-1">{skillDef.description}</p>
                           </Card>
                         );
@@ -1206,7 +1347,6 @@ export function CharacterSheetUI() {
                   )}
                 </div>
               ) : (
-                // Default Skill Display for non-custom characters
                 <div>
                   <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
                   {
