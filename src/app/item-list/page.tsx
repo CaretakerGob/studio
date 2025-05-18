@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Events - Beast Companion', // This page displays the Google Sheet data, which the user calls "Events"
-  description: 'View game events loaded from Google Sheets.',
+  description: 'Generate a random event from game events loaded from Google Sheets.', // Updated description
 };
 
 // This page is for the "/item-list" route, which is linked by "Events" in the sidebar.
@@ -58,18 +58,20 @@ async function getSheetData(): Promise<EventsSheetData[]> { // Renamed function 
     const typeIndex = sanitizedHeaders.indexOf('type');
     const descriptionIndex = sanitizedHeaders.indexOf('description');
 
-    if (insertIndex === -1 || countIndex === -1 || colorIndex === -1 || typeIndex === -1 || descriptionIndex === -1) {
-        const missingHeaderFields = ['Insert', 'Count', 'Color', 'Type', 'Description'].filter(expectedHeader => 
-            !sanitizedHeaders.includes(expectedHeader.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase()))
-        );
-        const errorMessage = `Required headers (Insert, Count, Color, Type, Description) not found or mismatch in Google Sheet. Missing or mismatched: ${missingHeaderFields.join(', ') || 'Unknown'}. Please check sheet headers and range.`;
+    // Make Insert and Count optional in terms of sheet presence, but ensure Color, Type, Description are there.
+    const requiredHeaders = ['color', 'type', 'description'];
+    const missingRequiredHeaders = requiredHeaders.filter(expectedHeader => !sanitizedHeaders.includes(expectedHeader));
+
+    if (missingRequiredHeaders.length > 0) {
+        const errorMessage = `Required headers (${requiredHeaders.join(', ')}) not found or mismatch in Google Sheet. Missing or mismatched: ${missingRequiredHeaders.join(', ')}. Please check sheet headers and range.`;
         console.error(errorMessage);
         return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: errorMessage }];
     }
 
+
     return rows.slice(1).map((row: any[]): EventsSheetData => ({ // Updated return type
-      Insert: row[insertIndex] || '',
-      Count: row[countIndex] || '',
+      Insert: insertIndex !== -1 ? (row[insertIndex] || '') : '', // Handle if Insert col doesn't exist
+      Count: countIndex !== -1 ? (row[countIndex] || '') : '', // Handle if Count col doesn't exist
       Color: row[colorIndex] || '',
       Type: row[typeIndex] || '',
       Description: row[descriptionIndex] || '',
@@ -89,7 +91,7 @@ export default async function DisplayEventsFromSheetPage() {
       <EventsSheetUI // Updated component usage
         items={eventsData} // Prop name is items, but data is eventsData
         title="Events" // This page is titled "Events"
-        cardDescription="Browse through game events loaded from Google Sheets."
+        cardDescription="Select a color and generate a random event." // Updated description
       />
     </div>
   );
