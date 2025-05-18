@@ -154,28 +154,30 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
           ) : randomlySelectedEvent ? (
             <Card 
               key={eventKey} 
-              className="w-full max-w-lg bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500 relative overflow-hidden"
+              className="w-full max-w-lg bg-transparent border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500 relative overflow-hidden aspect-[5/7]"
             >
               {currentEventBgImage && (
                 <Image
                   src={currentEventBgImage}
                   alt={`${randomlySelectedEvent.Color} event background`}
                   fill
-                  style={{ objectFit: 'cover' }}
+                  style={{ objectFit: 'contain' }} 
                   className="absolute inset-0 z-0 opacity-90 pointer-events-none"
                   data-ai-hint="event background texture"
                 />
               )}
-              <div className="relative z-10 bg-card/70 p-1 rounded-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl text-primary">{randomlySelectedEvent.Type || 'Event'}</CardTitle>
-                  <CardDescription className="text-sm">
-                    Color: {randomlySelectedEvent.Color}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-line">{randomlySelectedEvent.Description}</p>
-                </CardContent>
+              <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-4 sm:p-6">
+                <div className="bg-card/80 p-4 sm:p-6 rounded-lg shadow-md text-center max-w-full overflow-y-auto max-h-[90%]">
+                  <CardHeader className="p-0 pb-2">
+                    <CardTitle className="text-xl text-primary">{randomlySelectedEvent.Type || 'Event'}</CardTitle>
+                    <CardDescription className="text-sm">
+                      Color: {randomlySelectedEvent.Color}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line">{randomlySelectedEvent.Description}</p>
+                  </CardContent>
+                </div>
               </div>
             </Card>
           ) : (
@@ -192,4 +194,3 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     </div>
   );
 }
-
