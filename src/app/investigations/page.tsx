@@ -6,15 +6,15 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Investigations - Beast Companion',
-  description: 'Manage and track your investigations.',
+  description: 'Generate random investigation encounters.', // Updated description
 };
 
 async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> {
   const {
     GOOGLE_SERVICE_ACCOUNT_EMAIL,
     GOOGLE_PRIVATE_KEY,
-    INVESTIGATIONS_GOOGLE_SHEET_ID, // New variable for Investigations
-    INVESTIGATIONS_GOOGLE_SHEET_RANGE, // New variable for Investigations
+    INVESTIGATIONS_GOOGLE_SHEET_ID,
+    INVESTIGATIONS_GOOGLE_SHEET_RANGE,
   } = process.env;
 
   const missingVars: string[] = [];
@@ -27,7 +27,7 @@ async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> 
     const detailedErrorMessage = `Investigations Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, INVESTIGATIONS_GOOGLE_SHEET_ID, INVESTIGATIONS_GOOGLE_SHEET_RANGE) are correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.`;
     console.error(detailedErrorMessage);
     // Return a single error object that matches InvestigationData structure for consistent handling in UI
-    return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: detailedErrorMessage, Description: detailedErrorMessage } as unknown as InvestigationData];
+    return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: detailedErrorMessage } as unknown as InvestigationData];
   }
 
   try {
@@ -50,12 +50,10 @@ async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> 
     if (!rows || rows.length === 0) {
       const warningMessage = `No data found in Investigations Google Sheet ID: ${INVESTIGATIONS_GOOGLE_SHEET_ID} at range: ${INVESTIGATIONS_GOOGLE_SHEET_RANGE}.`;
       console.warn(warningMessage);
-      return [{ 'Location Color': 'Warning', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: warningMessage, Description: warningMessage } as unknown as InvestigationData];
+      return [{ 'Location Color': 'Warning', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: warningMessage } as unknown as InvestigationData];
     }
 
     const headers = rows[0] as string[];
-    // Sanitize headers to match InvestigationData keys (handle potential case differences or extra spaces)
-    // This might not be strictly necessary if sheet headers exactly match JSON keys
     const sanitizedHeaders = headers.map(h => h.trim()); 
 
     return rows.slice(1).map((row: any[]): InvestigationData => {
@@ -63,13 +61,26 @@ async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> 
       sanitizedHeaders.forEach((header, index) => {
         investigationEntry[header] = row[index] || '';
       });
-      return investigationEntry as InvestigationData;
+      // Ensure all potential keys from InvestigationData are present, even if empty
+      const defaultEntry: InvestigationData = {
+        'Location Color': '',
+        '1d6 Roll': '',
+        NPC: '',
+        Unit: '',
+        Persona: '',
+        Demand: '',
+        'Skill Check': '',
+        Goals: '',
+        Passive: '',
+        Description: '', // Added Description explicitly as it might not always be in sheets
+      };
+      return { ...defaultEntry, ...investigationEntry } as InvestigationData;
     });
 
   } catch (error) {
     console.error("Error fetching Investigation data from Google Sheets API:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: `Could not load Investigation data. Error: ${errorMessage}`, Description: `Could not load Investigation data. Error: ${errorMessage}` } as unknown as InvestigationData];
+    return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: `Could not load Investigation data. Error: ${errorMessage}` } as unknown as InvestigationData];
   }
 }
 
