@@ -162,11 +162,11 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
                   alt={`${randomlySelectedEvent.Color} event background`}
                   fill
                   style={{ objectFit: 'cover' }}
-                  className="absolute inset-0 z-0 opacity-20 pointer-events-none"
+                  className="absolute inset-0 z-0 opacity-30 pointer-events-none"
                   data-ai-hint="event background texture"
                 />
               )}
-              <div className="relative z-10 bg-card/70 p-1 rounded-lg"> {/* Added a semi-transparent bg for content */}
+              <div className="relative z-10 bg-card/70 p-1 rounded-lg">
                 <CardHeader>
                   <CardTitle className="text-xl text-primary">{randomlySelectedEvent.Type || 'Event'}</CardTitle>
                   <CardDescription className="text-sm">
@@ -192,3 +192,4 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     </div>
   );
 }
+
