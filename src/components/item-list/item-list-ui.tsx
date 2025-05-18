@@ -29,7 +29,13 @@ interface ItemListUIProps {
 }
 
 export function ItemListUI({ items, title, cardDescription }: ItemListUIProps) {
-  const headers = items.length > 0 ? Object.keys(items[0]) : ["Insert", "Count", "Color", "Type", "Description"];
+  // Define which headers to display
+  const displayedHeaders: Array<keyof ItemData> = ["Color", "Type", "Description"];
+
+  // Determine actual headers present in the first item, but only include those we want to display
+  const headersToRender = items.length > 0 
+    ? Object.keys(items[0]).filter(header => displayedHeaders.includes(header as keyof ItemData)) as Array<keyof ItemData>
+    : displayedHeaders;
 
   return (
     <Card className="shadow-xl">
@@ -46,7 +52,7 @@ export function ItemListUI({ items, title, cardDescription }: ItemListUIProps) {
             <TableCaption>A list of items. Ensure your Google Sheet (specified by \`GOOGLE_SHEET_ID\` and \`GOOGLE_SHEET_RANGE\`) is shared and has the correct columns.</TableCaption>
             <TableHeader>
               <TableRow>
-                {headers.map((header) => (
+                {headersToRender.map((header) => (
                   <TableHead key={header} className="capitalize">
                     {/* Simple way to add space before caps for display */}
                     {header.replace(/([A-Z])/g, ' $1').trim()}
@@ -57,7 +63,7 @@ export function ItemListUI({ items, title, cardDescription }: ItemListUIProps) {
             <TableBody>
               {items.map((item, index) => (
                 <TableRow key={`item-${index}`}>
-                  {headers.map((header) => (
+                  {headersToRender.map((header) => (
                     <TableCell key={`${header}-${index}`}>
                       {String(item[header as keyof ItemData] ?? '')}
                     </TableCell>
@@ -78,3 +84,4 @@ export function ItemListUI({ items, title, cardDescription }: ItemListUIProps) {
     </Card>
   );
 }
+
