@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Dices, Layers, UserCircle, Home, Settings, PanelLeft, List, CalendarDays, ClipboardList } from 'lucide-react'; // Added ClipboardList
+import { Dices, Layers, UserCircle, Home, Settings, PanelLeft, List, CalendarDays, ClipboardList, User } from 'lucide-react'; // Added User
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -23,7 +23,8 @@ const navItems = [
   // { href: '/turn-tracker', label: 'Turn Tracker', icon: Users }, // Commented out Turn Tracker
   { href: '/events', label: 'Item List', icon: List },
   { href: '/item-list', label: 'Events', icon: CalendarDays },
-  { href: '/investigations', label: 'Investigations', icon: ClipboardList }, // Added Investigations
+  { href: '/investigations', label: 'Investigations', icon: ClipboardList },
+  { href: '/profile', label: 'User Profile', icon: User }, // Added Profile link
 ];
 
 export function AppSidebar() {

@@ -1,17 +1,18 @@
 
+import Link from 'next/link'; // Added this import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList } from "lucide-react"; // Added List, CalendarDays, ClipboardList
-import Link from "next/link";
+import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User } from "lucide-react"; // Added Home, User
 
 export default function HomePage() {
   const features = [
     { name: "Character Sheet", href: "/character-sheet", icon: UserCircle, description: "Track your hero's stats and progress." },
     { name: "Dice Roller", href: "/dice-roller", icon: Dices, description: "Roll various dice for your game actions." },
     { name: "Card Generator", href: "/card-generator", icon: Layers, description: "Draw random cards from selected decks." },
-    { name: "Item List", href: "/events", icon: List, description: "View a list of items from the game." }, // Note: href points to /events as per sidebar
-    { name: "Events", href: "/item-list", icon: CalendarDays, description: "Generate random events from game data." }, // Note: href points to /item-list as per sidebar
+    { name: "Item List", href: "/events", icon: List, description: "View a list of items from the game." },
+    { name: "Events", href: "/item-list", icon: CalendarDays, description: "Generate random events from game data." },
     { name: "Investigations", href: "/investigations", icon: ClipboardList, description: "Manage and track your investigations." },
+    { name: "User Profile", href: "/profile", icon: User, description: "Manage your profile and saved data." }, // Added Profile card
   ];
 
   return (
@@ -23,7 +24,7 @@ export default function HomePage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"> {/* Changed lg:grid-cols-2 to lg:grid-cols-3 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {features.map((feature) => (
           <Card key={feature.name} className="shadow-xl hover:shadow-primary/50 transition-shadow duration-300">
             <CardHeader>
