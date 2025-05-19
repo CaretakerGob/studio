@@ -249,7 +249,7 @@ export function DiceRollerUI() {
   const renderCombatRolls = (rolls: CombatDieFace[]) => {
     return rolls.slice(0, 10).map((roll, index) => (
       <div key={index} className="inline-block mx-1 align-middle">
-        <CombatDieFaceImage face={roll} size={40} />
+        <CombatDieFaceImage face={roll} size={48} />
       </div>
     ));
   };
@@ -402,7 +402,7 @@ export function DiceRollerUI() {
                           const label = faceTypeLabels[faceKey];
                           return (
                             <div key={faceKey} className="flex flex-col items-center p-2 rounded-md bg-muted/30 flex-1 min-w-0">
-                              <CombatDieFaceImage face={faceKey} size={56} className="mb-1" />
+                              <CombatDieFaceImage face={faceKey} size={32} className="mb-1" />
                               <p className="text-sm font-medium text-foreground">{label}</p>
                               <p className="text-lg font-bold text-primary">{count}</p>
                             </div>
@@ -490,3 +490,4 @@ export function DiceRollerUI() {
     </div>
   );
 }
+
