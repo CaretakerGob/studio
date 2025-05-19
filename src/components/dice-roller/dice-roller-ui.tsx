@@ -236,7 +236,14 @@ export function DiceRollerUI() {
   const clearHistory = () => {
     setRollHistory([]);
     setLatestRoll(null);
-  }
+  };
+
+  const resetCombatDice = () => {
+    setNumCombatDice(1);
+    if (latestRoll?.type === 'combat') {
+      setLatestRoll(null);
+    }
+  };
 
   const renderNumberedGroupRolls = (rolls: number[]) => {
      return rolls.map((roll, index) => (
@@ -244,11 +251,11 @@ export function DiceRollerUI() {
         {roll}
       </Badge>
     ));
-  }
+  };
 
   const renderCombatRolls = (rolls: CombatDieFace[]) => {
     return rolls.map((roll, index) => (
-      <div key={index} className="inline-block align-middle p-1">
+      <div key={index} className="p-1 inline-block align-middle">
         <CombatDieFaceImage face={roll} size={48} />
       </div>
     ));
@@ -351,9 +358,14 @@ export function DiceRollerUI() {
                 className="mt-1"
               />
             </div>
-            <Button onClick={handleCombatRoll} size="lg" className="w-full text-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground mt-4">
-              <Dices className="mr-2 h-6 w-6" /> Roll {numCombatDice} Combat Dice
-            </Button>
+            <div className="flex space-x-2 mt-4">
+                <Button onClick={handleCombatRoll} size="lg" className="flex-grow text-lg bg-secondary hover:bg-secondary/80 text-secondary-foreground">
+                <Dices className="mr-2 h-6 w-6" /> Roll {numCombatDice} Combat Dice
+                </Button>
+                <Button onClick={resetCombatDice} variant="outline" size="lg" className="text-lg">
+                <RotateCcw className="mr-2 h-5 w-5" /> Reset
+                </Button>
+            </div>
           </div>
 
           {latestRoll && (
