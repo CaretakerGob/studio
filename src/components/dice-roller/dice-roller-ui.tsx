@@ -239,7 +239,7 @@ export function DiceRollerUI() {
   }
 
   const renderNumberedGroupRolls = (rolls: number[]) => {
-     return rolls.slice(0, 10).map((roll, index) => (
+     return rolls.map((roll, index) => (
       <Badge key={index} variant="default" className="text-lg px-3 py-1 bg-primary/20 text-primary-foreground border border-primary align-middle">
         {roll}
       </Badge>
@@ -248,7 +248,7 @@ export function DiceRollerUI() {
 
   const renderCombatRolls = (rolls: CombatDieFace[]) => {
     return rolls.map((roll, index) => (
-      <div key={index} className="inline-block align-middle">
+      <div key={index} className="inline-block align-middle p-1">
         <CombatDieFaceImage face={roll} size={48} />
       </div>
     ));
@@ -375,7 +375,6 @@ export function DiceRollerUI() {
                     </div>
                     <div className="flex items-center justify-center space-x-2 mb-1 flex-wrap min-h-[30px]">
                       {renderNumberedGroupRolls((group as NumberedDiceGroupResult).rolls)}
-                      {(group as NumberedDiceGroupResult).rolls.length > 10 && <Badge variant="outline" className="mt-2">...and {(group as NumberedDiceGroupResult).rolls.length - 10} more</Badge>}
                     </div>
                   </div>
                 ))}
@@ -392,7 +391,7 @@ export function DiceRollerUI() {
                        <div className="flex justify-between items-center mb-2">
                          <Badge variant="secondary" className="text-base">{combatGroup.notation}</Badge>
                        </div>
-                      <div className="flex items-center justify-center gap-2 mb-3 flex-wrap min-h-[40px]">
+                      <div className="grid grid-cols-6 gap-1 justify-center mb-3 min-h-[40px]">
                         {renderCombatRolls(combatGroup.rolls)}
                       </div>
                       <div className="flex justify-around items-start text-center mt-4 space-x-2">
@@ -428,7 +427,7 @@ export function DiceRollerUI() {
           <CardDescription>Last 20 rolls are stored here.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[300px] pr-3"> {/* Adjusted from h-[calc(100vh-220px)] to a fixed height */}
+          <ScrollArea className="h-[300px] pr-3"> 
             {rollHistory.length === 0 ? (
               <p className="text-muted-foreground text-center py-10">No rolls yet. Make your first roll!</p>
             ) : (
