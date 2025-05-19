@@ -391,7 +391,7 @@ export function DiceRollerUI() {
                        <div className="flex justify-between items-center mb-2">
                          <Badge variant="secondary" className="text-base">{combatGroup.notation}</Badge>
                        </div>
-                      <div className="grid grid-cols-6 gap-1 justify-center mb-3 min-h-[40px]">
+                      <div className="flex flex-wrap justify-center items-center gap-1 mb-3 min-h-[40px]">
                         {renderCombatRolls(combatGroup.rolls)}
                       </div>
                       <div className="flex justify-around items-start text-center mt-4 space-x-2">
@@ -487,3 +487,4 @@ export function DiceRollerUI() {
     </div>
   );
 }
+
