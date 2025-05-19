@@ -46,7 +46,7 @@ const combatDieFaceImages: Record<CombatDieFace, CombatDieFaceDetails> = {
     altText: 'Double Sword Face'
   },
   blank: {
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fblank%20188x188%20sticker.png?alt=media&token=08ff6336-a822-4615-8873-0291733210bc',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Dice%2Fblank%20188x188%20sticker.png?alt=media&token=305ce3df-c485-43a8-8f1f-6591e104f249',
     dataAiHint: 'blank die',
     altText: 'Blank Die Face'
   },
