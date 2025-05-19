@@ -247,8 +247,8 @@ export function DiceRollerUI() {
   }
 
   const renderCombatRolls = (rolls: CombatDieFace[]) => {
-    return rolls.slice(0, 10).map((roll, index) => (
-      <div key={index} className="inline-block mx-1 align-middle">
+    return rolls.map((roll, index) => (
+      <div key={index} className="inline-block align-middle">
         <CombatDieFaceImage face={roll} size={48} />
       </div>
     ));
@@ -392,9 +392,8 @@ export function DiceRollerUI() {
                        <div className="flex justify-between items-center mb-2">
                          <Badge variant="secondary" className="text-base">{combatGroup.notation}</Badge>
                        </div>
-                      <div className="flex items-center justify-center space-x-2 mb-3 flex-wrap min-h-[40px]">
+                      <div className="flex items-center justify-center gap-2 mb-3 flex-wrap min-h-[40px]">
                         {renderCombatRolls(combatGroup.rolls)}
-                        {combatGroup.rolls.length > 10 && <Badge variant="outline" className="mt-2">...and {combatGroup.rolls.length - 10} more</Badge>}
                       </div>
                       <div className="flex justify-around items-start text-center mt-4 space-x-2">
                         {(['swordandshield', 'double-sword', 'blank'] as CombatDieFace[]).map(faceKey => {
@@ -472,10 +471,9 @@ export function DiceRollerUI() {
                            {(r.groups[0] as CombatDiceResult).summary}
                          </div>
                         <div className="flex flex-wrap gap-1 mb-1">
-                           {(r.groups[0] as CombatDiceResult).rolls.slice(0,5).map((face, i) => (
+                           {(r.groups[0] as CombatDiceResult).rolls.map((face, i) => (
                              <CombatDieFaceImage key={i} face={face} size={16} className="mx-0.5"/>
                            ))}
-                           {(r.groups[0] as CombatDiceResult).rolls.length > 5 && <span className="text-xs">...</span>}
                          </div>
                        </>
                     )}
@@ -490,4 +488,3 @@ export function DiceRollerUI() {
     </div>
   );
 }
-
