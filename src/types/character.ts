@@ -90,5 +90,5 @@ export interface Character {
   meleeWeapon?: Weapon;
   rangedWeapon?: RangedWeapon;
   characterPoints?: number;
+  selectedArsenalCardId?: string | null; // Added to store the equipped arsenal card ID
 }
-
