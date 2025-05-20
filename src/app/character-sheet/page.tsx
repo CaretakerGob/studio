@@ -110,9 +110,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     }
 
     const headers = rows[0] as string[];
-    const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); // Ensure h is a string and handle potential null/undefined
+    const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
     
-    console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders); // Added for debugging
+    console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders); 
 
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -172,12 +172,11 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
         numModFields.forEach(field => {
           let colIndex = -1;
-          // Try direct match first (already lowercased sanitizedHeaders)
           colIndex = sanitizedHeaders.indexOf(field.toLowerCase() as string);
-          if (colIndex === -1) { // If not found, try variations from map
+          if (colIndex === -1) { 
               const possibleHeaders = Object.keys(headerToFieldMap).filter(h => headerToFieldMap[h] === field);
               for (const headerVariation of possibleHeaders) {
-                  colIndex = getColumnIndex([headerVariation]); // getColumnIndex also lowercases its input
+                  colIndex = getColumnIndex([headerVariation]); 
                   if (colIndex !== -1) break;
               }
           }
@@ -202,7 +201,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
          const parsedLevel = parseInt(String(row[levelIndex]), 10);
          if(!isNaN(parsedLevel)) item.level = parsedLevel;
       }
-
 
       const qtyIndex = getColumnIndex(['qty', 'quantity']);
       if (qtyIndex !== -1 && row[qtyIndex] && String(row[qtyIndex]).trim() !== '') {
@@ -257,19 +255,25 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         const statsStr = String(row[weaponStatsStringColumnIndex] || '').trim();
         if (statsStr) {
           item.weaponDetails = statsStr; 
-          if (item.isFlaggedAsWeapon || item.category === 'WEAPON' || (item.category === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) {
-            item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
-          }
+          // Always parse if details exist, the UI component will decide if it's primary based on flag/category
+          item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
         }
       }
-
+      
       const petFlagColumnIndex = getColumnIndex(['pet', 'is pet', 'companion']);
       if (petFlagColumnIndex !== -1 && row[petFlagColumnIndex]) {
         item.isPet = ['true', 'yes', '1'].includes(String(row[petFlagColumnIndex] || '').toLowerCase());
         if (item.isPet) {
-            const petNameColumnIndex = getColumnIndex(['pet name', 'companion name']);
-            if (petNameColumnIndex !== -1) item.petName = String(row[petNameColumnIndex] || item.abilityName || 'Companion');
-            else item.petName = item.abilityName || 'Companion';
+            const petNameFromCol = String(row[getColumnIndex(['pet name', 'companion name'])] || '').trim();
+            const abilityNameForPet = String(item.abilityName || '').trim();
+            
+            if (petNameFromCol) {
+                item.petName = petNameFromCol;
+            } else if (abilityNameForPet) {
+                item.petName = abilityNameForPet;
+            } else {
+                item.petName = 'Companion'; // Default if no name found
+            }
 
             const petStatsColumnIndex = getColumnIndex(['pet stats', 'companion stats']);
             if (petStatsColumnIndex !== -1) item.petStats = String(row[petStatsColumnIndex] || '');
@@ -302,3 +306,4 @@ export default async function CharacterSheetPage() {
     </div>
   );
 }
+
