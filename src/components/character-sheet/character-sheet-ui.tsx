@@ -4,11 +4,11 @@
 import type { ChangeEvent } from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"; // Added CardTitle and CardDescription
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, UserCircle, Swords } from "lucide-react";
+import { Save, UserCircle, Swords, Package, Library, BookOpen } from "lucide-react"; // Added Package, Library, BookOpen
 import type { CharacterStats, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import type { ArsenalCard, ArsenalItem } from '@/types/arsenal';
 
@@ -45,19 +45,19 @@ const initialSkills: Skills = {
 };
 
 const skillDefinitions: SkillDefinition[] = [
-  { id: 'ath', label: "Athletics (ATH)", description: "Prowess at swimming, running, tumbling, and parkour." },
-  { id: 'cpu', label: "Computer Use (CPU)", description: "Adept at hacking, online research, and navigating networks." },
-  { id: 'dare', label: "Dare Devil (DARE)", description: "Fearless and skilled driver/pilot, performs spectacular stunts." },
-  { id: 'dec', label: "Deception (DEC)", description: "Skill in lying, manipulation, sleight of hand, and stealth." },
-  { id: 'emp', label: "Empathy (EMP)", description: "Ability to triage, tutor, handle animals, and sense motives." },
-  { id: 'eng', label: "Engineer (ENG)", description: "Proficiency in crafting, repairing, using machinery, and disabling devices." },
-  { id: 'inv', label: "Investigate (INV)", description: "Ability to gather info, find clues, and research." },
-  { id: 'kno', label: "Knowledge (KNO)", description: "Filled with useful facts on various subjects (not Occult, Eng, CPU)." },
-  { id: 'occ', label: "Occult (OCC)", description: "Knowledge of rituals, demonology, alchemy, and ancient scripts." },
-  { id: 'pers', label: "Personality (PERS)", description: "Inner willpower and charisma (Inspirational or Intimidating)." },
-  { id: 'sur', label: "Survivalist (SUR)", description: "Skilled at living off the land, tracking, and navigation." },
-  { id: 'tac', label: "Tactician (TAC)", description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts." },
-  { id: 'tun', label: "Tuner (TUN)", description: "Rare individuals born with or acquired skill for visions, sensing danger." },
+  { id: 'ath', label: "Athletics (ATH)", description: "Prowess at swimming, running, tumbling, and parkour.", icon: UserCircle }, // Placeholder icon
+  { id: 'cpu', label: "Computer Use (CPU)", description: "Adept at hacking, online research, and navigating networks.", icon: UserCircle },
+  { id: 'dare', label: "Dare Devil (DARE)", description: "Fearless and skilled driver/pilot, performs spectacular stunts.", icon: UserCircle },
+  { id: 'dec', label: "Deception (DEC)", description: "Skill in lying, manipulation, sleight of hand, and stealth.", icon: UserCircle },
+  { id: 'emp', label: "Empathy (EMP)", description: "Ability to triage, tutor, handle animals, and sense motives.", icon: UserCircle },
+  { id: 'eng', label: "Engineer (ENG)", description: "Proficiency in crafting, repairing, using machinery, and disabling devices.", icon: UserCircle },
+  { id: 'inv', label: "Investigate (INV)", description: "Ability to gather info, find clues, and research.", icon: UserCircle },
+  { id: 'kno', label: "Knowledge (KNO)", description: "Filled with useful facts on various subjects (not Occult, Eng, CPU).", icon: UserCircle },
+  { id: 'occ', label: "Occult (OCC)", description: "Knowledge of rituals, demonology, alchemy, and ancient scripts.", icon: UserCircle },
+  { id: 'pers', label: "Personality (PERS)", description: "Inner willpower and charisma (Inspirational or Intimidating).", icon: UserCircle },
+  { id: 'sur', label: "Survivalist (SUR)", description: "Skilled at living off the land, tracking, and navigation.", icon: UserCircle },
+  { id: 'tac', label: "Tactician (TAC)", description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts.", icon: UserCircle },
+  { id: 'tun', label: "Tuner (TUN)", description: "Rare individuals born with or acquired skill for visions, sensing danger.", icon: UserCircle },
 ];
 
 
@@ -344,8 +344,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT') &&
-            item.parsedWeaponStats?.attack !== undefined &&
+            (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.parsedWeaponStats?.attack !== undefined)) &&
             !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) // No range or range is 0 for melee
         );
 
@@ -372,9 +371,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-            (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT') &&
-            item.parsedWeaponStats?.attack !== undefined &&
-            (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) // Must have range > 0
+             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.parsedWeaponStats?.attack !== undefined)) &&
+             (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) // Must have range > 0
           );
 
           if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
@@ -1163,3 +1161,5 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
+
+    
