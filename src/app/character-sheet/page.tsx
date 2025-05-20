@@ -110,7 +110,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     }
 
     const headers = rows[0] as string[];
-    const sanitizedHeaders = headers.map(h => h.trim().toLowerCase());
+    const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); // Ensure h is a string and handle potential null/undefined
+    
+    console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders); // Added for debugging
 
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -122,7 +124,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     
     const arsenalNameIndex = getColumnIndex(['arsenal name', 'arsenalname', 'name', 'title']);
     if (arsenalNameIndex === -1) {
-        const errorMsg = "Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet.";
+        const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMsg);
         return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [] }];
     }
@@ -170,11 +172,12 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
         numModFields.forEach(field => {
           let colIndex = -1;
+          // Try direct match first (already lowercased sanitizedHeaders)
           colIndex = sanitizedHeaders.indexOf(field.toLowerCase() as string);
-          if (colIndex === -1) {
+          if (colIndex === -1) { // If not found, try variations from map
               const possibleHeaders = Object.keys(headerToFieldMap).filter(h => headerToFieldMap[h] === field);
               for (const headerVariation of possibleHeaders) {
-                  colIndex = getColumnIndex([headerVariation]); 
+                  colIndex = getColumnIndex([headerVariation]); // getColumnIndex also lowercases its input
                   if (colIndex !== -1) break;
               }
           }
@@ -195,10 +198,17 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       if (categoryIndex !== -1) item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
       
       const levelIndex = getColumnIndex(['level']);
-      if (levelIndex !== -1 && row[levelIndex]) item.level = parseInt(String(row[levelIndex]), 10);
+      if (levelIndex !== -1 && row[levelIndex] && String(row[levelIndex]).trim() !== '') {
+         const parsedLevel = parseInt(String(row[levelIndex]), 10);
+         if(!isNaN(parsedLevel)) item.level = parsedLevel;
+      }
+
 
       const qtyIndex = getColumnIndex(['qty', 'quantity']);
-      if (qtyIndex !== -1 && row[qtyIndex]) item.qty = parseInt(String(row[qtyIndex]), 10);
+      if (qtyIndex !== -1 && row[qtyIndex] && String(row[qtyIndex]).trim() !== '') {
+        const parsedQty = parseInt(String(row[qtyIndex]), 10);
+        if(!isNaN(parsedQty)) item.qty = parsedQty;
+      }
 
       const cdIndex = getColumnIndex(['cd', 'cooldown']);
       if (cdIndex !== -1) item.cd = String(row[cdIndex] || '');
