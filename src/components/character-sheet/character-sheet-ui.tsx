@@ -506,16 +506,17 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
-        // Always load the default template for 'custom' initially
+        // For 'custom' character, always load the default template initially.
+        // User has to click "Load My Saved Custom" to load their saved version.
         characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
         if (characterToLoad) {
-             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null; // Ensure it's null if undefined
+             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
              characterToLoad.name = defaultTemplate?.name || 'Custom Character';
              characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
              characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
              characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
              characterToLoad.characterPoints = defaultTemplate?.characterPoints || 375;
-             characterToLoad.selectedArsenalCardId = null; // Ensure no arsenal on default load
+             characterToLoad.selectedArsenalCardId = null;
         }
       } else if (currentUser && auth.currentUser) { 
         try {
@@ -539,12 +540,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
          if (characterToLoad) {
             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
          }
-        if (currentUser) { // Only show "default loaded" toast if a user is logged in but no saved data found
+        if (currentUser) { 
            showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad?.name}. No saved data found.` });
         }
       }
       
-      // Ensure skills is an object even if loaded data might be missing it
       if (characterToLoad && !characterToLoad.skills) {
         characterToLoad.skills = { ...initialSkills };
       }
@@ -557,7 +557,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     loadCharacterData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError]); // Removed userSavedCharacters from deps as it's now handled by dropdown options
+  }, [selectedCharacterId, currentUser, setAuthError]); 
 
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedCooldowns), [(editableCharacterData as any)?.savedCooldowns]);
@@ -1440,65 +1440,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
           </div>
           <Separator />
 
-          {editableCharacterData.id === 'custom' && (
-            <>
-            <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30">
-              <h3 className="text-lg font-semibold text-primary flex items-center">
-                <ShoppingCart className="mr-2 h-5 w-5" /> Custom Ability Selection
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
-                <div className="w-full">
-                  <Label htmlFor="abilitySelect" className="text-sm text-muted-foreground">Choose an ability to add (Cost: 50 CP):</Label>
-                  <Select value={abilityToAddId} onValueChange={setAbilityToAddId}>
-                    <SelectTrigger id="abilitySelect">
-                      <SelectValue placeholder="Select an ability" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categorizedAbilities.actions.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel className="text-base text-primary">Actions</SelectLabel>
-                          {categorizedAbilities.actions.map(ability => (
-                            <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
-                              {ability.name} ({ability.type}) - {ability.cost} CP
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
-                       {categorizedAbilities.interrupts.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel className="text-base text-primary">Interrupts</SelectLabel>
-                          {categorizedAbilities.interrupts.map(ability => (
-                            <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
-                              {ability.name} ({ability.type}) - {ability.cost} CP
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
-                       {categorizedAbilities.passives.length > 0 && (
-                        <SelectGroup>
-                          <SelectLabel className="text-base text-primary">Passives</SelectLabel>
-                          {categorizedAbilities.passives.map(ability => (
-                            <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
-                              {ability.name} ({ability.type}) - {ability.cost} CP
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button
-                  onClick={handleAddAbilityToCustomCharacter}
-                  disabled={!abilityToAddId || (editableCharacterData.characterPoints || 0) < (allUniqueAbilities.find(a=>a.id === abilityToAddId)?.cost || Infinity)}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  Add Ability
-                </Button>
-              </div>
-            </div>
-             <Separator />
-            </>
-          )}
+          {/* Custom Ability Selection UI removed from here */}
 
           {arsenalCards && arsenalCards.length > 0 && (
             <>
@@ -1540,7 +1482,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                           <h4 className="text-base font-semibold text-primary flex items-center">
                             <PawPrint className="mr-2 h-5 w-5" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
                           </h4>
-                          {/* Pet HP Tracker */}
                           {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
                             <div>
                               <div className="flex items-center justify-between mb-1">
@@ -1566,7 +1507,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                               <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
                             </div>
                           )}
-                          {/* Pet Sanity Tracker */}
                           {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
                             <div>
                               <div className="flex items-center justify-between mb-1">
@@ -1714,7 +1654,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                       <WeaponDisplay weapon={currentRangedWeapon} type="ranged" />
                   </div>
               </div>
-              {/* Removed separate Companion card section, functionality moved to Arsenal Loadout card */}
             </TabsContent>
             <TabsContent value="skills" className="mt-6 space-y-6">
               {editableCharacterData.id === 'custom' ? (
@@ -1826,8 +1765,70 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
               )}
             </TabsContent>
             <TabsContent value="abilities" className="mt-6">
-              {currentCharacterAbilities.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8 bg-card/50 rounded-md">This character has no special abilities defined{editableCharacterData.id === 'custom' ? ' or selected' : ''}.</p>
+              {editableCharacterData.id === 'custom' && (
+                <>
+                  <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30 mb-6">
+                    <h3 className="text-lg font-semibold text-primary flex items-center">
+                      <ShoppingCart className="mr-2 h-5 w-5" /> Custom Ability Selection
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
+                      <div className="w-full">
+                        <Label htmlFor="abilitySelect" className="text-sm text-muted-foreground">Choose an ability to add (Cost: 50 CP):</Label>
+                        <Select value={abilityToAddId} onValueChange={setAbilityToAddId}>
+                          <SelectTrigger id="abilitySelect">
+                            <SelectValue placeholder="Select an ability" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categorizedAbilities.actions.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="text-base text-primary">Actions</SelectLabel>
+                                {categorizedAbilities.actions.map(ability => (
+                                  <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
+                                    {ability.name} ({ability.type}) - {ability.cost} CP
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                            {categorizedAbilities.interrupts.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="text-base text-primary">Interrupts</SelectLabel>
+                                {categorizedAbilities.interrupts.map(ability => (
+                                  <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
+                                    {ability.name} ({ability.type}) - {ability.cost} CP
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                            {categorizedAbilities.passives.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="text-base text-primary">Passives</SelectLabel>
+                                {categorizedAbilities.passives.map(ability => (
+                                  <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
+                                    {ability.name} ({ability.type}) - {ability.cost} CP
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        onClick={handleAddAbilityToCustomCharacter}
+                        disabled={!abilityToAddId || (editableCharacterData.characterPoints || 0) < (allUniqueAbilities.find(a=>a.id === abilityToAddId)?.cost || Infinity)}
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        Add Ability
+                      </Button>
+                    </div>
+                  </div>
+                  <Separator className="my-6" />
+                </>
+              )}
+
+              {currentCharacterAbilities.length === 0 && editableCharacterData.id !== 'custom' ? (
+                <p className="text-muted-foreground text-center py-8 bg-card/50 rounded-md">This character has no special abilities defined.</p>
+              ) : currentCharacterAbilities.length === 0 && editableCharacterData.id === 'custom' ? (
+                <p className="text-muted-foreground text-center py-8 bg-card/50 rounded-md">No abilities purchased yet for this custom character.</p>
               ) : (
                 <div className="space-y-6">
                   {actionAbilities.length > 0 && (
