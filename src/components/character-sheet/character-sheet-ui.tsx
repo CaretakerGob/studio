@@ -23,6 +23,7 @@ import { doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from '@/components/ui/badge';
 
 
 const initialBaseStats: CharacterStats = {
@@ -1920,4 +1921,3 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
-
