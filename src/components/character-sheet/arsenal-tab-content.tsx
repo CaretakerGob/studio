@@ -192,6 +192,17 @@ export function ArsenalTabContent({
                 {!currentCompanion.parsedPetCoreStats.hp && !currentCompanion.parsedPetCoreStats.sanity && currentCompanion.petStats && (
                   <p className="text-xs text-muted-foreground mt-1"><strong className="text-foreground">Raw Stats:</strong> {currentCompanion.petStats || 'N/A'}</p>
                 )}
+                {(currentCompanion.itemDescription || currentCompanion.type || currentCompanion.class || currentCompanion.effect || currentCompanion.secondaryEffect || currentCompanion.cd) && (
+                  <div className="mt-3 pt-3 border-t border-muted-foreground/20 text-xs space-y-1">
+                    <p className="font-medium text-foreground">Additional Details:</p>
+                    {currentCompanion.itemDescription && <p><strong className="text-muted-foreground">Description:</strong> {currentCompanion.itemDescription}</p>}
+                    {currentCompanion.type && <p><strong className="text-muted-foreground">Type:</strong> {currentCompanion.type}</p>}
+                    {currentCompanion.class && <p><strong className="text-muted-foreground">Class:</strong> {currentCompanion.class}</p>}
+                    {currentCompanion.effect && <p><strong className="text-muted-foreground">Effect:</strong> {currentCompanion.effect}</p>}
+                    {currentCompanion.secondaryEffect && <p><strong className="text-muted-foreground">Secondary Effect:</strong> {currentCompanion.secondaryEffect}</p>}
+                    {currentCompanion.cd && <p><strong className="text-muted-foreground">Cooldown:</strong> {currentCompanion.cd}</p>}
+                  </div>
+                )}
              </div>
           )}
           <Separator className="my-3" />
@@ -230,3 +241,4 @@ export function ArsenalTabContent({
     </div>
   );
 }
+
