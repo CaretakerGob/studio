@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { Character, CharacterStatDefinition, CharacterStats, StatName } from '@/types/character';
-import { Heart, Footprints, Shield, Brain, UserMinus as Minus, UserPlus as Plus } from "lucide-react"; // Assuming UserMinus and UserPlus are available
+import { Heart, Footprints, Shield, Brain, UserMinus as Minus, UserPlus as Plus, UserCircle } from "lucide-react"; // Assuming UserMinus and UserPlus are available
 
 export const statDefinitions: CharacterStatDefinition[] = [
   { id: 'hp', label: "Health Points (HP)", icon: Heart, description: "Your character's vitality. Reaching 0 HP usually means defeat." },
@@ -185,3 +185,4 @@ export function CoreStatsSection({
     </div>
   );
 }
+
