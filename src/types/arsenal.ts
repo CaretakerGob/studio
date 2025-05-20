@@ -19,10 +19,10 @@ export interface ArsenalItem {
   effect?: string;
   secondaryEffect?: string;
   toggle?: boolean;
-  isFlaggedAsWeapon?: boolean; // New: To specifically flag an item as a weapon if "Weapon" column is TRUE
+  isFlaggedAsWeapon?: boolean;
   effectStatChangeString?: string; 
   secondaryEffectStatChangeString?: string;
-  weaponDetails?: string; // Stores the A/R string like "A4/R2"
+  weaponDetails?: string; 
   
   parsedStatModifiers?: ParsedStatModifier[];
   parsedWeaponStats?: { 
@@ -30,6 +30,12 @@ export interface ArsenalItem {
     range?: number;
     rawDetails?: string; 
   };
+
+  // Companion/Pet related fields
+  isPet?: boolean;
+  petName?: string;
+  petStats?: string;
+  petAbilities?: string;
 }
 
 export interface ArsenalCard {
@@ -50,4 +56,3 @@ export interface ArsenalCard {
   rangedAttackMod?: number;
   rangedRangeMod?: number;
 }
-

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2, Trash2, UserCog, Package, Dices } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2, Trash2, UserCog, Package, Dices, PawPrint } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition, AbilityType } from "@/types/character";
 import type { ArsenalCard, ArsenalItem, ParsedStatModifier } from '@/types/arsenal';
 import { Progress } from '@/components/ui/progress';
@@ -349,11 +349,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            item.isFlaggedAsWeapon === true && // Check the new flag
+            item.isFlaggedAsWeapon === true && 
             item.parsedWeaponStats?.attack !== undefined &&
-            !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) // No range or range is 0 for melee
-        ) || equippedArsenalCard.items.find(item => // Fallback to older logic if flag not used widely yet
-            (item.category?.toUpperCase() === 'LOAD OUT' || item.category?.toUpperCase() === 'WEAPON') &&
+            !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
+        ) || equippedArsenalCard.items.find(item => 
+            (item.category?.toUpperCase() === 'WEAPON' || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
             item.parsedWeaponStats?.attack !== undefined &&
             !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
         );
@@ -371,20 +371,19 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         weaponToDisplay.attack = (weaponToDisplay.attack || 0) + equippedArsenalCard.meleeAttackMod;
     }
     
-    // Logic to hide default "Fists" if no specific melee weapon is equipped
     if (weaponToDisplay.name === "Fists" && weaponToDisplay.attack === 1 && 
-        !editableCharacterData?.meleeWeapon && // No base character melee weapon
-        !equippedArsenalCard?.items.some(i => // And no flagged arsenal melee weapon
+        !editableCharacterData?.meleeWeapon && 
+        !equippedArsenalCard?.items.some(i => 
             i.isFlaggedAsWeapon === true &&
             i.parsedWeaponStats?.attack !== undefined &&
             !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)
         ) && 
-        !equippedArsenalCard?.items.some(i => // And no category-based arsenal melee weapon (fallback)
-            (i.category?.toUpperCase() === "WEAPON" || i.category?.toUpperCase() === "LOAD OUT") &&
+        !equippedArsenalCard?.items.some(i => 
+            (i.category?.toUpperCase() === "WEAPON" || (i.category?.toUpperCase() === "LOAD OUT" && i.type?.toUpperCase() === 'WEAPON')) &&
              i.parsedWeaponStats?.attack !== undefined &&
              !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)
         ) &&
-        !equippedArsenalCard?.meleeAttackMod // And no global melee mod from arsenal card itself
+        !equippedArsenalCard?.meleeAttackMod
        ) {
         return undefined; 
     }
@@ -398,11 +397,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-              item.isFlaggedAsWeapon === true && // Check the new flag
+              item.isFlaggedAsWeapon === true && 
               item.parsedWeaponStats?.attack !== undefined &&
-              (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) // Must have range > 0
-          ) || equippedArsenalCard.items.find(item => // Fallback
-            (item.category?.toUpperCase() === 'LOAD OUT' || item.category?.toUpperCase() === 'WEAPON') &&
+              (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
+          ) || equippedArsenalCard.items.find(item => 
+            (item.category?.toUpperCase() === 'WEAPON' || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
             item.parsedWeaponStats?.attack !== undefined &&
             (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
           );
@@ -422,25 +421,29 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
           weaponToDisplay.range = (weaponToDisplay.range || 0) + (equippedArsenalCard.rangedRangeMod || 0);
       }
 
-      // Logic to hide default "None" if no specific ranged weapon is equipped
       if (weaponToDisplay.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 &&
-          !editableCharacterData?.rangedWeapon && // No base character ranged weapon
-          !equippedArsenalCard?.items.some(i => // And no flagged arsenal ranged weapon
+          !editableCharacterData?.rangedWeapon && 
+          !equippedArsenalCard?.items.some(i => 
               i.isFlaggedAsWeapon === true &&
               i.parsedWeaponStats?.attack !== undefined &&
               (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)
           ) &&
-          !equippedArsenalCard?.items.some(i => // And no category-based arsenal ranged weapon (fallback)
-            (i.category?.toUpperCase() === "WEAPON" || i.category?.toUpperCase() === "LOAD OUT") && 
+          !equippedArsenalCard?.items.some(i => 
+            (i.category?.toUpperCase() === "WEAPON" || (i.category?.toUpperCase() === "LOAD OUT" && i.type?.toUpperCase() === 'WEAPON')) && 
             i.parsedWeaponStats?.attack !== undefined && 
             (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)
           ) &&
-          !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod // And no global ranged mods
+          !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod 
          ) {
           return undefined;
       }
       return weaponToDisplay;
   }, [editableCharacterData?.rangedWeapon, equippedArsenalCard]);
+
+  const currentCompanion = useMemo(() => {
+    if (!equippedArsenalCard || !equippedArsenalCard.items) return null;
+    return equippedArsenalCard.items.find(item => item.isPet === true) || null;
+  }, [equippedArsenalCard]);
 
 
   const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
@@ -503,7 +506,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       let characterToLoad: Character | undefined = undefined;
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
-      if (selectedCharacterId === 'custom') { // Always load default for custom initially
+      if (selectedCharacterId === 'custom') { 
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
         if (characterToLoad) {
             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
@@ -516,7 +519,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         }
         showToastHelper({ title: "Template Loaded", description: `Loaded default Custom Character template.` });
 
-      } else if (currentUser && auth.currentUser) { // For non-custom characters, try loading saved first
+      } else if (currentUser && auth.currentUser) { 
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
           const docSnap = await getDoc(characterRef); 
@@ -532,7 +535,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         }
       }
 
-      // Fallback to default template if no saved data found for non-custom, or if user not logged in
       if (!characterToLoad && defaultTemplate && selectedCharacterId !== 'custom') {
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
          if (characterToLoad) {
@@ -1185,7 +1187,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   };
 
   const WeaponDisplay: React.FC<{ weapon?: Weapon | RangedWeapon, type: 'melee' | 'ranged' }> = ({ weapon, type }) => {
-    if (!weapon || (weapon.name === "None" && type === 'ranged') || (weapon.name === "Fists" && weapon.attack === 1 && type === 'melee')) {
+    if (!weapon || (weapon.name === "None" && type === 'ranged') || (weapon.name === "Fists" && weapon.attack === 1 && type === 'melee' && !equippedArsenalCard?.meleeAttackMod && !editableCharacterData?.meleeWeapon?.name ) ) { // Adjusted to better hide default fists
         return null; 
     }
 
@@ -1612,6 +1614,23 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                       <WeaponDisplay weapon={currentRangedWeapon} type="ranged" />
                   </div>
               </div>
+              {currentCompanion && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-xl font-semibold mb-3 flex items-center">
+                      <PawPrint className="mr-2 h-6 w-6 text-primary" /> Companion
+                    </h3>
+                    <Card className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+                      {currentCompanion.petName && <CardTitle className="text-lg text-accent mb-2">{currentCompanion.petName}</CardTitle>}
+                      {currentCompanion.petStats && <p><span className="font-semibold">Stats:</span> {currentCompanion.petStats}</p>}
+                      {currentCompanion.petAbilities && <p className="mt-2"><span className="font-semibold">Abilities:</span> {currentCompanion.petAbilities}</p>}
+                      {!currentCompanion.petName && currentCompanion.abilityName && <CardTitle className="text-lg text-accent mb-2">{currentCompanion.abilityName}</CardTitle>}
+                      {currentCompanion.itemDescription && <p className="text-sm text-muted-foreground mt-1">{currentCompanion.itemDescription}</p>}
+                    </Card>
+                  </div>
+                </>
+              )}
             </TabsContent>
             <TabsContent value="skills" className="mt-6 space-y-6"> 
               {editableCharacterData.id === 'custom' ? (
