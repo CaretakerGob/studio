@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2, Trash2 } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2, Trash2, UserCog } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition, AbilityType } from "@/types/character";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -308,7 +308,7 @@ export function CharacterSheetUI() {
       }
     };
     fetchUserSavedCharacters();
-  }, [currentUser, showToastHelper, isSaving]);
+  }, [currentUser, showToastHelper, isSaving]); // Re-fetch when currentUser changes or after saving
 
 
   const characterDropdownOptions = useMemo(() => {
@@ -346,7 +346,14 @@ export function CharacterSheetUI() {
       let docSnap; 
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
-      if (currentUser && auth.currentUser) {
+      if (selectedCharacterId === 'custom') {
+        // Always load the default template for 'custom' ID when selected from dropdown
+        characterToLoad = defaultTemplate;
+        if (characterToLoad) {
+          showToastHelper({ title: "Template Loaded", description: `Loaded default ${characterToLoad.name} template.` });
+        }
+      } else if (currentUser && auth.currentUser) {
+        // For other character IDs, try to load from Firestore
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
           docSnap = await getDoc(characterRef); 
@@ -361,18 +368,13 @@ export function CharacterSheetUI() {
         }
       }
 
+      // Fallback to default template if not loaded from Firestore (and not 'custom' ID)
       if (!characterToLoad) {
         characterToLoad = defaultTemplate;
-        if (characterToLoad) {
+        if (characterToLoad && selectedCharacterId !== 'custom') { // Avoid double toast for custom
            if (currentUser) {
-             if (characterToLoad.id !== 'custom') {
-                showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad.name}. No saved data found.` });
-             }
+             showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad.name}. No saved data found.` });
            }
-        } else {
-          showToastHelper({ title: "Error", description: "Selected character template not found.", variant: "destructive" });
-          setIsLoadingCharacter(false);
-          return;
         }
       }
       
@@ -384,13 +386,18 @@ export function CharacterSheetUI() {
           if (!characterToLoad.skills || Object.keys(characterToLoad.skills).length === 0) {
              characterToLoad.skills = { ...initialSkills };
           }
-          if (!characterToLoad.baseStats || (Object.values(characterToLoad.baseStats).every(v => v === 0 || v === undefined) && !docSnap?.exists())) {
+          // Ensure default custom stats are applied if not loaded from a specific saved state
+          if (!docSnap?.exists() || !characterToLoad.baseStats || (Object.values(characterToLoad.baseStats).every(v => v === 0 || v === undefined))) {
              characterToLoad.baseStats = { ...initialCustomCharacterStats };
+             characterToLoad.name = charactersData.find(c => c.id === 'custom')?.name || 'Custom Character'; // Reset name to default
+             characterToLoad.abilities = []; // Reset abilities to default
+             characterToLoad.skills = { ...initialSkills }; // Reset skills
+             characterToLoad.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375; // Reset CP
           }
       }
 
 
-      setEditableCharacterData(JSON.parse(JSON.stringify(characterToLoad)));
+      setEditableCharacterData(JSON.parse(JSON.stringify(characterToLoad || defaultTemplate))); // Ensure fallback if everything fails
       setAbilityToAddId(undefined);
       setSkillToPurchase(undefined);
       setIsLoadingCharacter(false);
@@ -398,13 +405,11 @@ export function CharacterSheetUI() {
 
     loadCharacterData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError]);
-
+  }, [selectedCharacterId, currentUser, setAuthError]); // Removed showToastHelper from deps as it's useCallback now
 
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedCooldowns), [(editableCharacterData as any)?.savedCooldowns]);
   const savedQuantitiesJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedQuantities), [(editableCharacterData as any)?.savedQuantities]);
-
 
   useEffect(() => {
     if (editableCharacterData && editableCharacterData.abilities) {
@@ -441,7 +446,7 @@ export function CharacterSheetUI() {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id, // Added character ID to re-run when character actually changes
+      editableCharacterData?.id, 
       abilitiesJSONKey,
       savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
@@ -537,7 +542,7 @@ export function CharacterSheetUI() {
     const currentVal = editableCharacterData.baseStats[statKey];
     const currentPoints = editableCharacterData.characterPoints || 0;
   
-    if (currentVal <= 1) { 
+    if (currentVal <= 1) { // Ensure stat cannot go below 1 (base)
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -591,7 +596,7 @@ export function CharacterSheetUI() {
     if (originalCharacter) {
       let characterToSet = JSON.parse(JSON.stringify(originalCharacter));
        if (characterToSet.id === 'custom' && originalCharacter.id === 'custom') {
-         characterToSet.name = originalCharacter.name; 
+         characterToSet.name = originalCharacter.name; // Reset to default "Custom Character"
          characterToSet.skills = { ...initialSkills }; 
          characterToSet.abilities = []; 
          characterToSet.baseStats = { ...initialCustomCharacterStats }; 
@@ -787,6 +792,11 @@ export function CharacterSheetUI() {
       const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", editableCharacterData.id);
       await setDoc(characterRef, characterToSave, { merge: true });
       showToastHelper({ title: "Character Saved!", description: `${editableCharacterData.name} has been saved successfully.` });
+      // Trigger a re-fetch of saved characters to update dropdown display names
+      const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
+      const querySnapshot = await getDocs(charactersCollectionRef);
+      const savedChars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Character));
+      setUserSavedCharacters(savedChars);
 
     } catch (error) {
       console.error("Error saving character: ", error);
@@ -794,6 +804,46 @@ export function CharacterSheetUI() {
       if(setAuthError) setAuthError("Failed to save character data.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleLoadSavedCustomCharacter = async () => {
+    if (!currentUser || !auth.currentUser) {
+      showToastHelper({ title: "Not Logged In", description: "Please log in to load your saved character.", variant: "destructive" });
+      return;
+    }
+    if (editableCharacterData?.id !== 'custom') {
+      showToastHelper({ title: "Incorrect Character", description: "Please select the Custom Character template first.", variant: "destructive" });
+      return;
+    }
+
+    setIsLoadingCharacter(true);
+    try {
+      const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", "custom");
+      const docSnap = await getDoc(characterRef);
+
+      if (docSnap.exists()) {
+        const savedData = { id: "custom", ...docSnap.data() } as Character;
+        // Ensure skills and abilities are present, even if empty arrays/objects, to prevent issues
+        savedData.skills = savedData.skills || { ...initialSkills };
+        savedData.abilities = savedData.abilities || [];
+        savedData.baseStats = savedData.baseStats || { ...initialCustomCharacterStats};
+        savedData.name = savedData.name || charactersData.find(c => c.id === 'custom')?.name || 'Custom Character';
+        savedData.characterPoints = savedData.characterPoints === undefined ? (charactersData.find(c => c.id === 'custom')?.characterPoints || 375) : savedData.characterPoints;
+
+
+        setEditableCharacterData(JSON.parse(JSON.stringify(savedData)));
+        showToastHelper({ title: "Character Loaded", description: `Loaded your saved custom character: ${savedData.name}.` });
+      } else {
+        showToastHelper({ title: "Not Found", description: "No saved custom character found for your account.", variant: "destructive" });
+        // Optionally, keep the current default template loaded or reset it
+        // For now, it will just keep the default template as it was.
+      }
+    } catch (err) {
+      console.error("Error loading saved custom character:", err);
+      showToastHelper({ title: "Load Error", description: "Could not load your saved custom character.", variant: "destructive" });
+    } finally {
+      setIsLoadingCharacter(false);
     }
   };
 
@@ -1122,22 +1172,34 @@ export function CharacterSheetUI() {
                 </Select>
               </div>
                {editableCharacterData?.id === 'custom' && (
-                <div className="w-full">
-                  <Label htmlFor="customCharacterName" className="text-lg font-medium mb-1 block">
-                    Character Name
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="customCharacterName"
-                      type="text"
-                      value={editableCharacterData.name}
-                      onChange={handleCustomCharacterNameChange}
-                      placeholder="Enter custom name"
-                      className="text-lg p-2 flex-grow"
-                    />
-                     <Edit2 className="h-5 w-5 text-muted-foreground" />
+                <>
+                  <div className="w-full">
+                    <Label htmlFor="customCharacterName" className="text-lg font-medium mb-1 block">
+                      Character Name
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="customCharacterName"
+                        type="text"
+                        value={editableCharacterData.name === 'Custom Character' && !userSavedCharacters.find(c => c.id === 'custom' && c.name !== 'Custom Character') ? '' : editableCharacterData.name}
+                        onChange={handleCustomCharacterNameChange}
+                        placeholder="Enter custom name"
+                        className="text-lg p-2 flex-grow"
+                      />
+                      <Edit2 className="h-5 w-5 text-muted-foreground" />
+                    </div>
                   </div>
-                </div>
+                  {currentUser && (
+                    <Button 
+                      onClick={handleLoadSavedCustomCharacter} 
+                      variant="outline" 
+                      className="w-full"
+                      disabled={isLoadingCharacter}
+                    >
+                      <UserCog className="mr-2 h-4 w-4" /> Load My Saved Custom
+                    </Button>
+                  )}
+                </>
               )}
             </div>
 
