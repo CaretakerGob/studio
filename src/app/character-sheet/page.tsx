@@ -222,6 +222,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
       const item: Partial<ArsenalItem> = {};
       item.id = `${arsenalId}_item_${rowIndex}`; 
+      item.isPet = false; // Initialize isPet to false
 
       const categoryIndex = getColumnIndex(['category']);
       if (categoryIndex !== -1) item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
@@ -242,7 +243,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       if (cdIndex !== -1) item.cd = String(row[cdIndex] || '');
 
       const abilityNameIndex = getColumnIndex(['ability name', 'abilityname', 'item name', 'itemname']);
-      item.abilityName = abilityNameIndex !== -1 ? String(row[abilityNameIndex] || '') : `Item ${rowIndex}`;
+      item.abilityName = abilityNameIndex !== -1 ? String(row[abilityNameIndex] || '').trim() : `Item ${rowIndex}`;
       
       const itemTypeIndex = getColumnIndex(['type']); 
       if (itemTypeIndex !== -1) item.type = String(row[itemTypeIndex] || '');
@@ -290,34 +291,43 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       }
       
       const petFlagColumnIndex = getColumnIndex(['pet', 'is pet', 'companion']);
-      if (petFlagColumnIndex !== -1 && row[petFlagColumnIndex]) {
-        item.isPet = ['true', 'yes', '1'].includes(String(row[petFlagColumnIndex] || '').toLowerCase());
-        if (item.isPet) {
+      if (petFlagColumnIndex !== -1 && row[petFlagColumnIndex] !== undefined && String(row[petFlagColumnIndex]).trim() !== '') {
+        const petFlagValue = String(row[petFlagColumnIndex]).trim().toLowerCase();
+        if (['true', 'yes', '1'].includes(petFlagValue)) {
+            item.isPet = true;
+
             const petNameFromCol = String(row[getColumnIndex(['pet name', 'companion name'])] || '').trim();
-            const abilityNameForPet = String(item.abilityName || '').trim();
-            
+            const abilityNameForPet = String(item.abilityName || '').trim(); // item.abilityName is parsed before this
+
             if (petNameFromCol) {
                 item.petName = petNameFromCol;
-            } else if (abilityNameForPet) {
+            } else if (abilityNameForPet && abilityNameForPet !== `Item ${rowIndex}`) {
                 item.petName = abilityNameForPet;
             } else {
-                item.petName = 'Companion';
+                item.petName = 'Companion'; // Default if no other name found
             }
 
-            const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '');
-            if (petStatsRawString) {
+            const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '').trim();
+            if (petStatsRawString) { // Check if string is not empty
               item.petStats = petStatsRawString;
               item.parsedPetCoreStats = parsePetStatsString(item.petStats);
             }
 
             const petAbilitiesColumnIndex = getColumnIndex(['pet abilities', 'companion abilities']);
-            if (petAbilitiesColumnIndex !== -1) item.petAbilities = String(row[petAbilitiesColumnIndex] || '');
+            if (petAbilitiesColumnIndex !== -1) {
+                const abilitiesStr = String(row[petAbilitiesColumnIndex] || '').trim();
+                if (abilitiesStr) item.petAbilities = abilitiesStr;
+            }
         }
       }
       
       const arsenal = arsenalsMap.get(arsenalId);
-      if (arsenal && item.abilityName) { 
+      if (arsenal && item.abilityName && item.abilityName !== `Item ${rowIndex}`) { // Only add if item has a meaningful name
         arsenal.items.push(item as ArsenalItem);
+      } else if (arsenal && (item.isPet || item.isFlaggedAsWeapon) && item.abilityName === `Item ${rowIndex}`){ // Add unnamed pets/weapons
+         if (item.isPet && !item.petName) item.petName = 'Unnamed Companion';
+         if (item.isFlaggedAsWeapon && !item.abilityName) item.abilityName = 'Unnamed Weapon';
+         arsenal.items.push(item as ArsenalItem);
       }
     });
 
