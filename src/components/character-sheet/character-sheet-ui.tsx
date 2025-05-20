@@ -283,6 +283,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingCharacter, setIsLoadingCharacter] = useState(true);
 
+  const [currentPetHp, setCurrentPetHp] = useState<number | null>(null);
+  const [currentPetSanity, setCurrentPetSanity] = useState<number | null>(null);
+
+
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
 
@@ -429,6 +433,17 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     return equippedArsenalCard.items.find(item => item.isPet === true) || null;
   }, [equippedArsenalCard]);
 
+  // Effect to initialize/reset current pet stats when currentCompanion changes
+  useEffect(() => {
+    if (currentCompanion && currentCompanion.parsedPetCoreStats) {
+      setCurrentPetHp(currentCompanion.parsedPetCoreStats.maxHp ?? currentCompanion.parsedPetCoreStats.hp ?? null);
+      setCurrentPetSanity(currentCompanion.parsedPetCoreStats.maxSanity ?? currentCompanion.parsedPetCoreStats.sanity ?? null);
+    } else {
+      setCurrentPetHp(null);
+      setCurrentPetSanity(null);
+    }
+  }, [currentCompanion]);
+
 
   const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
   const [maxAbilityCooldowns, setMaxAbilityCooldowns] = useState<Record<string, number>>({});
@@ -491,7 +506,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
-        // Always load the default template for 'custom' initially
         characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
         if (characterToLoad) {
             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
@@ -501,9 +515,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
             characterToLoad.characterPoints = defaultTemplate?.characterPoints || 375;
             characterToLoad.selectedArsenalCardId = null;
-            showToastHelper({ title: "Template Loaded", description: "Loaded default Custom Character template. Use 'Load My Saved Custom' to load your version." });
         }
-      } else if (currentUser && auth.currentUser) { // For non-custom characters, try loading saved version
+      } else if (currentUser && auth.currentUser) { 
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
           const docSnap = await getDoc(characterRef);
@@ -519,13 +532,12 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         }
       }
 
-      // Fallback to default template if no saved version was loaded for non-custom characters
       if (!characterToLoad && selectedCharacterId !== 'custom' && defaultTemplate) {
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
          if (characterToLoad) {
             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
          }
-        if (currentUser) { // Only show this toast if user is logged in but no saved data found
+        if (currentUser) { 
            showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad?.name}. No saved data found.` });
         }
       }
@@ -542,7 +554,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     loadCharacterData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError]); // currentUser added to reload if user logs in/out
+  }, [selectedCharacterId, currentUser, setAuthError]); 
 
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedCooldowns), [(editableCharacterData as any)?.savedCooldowns]);
@@ -584,10 +596,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id, // Run when character ID changes
-      abilitiesJSONKey,          // Run when abilities content changes
-      savedCooldownsJSONKey,     // Run when saved cooldowns content changes
-      savedQuantitiesJSONKey,    // Run when saved quantities content changes
+      editableCharacterData?.id, 
+      abilitiesJSONKey,          
+      savedCooldownsJSONKey,     
+      savedQuantitiesJSONKey,    
       parseCooldownRounds
   ]);
 
@@ -619,7 +631,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
-    if (!editableCharacterData || editableCharacterData.id === 'custom') return; // Prevent direct changes for custom char stats
+    if (!editableCharacterData || editableCharacterData.id === 'custom') return; 
     const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (isNaN(numericValue)) return;
 
@@ -652,6 +664,26 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   const decrementStat = (statName: StatName) => {
     if (!editableCharacterData || editableCharacterData.id === 'custom') return;
     handleStatChange(statName, (editableCharacterData.baseStats[statName] || 0) - 1);
+  };
+
+  const handleIncrementPetStat = (statType: 'hp' | 'sanity') => {
+    if (!currentCompanion || !currentCompanion.parsedPetCoreStats) return;
+    if (statType === 'hp') {
+      const maxHp = currentCompanion.parsedPetCoreStats.maxHp ?? currentCompanion.parsedPetCoreStats.hp ?? 0;
+      setCurrentPetHp(prev => Math.min((prev ?? 0) + 1, maxHp));
+    } else if (statType === 'sanity') {
+      const maxSanity = currentCompanion.parsedPetCoreStats.maxSanity ?? currentCompanion.parsedPetCoreStats.sanity ?? 0;
+      setCurrentPetSanity(prev => Math.min((prev ?? 0) + 1, maxSanity));
+    }
+  };
+  
+  const handleDecrementPetStat = (statType: 'hp' | 'sanity') => {
+    if (!currentCompanion || !currentCompanion.parsedPetCoreStats) return;
+    if (statType === 'hp') {
+      setCurrentPetHp(prev => Math.max((prev ?? 0) - 1, 0));
+    } else if (statType === 'sanity') {
+      setCurrentPetSanity(prev => Math.max((prev ?? 0) - 1, 0));
+    }
   };
 
 
@@ -692,7 +724,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const currentVal = editableCharacterData.baseStats[statKey];
     const currentPoints = editableCharacterData.characterPoints || 0;
 
-    if (currentVal <= 1) { // Prevent going below 1
+    if (currentVal <= 1) { 
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -748,7 +780,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         let characterToSet = JSON.parse(JSON.stringify(originalCharacterTemplate));
 
         if (characterToSet.id === 'custom') {
-            characterToSet.name = initialCustomCharacterStats.name || 'Custom Character'; // Use default name
+            characterToSet.name = initialCustomCharacterStats.name || 'Custom Character'; 
             characterToSet.baseStats = { ...initialCustomCharacterStats };
             characterToSet.skills = { ...initialSkills };
             characterToSet.abilities = [];
@@ -858,7 +890,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
     const currentSkills = editableCharacterData.skills || { ...initialSkills };
     const currentLevel = currentSkills[skillId] || 0;
-    if (currentLevel <= 1) { // If at level 1, removing it is a different action
+    if (currentLevel <= 1) { 
         handleRemoveSkill(skillId);
         return;
     }
@@ -977,7 +1009,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         showToastHelper({ title: "Character Loaded", description: `Loaded your saved custom character: ${savedData.name}.` });
       } else {
         showToastHelper({ title: "Not Found", description: "No saved custom character found. Loaded default template.", variant: "destructive" });
-        // No need to reload default here as the main useEffect already handles it when selectedCharacterId is 'custom'
       }
     } catch (err) {
       console.error("Error loading saved custom character:", err);
@@ -1470,7 +1501,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             <>
               <div className="space-y-2 p-4 border border-dashed border-accent/50 rounded-lg bg-card/30">
                 <Label htmlFor="arsenalCardSelect" className="text-lg font-medium text-accent flex items-center">
-                  <Shirt className="mr-2 h-5 w-5" /> Arsenal Loadout
+                  <Package className="mr-2 h-5 w-5" /> Arsenal Loadout
                 </Label>
                 {criticalArsenalError && (
                   <Alert variant="destructive" className="mb-4">
@@ -1604,14 +1635,88 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                   <Separator />
                   <div>
                     <h3 className="text-xl font-semibold mb-3 flex items-center">
-                      <PawPrint className="mr-2 h-6 w-6 text-primary" /> Companion
+                      <PawPrint className="mr-2 h-6 w-6 text-primary" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
                     </h3>
                     <Card className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
-                      {currentCompanion.petName && <CardTitle className="text-lg text-accent mb-2">{currentCompanion.petName}</CardTitle>}
-                      <p><span className="font-semibold">Stats:</span> {currentCompanion.petStats || 'N/A'}</p>
-                      {currentCompanion.petAbilities && <p className="mt-2"><span className="font-semibold">Abilities:</span> {currentCompanion.petAbilities}</p>}
-                      {!currentCompanion.petName && currentCompanion.abilityName && <CardTitle className="text-lg text-accent mb-2">{currentCompanion.abilityName}</CardTitle>}
-                      {currentCompanion.itemDescription && <p className="text-sm text-muted-foreground mt-1">{currentCompanion.itemDescription}</p>}
+                      {currentCompanion.parsedPetCoreStats && (
+                        <div className="space-y-3">
+                          {/* Pet HP Tracker */}
+                          {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <Label className="flex items-center text-md font-medium">
+                                  <Heart className="mr-2 h-5 w-5 text-red-500" /> HP
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('hp')} className="h-7 w-7">
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <Input
+                                    type="number"
+                                    value={currentPetHp}
+                                    readOnly
+                                    className="w-16 h-7 text-center text-md font-bold"
+                                  />
+                                  <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('hp')} className="h-7 w-7">
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className="h-2 [&>div]:bg-red-500" />
+                              <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
+                            </div>
+                          )}
+                          {/* Pet Sanity Tracker */}
+                          {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <Label className="flex items-center text-md font-medium">
+                                  <Brain className="mr-2 h-5 w-5 text-blue-400" /> Sanity
+                                </Label>
+                                <div className="flex items-center gap-2">
+                                  <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('sanity')} className="h-7 w-7">
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <Input
+                                    type="number"
+                                    value={currentPetSanity}
+                                    readOnly
+                                    className="w-16 h-7 text-center text-md font-bold"
+                                  />
+                                  <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('sanity')} className="h-7 w-7">
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className="h-2 [&>div]:bg-blue-400" />
+                              <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
+                            </div>
+                          )}
+                          {/* Pet MV Display */}
+                          {currentCompanion.parsedPetCoreStats.mv !== undefined && (
+                            <div className="flex items-center justify-between">
+                               <Label className="flex items-center text-md font-medium">
+                                <Footprints className="mr-2 h-5 w-5 text-green-500" /> MV
+                              </Label>
+                              <span className="text-md font-semibold">{currentCompanion.parsedPetCoreStats.mv}</span>
+                            </div>
+                          )}
+                          {/* Pet DEF Display */}
+                          {currentCompanion.parsedPetCoreStats.def !== undefined && (
+                             <div className="flex items-center justify-between">
+                               <Label className="flex items-center text-md font-medium">
+                                <Shield className="mr-2 h-5 w-5 text-gray-400" /> DEF
+                              </Label>
+                              <span className="text-md font-semibold">{currentCompanion.parsedPetCoreStats.def}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {currentCompanion.petAbilities && <p className="text-sm text-muted-foreground mt-3 pt-3 border-t border-muted-foreground/20"><strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}</p>}
+                      {!currentCompanion.parsedPetCoreStats && currentCompanion.petStats && (
+                        <p className="text-sm text-muted-foreground"><strong className="text-foreground">Raw Stats:</strong> {currentCompanion.petStats}</p>
+                      )}
+                      {currentCompanion.itemDescription && <p className="text-xs text-muted-foreground mt-2">{currentCompanion.itemDescription}</p>}
                     </Card>
                   </div>
                 </>
@@ -1812,3 +1917,4 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
+

@@ -3,7 +3,7 @@ import { CharacterSheetUI } from "@/components/character-sheet/character-sheet-u
 import type { Metadata } from 'next';
 import { google } from 'googleapis';
 import type { ArsenalCard, ArsenalItem, ArsenalItemCategory, ParsedStatModifier } from '@/types/arsenal';
-import type { StatName } from '@/types/character'; // For stat name validation
+import type { StatName, CharacterStats } from '@/types/character'; // For stat name validation
 
 export const metadata: Metadata = {
   title: 'Character Sheet - Beast Companion',
@@ -64,6 +64,36 @@ function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range
   }
   
   return parsed.attack !== undefined ? parsed : { rawDetails: detailsStr };
+}
+
+function parsePetStatsString(statsString?: string): Partial<CharacterStats> | undefined {
+  if (!statsString || typeof statsString !== 'string' || statsString.trim() === '') return undefined;
+  
+  const stats: Partial<CharacterStats> = {};
+  const statPairs = statsString.split(/\s+|,|;/).map(s => s.trim()).filter(Boolean);
+
+  statPairs.forEach(pair => {
+    const parts = pair.split(':');
+    if (parts.length === 2) {
+      const key = parts[0].trim().toLowerCase();
+      const value = parseInt(parts[1].trim(), 10);
+      if (!isNaN(value)) {
+        if (key === 'hp') { stats.hp = value; if (stats.maxHp === undefined) stats.maxHp = value; }
+        else if (key === 'maxhp' || key === 'max hp') stats.maxHp = value;
+        else if (key === 'sanity' || key === 'san') { stats.sanity = value; if (stats.maxSanity === undefined) stats.maxSanity = value; }
+        else if (key === 'maxsanity' || key === 'max sanity') stats.maxSanity = value;
+        else if (key === 'mv' || key === 'movement') stats.mv = value;
+        else if (key === 'def' || key === 'defense') stats.def = value;
+        // Not parsing ATK/RNG into core CharacterStats for pets for now
+      }
+    }
+  });
+
+  // Ensure maxHp and maxSanity are set if only hp/sanity were provided
+  if (stats.hp !== undefined && stats.maxHp === undefined) stats.maxHp = stats.hp;
+  if (stats.sanity !== undefined && stats.maxSanity === undefined) stats.maxSanity = stats.sanity;
+  
+  return Object.keys(stats).length > 0 ? stats : undefined;
 }
 
 
@@ -255,7 +285,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         const statsStr = String(row[weaponStatsStringColumnIndex] || '').trim();
         if (statsStr) {
           item.weaponDetails = statsStr; 
-          // Always parse if details exist, the UI component will decide if it's primary based on flag/category
           item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
         }
       }
@@ -272,11 +301,14 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             } else if (abilityNameForPet) {
                 item.petName = abilityNameForPet;
             } else {
-                item.petName = 'Companion'; // Default if no name found
+                item.petName = 'Companion';
             }
 
-            const petStatsColumnIndex = getColumnIndex(['pet stats', 'companion stats']);
-            if (petStatsColumnIndex !== -1) item.petStats = String(row[petStatsColumnIndex] || '');
+            const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '');
+            if (petStatsRawString) {
+              item.petStats = petStatsRawString;
+              item.parsedPetCoreStats = parsePetStatsString(item.petStats);
+            }
 
             const petAbilitiesColumnIndex = getColumnIndex(['pet abilities', 'companion abilities']);
             if (petAbilitiesColumnIndex !== -1) item.petAbilities = String(row[petAbilitiesColumnIndex] || '');

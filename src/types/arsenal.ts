@@ -1,4 +1,6 @@
 
+import type { CharacterStats } from '@/types/character';
+
 export type ArsenalItemCategory = 'WEAPON' | 'GEAR' | 'INTERRUPT' | 'PASSIVE' | 'ACTION' | 'LOAD OUT' | 'LOADOUT' | 'BONUS' | 'ELITE';
 
 export interface ParsedStatModifier {
@@ -34,8 +36,9 @@ export interface ArsenalItem {
   // Companion/Pet related fields
   isPet?: boolean;
   petName?: string;
-  petStats?: string;
+  petStats?: string; // Raw string from sheet
   petAbilities?: string;
+  parsedPetCoreStats?: Partial<CharacterStats>; // Parsed HP, MaxHP, MV, DEF, Sanity, MaxSanity
 }
 
 export interface ArsenalCard {
@@ -56,3 +59,4 @@ export interface ArsenalCard {
   rangedAttackMod?: number;
   rangedRangeMod?: number;
 }
+
