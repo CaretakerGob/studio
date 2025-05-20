@@ -1,43 +1,44 @@
 
-export type ArsenalItemCategory = 'WEAPON' | 'GEAR' | 'INTERRUPT' | 'PASSIVE' | 'ACTION' | 'LOAD OUT' | 'BONUS' | 'ELITE' | 'LOADOUT'; // Added LOADOUT based on sheet
+export type ArsenalItemCategory = 'WEAPON' | 'GEAR' | 'INTERRUPT' | 'PASSIVE' | 'ACTION' | 'LOAD OUT' | 'BONUS' | 'ELITE' | 'LOADOUT';
 
-// A simplified structure for parsed stat changes from strings like "Max HP +1"
 export interface ParsedStatModifier {
-  targetStat: string; // e.g., 'maxHp', 'def', 'meleeAttackMod'
+  targetStat: string; 
   value: number;
 }
 
 export interface ArsenalItem {
-  id: string; // Unique ID for the item within the arsenal context, e.g., arsenalName_itemName_rowNum
+  id: string; 
   category?: ArsenalItemCategory;
   level?: number;
   qty?: number;
   cd?: string;
-  abilityName?: string; // This seems to be the primary name for the item/ability
-  type?: string; // e.g., Shotgun, Armor
-  class?: string; // e.g., Ranged weapon
-  itemDescription?: string; // Renamed from 'description' to avoid conflict with ArsenalCard.description
+  abilityName?: string; 
+  type?: string; 
+  class?: string; 
+  itemDescription?: string; 
   effect?: string;
   secondaryEffect?: string;
   toggle?: boolean;
-  effectStatChangeString?: string; // Raw string e.g., "Max HP +1"
+  effectStatChangeString?: string; 
   secondaryEffectStatChangeString?: string;
-  weaponDetails?: string; // e.g., "A4/R2 – Ranged Shotgun"
+  weaponDetails?: string; 
   
-  // These will hold directly applicable character stat modifications
-  parsedStatModifiers?: ParsedStatModifier[]; 
+  parsedStatModifiers?: ParsedStatModifier[];
+  parsedWeaponStats?: { // Added to store parsed attack/range from weaponDetails
+    attack?: number;
+    range?: number;
+    rawDetails?: string; // Store the original string for reference/display
+  };
 }
 
 export interface ArsenalCard {
-  id: string; // Unique ID for the Arsenal (e.g., "closed_quarter_combatant")
-  name: string; // Display name (e.g., "Closed Quarter Combatant") - from "Arsenal Name" column
-  description?: string; // Overall description of the Arsenal (if available as a separate field, or could be derived)
+  id: string; 
+  name: string; 
+  description?: string; 
   imageUrlFront?: string;
   imageUrlBack?: string;
-  items: ArsenalItem[]; // List of weapons, gear, abilities in this arsenal
+  items: ArsenalItem[]; 
 
-  // Global stat mods for the arsenal card itself (if any, distinct from items)
-  // We can keep these from the previous implementation if some arsenals have direct global buffs
   hpMod?: number;
   maxHpMod?: number;
   mvMod?: number;

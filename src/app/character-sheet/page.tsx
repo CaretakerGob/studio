@@ -10,14 +10,11 @@ export const metadata: Metadata = {
   description: 'Manage your character stats for Beast.',
 };
 
-// Helper function to parse stat change strings like "Max HP +1" or "DEF -2"
-// This is a simplified parser and might need to be made more robust
 function parseEffectStatChange(statString: string | undefined): ParsedStatModifier[] {
   if (!statString || typeof statString !== 'string' || statString.trim() === '') {
     return [];
   }
   const modifiers: ParsedStatModifier[] = [];
-  // Split by common delimiters like comma or semicolon if multiple changes are in one string
   const changes = statString.split(/[,;]/).map(s => s.trim()).filter(Boolean);
 
   const statMap: Record<string, StatName | 'meleeAttackMod' | 'rangedAttackMod' | 'rangedRangeMod'> = {
@@ -31,23 +28,46 @@ function parseEffectStatChange(statString: string | undefined): ParsedStatModifi
   };
 
   for (const change of changes) {
-    const match = change.toLowerCase().match(/([\w\s]+)\s*([+-])\s*(\d+)/);
+    const match = change.toLowerCase().match(/([a-zA-Z\s]+)\s*([+-])\s*(\d+)/);
     if (match) {
       const rawStatName = match[1].trim();
       const operator = match[2];
       const value = parseInt(match[3], 10);
       
-      const targetStat = statMap[rawStatName] || rawStatName.replace(/\s+/g, ''); // Normalize: "Max HP" -> "maxhp"
+      const targetStat = statMap[rawStatName] || rawStatName.replace(/\s+/g, ''); 
 
       if (targetStat) {
         modifiers.push({
-          targetStat: targetStat as string, // Cast for now
+          targetStat: targetStat as string, 
           value: operator === '+' ? value : -value,
         });
       }
     }
   }
   return modifiers;
+}
+
+function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range?: number; rawDetails: string } | undefined {
+  if (!detailsStr || typeof detailsStr !== 'string' || detailsStr.trim() === '') return undefined;
+
+  const parsed: { attack?: number; range?: number; rawDetails: string } = { rawDetails: detailsStr };
+  
+  // Regex to capture A<number>/R<number> or A<number>
+  // Example: "A4/R2 – Ranged Shotgun" or "A3"
+  const match = detailsStr.match(/A(\d+)(?:\/R(\d+))?/i);
+
+  if (match) {
+    if (match[1]) { // Attack value
+      parsed.attack = parseInt(match[1], 10);
+    }
+    if (match[2]) { // Range value (optional)
+      parsed.range = parseInt(match[2], 10);
+    }
+  }
+  
+  // Return only if attack was found, or if rawDetails itself is meaningful (e.g. for flavor if no stats)
+  // For now, we primarily care if attack was parsed for it to be a weapon stat object
+  return parsed.attack !== undefined ? parsed : { rawDetails: detailsStr }; // Ensure rawDetails is always returned if input was valid
 }
 
 
@@ -83,7 +103,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: ARSENAL_CARDS_GOOGLE_SHEET_ID,
-      range: ARSENAL_CARDS_GOOGLE_SHEET_RANGE, // This range should cover all rows for all arsenals
+      range: ARSENAL_CARDS_GOOGLE_SHEET_RANGE, 
     });
 
     const rows = response.data.values;
@@ -115,21 +135,19 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     rows.slice(1).forEach((row: any[], rowIndex: number) => {
       const currentArsenalName = row[arsenalNameIndex] ? String(row[arsenalNameIndex]).trim() : `Unnamed Arsenal ${rowIndex}`;
-      if (!currentArsenalName) return; // Skip rows with no arsenal name
+      if (!currentArsenalName) return; 
 
       const arsenalId = currentArsenalName.toLowerCase().replace(/\s+/g, '_');
 
       if (!arsenalsMap.has(arsenalId)) {
-        // First time seeing this arsenal, create its base card
-        // We'll assume the first row for an Arsenal Name might contain global mods or image URLs
         const card: Partial<ArsenalCard> = {
             id: arsenalId,
             name: currentArsenalName,
             items: [],
         };
         
-        const descIndex = getColumnIndex(['description']); // General description for the Arsenal itself
-        if (descIndex !== -1) card.description = String(row[descIndex] || '');
+        const arsenalDescIndex = getColumnIndex(['arsenal description', 'description']); // Description for the Arsenal Card itself
+        if (arsenalDescIndex !== -1) card.description = String(row[arsenalDescIndex] || '');
 
         const imageUrlFrontIndex = getColumnIndex(['imageurlfront', 'frontimage', 'imagefront']);
         if (imageUrlFrontIndex !== -1) card.imageUrlFront = String(row[imageUrlFrontIndex] || '');
@@ -137,8 +155,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         const imageUrlBackIndex = getColumnIndex(['imageurlback', 'backimage', 'imageback']);
         if (imageUrlBackIndex !== -1) card.imageUrlBack = String(row[imageUrlBackIndex] || '');
         
-        // Simplified: Assume global mods might be on the first row for an arsenal.
-        // More robust: Could be specific "Arsenal Card Meta" row or separate sheet.
         const numModFields = ['hpMod', 'maxHpMod', 'mvMod', 'defMod', 'sanityMod', 'maxSanityMod', 'meleeAttackMod', 'rangedAttackMod', 'rangedRangeMod'];
         const headerToFieldMap: Record<string, keyof ArsenalCard> = {
             'hpmod': 'hpMod', 'hp mod': 'hpMod',
@@ -154,11 +170,13 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
         numModFields.forEach(field => {
           let colIndex = -1;
+          // First, try direct match (e.g., 'hpMod')
           colIndex = sanitizedHeaders.indexOf(field.toLowerCase() as string);
+          // If not found, try variations from headerToFieldMap
           if (colIndex === -1) {
               const possibleHeaders = Object.keys(headerToFieldMap).filter(h => headerToFieldMap[h] === field);
               for (const headerVariation of possibleHeaders) {
-                  colIndex = getColumnIndex([headerVariation]);
+                  colIndex = getColumnIndex([headerVariation]); // getColumnIndex already handles case-insensitivity
                   if (colIndex !== -1) break;
               }
           }
@@ -172,9 +190,8 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         arsenalsMap.set(arsenalId, card as ArsenalCard);
       }
 
-      // Create ArsenalItem from the current row
       const item: Partial<ArsenalItem> = {};
-      item.id = `${arsenalId}_item_${rowIndex}`; // Simple unique ID for the item
+      item.id = `${arsenalId}_item_${rowIndex}`; 
 
       const categoryIndex = getColumnIndex(['category']);
       if (categoryIndex !== -1) item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
@@ -191,15 +208,21 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const abilityNameIndex = getColumnIndex(['ability name', 'abilityname', 'item name', 'itemname']);
       item.abilityName = abilityNameIndex !== -1 ? String(row[abilityNameIndex] || '') : `Item ${rowIndex}`;
       
-      const itemTypeIndex = getColumnIndex(['type']); // e.g., Shotgun, Armor for WEAPON/GEAR
+      const itemTypeIndex = getColumnIndex(['type']); 
       if (itemTypeIndex !== -1) item.type = String(row[itemTypeIndex] || '');
       
-      const classIndex = getColumnIndex(['class']); // e.g., Ranged weapon
+      const classIndex = getColumnIndex(['class']); 
       if (classIndex !== -1) item.class = String(row[classIndex] || '');
       
-      const itemDescIndex = getColumnIndex(['description']); // Description specific to the item
-      if (itemDescIndex !== -1 && item.abilityName !== (arsenalsMap.get(arsenalId)?.description)) { // Avoid re-assigning arsenal desc
+      // Use a different description index for items vs the arsenal card itself.
+      const itemDescIndex = getColumnIndex(['item description', 'ability description', 'effect description']); 
+      if (itemDescIndex !== -1) {
         item.itemDescription = String(row[itemDescIndex] || '');
+      } else {
+         const genericDescIndex = getColumnIndex(['description']); // Fallback to generic 'description' if specific not found
+         if (genericDescIndex !== -1 && String(row[genericDescIndex] || '') !== arsenalsMap.get(arsenalId)?.description) {
+            item.itemDescription = String(row[genericDescIndex] || '');
+         }
       }
       
       const effectIndex = getColumnIndex(['effect']);
@@ -212,24 +235,21 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       if (toggleIndex !== -1) item.toggle = ['true', 'yes', '1'].includes(String(row[toggleIndex] || '').toLowerCase());
       
       const effectStatChangeIndex = getColumnIndex(['effect stat change', 'effectstatchange']);
-      if (effectStatChangeIndex !== -1) {
+      if (effectStatChangeIndex !== -1 && row[effectStatChangeIndex]) {
         item.effectStatChangeString = String(row[effectStatChangeIndex] || '');
         item.parsedStatModifiers = parseEffectStatChange(item.effectStatChangeString);
       }
       
-      const secondaryEffectStatChangeIndex = getColumnIndex(['secondary effect stat change', 'secondaryeffectstatchange']);
-       if (secondaryEffectStatChangeIndex !== -1) {
-        // item.secondaryEffectStatChangeString = String(row[secondaryEffectStatChangeIndex] || '');
-        // item.parsedSecondaryEffectStatChanges = parseEffectStatChange(item.secondaryEffectStatChangeString);
-        // For now, let's assume secondary effects are descriptive or handled by more complex logic later
+      const weaponDetailsIndex = getColumnIndex(['weapon', 'weapondetails']);
+      if (weaponDetailsIndex !== -1 && row[weaponDetailsIndex]) {
+        item.weaponDetails = String(row[weaponDetailsIndex] || '');
+        if (item.category === 'WEAPON' || (item.category === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) {
+          item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
+        }
       }
       
-      const weaponIndex = getColumnIndex(['weapon']); // e.g., A4/R2 – Ranged Shotgun
-      if (weaponIndex !== -1) item.weaponDetails = String(row[weaponIndex] || '');
-
-      // Add the parsed item to its arsenal
       const arsenal = arsenalsMap.get(arsenalId);
-      if (arsenal && item.abilityName) { // Only add if it has a name
+      if (arsenal && item.abilityName) { 
         arsenal.items.push(item as ArsenalItem);
       }
     });
