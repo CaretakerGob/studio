@@ -89,7 +89,7 @@ function parsePetStatsString(statsString?: string): Partial<CharacterStats> | un
     }
   });
 
-  // Ensure maxHp and maxSanity are set if only hp/sanity were provided
+  // Ensure maxHp and maxSanity are explicitly set if only hp/sanity were provided
   if (stats.hp !== undefined && stats.maxHp === undefined) stats.maxHp = stats.hp;
   if (stats.sanity !== undefined && stats.maxSanity === undefined) stats.maxSanity = stats.sanity;
   
@@ -297,18 +297,18 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             item.isPet = true;
 
             const petNameFromCol = String(row[getColumnIndex(['pet name', 'companion name'])] || '').trim();
-            const abilityNameForPet = String(item.abilityName || '').trim(); // item.abilityName is parsed before this
+            const abilityNameForPet = String(item.abilityName || '').trim(); 
 
             if (petNameFromCol) {
                 item.petName = petNameFromCol;
             } else if (abilityNameForPet && abilityNameForPet !== `Item ${rowIndex}`) {
                 item.petName = abilityNameForPet;
             } else {
-                item.petName = 'Companion'; // Default if no other name found
+                item.petName = 'Companion';
             }
 
             const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '').trim();
-            if (petStatsRawString) { // Check if string is not empty
+            if (petStatsRawString) { 
               item.petStats = petStatsRawString;
               item.parsedPetCoreStats = parsePetStatsString(item.petStats);
             }
@@ -322,9 +322,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       }
       
       const arsenal = arsenalsMap.get(arsenalId);
-      if (arsenal && item.abilityName && item.abilityName !== `Item ${rowIndex}`) { // Only add if item has a meaningful name
+      if (arsenal && item.abilityName && item.abilityName !== `Item ${rowIndex}`) { 
         arsenal.items.push(item as ArsenalItem);
-      } else if (arsenal && (item.isPet || item.isFlaggedAsWeapon) && item.abilityName === `Item ${rowIndex}`){ // Add unnamed pets/weapons
+      } else if (arsenal && (item.isPet || item.isFlaggedAsWeapon) && item.abilityName === `Item ${rowIndex}`){ 
          if (item.isPet && !item.petName) item.petName = 'Unnamed Companion';
          if (item.isFlaggedAsWeapon && !item.abilityName) item.abilityName = 'Unnamed Weapon';
          arsenal.items.push(item as ArsenalItem);
