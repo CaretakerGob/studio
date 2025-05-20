@@ -52,7 +52,8 @@ function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range
 
   const parsed: { attack?: number; range?: number; rawDetails: string } = { rawDetails: detailsStr };
   
-  const match = detailsStr.match(/A(\d+)(?:\/R(\d+))?/i);
+  // Try to match "A{attack}/R{range}" or "A{attack}" patterns, case insensitive
+  const match = detailsStr.match(/A(\d+)(?:\s*[\/-]?\s*R(\d+))?/i);
 
   if (match) {
     if (match[1]) { 
@@ -145,10 +146,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         const arsenalDescIndex = getColumnIndex(['arsenal description']); 
         if (arsenalDescIndex !== -1) card.description = String(row[arsenalDescIndex] || '');
         else {
-            const genericDescIndex = getColumnIndex(['description']); // Fallback for arsenal card's own description
+            const genericDescIndex = getColumnIndex(['description']); 
             if (genericDescIndex !== -1) card.description = String(row[genericDescIndex] || '');
         }
-
 
         const imageUrlFrontIndex = getColumnIndex(['imageurlfront', 'frontimage', 'imagefront']);
         if (imageUrlFrontIndex !== -1) card.imageUrlFront = String(row[imageUrlFrontIndex] || '');
@@ -171,7 +171,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
         numModFields.forEach(field => {
           let colIndex = -1;
+          // First, try direct match for the field name (e.g., "hpmod")
           colIndex = sanitizedHeaders.indexOf(field.toLowerCase() as string);
+          // If not found, try common variations from the map
           if (colIndex === -1) {
               const possibleHeaders = Object.keys(headerToFieldMap).filter(h => headerToFieldMap[h] === field);
               for (const headerVariation of possibleHeaders) {
@@ -238,13 +240,21 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         item.parsedStatModifiers = parseEffectStatChange(item.effectStatChangeString);
       }
       
-      const weaponDetailsIndex = getColumnIndex(['weapon', 'weapondetails']);
-      if (weaponDetailsIndex !== -1 && row[weaponDetailsIndex]) {
-        const weaponDetailsValue = String(row[weaponDetailsIndex] || '').trim();
-        if (weaponDetailsValue) {
-          item.weaponDetails = weaponDetailsValue;
-          // If category is 'WEAPON', or if it's 'LOAD OUT' and has weapon details, attempt to parse it.
-          if (item.category?.toUpperCase() === 'WEAPON' || item.category?.toUpperCase() === 'LOAD OUT') {
+      // For "Weapon" flag column (e.g. "Weapon" column with TRUE/FALSE)
+      const weaponFlagColumnIndex = getColumnIndex(['weapon']); // Specifically look for a column named "Weapon"
+      if (weaponFlagColumnIndex !== -1 && row[weaponFlagColumnIndex]) {
+        item.isFlaggedAsWeapon = ['true', 'yes', '1'].includes(String(row[weaponFlagColumnIndex] || '').toLowerCase());
+      }
+
+      // For weapon stats string (e.g. "A4/R2", coming from "Weapon Details" or "Effect" column)
+      const weaponStatsStringColumnIndex = getColumnIndex(['weapon details', 'effect description', 'effect', 'stats']);
+      if (weaponStatsStringColumnIndex !== -1 && row[weaponStatsStringColumnIndex]) {
+        const statsStr = String(row[weaponStatsStringColumnIndex] || '').trim();
+        if (statsStr) {
+          item.weaponDetails = statsStr; // Store the raw string
+          // Only parse if it's explicitly flagged as a weapon OR if the category suggests it's a weapon
+          // and we have details. This prioritizes the flag.
+          if (item.isFlaggedAsWeapon || item.category === 'WEAPON' || (item.category === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) {
             item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
           }
         }

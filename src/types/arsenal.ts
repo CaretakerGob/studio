@@ -1,5 +1,5 @@
 
-export type ArsenalItemCategory = 'WEAPON' | 'GEAR' | 'INTERRUPT' | 'PASSIVE' | 'ACTION' | 'LOAD OUT' | 'BONUS' | 'ELITE' | 'LOADOUT';
+export type ArsenalItemCategory = 'WEAPON' | 'GEAR' | 'INTERRUPT' | 'PASSIVE' | 'ACTION' | 'LOAD OUT' | 'LOADOUT' | 'BONUS' | 'ELITE';
 
 export interface ParsedStatModifier {
   targetStat: string; 
@@ -19,15 +19,16 @@ export interface ArsenalItem {
   effect?: string;
   secondaryEffect?: string;
   toggle?: boolean;
+  isFlaggedAsWeapon?: boolean; // New: To specifically flag an item as a weapon if "Weapon" column is TRUE
   effectStatChangeString?: string; 
   secondaryEffectStatChangeString?: string;
-  weaponDetails?: string; 
+  weaponDetails?: string; // Stores the A/R string like "A4/R2"
   
   parsedStatModifiers?: ParsedStatModifier[];
-  parsedWeaponStats?: { // Added to store parsed attack/range from weaponDetails
+  parsedWeaponStats?: { 
     attack?: number;
     range?: number;
-    rawDetails?: string; // Store the original string for reference/display
+    rawDetails?: string; 
   };
 }
 
@@ -49,3 +50,4 @@ export interface ArsenalCard {
   rangedAttackMod?: number;
   rangedRangeMod?: number;
 }
+
