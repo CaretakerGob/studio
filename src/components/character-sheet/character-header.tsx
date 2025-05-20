@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CardHeader, CardDescription, CardTitle } from "@/components/ui/card";
+import { CardHeader, CardDescription, CardTitle, CardContent } from "@/components/ui/card"; // Added CardContent
 import { UserCircle, RotateCcw, Edit2, UserCog, Award } from "lucide-react";
 import type { User } from 'firebase/auth';
 import type { Character } from '@/types/character';
