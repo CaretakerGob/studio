@@ -348,9 +348,17 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         : { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" };
 
     if (equippedArsenalCard?.items) {
-        const arsenalMeleeItem = 
-            equippedArsenalCard.items.find(item => item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON' && !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)) ||
-            equippedArsenalCard.items.find(item => item.category?.toUpperCase() === 'WEAPON' && !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0));
+        const arsenalMeleeItem =
+            equippedArsenalCard.items.find(item =>
+                item.category?.toUpperCase() === 'LOAD OUT' &&
+                item.parsedWeaponStats?.attack !== undefined &&
+                !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
+            ) ||
+            equippedArsenalCard.items.find(item =>
+                item.category?.toUpperCase() === 'WEAPON' &&
+                item.parsedWeaponStats?.attack !== undefined &&
+                !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
+            );
 
         if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
             weaponToDisplay = {
@@ -365,10 +373,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         weaponToDisplay.attack = (weaponToDisplay.attack || 0) + equippedArsenalCard.meleeAttackMod;
     }
     
-    // Hide default fists if no actual character weapon and no arsenal weapon is providing a melee option
     if (weaponToDisplay.name === "Fists" && weaponToDisplay.attack === 1 && 
         !editableCharacterData?.meleeWeapon && 
-        (!equippedArsenalCard?.items.some(i => (i.category === "WEAPON" || i.category === "LOAD OUT") && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) &&
+        (!equippedArsenalCard?.items.some(i=> (i.category?.toUpperCase() === "WEAPON" || i.category?.toUpperCase() === "LOAD OUT") && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) &&
         !equippedArsenalCard?.meleeAttackMod
        ) {
         return undefined; 
@@ -382,9 +389,17 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
           : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" };
 
       if (equippedArsenalCard?.items) {
-          const arsenalRangedItem = 
-              equippedArsenalCard.items.find(item => item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON' && (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)) ||
-              equippedArsenalCard.items.find(item => item.category?.toUpperCase() === 'WEAPON' && (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0));
+          const arsenalRangedItem =
+              equippedArsenalCard.items.find(item =>
+                  item.category?.toUpperCase() === 'LOAD OUT' &&
+                  item.parsedWeaponStats?.attack !== undefined &&
+                  (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
+              ) ||
+              equippedArsenalCard.items.find(item =>
+                  item.category?.toUpperCase() === 'WEAPON' &&
+                  item.parsedWeaponStats?.attack !== undefined &&
+                  (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
+              );
           
           if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
               weaponToDisplay = {
@@ -403,7 +418,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (weaponToDisplay.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 &&
           !editableCharacterData?.rangedWeapon &&
-          (!equippedArsenalCard?.items.some(i => (i.category === "WEAPON" || i.category === "LOAD OUT") && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) &&
+          (!equippedArsenalCard?.items.some(i => (i.category?.toUpperCase() === "WEAPON" || i.category?.toUpperCase() === "LOAD OUT") && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) &&
           !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod
          ) {
           return undefined;
@@ -473,7 +488,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
-        // Always load the default custom template first
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
         if (characterToLoad) {
             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
@@ -482,9 +496,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
             characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
             characterToLoad.characterPoints = defaultTemplate?.characterPoints || 375;
-            characterToLoad.selectedArsenalCardId = null; // Ensure default template has no arsenal selected
+            characterToLoad.selectedArsenalCardId = null;
         }
         showToastHelper({ title: "Template Loaded", description: `Loaded default Custom Character template.` });
+
       } else if (currentUser && auth.currentUser) {
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
@@ -1103,7 +1118,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             displayedValue += equippedArsenalCard.defMod;
         }
     }
-    displayedValue = Math.max(1, displayedValue); // Ensure displayed current value is at least 1 due to base
+    displayedValue = Math.max(1, displayedValue); 
     displayedMaxValue = Math.max(1, displayedMaxValue);
 
 
@@ -1153,11 +1168,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   };
 
   const WeaponDisplay: React.FC<{ weapon?: Weapon | RangedWeapon, type: 'melee' | 'ranged' }> = ({ weapon, type }) => {
-    if (!weapon || weapon.name === "None" || weapon.name === "Fists" && weapon.attack === 1 && type === 'melee' && !editableCharacterData?.meleeWeapon && !equippedArsenalCard?.items.some(i=> (i.category === "WEAPON" || i.category === "LOAD OUT") && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)) && !equippedArsenalCard?.meleeAttackMod) {
-         // Hide default fists if it's the base and no character or arsenal weapon is specified
-        if (type === 'melee' && weapon.name === "Fists" && weapon.attack === 1) return null;
-        // Hide default "None" for ranged if it's the base and no other source
-        if (type === 'ranged' && weapon.name === "None" && weapon.attack === 0 && weapon.range === 0) return null;
+    if (!weapon || weapon.name === "None" || weapon.name === "Fists" && weapon.attack === 1 && type === 'melee' && !editableCharacterData?.meleeWeapon && !equippedArsenalCard?.items.some(i=> (i.category?.toUpperCase() === "WEAPON" || i.category?.toUpperCase() === "LOAD OUT") && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)) && !equippedArsenalCard?.meleeAttackMod) {
+        if (type === 'melee' && weapon?.name === "Fists" && weapon?.attack === 1) return null;
+        if (type === 'ranged' && weapon?.name === "None" && weapon?.attack === 0 && (weapon as RangedWeapon)?.range === 0) return null;
     }
     if (!weapon) return null;
 

@@ -52,22 +52,18 @@ function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range
 
   const parsed: { attack?: number; range?: number; rawDetails: string } = { rawDetails: detailsStr };
   
-  // Regex to capture A<number>/R<number> or A<number>
-  // Example: "A4/R2 – Ranged Shotgun" or "A3"
   const match = detailsStr.match(/A(\d+)(?:\/R(\d+))?/i);
 
   if (match) {
-    if (match[1]) { // Attack value
+    if (match[1]) { 
       parsed.attack = parseInt(match[1], 10);
     }
-    if (match[2]) { // Range value (optional)
+    if (match[2]) { 
       parsed.range = parseInt(match[2], 10);
     }
   }
   
-  // Return only if attack was found, or if rawDetails itself is meaningful (e.g. for flavor if no stats)
-  // For now, we primarily care if attack was parsed for it to be a weapon stat object
-  return parsed.attack !== undefined ? parsed : { rawDetails: detailsStr }; // Ensure rawDetails is always returned if input was valid
+  return parsed.attack !== undefined ? parsed : { rawDetails: detailsStr };
 }
 
 
@@ -124,9 +120,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       return -1;
     };
     
-    const arsenalNameIndex = getColumnIndex(['arsenal name', 'arsenalname']);
+    const arsenalNameIndex = getColumnIndex(['arsenal name', 'arsenalname', 'name', 'title']);
     if (arsenalNameIndex === -1) {
-        const errorMsg = "Critical Error: 'Arsenal Name' column not found in Google Sheet.";
+        const errorMsg = "Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet.";
         console.error(errorMsg);
         return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [] }];
     }
@@ -146,8 +142,13 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             items: [],
         };
         
-        const arsenalDescIndex = getColumnIndex(['arsenal description', 'description']); // Description for the Arsenal Card itself
+        const arsenalDescIndex = getColumnIndex(['arsenal description']); 
         if (arsenalDescIndex !== -1) card.description = String(row[arsenalDescIndex] || '');
+        else {
+            const genericDescIndex = getColumnIndex(['description']); // Fallback for arsenal card's own description
+            if (genericDescIndex !== -1) card.description = String(row[genericDescIndex] || '');
+        }
+
 
         const imageUrlFrontIndex = getColumnIndex(['imageurlfront', 'frontimage', 'imagefront']);
         if (imageUrlFrontIndex !== -1) card.imageUrlFront = String(row[imageUrlFrontIndex] || '');
@@ -170,13 +171,11 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
         numModFields.forEach(field => {
           let colIndex = -1;
-          // First, try direct match (e.g., 'hpMod')
           colIndex = sanitizedHeaders.indexOf(field.toLowerCase() as string);
-          // If not found, try variations from headerToFieldMap
           if (colIndex === -1) {
               const possibleHeaders = Object.keys(headerToFieldMap).filter(h => headerToFieldMap[h] === field);
               for (const headerVariation of possibleHeaders) {
-                  colIndex = getColumnIndex([headerVariation]); // getColumnIndex already handles case-insensitivity
+                  colIndex = getColumnIndex([headerVariation]); 
                   if (colIndex !== -1) break;
               }
           }
@@ -214,13 +213,12 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const classIndex = getColumnIndex(['class']); 
       if (classIndex !== -1) item.class = String(row[classIndex] || '');
       
-      // Use a different description index for items vs the arsenal card itself.
       const itemDescIndex = getColumnIndex(['item description', 'ability description', 'effect description']); 
-      if (itemDescIndex !== -1) {
+      if (itemDescIndex !== -1 && String(row[itemDescIndex] || '').trim() !== '') {
         item.itemDescription = String(row[itemDescIndex] || '');
       } else {
-         const genericDescIndex = getColumnIndex(['description']); // Fallback to generic 'description' if specific not found
-         if (genericDescIndex !== -1 && String(row[genericDescIndex] || '') !== arsenalsMap.get(arsenalId)?.description) {
+         const genericDescIndex = getColumnIndex(['description']); 
+         if (genericDescIndex !== -1 && String(row[genericDescIndex] || '').trim() !== '' && String(row[genericDescIndex] || '') !== arsenalsMap.get(arsenalId)?.description) {
             item.itemDescription = String(row[genericDescIndex] || '');
          }
       }
@@ -242,9 +240,13 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       
       const weaponDetailsIndex = getColumnIndex(['weapon', 'weapondetails']);
       if (weaponDetailsIndex !== -1 && row[weaponDetailsIndex]) {
-        item.weaponDetails = String(row[weaponDetailsIndex] || '');
-        if (item.category === 'WEAPON' || (item.category === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) {
-          item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
+        const weaponDetailsValue = String(row[weaponDetailsIndex] || '').trim();
+        if (weaponDetailsValue) {
+          item.weaponDetails = weaponDetailsValue;
+          // If category is 'WEAPON', or if it's 'LOAD OUT' and has weapon details, attempt to parse it.
+          if (item.category?.toUpperCase() === 'WEAPON' || item.category?.toUpperCase() === 'LOAD OUT') {
+            item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
+          }
         }
       }
       
