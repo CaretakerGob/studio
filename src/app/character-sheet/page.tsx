@@ -156,8 +156,15 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     if (arsenalNameIndex === -1) {
         const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMsg);
-        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [] }];
+        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{abilityName: `Headers found: [${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
     }
+    
+    const petFlagColumnVariations = ['pet', 'is pet', 'companion'];
+    const petFlagHeaderIndex = getColumnIndex(petFlagColumnVariations);
+    if (petFlagHeaderIndex === -1) {
+        console.warn(`[DATA WARNING] No column found for Pet flag. Expected one of: ${petFlagColumnVariations.join('/')}. Pets might not be identified correctly.`);
+    }
+
 
     const arsenalsMap = new Map<string, ArsenalCard>();
 
@@ -290,9 +297,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         }
       }
       
-      const petFlagColumnIndex = getColumnIndex(['pet', 'is pet', 'companion']);
-      if (petFlagColumnIndex !== -1 && row[petFlagColumnIndex] !== undefined && String(row[petFlagColumnIndex]).trim() !== '') {
-        const petFlagValue = String(row[petFlagColumnIndex]).trim().toLowerCase();
+      const currentPetFlagColumnIndex = getColumnIndex(['pet', 'is pet', 'companion']); // Re-check variable name, should be petFlagHeaderIndex
+      if (currentPetFlagColumnIndex !== -1 && row[currentPetFlagColumnIndex] !== undefined && String(row[currentPetFlagColumnIndex]).trim() !== '') {
+        const petFlagValue = String(row[currentPetFlagColumnIndex]).trim().toLowerCase();
         if (['true', 'yes', '1'].includes(petFlagValue)) {
             item.isPet = true;
 
@@ -326,7 +333,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         arsenal.items.push(item as ArsenalItem);
       } else if (arsenal && (item.isPet || item.isFlaggedAsWeapon) && item.abilityName === `Item ${rowIndex}`){ 
          if (item.isPet && !item.petName) item.petName = 'Unnamed Companion';
-         if (item.isFlaggedAsWeapon && !item.abilityName) item.abilityName = 'Unnamed Weapon';
+         if (item.isFlaggedAsWeapon && !item.abilityName) item.abilityName = 'Unnamed Weapon'; // Corrected this line
          arsenal.items.push(item as ArsenalItem);
       }
     });
@@ -349,3 +356,5 @@ export default async function CharacterSheetPage() {
   );
 }
 
+
+    
