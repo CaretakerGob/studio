@@ -2,16 +2,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { List, Shuffle, AlertCircle, RotateCcw } from "lucide-react";
+import { Shuffle, AlertCircle } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from '@/components/ui/separator';
+
+import { EventControls } from './event-controls';
+import { MainEventDisplay } from './main-event-display';
+import { EventHistoryDisplay } from './event-history-display';
+
 
 export interface EventsSheetData {
   Insert?: string;
@@ -45,7 +43,6 @@ const eventBackgroundImages: Record<string, string> = {
 const RANDOM_ANY_COLOR = "random_any_color";
 const RANDOM_CHAOS_EVENT = "random_chaos_event";
 const RANDOM_ORDER_EVENT = "random_order_event";
-
 
 export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIProps) {
   const [selectedRandomType, setSelectedRandomType] = useState<string | undefined>(undefined);
@@ -110,22 +107,26 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     let filteredItems: EventsSheetData[] = [];
     let toastMessageDescription = "";
 
+    // Filter out system error messages from the pool of items to draw from
+    const drawableItems = items.filter(item => !(item.Type === 'System' && (item.Color === 'Error' || item.Color === 'Warning')));
+
+
     if (selectedRandomType) {
       if (selectedRandomType === RANDOM_ANY_COLOR) {
-        filteredItems = items.filter(item => item.Type !== 'System');
+        filteredItems = drawableItems;
         toastMessageDescription = "A random event from all colors has been drawn.";
       } else if (selectedRandomType === RANDOM_CHAOS_EVENT) {
-        filteredItems = items.filter(item => item.Color.includes("Chaos") && item.Type !== 'System');
+        filteredItems = drawableItems.filter(item => item.Color.includes("Chaos"));
         toastMessageDescription = "A random Chaos event has been drawn.";
       } else if (selectedRandomType === RANDOM_ORDER_EVENT) {
-        filteredItems = items.filter(item => item.Color.includes("Order") && item.Type !== 'System');
+        filteredItems = drawableItems.filter(item => item.Color.includes("Order"));
         toastMessageDescription = "A random Order event has been drawn.";
       }
     } else if (selectedChaosColor) {
-      filteredItems = items.filter(item => item.Color === selectedChaosColor && item.Type !== 'System');
+      filteredItems = drawableItems.filter(item => item.Color === selectedChaosColor);
       toastMessageDescription = `A random event for "${selectedChaosColor}" has been drawn.`;
     } else if (selectedOrderColor) {
-      filteredItems = items.filter(item => item.Color === selectedOrderColor && item.Type !== 'System');
+      filteredItems = drawableItems.filter(item => item.Color === selectedOrderColor);
       toastMessageDescription = `A random event for "${selectedOrderColor}" has been drawn.`;
     }
     
@@ -159,10 +160,9 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     toast({ title: "Events Reset", description: "Selection and event history cleared." });
   };
   
-  const systemError = items.length === 1 && items[0].Type === 'System' && items[0].Color === 'Error';
-  const currentEventBgImage = latestEvent ? eventBackgroundImages[latestEvent.Color] : undefined;
+  const systemErrorItem = items.find(item => item.Type === 'System' && item.Color === 'Error');
+  const isGenerateButtonDisabled = (!selectedRandomType && !selectedChaosColor && !selectedOrderColor) || isLoading || !!systemErrorItem || items.length === 0;
 
-  const isGenerateButtonDisabled = (!selectedRandomType && !selectedChaosColor && !selectedOrderColor) || isLoading || systemError || items.length === 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -175,69 +175,22 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
           <CardDescription>Select a type or color and generate an event.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="random-type-select" className="text-md font-medium">Random Event Type:</Label>
-            <Select value={selectedRandomType || ""} onValueChange={handleRandomTypeChange} disabled={systemError || items.length === 0}>
-              <SelectTrigger id="random-type-select" className="w-full mt-1">
-                <SelectValue placeholder="Select Random Type..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={RANDOM_ANY_COLOR}>Random Event (Any Color)</SelectItem>
-                <SelectItem value={RANDOM_CHAOS_EVENT}>Random Chaos Event</SelectItem>
-                <SelectItem value={RANDOM_ORDER_EVENT}>Random Order Event</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          <div>
-            <Label htmlFor="chaos-color-select" className="text-md font-medium">Chaos Colors:</Label>
-            <Select value={selectedChaosColor || ""} onValueChange={handleChaosColorChange} disabled={systemError || items.length === 0 || availableChaosColors.length === 0}>
-              <SelectTrigger id="chaos-color-select" className="w-full mt-1">
-                <SelectValue placeholder="Select Chaos Color..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableChaosColors.map(color => (
-                  <SelectItem key={color} value={color}>
-                    {color}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          <div>
-            <Label htmlFor="order-color-select" className="text-md font-medium">Order Colors:</Label>
-            <Select value={selectedOrderColor || ""} onValueChange={handleOrderColorChange} disabled={systemError || items.length === 0 || availableOrderColors.length === 0}>
-              <SelectTrigger id="order-color-select" className="w-full mt-1">
-                <SelectValue placeholder="Select Order Color..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableOrderColors.map(color => (
-                  <SelectItem key={color} value={color}>
-                    {color}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          <Button 
-            onClick={handleGenerateRandomEvent} 
-            className="w-full bg-primary hover:bg-primary/90 mt-4" // Added mt-4 for spacing
-            disabled={isGenerateButtonDisabled}
-          >
-            <Shuffle className="mr-2 h-5 w-5" />
-            {isLoading ? "Generating..." : "Generate Random Event"}
-          </Button>
-           <Button variant="outline" onClick={resetEventsHistory} className="w-full">
-            <RotateCcw className="mr-2 h-4 w-4" /> Reset Events
-          </Button>
+          <EventControls 
+            selectedRandomType={selectedRandomType}
+            onRandomTypeChange={handleRandomTypeChange}
+            availableChaosColors={availableChaosColors}
+            selectedChaosColor={selectedChaosColor}
+            onChaosColorChange={handleChaosColorChange}
+            availableOrderColors={availableOrderColors}
+            selectedOrderColor={selectedOrderColor}
+            onOrderColorChange={handleOrderColorChange}
+            onGenerateEvent={handleGenerateRandomEvent}
+            onResetEvents={resetEventsHistory}
+            isGenerateDisabled={isGenerateButtonDisabled}
+            isLoading={isLoading}
+            systemError={!!systemErrorItem}
+            itemsLength={items.length}
+          />
         </CardContent>
       </Card>
 
@@ -248,101 +201,20 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
             <CardDescription>{cardDescription}</CardDescription>
           </CardHeader>
           <CardContent className="flex-grow flex flex-col items-center justify-center w-full p-4">
-            {systemError ? (
-              <Alert variant="destructive" className="max-w-lg text-center">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                  <AlertTitle>System Error</AlertTitle>
-                  <AlertDescription>
-                    {items[0].Description}
-                  </AlertDescription>
-                </Alert>
-            ) : isLoading && !latestEvent ? (
-              <div className="space-y-3 w-full max-w-md aspect-[5/7] flex flex-col justify-center items-center">
-                <Skeleton className="h-8 w-3/4" />
-                <Skeleton className="h-6 w-1/2" />
-                <Skeleton className="h-20 w-full" />
-              </div>
-            ) : latestEvent ? (
-              <Card 
-                key={eventKey} 
-                className="w-full max-w-lg bg-transparent border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500 relative overflow-hidden aspect-[5/7]"
-              >
-                {currentEventBgImage && (
-                  <Image
-                    src={currentEventBgImage}
-                    alt={`${latestEvent.Color} event background`}
-                    fill
-                    style={{ objectFit: 'contain' }} 
-                    className="absolute inset-0 z-0 opacity-90 pointer-events-none"
-                    data-ai-hint="event background texture"
-                    priority
-                  />
-                )}
-                <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-4 sm:p-6">
-                  <div className="bg-card/80 p-4 sm:p-6 rounded-lg shadow-md text-center max-w-full overflow-y-auto max-h-[90%]">
-                    <CardHeader className="p-0 pb-2">
-                      <CardTitle className="text-xl text-primary">{latestEvent.Type || 'Event'}</CardTitle>
-                      <CardDescription className="text-sm">
-                        Color: {latestEvent.Color}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line">{latestEvent.Description}</p>
-                    </CardContent>
-                  </div>
-                </div>
-              </Card>
-            ) : (
-              <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50">
-                <List className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <AlertTitle>No Event Generated</AlertTitle>
-                <AlertDescription>
-                  {items.length === 0 ? "No event data loaded." : "Select a type or color and click 'Generate Random Event' to see an event."}
-                </AlertDescription>
-              </Alert>
-            )}
+            <MainEventDisplay 
+              latestEvent={latestEvent}
+              isLoading={isLoading}
+              eventKey={eventKey}
+              eventBackgroundImages={eventBackgroundImages}
+              systemError={!!systemErrorItem}
+              systemErrorMessage={systemErrorItem?.Description}
+              itemsLength={items.filter(item => !(item.Type === 'System' && (item.Color === 'Error' || item.Color === 'Warning'))).length}
+            />
           </CardContent>
         </Card>
 
-        {previousEvents.length > 0 && (
-          <div className="w-full mt-4">
-            <h4 className="text-lg font-semibold mb-3 text-center text-muted-foreground">Previously Drawn Events</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {previousEvents.map((event, index) => {
-                const historicEventBgImage = eventBackgroundImages[event.Color];
-                return (
-                  <Card key={`${event.Color}-${event.Type}-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden relative aspect-[5/7]">
-                    {historicEventBgImage && (
-                       <Image
-                        src={historicEventBgImage}
-                        alt={`${event.Color} event background`}
-                        fill
-                        style={{ objectFit: 'contain' }}
-                        className="absolute inset-0 z-0 opacity-70 pointer-events-none"
-                        data-ai-hint="event background texture small"
-                      />
-                    )}
-                    <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-2">
-                        <div className="bg-card/70 p-2 rounded-md shadow-sm text-center max-w-full overflow-y-auto max-h-[90%]">
-                            <CardHeader className="p-1 pb-1">
-                            <CardTitle className="text-sm text-primary truncate">{event.Type || 'Event'}</CardTitle>
-                            <CardDescription className="text-xs">Color: {event.Color}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-1 pt-0">
-                            <p className="text-xs text-muted-foreground whitespace-pre-line">{event.Description}</p>
-                            </CardContent>
-                        </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <EventHistoryDisplay previousEvents={previousEvents} eventBackgroundImages={eventBackgroundImages} />
       </div>
     </div>
   );
 }
-
-
-    
