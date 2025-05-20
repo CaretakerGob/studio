@@ -506,15 +506,16 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
+        // Always load the default template for 'custom' initially
         characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
         if (characterToLoad) {
-            characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
-            characterToLoad.name = defaultTemplate?.name || 'Custom Character';
-            characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
-            characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
-            characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
-            characterToLoad.characterPoints = defaultTemplate?.characterPoints || 375;
-            characterToLoad.selectedArsenalCardId = null;
+             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null; // Ensure it's null if undefined
+             characterToLoad.name = defaultTemplate?.name || 'Custom Character';
+             characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
+             characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
+             characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
+             characterToLoad.characterPoints = defaultTemplate?.characterPoints || 375;
+             characterToLoad.selectedArsenalCardId = null; // Ensure no arsenal on default load
         }
       } else if (currentUser && auth.currentUser) { 
         try {
@@ -532,16 +533,18 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         }
       }
 
+      // Fallback to default template if no user-saved version was loaded (for non-custom characters)
       if (!characterToLoad && selectedCharacterId !== 'custom' && defaultTemplate) {
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
          if (characterToLoad) {
             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
          }
-        if (currentUser) { 
+        if (currentUser) { // Only show "default loaded" toast if a user is logged in but no saved data found
            showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad?.name}. No saved data found.` });
         }
       }
-
+      
+      // Ensure skills is an object even if loaded data might be missing it
       if (characterToLoad && !characterToLoad.skills) {
         characterToLoad.skills = { ...initialSkills };
       }
@@ -554,7 +557,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     loadCharacterData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError]); 
+  }, [selectedCharacterId, currentUser, setAuthError]); // Removed userSavedCharacters from deps as it's now handled by dropdown options
 
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedCooldowns), [(editableCharacterData as any)?.savedCooldowns]);
@@ -1532,6 +1535,87 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                     <CardTitle className="text-md text-accent mb-2">{equippedArsenalCard.name}</CardTitle>
                     {equippedArsenalCard.description && <CardDescription className="text-xs mt-1 mb-2">{equippedArsenalCard.description}</CardDescription>}
 
+                    {currentCompanion && currentCompanion.parsedPetCoreStats && (
+                       <div className="space-y-3 my-3">
+                          <h4 className="text-base font-semibold text-primary flex items-center">
+                            <PawPrint className="mr-2 h-5 w-5" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
+                          </h4>
+                          {/* Pet HP Tracker */}
+                          {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <Label className="flex items-center text-sm font-medium">
+                                  <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
+                                </Label>
+                                <div className="flex items-center gap-1">
+                                  <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('hp')} className="h-6 w-6">
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <Input
+                                    type="number"
+                                    value={currentPetHp}
+                                    readOnly
+                                    className="w-12 h-6 text-center text-sm font-bold"
+                                  />
+                                  <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('hp')} className="h-6 w-6">
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className="h-1.5 [&>div]:bg-red-500" />
+                              <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
+                            </div>
+                          )}
+                          {/* Pet Sanity Tracker */}
+                          {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <Label className="flex items-center text-sm font-medium">
+                                  <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
+                                </Label>
+                                <div className="flex items-center gap-1">
+                                  <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('sanity')} className="h-6 w-6">
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                  <Input
+                                    type="number"
+                                    value={currentPetSanity}
+                                    readOnly
+                                    className="w-12 h-6 text-center text-sm font-bold"
+                                  />
+                                  <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('sanity')} className="h-6 w-6">
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className="h-1.5 [&>div]:bg-blue-400" />
+                              <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
+                            </div>
+                          )}
+                           {currentCompanion.parsedPetCoreStats.mv !== undefined && (
+                            <div className="flex items-center justify-between text-sm">
+                               <Label className="flex items-center font-medium">
+                                <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
+                              </Label>
+                              <span className="font-semibold">{currentCompanion.parsedPetCoreStats.mv}</span>
+                            </div>
+                          )}
+                          {currentCompanion.parsedPetCoreStats.def !== undefined && (
+                             <div className="flex items-center justify-between text-sm">
+                               <Label className="flex items-center font-medium">
+                                <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
+                              </Label>
+                              <span className="font-semibold">{currentCompanion.parsedPetCoreStats.def}</span>
+                            </div>
+                          )}
+                          {currentCompanion.petAbilities && <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-muted-foreground/20"><strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}</p>}
+                          {!currentCompanion.parsedPetCoreStats && currentCompanion.petStats && (
+                            <p className="text-xs text-muted-foreground mt-1"><strong className="text-foreground">Raw Stats:</strong> {currentCompanion.petStats}</p>
+                          )}
+                       </div>
+                    )}
+
+
                     <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="arsenal-contents">
                         <AccordionTrigger className="text-sm hover:no-underline">View Contents ({equippedArsenalCard.items.length})</AccordionTrigger>
@@ -1630,97 +1714,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                       <WeaponDisplay weapon={currentRangedWeapon} type="ranged" />
                   </div>
               </div>
-              {currentCompanion && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="text-xl font-semibold mb-3 flex items-center">
-                      <PawPrint className="mr-2 h-6 w-6 text-primary" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
-                    </h3>
-                    <Card className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
-                      {currentCompanion.parsedPetCoreStats && (
-                        <div className="space-y-3">
-                          {/* Pet HP Tracker */}
-                          {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <Label className="flex items-center text-md font-medium">
-                                  <Heart className="mr-2 h-5 w-5 text-red-500" /> HP
-                                </Label>
-                                <div className="flex items-center gap-2">
-                                  <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('hp')} className="h-7 w-7">
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <Input
-                                    type="number"
-                                    value={currentPetHp}
-                                    readOnly
-                                    className="w-16 h-7 text-center text-md font-bold"
-                                  />
-                                  <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('hp')} className="h-7 w-7">
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className="h-2 [&>div]:bg-red-500" />
-                              <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
-                            </div>
-                          )}
-                          {/* Pet Sanity Tracker */}
-                          {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <Label className="flex items-center text-md font-medium">
-                                  <Brain className="mr-2 h-5 w-5 text-blue-400" /> Sanity
-                                </Label>
-                                <div className="flex items-center gap-2">
-                                  <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('sanity')} className="h-7 w-7">
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <Input
-                                    type="number"
-                                    value={currentPetSanity}
-                                    readOnly
-                                    className="w-16 h-7 text-center text-md font-bold"
-                                  />
-                                  <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('sanity')} className="h-7 w-7">
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className="h-2 [&>div]:bg-blue-400" />
-                              <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
-                            </div>
-                          )}
-                          {/* Pet MV Display */}
-                          {currentCompanion.parsedPetCoreStats.mv !== undefined && (
-                            <div className="flex items-center justify-between">
-                               <Label className="flex items-center text-md font-medium">
-                                <Footprints className="mr-2 h-5 w-5 text-green-500" /> MV
-                              </Label>
-                              <span className="text-md font-semibold">{currentCompanion.parsedPetCoreStats.mv}</span>
-                            </div>
-                          )}
-                          {/* Pet DEF Display */}
-                          {currentCompanion.parsedPetCoreStats.def !== undefined && (
-                             <div className="flex items-center justify-between">
-                               <Label className="flex items-center text-md font-medium">
-                                <Shield className="mr-2 h-5 w-5 text-gray-400" /> DEF
-                              </Label>
-                              <span className="text-md font-semibold">{currentCompanion.parsedPetCoreStats.def}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {currentCompanion.petAbilities && <p className="text-sm text-muted-foreground mt-3 pt-3 border-t border-muted-foreground/20"><strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}</p>}
-                      {!currentCompanion.parsedPetCoreStats && currentCompanion.petStats && (
-                        <p className="text-sm text-muted-foreground"><strong className="text-foreground">Raw Stats:</strong> {currentCompanion.petStats}</p>
-                      )}
-                      {currentCompanion.itemDescription && <p className="text-xs text-muted-foreground mt-2">{currentCompanion.itemDescription}</p>}
-                    </Card>
-                  </div>
-                </>
-              )}
+              {/* Removed separate Companion card section, functionality moved to Arsenal Loadout card */}
             </TabsContent>
             <TabsContent value="skills" className="mt-6 space-y-6">
               {editableCharacterData.id === 'custom' ? (
