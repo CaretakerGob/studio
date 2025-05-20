@@ -506,8 +506,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
-        // For 'custom' character, always load the default template initially.
-        // User has to click "Load My Saved Custom" to load their saved version.
         characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
         if (characterToLoad) {
              characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
@@ -534,7 +532,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         }
       }
 
-      // Fallback to default template if no user-saved version was loaded (for non-custom characters)
       if (!characterToLoad && selectedCharacterId !== 'custom' && defaultTemplate) {
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
          if (characterToLoad) {
@@ -1440,188 +1437,14 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
           </div>
           <Separator />
 
-          {/* Custom Ability Selection UI removed from here */}
-
-          {arsenalCards && arsenalCards.length > 0 && (
-            <>
-              <div className="space-y-2 p-4 border border-dashed border-accent/50 rounded-lg bg-card/30">
-                <Label htmlFor="arsenalCardSelect" className="text-lg font-medium text-accent flex items-center">
-                  <Package className="mr-2 h-5 w-5" /> Arsenal Loadout
-                </Label>
-                {criticalArsenalError && (
-                  <Alert variant="destructive" className="mb-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>{criticalArsenalError.name}</AlertTitle>
-                    <AlertDescription>{criticalArsenalError.description}</AlertDescription>
-                  </Alert>
-                )}
-                <Select
-                  value={editableCharacterData.selectedArsenalCardId || "none"}
-                  onValueChange={handleArsenalCardChange}
-                  disabled={!arsenalCards || arsenalCards.length === 0 || (arsenalCards.length === 1 && (arsenalCards[0].id.startsWith('error-') || arsenalCards[0].id.startsWith('warning-')))}
-                >
-                  <SelectTrigger id="arsenalCardSelect">
-                    <SelectValue placeholder="Select Arsenal Loadout..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {arsenalCards.filter(card => !card.id.startsWith('error-') && !card.id.startsWith('warning-')).map(card => (
-                      <SelectItem key={card.id} value={card.id}>
-                        {card.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {equippedArsenalCard && (
-                  <Card className="mt-2 p-3 bg-card/60 border-accent/70">
-                    <CardTitle className="text-md text-accent mb-2">{equippedArsenalCard.name}</CardTitle>
-                    {equippedArsenalCard.description && <CardDescription className="text-xs mt-1 mb-2">{equippedArsenalCard.description}</CardDescription>}
-
-                    {currentCompanion && currentCompanion.parsedPetCoreStats && (
-                       <div className="space-y-3 my-3">
-                          <h4 className="text-base font-semibold text-primary flex items-center">
-                            <PawPrint className="mr-2 h-5 w-5" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
-                          </h4>
-                          {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <Label className="flex items-center text-sm font-medium">
-                                  <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
-                                </Label>
-                                <div className="flex items-center gap-1">
-                                  <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('hp')} className="h-6 w-6">
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <Input
-                                    type="number"
-                                    value={currentPetHp}
-                                    readOnly
-                                    className="w-12 h-6 text-center text-sm font-bold"
-                                  />
-                                  <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('hp')} className="h-6 w-6">
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className="h-1.5 [&>div]:bg-red-500" />
-                              <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
-                            </div>
-                          )}
-                          {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <Label className="flex items-center text-sm font-medium">
-                                  <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
-                                </Label>
-                                <div className="flex items-center gap-1">
-                                  <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('sanity')} className="h-6 w-6">
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <Input
-                                    type="number"
-                                    value={currentPetSanity}
-                                    readOnly
-                                    className="w-12 h-6 text-center text-sm font-bold"
-                                  />
-                                  <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('sanity')} className="h-6 w-6">
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className="h-1.5 [&>div]:bg-blue-400" />
-                              <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
-                            </div>
-                          )}
-                           {currentCompanion.parsedPetCoreStats.mv !== undefined && (
-                            <div className="flex items-center justify-between text-sm">
-                               <Label className="flex items-center font-medium">
-                                <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
-                              </Label>
-                              <span className="font-semibold">{currentCompanion.parsedPetCoreStats.mv}</span>
-                            </div>
-                          )}
-                          {currentCompanion.parsedPetCoreStats.def !== undefined && (
-                             <div className="flex items-center justify-between text-sm">
-                               <Label className="flex items-center font-medium">
-                                <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
-                              </Label>
-                              <span className="font-semibold">{currentCompanion.parsedPetCoreStats.def}</span>
-                            </div>
-                          )}
-                          {currentCompanion.petAbilities && <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-muted-foreground/20"><strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}</p>}
-                          {!currentCompanion.parsedPetCoreStats && currentCompanion.petStats && (
-                            <p className="text-xs text-muted-foreground mt-1"><strong className="text-foreground">Raw Stats:</strong> {currentCompanion.petStats}</p>
-                          )}
-                       </div>
-                    )}
-
-
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="arsenal-contents">
-                        <AccordionTrigger className="text-sm hover:no-underline">View Contents ({equippedArsenalCard.items.length})</AccordionTrigger>
-                        <AccordionContent>
-                          <ScrollArea className="h-[200px] pr-2">
-                            <div className="space-y-2 text-xs mt-2">
-                              {equippedArsenalCard.items.map(item => (
-                                <div key={item.id} className="p-2 border border-muted-foreground/20 rounded-md bg-background/30">
-                                  <p className="font-semibold text-foreground">
-                                    {item.abilityName || 'Unnamed Item'}
-                                    {(item.category === 'WEAPON' && item.parsedWeaponStats?.rawDetails && item.parsedWeaponStats.rawDetails !== item.abilityName) ? ` (${item.parsedWeaponStats.rawDetails})` : (item.class ? ` (${item.class})` : '')}
-                                    <span className="text-muted-foreground text-xs"> ({item.category || 'N/A'})</span>
-                                  </p>
-                                  {item.itemDescription && <p className="text-muted-foreground">{item.itemDescription}</p>}
-
-                                  {item.parsedWeaponStats?.attack !== undefined && (
-                                    <p><span className="font-medium text-primary/80">Attack:</span> {item.parsedWeaponStats.attack}
-                                    {item.parsedWeaponStats?.range !== undefined && <span className="ml-2"><span className="font-medium text-primary/80">Range:</span> {item.parsedWeaponStats.range}</span>}
-                                    </p>
-                                  )}
-
-                                  {item.effect && <p><span className="font-medium text-primary/80">Effect:</span> {item.effect}</p>}
-                                  {item.secondaryEffect && <p><span className="font-medium text-primary/80">Secondary:</span> {item.secondaryEffect}</p>}
-
-                                  {item.parsedStatModifiers && item.parsedStatModifiers.length > 0 && (
-                                    <p><span className="font-medium text-primary/80">Stat Changes:</span> {item.parsedStatModifiers.map(mod => `${mod.targetStat.toUpperCase()}: ${mod.value > 0 ? '+' : ''}${mod.value}`).join(', ')}</p>
-                                  )}
-                                   {item.qty && <p><span className="font-medium text-primary/80">Qty:</span> {item.qty}</p>}
-                                   {item.cd && <p><span className="font-medium text-primary/80">CD:</span> {item.cd}</p>}
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-
-                    <div className="mt-3 text-xs space-y-0.5">
-                        <p className="font-medium text-muted-foreground">Global Stat Modifiers (from Arsenal Card itself):</p>
-                        {equippedArsenalCard.hpMod !== 0 && typeof equippedArsenalCard.hpMod === 'number' && <p>HP Mod: {equippedArsenalCard.hpMod?.toFixed(0)}</p>}
-                        {equippedArsenalCard.maxHpMod !== 0 && typeof equippedArsenalCard.maxHpMod === 'number' && <p>Max HP Mod: {equippedArsenalCard.maxHpMod?.toFixed(0)}</p>}
-                        {equippedArsenalCard.mvMod !== 0 && typeof equippedArsenalCard.mvMod === 'number' && <p>MV Mod: {equippedArsenalCard.mvMod?.toFixed(0)}</p>}
-                        {equippedArsenalCard.defMod !== 0 && typeof equippedArsenalCard.defMod === 'number' && <p>DEF Mod: {equippedArsenalCard.defMod?.toFixed(0)}</p>}
-                        {equippedArsenalCard.sanityMod !== 0 && typeof equippedArsenalCard.sanityMod === 'number' && <p>Sanity Mod: {equippedArsenalCard.sanityMod?.toFixed(0)}</p>}
-                        {equippedArsenalCard.maxSanityMod !== 0 && typeof equippedArsenalCard.maxSanityMod === 'number' && <p>Max Sanity Mod: {equippedArsenalCard.maxSanityMod?.toFixed(0)}</p>}
-                        {equippedArsenalCard.meleeAttackMod !== 0 && typeof equippedArsenalCard.meleeAttackMod === 'number' && <p>Melee Attack Mod: {equippedArsenalCard.meleeAttackMod?.toFixed(0)}</p>}
-                        {equippedArsenalCard.rangedAttackMod !== 0 && typeof equippedArsenalCard.rangedAttackMod === 'number' && <p>Ranged Attack Mod: {equippedArsenalCard.rangedAttackMod?.toFixed(0)}</p>}
-                        {equippedArsenalCard.rangedRangeMod !== 0 && typeof equippedArsenalCard.rangedRangeMod === 'number' && <p>Ranged Range Mod: {equippedArsenalCard.rangedRangeMod?.toFixed(0)}</p>}
-                         {![equippedArsenalCard.hpMod, equippedArsenalCard.maxHpMod, equippedArsenalCard.mvMod, equippedArsenalCard.defMod, equippedArsenalCard.sanityMod, equippedArsenalCard.maxSanityMod, equippedArsenalCard.meleeAttackMod, equippedArsenalCard.rangedAttackMod, equippedArsenalCard.rangedRangeMod].some(mod => mod && mod !== 0) && (
-                            <p className="italic">No global stat modifiers.</p>
-                        )}
-                    </div>
-                  </Card>
-                )}
-              </div>
-              <Separator />
-            </>
-          )}
-
-
           <Tabs defaultValue="stats" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4"> {/* Changed from grid-cols-3 to grid-cols-4 */}
               <TabsTrigger value="stats">Stats &amp; Equipment</TabsTrigger>
+              <TabsTrigger value="arsenal">Arsenal</TabsTrigger> {/* New Arsenal Tab Trigger */}
               <TabsTrigger value="skills">Skills</TabsTrigger>
               <TabsTrigger value="abilities">Abilities</TabsTrigger>
             </TabsList>
+
             <TabsContent value="stats" className="mt-6 space-y-6">
               <div>
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><UserCircle className="mr-2 h-6 w-6 text-primary" /> Core Stats</h3>
@@ -1655,6 +1478,179 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                   </div>
               </div>
             </TabsContent>
+
+            <TabsContent value="arsenal" className="mt-6 space-y-6"> {/* New Arsenal Tab Content */}
+              {arsenalCards && arsenalCards.length > 0 && (
+                <div className="space-y-2 p-4 border border-dashed border-accent/50 rounded-lg bg-card/30">
+                  <Label htmlFor="arsenalCardSelect" className="text-lg font-medium text-accent flex items-center">
+                    <Package className="mr-2 h-5 w-5" /> Arsenal Loadout
+                  </Label>
+                  {criticalArsenalError && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>{criticalArsenalError.name}</AlertTitle>
+                      <AlertDescription>{criticalArsenalError.description}</AlertDescription>
+                    </Alert>
+                  )}
+                  <Select
+                    value={editableCharacterData.selectedArsenalCardId || "none"}
+                    onValueChange={handleArsenalCardChange}
+                    disabled={!arsenalCards || arsenalCards.length === 0 || (arsenalCards.length === 1 && (arsenalCards[0].id.startsWith('error-') || arsenalCards[0].id.startsWith('warning-')))}
+                  >
+                    <SelectTrigger id="arsenalCardSelect">
+                      <SelectValue placeholder="Select Arsenal Loadout..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {arsenalCards.filter(card => !card.id.startsWith('error-') && !card.id.startsWith('warning-')).map(card => (
+                        <SelectItem key={card.id} value={card.id}>
+                          {card.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {equippedArsenalCard && (
+                    <Card className="mt-2 p-3 bg-card/60 border-accent/70">
+                      <CardTitle className="text-md text-accent mb-2">{equippedArsenalCard.name}</CardTitle>
+                      {equippedArsenalCard.description && <CardDescription className="text-xs mt-1 mb-2">{equippedArsenalCard.description}</CardDescription>}
+
+                      {currentCompanion && currentCompanion.parsedPetCoreStats && (
+                         <div className="space-y-3 my-3 p-3 border border-muted-foreground/30 rounded-md bg-background/40">
+                            <h4 className="text-base font-semibold text-primary flex items-center">
+                              <PawPrint className="mr-2 h-5 w-5" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
+                            </h4>
+                            {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <Label className="flex items-center text-sm font-medium">
+                                    <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
+                                  </Label>
+                                  <div className="flex items-center gap-1">
+                                    <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('hp')} className="h-6 w-6">
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <Input
+                                      type="number"
+                                      value={currentPetHp}
+                                      readOnly
+                                      className="w-12 h-6 text-center text-sm font-bold p-1"
+                                    />
+                                    <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('hp')} className="h-6 w-6">
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className="h-1.5 [&>div]:bg-red-500" />
+                                <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
+                              </div>
+                            )}
+                            {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <Label className="flex items-center text-sm font-medium">
+                                    <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
+                                  </Label>
+                                  <div className="flex items-center gap-1">
+                                    <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('sanity')} className="h-6 w-6">
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <Input
+                                      type="number"
+                                      value={currentPetSanity}
+                                      readOnly
+                                      className="w-12 h-6 text-center text-sm font-bold p-1"
+                                    />
+                                    <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('sanity')} className="h-6 w-6">
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className="h-1.5 [&>div]:bg-blue-400" />
+                                <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
+                              </div>
+                            )}
+                             {currentCompanion.parsedPetCoreStats.mv !== undefined && (
+                              <div className="flex items-center justify-between text-sm">
+                                 <Label className="flex items-center font-medium">
+                                  <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
+                                </Label>
+                                <span className="font-semibold">{currentCompanion.parsedPetCoreStats.mv}</span>
+                              </div>
+                            )}
+                            {currentCompanion.parsedPetCoreStats.def !== undefined && (
+                               <div className="flex items-center justify-between text-sm">
+                                 <Label className="flex items-center font-medium">
+                                  <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
+                                </Label>
+                                <span className="font-semibold">{currentCompanion.parsedPetCoreStats.def}</span>
+                              </div>
+                            )}
+                            {currentCompanion.petAbilities && <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-muted-foreground/20"><strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}</p>}
+                            {!currentCompanion.parsedPetCoreStats.hp && !currentCompanion.parsedPetCoreStats.sanity && currentCompanion.petStats && (
+                              <p className="text-xs text-muted-foreground mt-1"><strong className="text-foreground">Raw Stats:</strong> {currentCompanion.petStats}</p>
+                            )}
+                         </div>
+                      )}
+
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="arsenal-contents">
+                          <AccordionTrigger className="text-sm hover:no-underline">View Contents ({equippedArsenalCard.items.length})</AccordionTrigger>
+                          <AccordionContent>
+                            <ScrollArea className="h-[200px] pr-2">
+                              <div className="space-y-2 text-xs mt-2">
+                                {equippedArsenalCard.items.map(item => (
+                                  <div key={item.id} className="p-2 border border-muted-foreground/20 rounded-md bg-background/30">
+                                    <p className="font-semibold text-foreground">
+                                      {item.abilityName || 'Unnamed Item'}
+                                      {(item.isFlaggedAsWeapon && item.parsedWeaponStats?.rawDetails && item.parsedWeaponStats.rawDetails !== item.abilityName) ? ` (${item.parsedWeaponStats.rawDetails})` : (item.class ? ` (${item.class})` : '')}
+                                      <span className="text-muted-foreground text-xs"> ({item.category || 'N/A'})</span>
+                                    </p>
+                                    {item.itemDescription && <p className="text-muted-foreground">{item.itemDescription}</p>}
+
+                                    {item.parsedWeaponStats?.attack !== undefined && (
+                                      <p><span className="font-medium text-primary/80">Attack:</span> {item.parsedWeaponStats.attack}
+                                      {item.parsedWeaponStats?.range !== undefined && <span className="ml-2"><span className="font-medium text-primary/80">Range:</span> {item.parsedWeaponStats.range}</span>}
+                                      </p>
+                                    )}
+
+                                    {item.effect && <p><span className="font-medium text-primary/80">Effect:</span> {item.effect}</p>}
+                                    {item.secondaryEffect && <p><span className="font-medium text-primary/80">Secondary:</span> {item.secondaryEffect}</p>}
+
+                                    {item.parsedStatModifiers && item.parsedStatModifiers.length > 0 && (
+                                      <p><span className="font-medium text-primary/80">Stat Changes:</span> {item.parsedStatModifiers.map(mod => `${mod.targetStat.toUpperCase()}: ${mod.value > 0 ? '+' : ''}${mod.value}`).join(', ')}</p>
+                                    )}
+                                     {item.qty && <p><span className="font-medium text-primary/80">Qty:</span> {item.qty}</p>}
+                                     {item.cd && <p><span className="font-medium text-primary/80">CD:</span> {item.cd}</p>}
+                                  </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+
+                      <div className="mt-3 text-xs space-y-0.5">
+                          <p className="font-medium text-muted-foreground">Global Stat Modifiers (from Arsenal Card itself):</p>
+                          {equippedArsenalCard.hpMod !== 0 && typeof equippedArsenalCard.hpMod === 'number' && <p>HP Mod: {equippedArsenalCard.hpMod?.toFixed(0)}</p>}
+                          {equippedArsenalCard.maxHpMod !== 0 && typeof equippedArsenalCard.maxHpMod === 'number' && <p>Max HP Mod: {equippedArsenalCard.maxHpMod?.toFixed(0)}</p>}
+                          {equippedArsenalCard.mvMod !== 0 && typeof equippedArsenalCard.mvMod === 'number' && <p>MV Mod: {equippedArsenalCard.mvMod?.toFixed(0)}</p>}
+                          {equippedArsenalCard.defMod !== 0 && typeof equippedArsenalCard.defMod === 'number' && <p>DEF Mod: {equippedArsenalCard.defMod?.toFixed(0)}</p>}
+                          {equippedArsenalCard.sanityMod !== 0 && typeof equippedArsenalCard.sanityMod === 'number' && <p>Sanity Mod: {equippedArsenalCard.sanityMod?.toFixed(0)}</p>}
+                          {equippedArsenalCard.maxSanityMod !== 0 && typeof equippedArsenalCard.maxSanityMod === 'number' && <p>Max Sanity Mod: {equippedArsenalCard.maxSanityMod?.toFixed(0)}</p>}
+                          {equippedArsenalCard.meleeAttackMod !== 0 && typeof equippedArsenalCard.meleeAttackMod === 'number' && <p>Melee Attack Mod: {equippedArsenalCard.meleeAttackMod?.toFixed(0)}</p>}
+                          {equippedArsenalCard.rangedAttackMod !== 0 && typeof equippedArsenalCard.rangedAttackMod === 'number' && <p>Ranged Attack Mod: {equippedArsenalCard.rangedAttackMod?.toFixed(0)}</p>}
+                          {equippedArsenalCard.rangedRangeMod !== 0 && typeof equippedArsenalCard.rangedRangeMod === 'number' && <p>Ranged Range Mod: {equippedArsenalCard.rangedRangeMod?.toFixed(0)}</p>}
+                           {![equippedArsenalCard.hpMod, equippedArsenalCard.maxHpMod, equippedArsenalCard.mvMod, equippedArsenalCard.defMod, equippedArsenalCard.sanityMod, equippedArsenalCard.maxSanityMod, equippedArsenalCard.meleeAttackMod, equippedArsenalCard.rangedAttackMod, equippedArsenalCard.rangedRangeMod].some(mod => mod && mod !== 0) && (
+                              <p className="italic">No global stat modifiers.</p>
+                          )}
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+
+
             <TabsContent value="skills" className="mt-6 space-y-6">
               {editableCharacterData.id === 'custom' ? (
                 <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30">
@@ -1912,4 +1908,3 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
-
