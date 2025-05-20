@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2, Trash2, UserCog, Package, Dices, PawPrint, AlertCircle, Shirt } from "lucide-react";
 import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition, AbilityType } from "@/types/character";
-import type { ArsenalCard, ArsenalItem, ParsedStatModifier } from '@/types/arsenal';
+import type { ArsenalCard, ArsenalItem, ParsedStatModifier, ArsenalItemCategory } from '@/types/arsenal';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -94,7 +94,7 @@ const charactersData: Character[] = [
     id: 'gob',
     name: 'Gob',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { ...initialSkills, tac: 3, sur: 2, kno: 3 },
+    skills: { ...initialSkills, tac: 3, sur: 2, kno: 3, ath: 0, cpu: 0, dare: 0, dec: 0, emp: 0, eng: 0, inv: 0, occ: 0, pers: 0, tun: 0 },
     avatarSeed: 'gob',
     imageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FGob.png?alt=media&token=d5d63a0b-0465-4c50-a179-351ac7cc7fa9`,
     meleeWeapon: { name: "Knife", attack: 2 },
@@ -113,7 +113,7 @@ const charactersData: Character[] = [
     id: 'cassandra',
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { ...initialSkills, occ: 2, emp: 2, tun: 1 },
+    skills: { ...initialSkills, occ: 2, emp: 2, tun: 1, ath: 0, cpu: 0, dare: 0, dec: 0, eng: 0, inv: 0, kno: 0, pers: 0, sur: 0, tac: 0 },
     avatarSeed: 'cassandra',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCassandra.png?alt=media&token=6df9b49f-aeb0-45a1-ae75-7f77945ce18c',
     meleeWeapon: { name: "Saber", attack: 3 },
@@ -132,7 +132,7 @@ const charactersData: Character[] = [
     id: 'fei',
     name: 'Fei',
     baseStats: { hp: 5, maxHp: 5, mv: 4, def: 2, sanity: 6, maxSanity: 6 },
-    skills: { ...initialSkills, occ: 4, emp: 2, kno: 2 },
+    skills: { ...initialSkills, occ: 4, emp: 2, kno: 2, ath: 0, cpu: 0, dare: 0, dec: 0, eng: 0, inv: 0, pers: 0, sur: 0, tac: 0, tun: 0 },
     avatarSeed: 'fei',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2Ffei.png?alt=media&token=ec84180b-3734-499e-9767-0846580cdce9',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
@@ -153,7 +153,7 @@ const charactersData: Character[] = [
     id: 'michael',
     name: 'Michael',
     baseStats: { hp: 6, maxHp: 6, mv: 5, def: 3, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills, emp: 2, dec: 2, inv: 2, ath: 2 },
+    skills: { ...initialSkills, emp: 2, dec: 2, inv: 2, ath: 2, cpu: 0, dare: 0, eng: 0, kno: 0, occ: 0, pers: 0, sur: 0, tac: 0, tun: 0 },
     avatarSeed: 'michael',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FMichael.png?alt=media&token=4674d3b6-5f0e-494c-97cb-b768b84f17fe',
     meleeWeapon: { name: "Kunai", attack: 3 },
@@ -173,7 +173,7 @@ const charactersData: Character[] = [
     id: 'tamara',
     name: 'Tamara',
     baseStats: { hp: 7, maxHp: 7, mv: 5, def: 4, sanity: 6, maxSanity: 6 },
-    skills: { ...initialSkills, emp: 4, pers: 2 },
+    skills: { ...initialSkills, emp: 4, pers: 2, ath: 0, cpu: 0, dare: 0, dec: 0, eng: 0, inv: 0, kno: 0, occ: 0, sur: 0, tac: 0, tun: 0 },
     avatarSeed: 'tamara',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FEnhanced%20Tamara%20new.png?alt=media&token=f3408528-8abe-4ed5-b518-47e375ca09fb',
     meleeWeapon: { name: "Martial Arts", attack: 2 },
@@ -192,7 +192,7 @@ const charactersData: Character[] = [
     id: 'trish',
     name: 'Trish',
     baseStats: { hp: 7, maxHp: 7, mv: 5, def: 3, sanity: 4, maxSanity: 4 },
-    skills: { ...initialSkills, ath: 3, pers: 2 },
+    skills: { ...initialSkills, ath: 3, pers: 2, cpu: 0, dare: 0, dec: 0, emp: 0, eng: 0, inv: 0, kno: 0, occ: 0, sur: 0, tac: 0, tun: 0 },
     avatarSeed: 'trish',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FTrish%20Black%20Shoes.png?alt=media&token=6bb82bb4-c06f-40b1-bd55-5c86a78cedb5',
     meleeWeapon: { name: "Katana", attack: 4 },
@@ -211,7 +211,7 @@ const charactersData: Character[] = [
     id: 'blake',
     name: 'Blake',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills, eng: 2, sur: 2, tac: 2 },
+    skills: { ...initialSkills, eng: 2, sur: 2, tac: 2, ath: 0, cpu: 0, dare: 0, dec: 0, emp: 0, inv: 0, kno: 0, occ: 0, pers: 0, tun: 0 },
     avatarSeed: 'blake',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FBlake%202.png?alt=media&token=6992782d-124a-44ff-8eec-be9cfd0221f2',
     meleeWeapon: { name: "Kukri", attack: 4 },
@@ -231,7 +231,7 @@ const charactersData: Character[] = [
     id: 'walter',
     name: 'Walter',
     baseStats: { hp: 9, maxHp: 9, mv: 4, def: 4, sanity: 5, maxSanity: 5 },
-    skills: { ...initialSkills, dare: 2, cpu: 2, pers: 2 },
+    skills: { ...initialSkills, dare: 2, cpu: 2, pers: 2, ath: 0, dec: 0, emp: 0, eng: 0, inv: 0, kno: 0, occ: 0, sur: 0, tac: 0, tun: 0 },
     avatarSeed: 'walter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FWalter.png?alt=media&token=0f5ccd9d-7f35-4400-b9a4-c5d4f5e051e7',
     meleeWeapon: { name: "Mace", attack: 3 },
@@ -324,7 +324,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard && equippedArsenalCard.items) {
       equippedArsenalCard.items.forEach(item => {
-        if (item.category === 'GEAR' && item.parsedStatModifiers) {
+        if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
           item.parsedStatModifiers.forEach(mod => {
             const statKey = mod.targetStat as keyof CharacterStats;
             if (statKey in base) {
@@ -355,7 +355,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            (item.isFlaggedAsWeapon === true || item.category === 'WEAPON' || (item.category === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
+            (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'WEAPON' || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
             item.parsedWeaponStats?.attack !== undefined &&
             !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
         );
@@ -376,7 +376,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     if (weaponToDisplay.name === "Fists" && weaponToDisplay.attack === 1 &&
         !editableCharacterData?.meleeWeapon?.name && 
         !equippedArsenalCard?.items.some(i =>
-            (i.isFlaggedAsWeapon === true || i.category === "WEAPON" || (i.category === "LOAD OUT" && i.type?.toUpperCase() === 'WEAPON')) &&
+            (i.isFlaggedAsWeapon === true || i.category?.toUpperCase() === "WEAPON" || (i.category?.toUpperCase() === "LOAD OUT" && i.type?.toUpperCase() === 'WEAPON')) &&
              i.parsedWeaponStats?.attack !== undefined &&
              !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)
         ) &&
@@ -394,7 +394,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-            (item.isFlaggedAsWeapon === true || item.category === 'WEAPON' || (item.category === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
+            (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'WEAPON' || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
             item.parsedWeaponStats?.attack !== undefined &&
             (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
           );
@@ -417,7 +417,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       if (weaponToDisplay.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 &&
           !editableCharacterData?.rangedWeapon?.name && 
           !equippedArsenalCard?.items.some(i =>
-            (i.isFlaggedAsWeapon === true || i.category === "WEAPON" || (i.category === "LOAD OUT" && i.type?.toUpperCase() === 'WEAPON')) &&
+            (i.isFlaggedAsWeapon === true || i.category?.toUpperCase() === "WEAPON" || (i.category?.toUpperCase() === "LOAD OUT" && i.type?.toUpperCase() === 'WEAPON')) &&
             i.parsedWeaponStats?.attack !== undefined &&
             (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)
           ) &&
@@ -433,7 +433,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     return equippedArsenalCard.items.find(item => item.isPet === true) || null;
   }, [equippedArsenalCard]);
 
-  // Effect to initialize/reset current pet stats when currentCompanion changes
   useEffect(() => {
     if (currentCompanion && currentCompanion.parsedPetCoreStats) {
       setCurrentPetHp(currentCompanion.parsedPetCoreStats.maxHp ?? currentCompanion.parsedPetCoreStats.hp ?? null);
@@ -450,116 +449,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   const [currentAbilityQuantities, setCurrentAbilityQuantities] = useState<Record<string, number>>({});
   const [maxAbilityQuantities, setMaxAbilityQuantities] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    const fetchUserSavedCharacters = async () => {
-      if (currentUser && auth.currentUser) {
-        try {
-          const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
-          const querySnapshot = await getDocs(charactersCollectionRef);
-          const savedChars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Character));
-          setUserSavedCharacters(savedChars);
-        } catch (err) {
-          console.error("Error fetching user's saved characters:", err);
-          showToastHelper({ title: "Load Error", description: "Could not fetch list of saved characters.", variant: "destructive"});
-          setUserSavedCharacters([]);
-        }
-      } else {
-        setUserSavedCharacters([]);
-      }
-    };
-    fetchUserSavedCharacters();
-  }, [currentUser, showToastHelper, isSaving]);
-
-
-  const characterDropdownOptions = useMemo(() => {
-    return charactersData.map(templateChar => {
-      const savedUserVersion = userSavedCharacters.find(savedChar => savedChar.id === templateChar.id);
-      let displayLabel = templateChar.name;
-
-      if (savedUserVersion) {
-        if (templateChar.id === 'custom' && savedUserVersion.name && savedUserVersion.name !== templateChar.name) {
-          displayLabel = `${savedUserVersion.name} (Custom Character)`;
-        } else {
-          displayLabel = `${templateChar.name} (Saved)`;
-        }
-      }
-      return {
-        id: templateChar.id,
-        name: templateChar.name,
-        displayNameInDropdown: displayLabel,
-      };
-    }).sort((a, b) => a.displayNameInDropdown.localeCompare(b.displayNameInDropdown));
-  }, [userSavedCharacters]);
-
-
-  useEffect(() => {
-    const loadCharacterData = async () => {
-      if (!selectedCharacterId) {
-          setIsLoadingCharacter(false);
-          return;
-      }
-
-      setIsLoadingCharacter(true);
-      if(setAuthError) setAuthError(null);
-
-      let characterToLoad: Character | undefined = undefined;
-      const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
-
-      if (selectedCharacterId === 'custom') {
-        characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
-        if (characterToLoad) {
-             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
-             characterToLoad.name = defaultTemplate?.name || 'Custom Character';
-             characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
-             characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
-             characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
-             characterToLoad.characterPoints = defaultTemplate?.characterPoints || 375;
-             characterToLoad.selectedArsenalCardId = null;
-        }
-      } else if (currentUser && auth.currentUser) { 
-        try {
-          const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
-          const docSnap = await getDoc(characterRef);
-
-          if (docSnap.exists()) {
-            characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
-            characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
-            showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name}.` });
-          }
-        } catch (err: any) {
-          console.error("Error loading character from Firestore:", err);
-          showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default.", variant: "destructive" });
-        }
-      }
-
-      if (!characterToLoad && selectedCharacterId !== 'custom' && defaultTemplate) {
-        characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
-         if (characterToLoad) {
-            characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
-         }
-        if (currentUser) { 
-           showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad?.name}. No saved data found.` });
-        }
-      }
-      
-      if (characterToLoad && !characterToLoad.skills) {
-        characterToLoad.skills = { ...initialSkills };
-      }
-
-      setEditableCharacterData(characterToLoad || defaultTemplate || null);
-      setAbilityToAddId(undefined);
-      setSkillToPurchase(undefined);
-      setIsLoadingCharacter(false);
-    };
-
-    loadCharacterData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError]); 
-
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedCooldowns), [(editableCharacterData as any)?.savedCooldowns]);
   const savedQuantitiesJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedQuantities), [(editableCharacterData as any)?.savedQuantities]);
-
 
   useEffect(() => {
     if (editableCharacterData && editableCharacterData.abilities) {
@@ -602,6 +494,110 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       savedQuantitiesJSONKey,    
       parseCooldownRounds
   ]);
+
+  useEffect(() => {
+    const fetchUserSavedCharacters = async () => {
+      if (currentUser && auth.currentUser) {
+        try {
+          const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
+          const querySnapshot = await getDocs(charactersCollectionRef);
+          const savedChars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Character));
+          setUserSavedCharacters(savedChars);
+        } catch (err) {
+          console.error("Error fetching user's saved characters:", err);
+          showToastHelper({ title: "Load Error", description: "Could not fetch list of saved characters.", variant: "destructive"});
+          setUserSavedCharacters([]);
+        }
+      } else {
+        setUserSavedCharacters([]);
+      }
+    };
+    fetchUserSavedCharacters();
+  }, [currentUser, showToastHelper, isSaving]);
+
+
+  const characterDropdownOptions = useMemo(() => {
+    return charactersData.map(templateChar => {
+      const savedUserVersion = userSavedCharacters.find(savedChar => savedChar.id === templateChar.id);
+      let displayLabel = templateChar.name;
+
+      if (savedUserVersion) {
+        if (templateChar.id === 'custom' && savedUserVersion.name && savedUserVersion.name !== templateChar.name) {
+          displayLabel = `${savedUserVersion.name} (Custom Character)`;
+        } else {
+          displayLabel = `${templateChar.name} (Saved)`;
+        }
+      }
+      return {
+        id: templateChar.id,
+        name: templateChar.name,
+        displayNameInDropdown: displayLabel,
+      };
+    }).sort((a, b) => a.displayNameInDropdown.localeCompare(b.displayNameInDropdown));
+  }, [userSavedCharacters]);
+
+  useEffect(() => {
+    const loadCharacterData = async () => {
+      if (!selectedCharacterId) {
+          setIsLoadingCharacter(false);
+          return;
+      }
+
+      setIsLoadingCharacter(true);
+      if(setAuthError) setAuthError(null);
+
+      let characterToLoad: Character | undefined = undefined;
+      const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
+
+      if (selectedCharacterId === 'custom') {
+        // For custom character, ALWAYS load the default template first. User must click "Load My Saved Custom"
+        characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
+        if (characterToLoad) {
+             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
+             characterToLoad.name = defaultTemplate?.name || 'Custom Character'; // Reset name to default
+             characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
+             characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
+             characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
+             characterToLoad.characterPoints = defaultTemplate?.characterPoints || 375;
+             characterToLoad.selectedArsenalCardId = null;
+        }
+      } else if (currentUser && auth.currentUser) { 
+        try {
+          const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
+          const docSnap = await getDoc(characterRef);
+
+          if (docSnap.exists()) {
+            characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
+            characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
+            showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name}.` });
+          }
+        } catch (err: any) {
+          console.error("Error loading character from Firestore:", err);
+          showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default.", variant: "destructive" });
+        }
+         if (!characterToLoad && defaultTemplate) { // Fallback to default if Firestore load failed or no saved data
+            characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
+            if (characterToLoad) characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
+            showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad?.name}. No saved data found for user.` });
+        }
+      } else if (defaultTemplate) { // Not custom, not logged in, load default
+          characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
+           if (characterToLoad) characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
+      }
+      
+      if (characterToLoad && !characterToLoad.skills) {
+        characterToLoad.skills = { ...initialSkills };
+      }
+
+      setEditableCharacterData(characterToLoad || defaultTemplate || null);
+      setAbilityToAddId(undefined);
+      setSkillToPurchase(undefined);
+      setIsLoadingCharacter(false);
+    };
+
+    loadCharacterData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCharacterId, currentUser, setAuthError]); 
 
 
   const handleCharacterDropdownChange = (id: string) => {
@@ -780,7 +776,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         let characterToSet = JSON.parse(JSON.stringify(originalCharacterTemplate));
 
         if (characterToSet.id === 'custom') {
-            characterToSet.name = initialCustomCharacterStats.name || 'Custom Character'; 
+            characterToSet.name = charactersData.find(c => c.id === 'custom')?.name || 'Custom Character'; 
             characterToSet.baseStats = { ...initialCustomCharacterStats };
             characterToSet.skills = { ...initialSkills };
             characterToSet.abilities = [];
@@ -1112,7 +1108,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             displayedValue += (equippedArsenalCard.hpMod || 0);
             if (equippedArsenalCard.items) {
                 equippedArsenalCard.items.forEach(item => {
-                    if (item.category === 'GEAR' && item.parsedStatModifiers) {
+                    if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
                         item.parsedStatModifiers.forEach(mod => {
                             if (mod.targetStat === 'hp') displayedValue += mod.value;
                             if (mod.targetStat === 'maxHp') displayedMaxValue += mod.value;
@@ -1127,7 +1123,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             displayedValue += (equippedArsenalCard.sanityMod || 0);
              if (equippedArsenalCard.items) {
                 equippedArsenalCard.items.forEach(item => {
-                    if (item.category === 'GEAR' && item.parsedStatModifiers) {
+                    if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
                         item.parsedStatModifiers.forEach(mod => {
                             if (mod.targetStat === 'sanity') displayedValue += mod.value;
                             if (mod.targetStat === 'maxSanity') displayedMaxValue += mod.value;
@@ -1325,6 +1321,46 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     );
   };
 
+  const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
+
+  const renderArsenalItemsByCategory = (category: ArsenalItemCategory) => {
+    if (!equippedArsenalCard) return null;
+    const items = equippedArsenalCard.items.filter(item => item.category?.toUpperCase() === category.toUpperCase());
+    if (items.length === 0) {
+      return <p className="text-sm text-muted-foreground italic">No {category.toLowerCase()} items in this arsenal.</p>;
+    }
+    return (
+      <ScrollArea className="h-[250px] pr-3">
+        <div className="space-y-2">
+          {items.map(item => (
+            <Card key={item.id} className="p-3 bg-card/60 border-muted-foreground/20">
+              <p className="font-semibold text-foreground">
+                {item.abilityName || 'Unnamed Item'}
+                {item.class ? ` (${item.class})` : ''}
+                 {item.level !== undefined ? <Badge variant="secondary" className="ml-2 text-xs">Lvl {item.level}</Badge> : ''}
+              </p>
+              {item.itemDescription && <p className="text-xs text-muted-foreground">{item.itemDescription}</p>}
+              {item.parsedWeaponStats?.attack !== undefined && (
+                <p className="text-xs"><span className="font-medium text-primary/80">Attack:</span> {item.parsedWeaponStats.attack}
+                {item.parsedWeaponStats?.range !== undefined && <span className="ml-2"><span className="font-medium text-primary/80">Range:</span> {item.parsedWeaponStats.range}</span>}
+                </p>
+              )}
+              {item.effect && <p className="text-xs"><span className="font-medium text-primary/80">Effect:</span> {item.effect}</p>}
+              {item.secondaryEffect && <p className="text-xs"><span className="font-medium text-primary/80">Secondary:</span> {item.secondaryEffect}</p>}
+              {item.parsedStatModifiers && item.parsedStatModifiers.length > 0 && (
+                <p className="text-xs"><span className="font-medium text-primary/80">Stat Changes:</span> {item.parsedStatModifiers.map(mod => `${mod.targetStat.toUpperCase()}: ${mod.value > 0 ? '+' : ''}${mod.value}`).join(', ')}</p>
+              )}
+              {item.qty && <p className="text-xs"><span className="font-medium text-primary/80">Qty:</span> {item.qty}</p>}
+              {item.cd && <p className="text-xs"><span className="font-medium text-primary/80">CD:</span> {item.cd}</p>}
+              {item.type && <p className="text-xs"><span className="font-medium text-primary/80">Type:</span> {item.type}</p>}
+              {item.toggle !== undefined && <p className="text-xs"><span className="font-medium text-primary/80">Toggle:</span> {item.toggle ? 'Yes' : 'No'}</p>}
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
+    );
+  };
+
   if (authLoading || isLoadingCharacter || !editableCharacterData) {
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-xl p-10 text-center">
@@ -1333,8 +1369,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         </Card>
     );
   }
-
-  const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
 
   return (
     <Card className="w-full max-w-4xl mx-auto shadow-xl relative overflow-hidden">
@@ -1438,9 +1472,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
           <Separator />
 
           <Tabs defaultValue="stats" className="w-full">
-            <TabsList className="grid w-full grid-cols-4"> {/* Changed from grid-cols-3 to grid-cols-4 */}
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="stats">Stats &amp; Equipment</TabsTrigger>
-              <TabsTrigger value="arsenal">Arsenal</TabsTrigger> {/* New Arsenal Tab Trigger */}
+              <TabsTrigger value="arsenal">Arsenal</TabsTrigger>
               <TabsTrigger value="skills">Skills</TabsTrigger>
               <TabsTrigger value="abilities">Abilities</TabsTrigger>
             </TabsList>
@@ -1479,7 +1513,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
               </div>
             </TabsContent>
 
-            <TabsContent value="arsenal" className="mt-6 space-y-6"> {/* New Arsenal Tab Content */}
+            <TabsContent value="arsenal" className="mt-6 space-y-6">
               {arsenalCards && arsenalCards.length > 0 && (
                 <div className="space-y-2 p-4 border border-dashed border-accent/50 rounded-lg bg-card/30">
                   <Label htmlFor="arsenalCardSelect" className="text-lg font-medium text-accent flex items-center">
@@ -1591,44 +1625,22 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                             )}
                          </div>
                       )}
-
-                      <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="arsenal-contents">
-                          <AccordionTrigger className="text-sm hover:no-underline">View Contents ({equippedArsenalCard.items.length})</AccordionTrigger>
-                          <AccordionContent>
-                            <ScrollArea className="h-[200px] pr-2">
-                              <div className="space-y-2 text-xs mt-2">
-                                {equippedArsenalCard.items.map(item => (
-                                  <div key={item.id} className="p-2 border border-muted-foreground/20 rounded-md bg-background/30">
-                                    <p className="font-semibold text-foreground">
-                                      {item.abilityName || 'Unnamed Item'}
-                                      {(item.isFlaggedAsWeapon && item.parsedWeaponStats?.rawDetails && item.parsedWeaponStats.rawDetails !== item.abilityName) ? ` (${item.parsedWeaponStats.rawDetails})` : (item.class ? ` (${item.class})` : '')}
-                                      <span className="text-muted-foreground text-xs"> ({item.category || 'N/A'})</span>
-                                    </p>
-                                    {item.itemDescription && <p className="text-muted-foreground">{item.itemDescription}</p>}
-
-                                    {item.parsedWeaponStats?.attack !== undefined && (
-                                      <p><span className="font-medium text-primary/80">Attack:</span> {item.parsedWeaponStats.attack}
-                                      {item.parsedWeaponStats?.range !== undefined && <span className="ml-2"><span className="font-medium text-primary/80">Range:</span> {item.parsedWeaponStats.range}</span>}
-                                      </p>
-                                    )}
-
-                                    {item.effect && <p><span className="font-medium text-primary/80">Effect:</span> {item.effect}</p>}
-                                    {item.secondaryEffect && <p><span className="font-medium text-primary/80">Secondary:</span> {item.secondaryEffect}</p>}
-
-                                    {item.parsedStatModifiers && item.parsedStatModifiers.length > 0 && (
-                                      <p><span className="font-medium text-primary/80">Stat Changes:</span> {item.parsedStatModifiers.map(mod => `${mod.targetStat.toUpperCase()}: ${mod.value > 0 ? '+' : ''}${mod.value}`).join(', ')}</p>
-                                    )}
-                                     {item.qty && <p><span className="font-medium text-primary/80">Qty:</span> {item.qty}</p>}
-                                     {item.cd && <p><span className="font-medium text-primary/80">CD:</span> {item.cd}</p>}
-                                  </div>
-                                ))}
-                              </div>
-                            </ScrollArea>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-
+                      <Separator className="my-3" />
+                      <div>
+                        <h4 className="text-md font-semibold mb-2 text-accent">Load Out Items:</h4>
+                        {renderArsenalItemsByCategory('LOAD OUT')}
+                      </div>
+                       <Separator className="my-3" />
+                       <div>
+                        <h4 className="text-md font-semibold mb-2 text-accent">Bonus Items:</h4>
+                        {renderArsenalItemsByCategory('BONUS')}
+                      </div>
+                       <Separator className="my-3" />
+                       <div>
+                        <h4 className="text-md font-semibold mb-2 text-accent">Elite Items:</h4>
+                        {renderArsenalItemsByCategory('ELITE')}
+                      </div>
+                      <Separator className="my-3" />
                       <div className="mt-3 text-xs space-y-0.5">
                           <p className="font-medium text-muted-foreground">Global Stat Modifiers (from Arsenal Card itself):</p>
                           {equippedArsenalCard.hpMod !== 0 && typeof equippedArsenalCard.hpMod === 'number' && <p>HP Mod: {equippedArsenalCard.hpMod?.toFixed(0)}</p>}
@@ -1761,7 +1773,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
               )}
             </TabsContent>
             <TabsContent value="abilities" className="mt-6">
-              {editableCharacterData.id === 'custom' && (
+             {editableCharacterData.id === 'custom' && (
                 <>
                   <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30 mb-6">
                     <h3 className="text-lg font-semibold text-primary flex items-center">
@@ -1908,3 +1920,4 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
+
