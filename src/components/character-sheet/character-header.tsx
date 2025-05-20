@@ -10,6 +10,7 @@ import { CardHeader, CardDescription, CardTitle, CardContent } from "@/component
 import { UserCircle, RotateCcw, Edit2, UserCog, Award } from "lucide-react";
 import type { User } from 'firebase/auth';
 import type { Character } from '@/types/character';
+import { Separator } from '@/components/ui/separator'; // Added Separator import
 
 interface CharacterHeaderProps {
   selectedCharacterId: string;
