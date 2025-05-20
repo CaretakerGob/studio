@@ -316,22 +316,25 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard && equippedArsenalCard.items) {
       equippedArsenalCard.items.forEach(item => {
+        // Only apply GEAR item stat modifiers here. Weapon/Ability integration is more complex.
         if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
           item.parsedStatModifiers.forEach(mod => {
-            const statKey = mod.targetStat as keyof CharacterStats;
-            if (statKey in base) {
+            const statKey = mod.targetStat as keyof CharacterStats; // Be cautious with type assertion
+            if (statKey in base && typeof (base[statKey]) === 'number') { // Check if key exists and is number
               (base[statKey] as number) = Math.max(
-                (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0,
-                (base[statKey] || 0) + mod.value
+                (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0, // Ensure maxHp/maxSanity don't go below 1
+                (base[statKey] as number) + mod.value
               );
             }
           });
         }
       });
     }
-
+    
+    // Ensure current hp/sanity doesn't exceed new max after mods
     if (base.hp > base.maxHp) base.hp = base.maxHp;
     if (base.sanity > base.maxSanity) base.sanity = base.maxSanity;
+
 
     return base;
   }, [editableCharacterData, equippedArsenalCard]);
@@ -409,6 +412,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     }
   }, [currentCompanion]);
 
+  // Memoize stringified dependencies for the cooldown/quantity effect
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedCooldowns), [(editableCharacterData as any)?.savedCooldowns]);
   const savedQuantitiesJSONKey = useMemo(() => JSON.stringify((editableCharacterData as any)?.savedQuantities), [(editableCharacterData as any)?.savedQuantities]);
@@ -449,7 +453,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id,
+      editableCharacterData?.id, // Only depends on character ID and the memoized JSON keys
       abilitiesJSONKey,
       savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
@@ -511,13 +515,14 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom' && defaultTemplate) {
+         // Always load the default template for "Custom Character" initially
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
-        characterToLoad.name = defaultTemplate.name || 'Custom Character';
+        characterToLoad.name = defaultTemplate.name || 'Custom Character'; // Ensure name is set
         characterToLoad.baseStats = { ...(defaultTemplate.baseStats || initialCustomCharacterStats) };
         characterToLoad.skills = { ...(defaultTemplate.skills || initialSkills) };
         characterToLoad.abilities = defaultTemplate.abilities ? [...defaultTemplate.abilities] : [];
-        characterToLoad.characterPoints = defaultTemplate.characterPoints || 375;
-        characterToLoad.selectedArsenalCardId = null;
+        characterToLoad.characterPoints = defaultTemplate.characterPoints === undefined ? 375 : defaultTemplate.characterPoints;
+        characterToLoad.selectedArsenalCardId = null; // Default custom doesn't have arsenal
       } else if (currentUser && auth.currentUser && defaultTemplate) {
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
@@ -525,12 +530,13 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
           if (docSnap.exists()) {
             characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
-            characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
+            // Ensure all fields from default template are present if missing in saved data
             characterToLoad.name = characterToLoad.name || defaultTemplate.name;
             characterToLoad.baseStats = characterToLoad.baseStats || defaultTemplate.baseStats;
             characterToLoad.skills = characterToLoad.skills || defaultTemplate.skills;
             characterToLoad.abilities = Array.isArray(characterToLoad.abilities) ? characterToLoad.abilities : defaultTemplate.abilities;
             characterToLoad.characterPoints = typeof characterToLoad.characterPoints === 'number' ? characterToLoad.characterPoints : defaultTemplate.characterPoints;
+            characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
             characterToLoad.meleeWeapon = characterToLoad.meleeWeapon || defaultTemplate.meleeWeapon;
             characterToLoad.rangedWeapon = characterToLoad.rangedWeapon || defaultTemplate.rangedWeapon;
             characterToLoad.imageUrl = characterToLoad.imageUrl || defaultTemplate.imageUrl;
@@ -549,7 +555,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             if (characterToLoad) characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
           }
         }
-      } else if (defaultTemplate) {
+      } else if (defaultTemplate) { // User not logged in, or non-custom character without saved data
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
         if (characterToLoad) characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
       }
@@ -688,7 +694,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const currentVal = editableCharacterData.baseStats[statKey];
     const currentPoints = editableCharacterData.characterPoints || 0;
 
-    if (currentVal <= 1) {
+    // Prevent selling below 1 point
+    if (currentVal <= 1) { // Changed from customStatPointBuyConfig[statKey].base
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -750,7 +757,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
         if (characterToSet.id === 'custom') {
             characterToSet.name = charactersData.find(c => c.id === 'custom')?.name || 'Custom Character';
-            characterToSet.baseStats = { ...initialCustomCharacterStats };
+            characterToSet.baseStats = { ...initialCustomCharacterStats }; // Use the new initial stats
             characterToSet.skills = { ...initialSkills };
             characterToSet.abilities = [];
             characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375;
@@ -787,7 +794,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     setEditableCharacterData(prevData => {
         if (!prevData) return null;
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { cost, ...abilityToAdd } = abilityInfo;
+        const { cost, ...abilityToAdd } = abilityInfo; // Exclude cost from being added to the ability object itself
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability];
         const newCharacterPoints = currentCP - abilityInfo.cost;
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
@@ -802,7 +809,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const currentSkills = editableCharacterData.skills || { ...initialSkills };
     const currentSkillLevel = currentSkills[skillToPurchase] || 0;
 
-    if (currentSkillLevel > 0) {
+    if (currentSkillLevel > 0) { // Check if skill is already at level 1 or more
       showToastHelper({ title: "Skill Already Added", description: "This skill is already part of your character. Use +/- to adjust its level.", variant: "destructive" });
       return;
     }
@@ -817,7 +824,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     setEditableCharacterData(prevData => {
       if (!prevData) return null;
-      const newSkills = { ...currentSkills, [skillToPurchase!]: 1 };
+      const newSkills = { ...currentSkills, [skillToPurchase!]: 1 }; // Set to level 1
       const newCharacterPoints = currentCP - SKILL_COST_LEVEL_1;
       return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
     });
@@ -835,7 +842,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     }
 
     let cost = 0;
-    if (currentLevel === 0) cost = SKILL_COST_LEVEL_1;
+    if (currentLevel === 0) cost = SKILL_COST_LEVEL_1; // Should not happen if using handlePurchaseSkill first
     else if (currentLevel === 1) cost = SKILL_COST_LEVEL_2;
     else if (currentLevel === 2) cost = SKILL_COST_LEVEL_3;
 
@@ -859,7 +866,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
     const currentSkills = editableCharacterData.skills || { ...initialSkills };
     const currentLevel = currentSkills[skillId] || 0;
-    if (currentLevel <= 1) {
+    if (currentLevel <= 1) { // If current level is 1, "decreasing" means removing it
         handleRemoveSkill(skillId);
         return;
     }
@@ -867,6 +874,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     let refund = 0;
     if (currentLevel === 3) refund = SKILL_COST_LEVEL_3;
     else if (currentLevel === 2) refund = SKILL_COST_LEVEL_2;
+    // No refund if currentLevel is 1, as handleRemoveSkill covers that cost
 
     const skillDef = skillDefinitions.find(s => s.id === skillId);
     setEditableCharacterData(prevData => {
@@ -882,7 +890,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     if (!editableCharacterData || editableCharacterData.id !== 'custom') return;
     const currentSkills = editableCharacterData.skills || { ...initialSkills };
     const currentLevel = currentSkills[skillId] || 0;
-    if (currentLevel === 0) return;
+    if (currentLevel === 0) return; // Skill not present
 
     let totalRefund = 0;
     if (currentLevel === 1) totalRefund = SKILL_COST_LEVEL_1;
@@ -892,7 +900,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const skillDef = skillDefinitions.find(s => s.id === skillId);
     setEditableCharacterData(prevData => {
       if (!prevData) return null;
-      const newSkills = { ...currentSkills, [skillId]: 0 };
+      const newSkills = { ...currentSkills, [skillId]: 0 }; // Set skill level to 0
       const newCharacterPoints = (prevData.characterPoints || 0) + totalRefund;
       return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
     });
@@ -903,7 +911,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     if (editableCharacterData?.id === 'custom' && editableCharacterData.skills) {
       return skillDefinitions.filter(def => (editableCharacterData.skills?.[def.id as SkillName] || 0) > 0);
     }
-    return [];
+    return []; // Return empty array if not custom or no skills
   }, [editableCharacterData]);
 
 
@@ -922,14 +930,15 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     try {
       const characterToSave = {
         ...editableCharacterData,
-        savedCooldowns: currentAbilityCooldowns,
-        savedQuantities: currentAbilityQuantities,
+        savedCooldowns: currentAbilityCooldowns, // Save current cooldowns
+        savedQuantities: currentAbilityQuantities, // Save current quantities
         selectedArsenalCardId: editableCharacterData.selectedArsenalCardId || null,
       };
       const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", editableCharacterData.id);
-      await setDoc(characterRef, characterToSave, { merge: true });
+      await setDoc(characterRef, characterToSave, { merge: true }); // Use merge to avoid overwriting unrelated fields if any
       showToastHelper({ title: "Character Saved!", description: `${editableCharacterData.name} has been saved successfully.` });
 
+      // Refresh user saved characters list to update dropdown
       const charactersCollectionRef = collection(db, "userCharacters", currentUser.uid, "characters");
       const querySnapshot = await getDocs(charactersCollectionRef);
       const savedChars = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Character));
@@ -961,8 +970,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (docSnap.exists()) {
         const savedData = { id: "custom", ...docSnap.data() } as Character;
-        const defaultCustomTemplate = charactersData.find(c => c.id === 'custom')!;
+        const defaultCustomTemplate = charactersData.find(c => c.id === 'custom')!; // Should always exist
 
+        // Merge saved data with a fresh default template to ensure all fields are present
         const freshDefault = JSON.parse(JSON.stringify(defaultCustomTemplate));
 
         savedData.name = savedData.name || freshDefault.name;
@@ -975,19 +985,21 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         savedData.rangedWeapon = savedData.rangedWeapon || freshDefault.rangedWeapon;
         savedData.imageUrl = savedData.imageUrl || freshDefault.imageUrl;
         savedData.avatarSeed = savedData.avatarSeed || freshDefault.avatarSeed;
+        // Restore saved cooldowns and quantities
         if (savedData.savedCooldowns) (savedData as any).savedCooldowns = savedData.savedCooldowns;
         if (savedData.savedQuantities) (savedData as any).savedQuantities = savedData.savedQuantities;
 
 
-        setEditableCharacterData(JSON.parse(JSON.stringify(savedData)));
+        setEditableCharacterData(JSON.parse(JSON.stringify(savedData))); // Use deep copy
         showToastHelper({ title: "Character Loaded", description: `Loaded your saved custom character: ${savedData.name}.` });
       } else {
         showToastHelper({ title: "Not Found", description: "No saved custom character found. Loaded default template.", variant: "destructive" });
+        // Load the default template if no saved custom character is found
         const defaultTemplate = charactersData.find(c => c.id === 'custom');
         if (defaultTemplate) {
             let characterToSet = JSON.parse(JSON.stringify(defaultTemplate));
             characterToSet.name = defaultTemplate.name || 'Custom Character';
-            characterToSet.baseStats = { ...initialCustomCharacterStats };
+            characterToSet.baseStats = { ...initialCustomCharacterStats }; // Use new initial stats
             characterToSet.skills = { ...initialSkills };
             characterToSet.abilities = [];
             characterToSet.characterPoints = defaultTemplate.characterPoints || 375;
@@ -1015,6 +1027,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       else if (ability.type === 'Passive') passives.push(ability);
     });
 
+    // Sort each category alphabetically by ability name
     const sortFn = (a: AbilityWithCost, b: AbilityWithCost) => a.name.localeCompare(b.name);
 
     return {
@@ -1058,7 +1071,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
           }
         />
       )}
-      <div className="relative z-10 bg-transparent">
+      <div className="relative z-10 bg-transparent"> {/* Ensure content is above background */}
          <CharacterHeader
             selectedCharacterId={selectedCharacterId}
             editableCharacterData={editableCharacterData}
@@ -1070,7 +1083,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             onLoadSavedCustomCharacter={handleLoadSavedCustomCharacter}
             onResetStats={resetStats}
         />
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6"> {/* This CardContent might be redundant if CharacterHeader has one */}
           <Tabs defaultValue="stats" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="stats">Stats &amp; Equipment</TabsTrigger>
@@ -1099,10 +1112,18 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                       <WeaponDisplay weapon={currentRangedWeapon} type="ranged" equippedArsenalCard={equippedArsenalCard} baseRangedWeaponName={editableCharacterData.rangedWeapon?.name} />
                   </div>
               </div>
+                {/* MOVED AND ENHANCED COMPANION SECTION - Ensure this logic is sound */}
+                {/* Check if the pet section should be here or in ArsenalTabContent based on latest design */}
                 {currentCompanion && currentCompanion.parsedPetCoreStats && (
                   <>
                     <Separator />
                     <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+                        {/*
+                          To "fix" pet not showing, verify these conditions in your Google Sheet:
+                          1. The Arsenal for this pet has an item row with a "Pet" column set to TRUE (or YES/1).
+                          2. That same pet item row has a "Pet Stats" column with parseable stats (e.g., "HP:10 MV:4 DEF:2 SAN:5").
+                          3. Both "Pet" and "Pet Stats" columns are within your ARSENAL_CARDS_GOOGLE_SHEET_RANGE in .env.local.
+                        */}
                         <h3 className="text-xl font-semibold mb-3 flex items-center">
                             <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
                         </h3>
@@ -1179,6 +1200,21 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                 <strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}
                             </p>
                         )}
+                         {/* Displaying additional pet item details */}
+                        {(currentCompanion.itemDescription || currentCompanion.type || currentCompanion.class || currentCompanion.effect || currentCompanion.secondaryEffect || currentCompanion.cd || (currentCompanion.petStats && (!currentCompanion.parsedPetCoreStats.hp && !currentCompanion.parsedPetCoreStats.sanity) )) && (
+                          <div className="mt-3 pt-3 border-t border-muted-foreground/20 text-xs space-y-1">
+                            <p className="font-medium text-foreground">Additional Pet Details:</p>
+                            {currentCompanion.itemDescription && <p><strong className="text-muted-foreground">Description:</strong> {currentCompanion.itemDescription}</p>}
+                            {currentCompanion.type && <p><strong className="text-muted-foreground">Type:</strong> {currentCompanion.type}</p>}
+                            {currentCompanion.class && <p><strong className="text-muted-foreground">Class:</strong> {currentCompanion.class}</p>}
+                            {currentCompanion.effect && <p><strong className="text-muted-foreground">Effect:</strong> {currentCompanion.effect}</p>}
+                            {currentCompanion.secondaryEffect && <p><strong className="text-muted-foreground">Secondary Effect:</strong> {currentCompanion.secondaryEffect}</p>}
+                            {currentCompanion.cd && <p><strong className="text-muted-foreground">Cooldown:</strong> {currentCompanion.cd}</p>}
+                            {currentCompanion.petStats && (!currentCompanion.parsedPetCoreStats.hp && !currentCompanion.parsedPetCoreStats.sanity) && (
+                               <p><strong className="text-muted-foreground">Raw Stats:</strong> {currentCompanion.petStats}</p>
+                            )}
+                          </div>
+                        )}
                     </div>
                   </>
                 )}
@@ -1189,11 +1225,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                     editableCharacterData={editableCharacterData}
                     arsenalCards={arsenalCards}
                     handleArsenalCardChange={handleArsenalCardChange}
-                    currentCompanion={currentCompanion}
-                    currentPetHp={currentPetHp}
-                    currentPetSanity={currentPetSanity}
-                    handleIncrementPetStat={handleIncrementPetStat}
-                    handleDecrementPetStat={handleDecrementPetStat}
+                    currentCompanion={currentCompanion} // Pass currentCompanion here
+                    currentPetHp={currentPetHp} // Pass currentPetHp here
+                    currentPetSanity={currentPetSanity} // Pass currentPetSanity here
+                    handleIncrementPetStat={handleIncrementPetStat} // Pass handler
+                    handleDecrementPetStat={handleDecrementPetStat} // Pass handler
                     criticalArsenalError={criticalArsenalError}
                 />
             </TabsContent>
@@ -1250,3 +1286,5 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
+
+    

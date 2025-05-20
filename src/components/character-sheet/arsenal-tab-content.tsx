@@ -19,11 +19,14 @@ interface ArsenalTabContentProps {
   editableCharacterData: Character;
   arsenalCards: ArsenalCard[];
   handleArsenalCardChange: (arsenalCardId: string | undefined) => void;
-  currentCompanion: ArsenalItem | null;
-  currentPetHp: number | null;
-  currentPetSanity: number | null;
-  handleIncrementPetStat: (statType: 'hp' | 'sanity') => void;
-  handleDecrementPetStat: (statType: 'hp' | 'sanity') => void;
+  currentCompanion: ArsenalItem | null; // Receives the current companion
+  // The following props related to detailed pet stats are no longer needed here
+  // as the primary interactive display is now in CharacterSheetUI's "stats" tab.
+  // We can still display basic pet info if `currentCompanion` is passed.
+  // currentPetHp: number | null;
+  // currentPetSanity: number | null;
+  // handleIncrementPetStat: (statType: 'hp' | 'sanity') => void;
+  // handleDecrementPetStat: (statType: 'hp' | 'sanity') => void;
   criticalArsenalError?: ArsenalCard | null;
 }
 
@@ -31,11 +34,11 @@ export function ArsenalTabContent({
   editableCharacterData,
   arsenalCards,
   handleArsenalCardChange,
-  currentCompanion,
-  currentPetHp,
-  currentPetSanity,
-  handleIncrementPetStat,
-  handleDecrementPetStat,
+  currentCompanion, // Keep this to know if a pet is part of the arsenal
+  // currentPetHp, // No longer needed for detailed display here
+  // currentPetSanity, // No longer needed for detailed display here
+  // handleIncrementPetStat, // No longer needed here
+  // handleDecrementPetStat, // No longer needed here
   criticalArsenalError,
 }: ArsenalTabContentProps) {
 
@@ -67,6 +70,13 @@ export function ArsenalTabContent({
               {item.secondaryEffect && <p className="text-xs"><span className="font-medium text-primary/80">Secondary:</span> {item.secondaryEffect}</p>}
               {item.parsedStatModifiers && item.parsedStatModifiers.length > 0 && (
                 <p className="text-xs"><span className="font-medium text-primary/80">Stat Changes:</span> {item.parsedStatModifiers.map(mod => `${mod.targetStat.toUpperCase()}: ${mod.value > 0 ? '+' : ''}${mod.value}`).join(', ')}</p>
+              )}
+              {item.isPet && currentCompanion?.id === item.id && ( // Show basic pet info here
+                <div className="mt-2 pt-2 border-t border-muted-foreground/30 text-xs">
+                  <p className="font-medium text-primary flex items-center"><PawPrint className="mr-1 h-4 w-4" /> Companion: {item.petName || item.abilityName || 'Companion'}</p>
+                  {item.petStats && <p><strong className="text-muted-foreground">Stats:</strong> {item.petStats}</p>}
+                  {item.petAbilities && <p><strong className="text-muted-foreground">Abilities:</strong> {item.petAbilities}</p>}
+                </div>
               )}
               {item.qty && <p className="text-xs"><span className="font-medium text-primary/80">Qty:</span> {item.qty}</p>}
               {item.cd && <p className="text-xs"><span className="font-medium text-primary/80">CD:</span> {item.cd}</p>}
@@ -116,95 +126,17 @@ export function ArsenalTabContent({
         <Card className="mt-2 p-3 bg-card/60 border-accent/70">
           <CardTitle className="text-md text-accent mb-2">{equippedArsenalCard.name}</CardTitle>
           {equippedArsenalCard.description && <CardDescription className="text-xs mt-1 mb-2">{equippedArsenalCard.description}</CardDescription>}
-
-          {currentCompanion && currentCompanion.parsedPetCoreStats && (
-             <div className="space-y-3 my-3 p-3 border border-muted-foreground/30 rounded-md bg-background/40">
-                <h4 className="text-base font-semibold text-primary flex items-center">
-                  <PawPrint className="mr-2 h-5 w-5" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
-                </h4>
-                {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <Label className="flex items-center text-sm font-medium">
-                        <UserCircle className="mr-2 h-4 w-4 text-red-500" /> HP
-                      </Label>
-                      <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('hp')} className="h-6 w-6">
-                          <UserMinus className="h-3 w-3" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={currentPetHp}
-                          readOnly
-                          className="w-12 h-6 text-center text-sm font-bold p-1"
-                        />
-                        <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('hp')} className="h-6 w-6">
-                          <UserPlus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className="h-1.5 [&>div]:bg-red-500" />
-                    <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
-                  </div>
-                )}
-                {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <Label className="flex items-center text-sm font-medium">
-                        <UserCircle className="mr-2 h-4 w-4 text-blue-400" /> Sanity
-                      </Label>
-                      <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('sanity')} className="h-6 w-6">
-                          <UserMinus className="h-3 w-3" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={currentPetSanity}
-                          readOnly
-                          className="w-12 h-6 text-center text-sm font-bold p-1"
-                        />
-                        <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('sanity')} className="h-6 w-6">
-                          <UserPlus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className="h-1.5 [&>div]:bg-blue-400" />
-                    <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
-                  </div>
-                )}
-                 {currentCompanion.parsedPetCoreStats.mv !== undefined && (
-                  <div className="flex items-center justify-between text-sm">
-                     <Label className="flex items-center font-medium">
-                      <UserCircle className="mr-2 h-4 w-4 text-green-500" /> MV
-                    </Label>
-                    <span className="font-semibold">{currentCompanion.parsedPetCoreStats.mv}</span>
-                  </div>
-                )}
-                {currentCompanion.parsedPetCoreStats.def !== undefined && (
-                   <div className="flex items-center justify-between text-sm">
-                     <Label className="flex items-center font-medium">
-                      <UserCircle className="mr-2 h-4 w-4 text-gray-400" /> DEF
-                    </Label>
-                    <span className="font-semibold">{currentCompanion.parsedPetCoreStats.def}</span>
-                  </div>
-                )}
-                {currentCompanion.petAbilities && <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-muted-foreground/20"><strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}</p>}
-                {!currentCompanion.parsedPetCoreStats.hp && !currentCompanion.parsedPetCoreStats.sanity && currentCompanion.petStats && (
-                  <p className="text-xs text-muted-foreground mt-1"><strong className="text-foreground">Raw Stats:</strong> {currentCompanion.petStats || 'N/A'}</p>
-                )}
-                {(currentCompanion.itemDescription || currentCompanion.type || currentCompanion.class || currentCompanion.effect || currentCompanion.secondaryEffect || currentCompanion.cd) && (
-                  <div className="mt-3 pt-3 border-t border-muted-foreground/20 text-xs space-y-1">
-                    <p className="font-medium text-foreground">Additional Details:</p>
-                    {currentCompanion.itemDescription && <p><strong className="text-muted-foreground">Description:</strong> {currentCompanion.itemDescription}</p>}
-                    {currentCompanion.type && <p><strong className="text-muted-foreground">Type:</strong> {currentCompanion.type}</p>}
-                    {currentCompanion.class && <p><strong className="text-muted-foreground">Class:</strong> {currentCompanion.class}</p>}
-                    {currentCompanion.effect && <p><strong className="text-muted-foreground">Effect:</strong> {currentCompanion.effect}</p>}
-                    {currentCompanion.secondaryEffect && <p><strong className="text-muted-foreground">Secondary Effect:</strong> {currentCompanion.secondaryEffect}</p>}
-                    {currentCompanion.cd && <p><strong className="text-muted-foreground">Cooldown:</strong> {currentCompanion.cd}</p>}
-                  </div>
-                )}
+          
+          {/* The detailed, interactive pet stats display is now in CharacterSheetUI's "stats" tab. */}
+          {/* We can show a simple mention if the current arsenal includes the active companion. */}
+          {currentCompanion && equippedArsenalCard.items.some(item => item.id === currentCompanion.id) && (
+             <div className="my-2 p-2 border border-muted-foreground/20 rounded-md bg-background/30 text-sm">
+                <p className="flex items-center text-primary"><PawPrint className="mr-2 h-4 w-4" />Includes Companion: {currentCompanion.petName || currentCompanion.abilityName}</p>
+                {/* Optionally display raw stats or abilities string here if desired, but no trackers */}
+                {currentCompanion.petStats && <p className="text-xs text-muted-foreground">Base Stats: {currentCompanion.petStats}</p>}
              </div>
           )}
+
           <Separator className="my-3" />
           <div>
             <h4 className="text-md font-semibold mb-2 text-accent">Load Out Items:</h4>
@@ -242,3 +174,4 @@ export function ArsenalTabContent({
   );
 }
 
+    
