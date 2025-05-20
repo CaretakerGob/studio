@@ -1,7 +1,7 @@
 
 export interface ArsenalCard {
   id: string;
-  name: string;
+  name: string; // This will now be the "Arsenal Name" e.g., "Closed Quarter Combatant"
   description?: string;
   hpMod?: number;
   maxHpMod?: number;
@@ -12,5 +12,7 @@ export interface ArsenalCard {
   meleeAttackMod?: number;
   rangedAttackMod?: number;
   rangedRangeMod?: number;
-  // Add other potential mods as needed, e.g., skillMod?: number;
+  imageUrlFront?: string; // Added
+  imageUrlBack?: string;  // Added
+  // Future: Could include an array of specific weapons, gear, abilities if we expand to full relational model
 }

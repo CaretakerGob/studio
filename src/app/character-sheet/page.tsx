@@ -2,7 +2,7 @@
 import { CharacterSheetUI } from "@/components/character-sheet/character-sheet-ui";
 import type { Metadata } from 'next';
 import { google } from 'googleapis';
-import type { ArsenalCard } from '@/types/arsenal'; // Import ArsenalCard type
+import type { ArsenalCard } from '@/types/arsenal';
 
 export const metadata: Metadata = {
   title: 'Character Sheet - Beast Companion',
@@ -26,7 +26,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
   if (missingVars.length > 0) {
     const detailedErrorMessage = `Arsenal Cards Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables are correctly set in your .env.local file.`;
     console.error(detailedErrorMessage);
-    // Return an empty array or a single error object that matches ArsenalCard structure
     return [{ id: 'error-arsenal', name: 'System Error', description: detailedErrorMessage } as ArsenalCard];
   }
 
@@ -53,57 +52,77 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     }
 
     const headers = rows[0] as string[];
-    // Sanitize headers: trim and convert to camelCase for easier mapping
+    // Sanitize headers: trim and convert to camelCase for easier mapping, or use a direct map
     const sanitizedHeaders = headers.map(h => 
       h.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase())
     );
     
-    // Helper to get value by header name, case-insensitive
-    const getColumnIndex = (headerName: string) => {
-        const lowerHeaderName = headerName.toLowerCase();
-        return sanitizedHeaders.findIndex(h => h.toLowerCase() === lowerHeaderName);
+    // Helper to get value by header name, trying common variations
+    const getColumnIndex = (headerNameVariations: string[]) => {
+        for (const variation of headerNameVariations) {
+            const lowerVariation = variation.toLowerCase();
+            const index = sanitizedHeaders.findIndex(h => h.toLowerCase() === lowerVariation);
+            if (index !== -1) return index;
+        }
+        return -1;
     };
 
     return rows.slice(1).map((row: any[], index: number): ArsenalCard => {
       const card: Partial<ArsenalCard> = {};
       
-      const idIndex = getColumnIndex('id');
+      const idIndex = getColumnIndex(['id', 'arsenalid']);
       card.id = idIndex !== -1 && row[idIndex] ? String(row[idIndex]) : `arsenal_row_${index}`;
       
-      const nameIndex = getColumnIndex('name');
+      const nameIndex = getColumnIndex(['arsenal name', 'name', 'title']);
       card.name = nameIndex !== -1 && row[nameIndex] ? String(row[nameIndex]) : `Unnamed Arsenal ${index + 1}`;
 
-      const descIndex = getColumnIndex('description');
+      const descIndex = getColumnIndex(['description', 'desc']);
       card.description = descIndex !== -1 ? String(row[descIndex] || '') : undefined;
+
+      const imageUrlFrontIndex = getColumnIndex(['imageurlfront', 'frontimage', 'imagefront']);
+      card.imageUrlFront = imageUrlFrontIndex !== -1 ? String(row[imageUrlFrontIndex] || '') : undefined;
+      
+      const imageUrlBackIndex = getColumnIndex(['imageurlback', 'backimage', 'imageback']);
+      card.imageUrlBack = imageUrlBackIndex !== -1 ? String(row[imageUrlBackIndex] || '') : undefined;
 
       const numModFields: (keyof ArsenalCard)[] = ['hpMod', 'maxHpMod', 'mvMod', 'defMod', 'sanityMod', 'maxSanityMod', 'meleeAttackMod', 'rangedAttackMod', 'rangedRangeMod'];
       
-      // For header matching, allow for spaces e.g. "HP Mod"
+      // For header matching, allow for spaces e.g. "HP Mod" or direct camelCase "hpMod"
       const headerToFieldMap: Record<string, keyof ArsenalCard> = {
-        'hp mod': 'hpMod', 'max hp mod': 'maxHpMod', 'mv mod': 'mvMod', 'def mod': 'defMod',
-        'sanity mod': 'sanityMod', 'max sanity mod': 'maxSanityMod',
-        'melee attack mod': 'meleeAttackMod', 'ranged attack mod': 'rangedAttackMod', 'ranged range mod': 'rangedRangeMod',
+        'hpmod': 'hpMod', 'hp mod': 'hpMod',
+        'maxhpmod': 'maxHpMod', 'max hp mod': 'maxHpMod',
+        'mvmod': 'mvMod', 'mv mod': 'mvMod',
+        'defmod': 'defMod', 'def mod': 'defMod',
+        'sanitymod': 'sanityMod', 'sanity mod': 'sanityMod',
+        'maxsanitymod': 'maxSanityMod', 'max sanity mod': 'maxSanityMod',
+        'meleeattackmod': 'meleeAttackMod', 'melee attack mod': 'meleeAttackMod',
+        'rangedattackmod': 'rangedAttackMod', 'ranged attack mod': 'rangedAttackMod',
+        'rangedrangemod': 'rangedRangeMod', 'ranged range mod': 'rangedRangeMod',
       };
 
       numModFields.forEach(field => {
         let colIndex = -1;
-        // Try direct match first (e.g. hpMod)
-        colIndex = getColumnIndex(field as string);
-        // Then try spaced match (e.g. hp mod)
-        if (colIndex === -1) {
-            const spacedHeader = Object.keys(headerToFieldMap).find(h => headerToFieldMap[h] === field);
-            if(spacedHeader) colIndex = getColumnIndex(spacedHeader);
-        }
+        // Try direct camelCase match from sanitizedHeaders first (e.g. hpMod if sheet has "hpMod")
+        colIndex = sanitizedHeaders.indexOf(field.toLowerCase() as string);
 
-        if (colIndex !== -1 && row[colIndex] !== undefined && row[colIndex] !== '') {
+        // Then try variations from headerToFieldMap
+        if (colIndex === -1) {
+            const possibleHeaders = Object.keys(headerToFieldMap).filter(h => headerToFieldMap[h] === field);
+            for (const headerVariation of possibleHeaders) {
+                colIndex = getColumnIndex([headerVariation]); // Use the helper with a single variation
+                if (colIndex !== -1) break;
+            }
+        }
+        
+        if (colIndex !== -1 && row[colIndex] !== undefined && String(row[colIndex]).trim() !== '') {
           const val = parseFloat(String(row[colIndex]));
           if (!isNaN(val)) {
             (card as any)[field] = val;
           } else {
-            (card as any)[field] = 0;
+            (card as any)[field] = 0; // Default to 0 if value is not a number
           }
         } else {
-          (card as any)[field] = 0;
+          (card as any)[field] = 0; // Default to 0 if column not found or empty
         }
       });
       return card as ArsenalCard;
