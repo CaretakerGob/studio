@@ -11,10 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Footprints, Shield, Brain, Swords, UserCircle, Minus, Plus, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Leaf, Library, BookMarked, HeartHandshake, SlidersHorizontal, Award, Clock, Box, VenetianMask, Search, PersonStanding, Laptop, Star, Wrench, Smile, ShoppingCart, Edit2, Trash2, UserCog, Package, Dices, PawPrint, AlertCircle, Shirt } from "lucide-react";
-import type { CharacterStats, CharacterStatDefinition, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition, AbilityType } from "@/types/character";
-import type { ArsenalCard, ArsenalItem, ParsedStatModifier, ArsenalItemCategory } from '@/types/arsenal';
-import { Progress } from '@/components/ui/progress';
+import { Swords, UserCircle, Save, RotateCcw, BookOpen, Zap, ShieldAlert, Crosshair, ClipboardList, Library, BookMarked, Award, Clock, Box, ShoppingCart, Edit2, Trash2, UserCog, Package, PawPrint, AlertCircle, Shirt } from "lucide-react";
+import type { CharacterStats, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
+import type { ArsenalCard, ArsenalItem, ArsenalItemCategory } from '@/types/arsenal';
+
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from "@/context/auth-context";
@@ -23,6 +23,8 @@ import { doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
+import { CharacterHeader } from './character-header';
+import { CoreStatsSection, customStatPointBuyConfig } from './core-stats-section';
 
 
 const initialBaseStats: CharacterStats = {
@@ -44,35 +46,20 @@ const initialSkills: Skills = {
   ath: 0, cpu: 0, dare: 0, dec: 0, emp: 0, eng: 0, inv: 0, kno: 0, occ: 0, pers: 0, sur: 0, tac: 0, tun: 0,
 };
 
-const statDefinitions: CharacterStatDefinition[] = [
-  { id: 'hp', label: "Health Points (HP)", icon: Heart, description: "Your character's vitality. Reaching 0 HP usually means defeat." },
-  { id: 'sanity', label: "Sanity", icon: Brain, description: "Your character's mental stability. Low sanity can have dire consequences." },
-  { id: 'mv', label: "Movement (MV)", icon: Footprints, description: "How many spaces your character can move." },
-  { id: 'def', label: "Defense (DEF)", icon: Shield, description: "Reduces incoming damage." },
-];
-
-const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity'>, { cost: number; max: number; base: number }> = {
-  hp: { cost: 5, max: 7, base: 1 },
-  sanity: { cost: 10, max: 5, base: 1 },
-  mv: { cost: 2, max: 6, base: 1 },
-  def: { cost: 5, max: 3, base: 1 },
-};
-
-
 const skillDefinitions: SkillDefinition[] = [
-  { id: 'ath', label: "Athletics (ATH)", icon: PersonStanding, description: "Prowess at swimming, running, tumbling, and parkour." },
-  { id: 'cpu', label: "Computer Use (CPU)", icon: Laptop, description: "Adept at hacking, online research, and navigating networks." },
-  { id: 'dare', label: "Dare Devil (DARE)", icon: Star, description: "Fearless and skilled driver/pilot, performs spectacular stunts." },
-  { id: 'dec', label: "Deception (DEC)", icon: VenetianMask, description: "Skill in lying, manipulation, sleight of hand, and stealth." },
-  { id: 'emp', label: "Empathy (EMP)", icon: HeartHandshake, description: "Ability to triage, tutor, handle animals, and sense motives." },
-  { id: 'eng', label: "Engineer (ENG)", icon: Wrench, description: "Proficiency in crafting, repairing, using machinery, and disabling devices." },
-  { id: 'inv', label: "Investigate (INV)", icon: Search, description: "Ability to gather info, find clues, and research." },
-  { id: 'kno', label: "Knowledge (KNO)", icon: Library, description: "Filled with useful facts on various subjects (not Occult, Eng, CPU)." },
-  { id: 'occ', label: "Occult (OCC)", icon: BookMarked, description: "Knowledge of rituals, demonology, alchemy, and ancient scripts." },
-  { id: 'pers', label: "Personality (PERS)", icon: Smile, description: "Inner willpower and charisma (Inspirational or Intimidating)." },
-  { id: 'sur', label: "Survivalist (SUR)", icon: Leaf, description: "Skilled at living off the land, tracking, and navigation." },
-  { id: 'tac', label: "Tactician (TAC)", icon: ClipboardList, description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts." },
-  { id: 'tun', label: "Tuner (TUN)", icon: SlidersHorizontal, description: "Rare individuals born with or acquired skill for visions, sensing danger." },
+  { id: 'ath', label: "Athletics (ATH)", icon: "PersonStanding", description: "Prowess at swimming, running, tumbling, and parkour." },
+  { id: 'cpu', label: "Computer Use (CPU)", icon: "Laptop", description: "Adept at hacking, online research, and navigating networks." },
+  { id: 'dare', label: "Dare Devil (DARE)", icon: "Star", description: "Fearless and skilled driver/pilot, performs spectacular stunts." },
+  { id: 'dec', label: "Deception (DEC)", icon: "VenetianMask", description: "Skill in lying, manipulation, sleight of hand, and stealth." },
+  { id: 'emp', label: "Empathy (EMP)", icon: "HeartHandshake", description: "Ability to triage, tutor, handle animals, and sense motives." },
+  { id: 'eng', label: "Engineer (ENG)", icon: "Wrench", description: "Proficiency in crafting, repairing, using machinery, and disabling devices." },
+  { id: 'inv', label: "Investigate (INV)", icon: "Search", description: "Ability to gather info, find clues, and research." },
+  { id: 'kno', label: "Knowledge (KNO)", icon: "Library", description: "Filled with useful facts on various subjects (not Occult, Eng, CPU)." },
+  { id: 'occ', label: "Occult (OCC)", icon: "BookMarked", description: "Knowledge of rituals, demonology, alchemy, and ancient scripts." },
+  { id: 'pers', label: "Personality (PERS)", icon: "Smile", description: "Inner willpower and charisma (Inspirational or Intimidating)." },
+  { id: 'sur', label: "Survivalist (SUR)", icon: "Leaf", description: "Skilled at living off the land, tracking, and navigation." },
+  { id: 'tac', label: "Tactician (TAC)", icon: "ClipboardList", description: "Observant, spots details, predicts enemy plans. +1 to turn order roll /2 pts." },
+  { id: 'tun', label: "Tuner (TUN)", icon: "SlidersHorizontal", description: "Rare individuals born with or acquired skill for visions, sensing danger." },
 ];
 
 
@@ -551,15 +538,16 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (selectedCharacterId === 'custom') {
         characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
-        if (characterToLoad) {
+         if (characterToLoad) {
           characterToLoad.name = defaultTemplate?.name || 'Custom Character';
           characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
           characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
           characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
           characterToLoad.characterPoints = defaultTemplate?.characterPoints || 375;
-          characterToLoad.selectedArsenalCardId = null;
+          characterToLoad.selectedArsenalCardId = null; // Always start custom with no arsenal
         }
-        showToastHelper({ title: "Default Loaded", description: `Loaded default version of ${characterToLoad?.name}.` });
+        showToastHelper({ title: "Default Loaded", description: `Loaded default template for Custom Character.` });
+
       } else if (currentUser && auth.currentUser) {
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
@@ -719,7 +707,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const currentVal = editableCharacterData.baseStats[statKey];
     const currentPoints = editableCharacterData.characterPoints || 0;
 
-    if (currentVal <= 1) {
+    if (currentVal <= 1) { // Ensure stats don't go below 1
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -927,7 +915,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
   const purchasedSkills = useMemo(() => {
     if (editableCharacterData?.id === 'custom' && editableCharacterData.skills) {
-      return skillDefinitions.filter(def => (editableCharacterData.skills?.[def.id] || 0) > 0);
+      return skillDefinitions.filter(def => (editableCharacterData.skills?.[def.id as SkillName] || 0) > 0);
     }
     return [];
   }, [editableCharacterData]);
@@ -1046,150 +1034,18 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     };
   }, []);
 
-
-  const StatInputComponent: React.FC<{ def: CharacterStatDefinition }> = ({ def }) => {
-    const isProgressStat = def.id === 'hp' || def.id === 'sanity';
-    const currentValue = effectiveBaseStats[def.id] || 0;
-    const maxValue = def.id === 'hp' ? effectiveBaseStats.maxHp : (def.id === 'sanity' ? effectiveBaseStats.maxSanity : undefined);
-
-    return (
-      <div className={cn("p-4 rounded-lg border border-border bg-card/50 shadow-md transition-all duration-300", highlightedStat === def.id ? "ring-2 ring-primary shadow-lg" : "shadow-md")}>
-        <div className="flex items-center justify-between mb-2">
-          <Label htmlFor={def.id} className="flex items-center text-lg font-medium">
-            <def.icon className="mr-2 h-6 w-6 text-primary" />
-            {def.label}
-          </Label>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => decrementStat(def.id)} className="h-8 w-8">
-              <Minus className="h-4 w-4" />
-            </Button>
-            <Input
-              id={def.id}
-              type="number"
-              value={currentValue}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => handleStatChange(def.id, e.target.value)}
-              className="w-20 h-8 text-center text-lg font-bold"
-              min="0"
-            />
-            <Button variant="outline" size="icon" onClick={() => incrementStat(def.id)} className="h-8 w-8">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        {isProgressStat && maxValue !== undefined && (
-          <div className="mt-2">
-            <Progress value={(currentValue / maxValue) * 100 || 0} className="h-3 [&>div]:bg-primary" />
-            <p className="text-xs text-muted-foreground text-right mt-1">{currentValue} / {maxValue}</p>
-            { (def.id === 'hp' || def.id === 'sanity') &&
-                <div className="flex items-center gap-2 mt-2">
-                    <Label htmlFor={`max${def.id.charAt(0).toUpperCase() + def.id.slice(1)}`} className="text-sm text-muted-foreground whitespace-nowrap">Max {def.label.split(" ")[0]}:</Label>
-                    <Input
-                        id={`max${def.id.charAt(0).toUpperCase() + def.id.slice(1)}`}
-                        type="number"
-                        value={maxValue}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => handleStatChange(def.id === 'hp' ? 'maxHp' : 'maxSanity', e.target.value)}
-                        className="w-20 h-8 text-center"
-                        min="1"
-                    />
-                </div>
-            }
-          </div>
-        )}
-        {def.description && <p className="text-xs text-muted-foreground mt-1">{def.description}</p>}
-      </div>
-    );
-  };
-
-  const CustomStatPointBuyComponent: React.FC<{
-    statKey: Exclude<StatName, 'maxHp' | 'maxSanity'>;
-    label: string;
-    Icon: React.ElementType;
-   }> = ({ statKey, label, Icon }) => {
-    if (!editableCharacterData || editableCharacterData.id !== 'custom') return null;
-
-    const config = customStatPointBuyConfig[statKey];
-    const baseValueFromTemplate = editableCharacterData.baseStats[statKey];
-    const currentCP = editableCharacterData.characterPoints || 0;
-
-    let displayedValue = baseValueFromTemplate || 0;
-    let displayedMaxValue = (statKey === 'hp' ? editableCharacterData.baseStats.maxHp : editableCharacterData.baseStats.maxSanity) || 0;
-
-    if (equippedArsenalCard) {
-        if (statKey === 'hp') {
-            displayedValue += (equippedArsenalCard.hpMod || 0);
-            if (equippedArsenalCard.items) {
-                equippedArsenalCard.items.forEach(item => {
-                    if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
-                        item.parsedStatModifiers.forEach(mod => {
-                            if (mod.targetStat === 'hp') displayedValue += mod.value;
-                            if (mod.targetStat === 'maxHp') displayedMaxValue += mod.value;
-                        });
-                    }
-                });
-            }
-            displayedMaxValue += (equippedArsenalCard.maxHpMod || 0);
-            if (displayedValue > displayedMaxValue) displayedValue = displayedMaxValue;
-
-        } else if (statKey === 'sanity') {
-            displayedValue += (equippedArsenalCard.sanityMod || 0);
-             if (equippedArsenalCard.items) {
-                equippedArsenalCard.items.forEach(item => {
-                    if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
-                        item.parsedStatModifiers.forEach(mod => {
-                            if (mod.targetStat === 'sanity') displayedValue += mod.value;
-                            if (mod.targetStat === 'maxSanity') displayedMaxValue += mod.value;
-                        });
-                    }
-                });
-            }
-            displayedMaxValue += (equippedArsenalCard.maxSanityMod || 0);
-            if (displayedValue > displayedMaxValue) displayedValue = displayedMaxValue;
-        } else if (statKey === 'mv' && equippedArsenalCard.mvMod) {
-            displayedValue += equippedArsenalCard.mvMod;
-        } else if (statKey === 'def' && equippedArsenalCard.defMod) {
-            displayedValue += equippedArsenalCard.defMod;
-        }
-    }
-    displayedValue = Math.max(1, displayedValue);
-    displayedMaxValue = Math.max(1, displayedMaxValue);
-
-
-    return (
-      <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
-        <div className="flex items-center justify-between mb-2">
-          <Label className="flex items-center text-lg font-medium">
-            <Icon className="mr-2 h-6 w-6 text-primary" />
-            {label}
-          </Label>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => handleSellStatPoint(statKey)} disabled={baseValueFromTemplate <= 1} className="h-8 w-8">
-              <Minus className="h-4 w-4" />
-            </Button>
-            <span className="w-12 h-8 text-center text-lg font-bold flex items-center justify-center">{displayedValue}</span>
-            <Button variant="outline" size="icon" onClick={() => handleBuyStatPoint(statKey)} disabled={baseValueFromTemplate >= config.max || currentCP < config.cost} className="h-8 w-8">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-         <p className="text-xs text-muted-foreground">Base Points Invested: {baseValueFromTemplate} / {config.max} | Cost: {config.cost} CP per point</p>
-        {(statKey === 'hp' || statKey === 'sanity') && (
-          <div className="mt-2">
-            <Progress value={(displayedValue / displayedMaxValue) * 100 || 0} className="h-3 [&>div]:bg-primary" />
-            <p className="text-xs text-muted-foreground text-right mt-1">{displayedValue} / {displayedMaxValue}</p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-
   const SkillDisplayComponent: React.FC<{ def: SkillDefinition }> = ({ def }) => {
-    const skillValue = (characterSkills as Skills)[def.id as SkillName] || 0;
+    if (!editableCharacterData || !editableCharacterData.skills) return null;
+    const skillValue = (editableCharacterData.skills as Skills)[def.id as SkillName] || 0;
+    if (skillValue === 0 && editableCharacterData.id !== 'custom') return null; // Hide if 0 for non-custom
+
+    const IconComponent = skillDefinitions.find(s => s.id === def.id)?.icon;
+
     return (
       <div className="p-3 rounded-lg border border-border bg-card/50 shadow-sm">
         <div className="flex items-center justify-between">
           <Label htmlFor={def.id} className="flex items-center text-md font-medium">
-            <def.icon className="mr-2 h-5 w-5 text-primary" />
+           {IconComponent && typeof IconComponent === 'string' && <Badge variant="outline" className="mr-2 p-1"><Library /></Badge> /* Placeholder, fix later */}
             {def.label}
           </Label>
           <span className="text-lg font-bold text-primary">{skillValue}</span>
@@ -1278,7 +1134,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={onDecrementQuantity} disabled={currentQuantity === 0} className="h-8 w-8">
-                  <Minus className="h-4 w-4" />
+                  <UserMinus className="h-4 w-4" />
                 </Button>
                 <Input
                   id={`${ability.id}-quantity`}
@@ -1288,7 +1144,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                   className="w-16 h-8 text-center text-lg font-bold"
                 />
                 <Button variant="outline" size="icon" onClick={onIncrementQuantity} disabled={currentQuantity === maxQuantity} className="h-8 w-8">
-                  <Plus className="h-4 w-4" />
+                  <UserPlus className="h-4 w-4" />
                 </Button>
                 <span className="text-xl font-medium text-muted-foreground">/ {maxQuantity}</span>
               </div>
@@ -1305,7 +1161,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="icon" onClick={onDecrementCooldown} disabled={currentCooldown === 0} className="h-8 w-8">
-                  <Minus className="h-4 w-4" />
+                  <UserMinus className="h-4 w-4" />
                 </Button>
                 <Input
                   id={`${ability.id}-cooldown`}
@@ -1315,7 +1171,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                   className="w-16 h-8 text-center text-lg font-bold"
                 />
                 <Button variant="outline" size="icon" onClick={onIncrementCooldown} disabled={currentCooldown === maxCooldown} className="h-8 w-8">
-                  <Plus className="h-4 w-4" />
+                  <UserPlus className="h-4 w-4" />
                 </Button>
                 <span className="text-xl font-medium text-muted-foreground">/ {maxCooldown}</span>
               </div>
@@ -1404,84 +1260,18 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         />
       )}
       <div className="relative z-10 bg-transparent">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                  <UserCircle className="mr-3 h-10 w-10 text-primary" />
-                  <CardTitle className="text-3xl">Character Sheet</CardTitle>
-              </div>
-              <Button variant="ghost" onClick={resetStats} size="sm">
-                  <RotateCcw className="mr-2 h-4 w-4" /> Reset Template
-              </Button>
-          </div>
-          <CardDescription>Manage your character's attributes, abilities, and status.</CardDescription>
-        </CardHeader>
+         <CharacterHeader
+            selectedCharacterId={selectedCharacterId}
+            editableCharacterData={editableCharacterData}
+            characterDropdownOptions={characterDropdownOptions}
+            currentUser={currentUser}
+            isLoadingCharacter={isLoadingCharacter}
+            onCharacterDropdownChange={handleCharacterDropdownChange}
+            onCustomCharacterNameChange={handleCustomCharacterNameChange}
+            onLoadSavedCustomCharacter={handleLoadSavedCustomCharacter}
+            onResetStats={resetStats}
+        />
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            <div className="md:col-span-1 space-y-4">
-              <div className="w-full">
-                <Label htmlFor="characterName" className="text-lg font-medium mb-1 block">Character Template</Label>
-                <Select value={selectedCharacterId} onValueChange={handleCharacterDropdownChange}>
-                  <SelectTrigger id="characterName" className="text-xl p-2 w-full">
-                    <SelectValue placeholder="Select a character" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {characterDropdownOptions.map(charOpt => (
-                       <SelectItem key={charOpt.id} value={charOpt.id}>
-                         {charOpt.displayNameInDropdown}
-                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-               {editableCharacterData?.id === 'custom' && (
-                <>
-                  <div className="w-full">
-                    <Label htmlFor="customCharacterName" className="text-lg font-medium mb-1 block">
-                      Character Name
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="customCharacterName"
-                        type="text"
-                        value={editableCharacterData.name === 'Custom Character' && !userSavedCharacters.find(c => c.id === 'custom' && c.name !== 'Custom Character') ? '' : editableCharacterData.name}
-                        onChange={handleCustomCharacterNameChange}
-                        placeholder="Enter custom name"
-                        className="text-lg p-2 flex-grow"
-                      />
-                      <Edit2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  </div>
-                  {currentUser && (
-                    <Button
-                      onClick={handleLoadSavedCustomCharacter}
-                      variant="outline"
-                      className="w-full"
-                      disabled={isLoadingCharacter}
-                    >
-                      <UserCog className="mr-2 h-4 w-4" /> Load My Saved Custom
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-
-             <div className="md:col-span-2 space-y-4 flex justify-end">
-                {editableCharacterData && editableCharacterData.characterPoints !== undefined && (
-                <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-fit flex flex-col items-end">
-                    <Label className="text-md font-medium flex items-center">
-                    <Award className="mr-2 h-5 w-5 text-primary" />
-                    Character Points
-                    </Label>
-                    <p className="text-xl font-bold text-primary mt-1">
-                    {editableCharacterData.characterPoints}
-                    </p>
-                </div>
-                )}
-            </div>
-          </div>
-          <Separator />
-
           <Tabs defaultValue="stats" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="stats">Stats &amp; Equipment</TabsTrigger>
@@ -1491,29 +1281,17 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             </TabsList>
 
             <TabsContent value="stats" className="mt-6 space-y-6">
-              <div>
-                <h3 className="text-xl font-semibold mb-3 flex items-center"><UserCircle className="mr-2 h-6 w-6 text-primary" /> Core Stats</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {editableCharacterData.id === 'custom' ? (
-                    <>
-                      {(Object.keys(customStatPointBuyConfig) as Array<Exclude<StatName, 'maxHp' | 'maxSanity'>>).map(statKey => {
-                          const statDef = statDefinitions.find(s => s.id === statKey);
-                          if (!statDef) return null;
-                          return (
-                            <CustomStatPointBuyComponent
-                              key={statKey}
-                              statKey={statKey}
-                              label={statDef.label}
-                              Icon={statDef.icon}
-                            />
-                          );
-                      })}
-                    </>
-                  ) : (
-                    statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)
-                  )}
-                </div>
-              </div>
+              <CoreStatsSection
+                editableCharacterData={editableCharacterData}
+                effectiveBaseStats={effectiveBaseStats}
+                highlightedStat={highlightedStat}
+                handleStatChange={handleStatChange}
+                incrementStat={incrementStat}
+                decrementStat={decrementStat}
+                handleBuyStatPoint={handleBuyStatPoint}
+                handleSellStatPoint={handleSellStatPoint}
+                customStatPointBuyConfig={customStatPointBuyConfig}
+              />
               <Separator/>
               <div>
                   <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
@@ -1568,11 +1346,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                               <div>
                                 <div className="flex items-center justify-between mb-1">
                                   <Label className="flex items-center text-sm font-medium">
-                                    <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
+                                    <UserCircle className="mr-2 h-4 w-4 text-red-500" /> HP
                                   </Label>
                                   <div className="flex items-center gap-1">
                                     <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('hp')} className="h-6 w-6">
-                                      <Minus className="h-3 w-3" />
+                                      <UserMinus className="h-3 w-3" />
                                     </Button>
                                     <Input
                                       type="number"
@@ -1581,7 +1359,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                       className="w-12 h-6 text-center text-sm font-bold p-1"
                                     />
                                     <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('hp')} className="h-6 w-6">
-                                      <Plus className="h-3 w-3" />
+                                      <UserPlus className="h-3 w-3" />
                                     </Button>
                                   </div>
                                 </div>
@@ -1593,11 +1371,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                               <div>
                                 <div className="flex items-center justify-between mb-1">
                                   <Label className="flex items-center text-sm font-medium">
-                                    <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
+                                    <UserCircle className="mr-2 h-4 w-4 text-blue-400" /> Sanity
                                   </Label>
                                   <div className="flex items-center gap-1">
                                     <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('sanity')} className="h-6 w-6">
-                                      <Minus className="h-3 w-3" />
+                                      <UserMinus className="h-3 w-3" />
                                     </Button>
                                     <Input
                                       type="number"
@@ -1606,7 +1384,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                       className="w-12 h-6 text-center text-sm font-bold p-1"
                                     />
                                     <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('sanity')} className="h-6 w-6">
-                                      <Plus className="h-3 w-3" />
+                                      <UserPlus className="h-3 w-3" />
                                     </Button>
                                   </div>
                                 </div>
@@ -1617,7 +1395,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                              {currentCompanion.parsedPetCoreStats.mv !== undefined && (
                               <div className="flex items-center justify-between text-sm">
                                  <Label className="flex items-center font-medium">
-                                  <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
+                                  <UserCircle className="mr-2 h-4 w-4 text-green-500" /> MV
                                 </Label>
                                 <span className="font-semibold">{currentCompanion.parsedPetCoreStats.mv}</span>
                               </div>
@@ -1625,7 +1403,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                             {currentCompanion.parsedPetCoreStats.def !== undefined && (
                                <div className="flex items-center justify-between text-sm">
                                  <Label className="flex items-center font-medium">
-                                  <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
+                                  <UserCircle className="mr-2 h-4 w-4 text-gray-400" /> DEF
                                 </Label>
                                 <span className="font-semibold">{currentCompanion.parsedPetCoreStats.def}</span>
                               </div>
@@ -1636,7 +1414,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                             )}
                          </div>
                       )}
-
                       <Separator className="my-3" />
                       <div>
                         <h4 className="text-md font-semibold mb-2 text-accent">Load Out Items:</h4>
@@ -1716,12 +1493,13 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                         let upgradeCost = 0;
                         if (currentLevel === 1) upgradeCost = SKILL_COST_LEVEL_2;
                         else if (currentLevel === 2) upgradeCost = SKILL_COST_LEVEL_3;
+                        const IconComp = skillDefinitions.find(s => s.id === skillDef.id)?.icon as React.ElementType | undefined;
 
                         return (
                           <Card key={skillDef.id} className="p-3 bg-card/60">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
-                                <skillDef.icon className="mr-2 h-5 w-5 text-primary" />
+                                {IconComp && <IconComp className="mr-2 h-5 w-5 text-primary" />}
                                 <span className="font-medium">{skillDef.label} - Level {currentLevel}</span>
                               </div>
                               <div className="flex items-center gap-1">
@@ -1732,7 +1510,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                   onClick={() => handleDecreaseSkillLevel(skillDef.id)}
                                   disabled={currentLevel <= 0}
                                 >
-                                  <Minus className="h-4 w-4" />
+                                  <UserMinus className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="outline"
@@ -1741,7 +1519,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                   onClick={() => handleIncreaseSkillLevel(skillDef.id)}
                                   disabled={currentLevel >= MAX_SKILL_LEVEL || (editableCharacterData.characterPoints || 0) < upgradeCost}
                                 >
-                                  <Plus className="h-4 w-4" />
+                                  <UserPlus className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -1769,7 +1547,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                   <h3 className="text-xl font-semibold mb-3 flex items-center"><Library className="mr-2 h-6 w-6 text-primary" /> Skills</h3>
                   {
                     (() => {
-                      const relevantSkillDefinitions = skillDefinitions.filter(def => ((characterSkills as Skills)[def.id as SkillName] ?? 0) > 0);
+                      const relevantSkillDefinitions = skillDefinitions.filter(def => ((editableCharacterData.skills as Skills)[def.id as SkillName] ?? 0) > 0);
                       if (relevantSkillDefinitions.length === 0) {
                         return <p className="text-muted-foreground text-center py-4 bg-card/50 rounded-md">This character has no specialized skills.</p>;
                       }
@@ -1931,3 +1709,4 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
+
