@@ -1,22 +1,21 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Layers, Shuffle, RotateCcw, Hand } from 'lucide-react';
+import { Layers, Hand } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 
-interface GameCard {
+import { DeckSelectionControls } from './deck-selection-controls';
+import { MainGeneratedCard } from './main-generated-card';
+import { HeldCardsSection } from './held-cards-section';
+import { DrawnHistoryDisplay } from './drawn-history-display';
+
+export interface GameCard {
   id: string;
   name: string;
-  type: string; // e.g., 'Event', 'Item', 'Madness'
+  type: string;
   deck: string;
   description: string;
   imageUrl?: string;
@@ -87,7 +86,6 @@ const generateClashCards = (): GameCard[] => {
   }
   return [...existingCards, ...newCards];
 };
-
 
 const sampleDecks: { name: string; cards: GameCard[] }[] = [
   {
@@ -203,55 +201,17 @@ export function CardGeneratorUI() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-      {/* Generated Card Display (Latest Card) */}
+      {/* Main Generated Card - Top on mobile */}
       <Card className="md:col-start-2 md:col-span-2 shadow-xl min-h-[500px] flex flex-col justify-start items-center">
         <CardHeader className="w-full text-center">
            <CardTitle className="text-2xl">Generated Card</CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col items-center justify-start w-full p-4">
-          {isLoading && !latestCard && heldCards.length === 0 ? (
-            <div className="space-y-4 w-full max-w-xs">
-              <Skeleton className="h-[420px] w-[300px] rounded-lg mx-auto aspect-[5/7]" />
-              <Skeleton className="h-6 w-3/4 mx-auto" />
-              <Skeleton className="h-4 w-full mx-auto" />
-              <Skeleton className="h-4 w-5/6 mx-auto" />
-            </div>
-          ) : latestCard ? (
-            <Card key={cardKey} className="w-full max-w-[300px] sm:max-w-sm md:max-w-md bg-card/80 border-primary shadow-lg animate-in fade-in-50 zoom-in-90 duration-500">
-              {latestCard.imageUrl && (
-                <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-lg">
-                  <Image
-                    src={latestCard.imageUrl}
-                    alt={latestCard.name}
-                    fill
-                    sizes="(max-width: 640px) 90vw, (max-width: 768px) 80vw, (max-width: 1024px) 50vw, 300px"
-                    style={{ objectFit: "contain" }}
-                    data-ai-hint={latestCard.dataAiHint}
-                    priority={true}
-                  />
-                </div>
-              )}
-              <CardHeader className="pt-4">
-                <CardTitle className="text-xl text-primary">{latestCard.name}</CardTitle>
-                <CardDescription className="text-sm">Type: {latestCard.type} (From: {latestCard.deck})</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{latestCard.description}</p>
-              </CardContent>
-            </Card>
-          ) : (
-             <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50 mt-10">
-              <Layers className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <AlertTitle>No Card Drawn Yet</AlertTitle>
-              <AlertDescription>
-                Select decks and click "Draw Random Card", or play a card from your hand.
-              </AlertDescription>
-            </Alert>
-          )}
+          <MainGeneratedCard latestCard={latestCard} isLoading={isLoading} cardKey={cardKey} />
         </CardContent>
       </Card>
 
-      {/* Card Decks & Held Cards */}
+      {/* Controls & Held Cards - Below on mobile, first column on desktop */}
       <Card className="md:col-start-1 md:col-span-1 md:row-start-1 shadow-xl">
         <CardHeader>
           <div className="flex items-center">
@@ -260,30 +220,18 @@ export function CardGeneratorUI() {
           </div>
           <CardDescription>Select which deck to draw from.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Label htmlFor="deck-select">Select a Deck:</Label>
-          <Select value={selectedDeck} onValueChange={handleDeckSelection}>
-            <SelectTrigger id="deck-select" className="w-full">
-              <SelectValue placeholder="Choose a deck..." />
-            </SelectTrigger>
-            <SelectContent>
-              {sampleDecks.map(deck => (
-                <SelectItem key={deck.name} value={deck.name}>
-                  {deck.name} ({deck.cards.length} cards)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <CardContent>
+          <DeckSelectionControls
+            sampleDecks={sampleDecks}
+            selectedDeck={selectedDeck}
+            onDeckChange={handleDeckSelection}
+            onGenerateCard={generateCard}
+            onResetGenerator={resetGenerator}
+            isLoading={isLoading}
+            isGenerateDisabled={!selectedDeck}
+          />
         </CardContent>
-        <CardFooter className="flex flex-col gap-2 pt-4">
-          <Button onClick={generateCard} size="lg" className="w-full bg-primary hover:bg-primary/90" disabled={!selectedDeck || isLoading}>
-            <Shuffle className="mr-2 h-5 w-5" /> {isLoading ? "Drawing..." : "Draw Random Card"}
-          </Button>
-           <Button variant="outline" onClick={resetGenerator} className="w-full">
-            <RotateCcw className="mr-2 h-4 w-4" /> Reset
-          </Button>
-        </CardFooter>
-
+        
         <Separator className="my-4 mx-6" />
 
         <CardHeader className="pt-0 px-6">
@@ -294,87 +242,12 @@ export function CardGeneratorUI() {
           <CardDescription>Cards you can play later.</CardDescription>
         </CardHeader>
         <CardContent className="px-6 pb-6">
-          {heldCards.length === 0 ? (
-            <Alert variant="default" className="text-center border-dashed border-muted-foreground/50">
-              <Hand className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
-              <AlertTitle className="text-sm">No Cards Held</AlertTitle>
-              <AlertDescription className="text-xs">
-                Cards marked as "holdable" will appear here when drawn.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <ScrollArea className="h-[250px] pr-3">
-              <div className="space-y-3">
-                {heldCards.map((card, index) => (
-                  <Card 
-                    key={`${card.id}-held-${index}`} 
-                    className="bg-card/80 border-primary/60 shadow-md hover:shadow-primary/40 transition-all duration-200 ease-in-out transform hover:scale-105 cursor-pointer group"
-                    onClick={() => playHeldCard(card)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') playHeldCard(card); }}
-                  >
-                    {card.imageUrl && (
-                      <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-md">
-                        <Image
-                          src={card.imageUrl}
-                          alt={card.name}
-                          fill
-                          sizes="150px"
-                          style={{ objectFit: "contain" }}
-                          data-ai-hint={`${card.dataAiHint} held`}
-                        />
-                      </div>
-                    )}
-                    <CardHeader className="p-2 pb-1">
-                      <CardTitle className="text-base text-primary truncate group-hover:underline">{card.name}</CardTitle>
-                      <CardDescription className="text-xs">Type: {card.type}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-2 pt-0">
-                      <p className="text-xs text-muted-foreground truncate mb-1">{card.description}</p>
-                       <Button variant="link" size="sm" className="p-0 h-auto text-xs text-accent group-hover:text-accent-foreground" tabIndex={-1}>
-                         Click to Play
-                       </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
+          <HeldCardsSection heldCards={heldCards} onPlayHeldCard={playHeldCard} />
         </CardContent>
       </Card>
 
-      {/* Previously Drawn - This section will be third in mobile DOM flow, and part of right column on desktop */}
-      {previousCards.length > 0 && (
-        <div className="md:col-start-2 md:col-span-2 w-full mt-8 md:mt-6"> {/* Adjusted md:mt-6 for better spacing on desktop */}
-          <h4 className="text-lg font-semibold mb-3 text-center text-muted-foreground">Previously Drawn</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {previousCards.map((card, index) => (
-              <Card key={`${card.id}-hist-${index}`} className="bg-card/60 border-muted-foreground/30 shadow-sm overflow-hidden">
-                {card.imageUrl && (
-                  <div className="relative w-full aspect-[5/7] overflow-hidden rounded-t-md">
-                    <Image
-                      src={card.imageUrl}
-                      alt={card.name}
-                      fill
-                      sizes="(max-width: 640px) 40vw, 150px"
-                      style={{ objectFit: "contain" }}
-                      data-ai-hint={`${card.dataAiHint} history`}
-                    />
-                  </div>
-                )}
-                <CardHeader className="p-2">
-                  <CardTitle className="text-sm text-primary truncate">{card.name}</CardTitle>
-                  <CardDescription className="text-xs">Type: {card.type}</CardDescription>
-                </CardHeader>
-                <CardContent className="p-2 pt-0">
-                  <p className="text-xs text-muted-foreground truncate">{card.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Previously Drawn - Below generated card on desktop, last on mobile */}
+       <DrawnHistoryDisplay previousCards={previousCards} />
     </div>
   );
 }
