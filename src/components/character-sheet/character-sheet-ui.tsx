@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 
 import { useToast } from '@/hooks/use-toast';
@@ -297,6 +298,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   const [currentPetSanity, setCurrentPetSanity] = useState<number | null>(null);
   const [currentPetMv, setCurrentPetMv] = useState<number | null>(null);
   const [currentPetDef, setCurrentPetDef] = useState<number | null>(null);
+  
 
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
@@ -463,7 +465,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       editableCharacterData.abilities.forEach(ability => {
         if (ability.cooldown && (ability.type === 'Action' || ability.type === 'Interrupt')) {
-          const maxRounds = parseCooldownRounds(ability.cooldown);
+          const maxRounds = parseCooldownRounds(String(ability.cooldown));
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
             newInitialCurrentCDs[ability.id] = (savedCDs && savedCDs[ability.id] !== undefined) ? savedCDs[ability.id] : maxRounds;
@@ -552,7 +554,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
-          // Always load the default custom template initially
           characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
           if (characterToLoad) {
               characterToLoad.name = defaultTemplate?.name || 'Custom Character'; 
@@ -564,7 +565,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
               characterToLoad.savedCooldowns = {};
               characterToLoad.savedQuantities = {};
           }
-          // No toast for loading default custom, as it's the starting point.
       } else if (currentUser && auth.currentUser && defaultTemplate) {
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
@@ -572,7 +572,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
           if (docSnap.exists()) {
             characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
-            // Ensure all properties from default template are present if missing from saved data
             characterToLoad.name = characterToLoad.name || defaultTemplate.name;
             characterToLoad.baseStats = characterToLoad.baseStats || defaultTemplate.baseStats;
             characterToLoad.skills = characterToLoad.skills || defaultTemplate.skills;
@@ -607,7 +606,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             }
           }
         }
-      } else if (defaultTemplate) { // Not custom, and no user logged in
+      } else if (defaultTemplate) { 
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
          if (characterToLoad) { 
             characterToLoad.selectedArsenalCardId = null;
@@ -700,8 +699,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
-    let maxValue: number | undefined = undefined;
-    let baseValue: number | undefined = undefined;
+    let maxValue: number | undefined = undefined; 
+    let baseValue: number | undefined = undefined; 
 
 
     switch (statType) {
@@ -718,31 +717,25 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         case 'mv':
             setter = setCurrentPetMv;
             currentValue = currentPetMv;
-            baseValue = coreStats.mv;
+            baseValue = coreStats.mv; 
+            maxValue = coreStats.mv; 
             break;
         case 'def':
             setter = setCurrentPetDef;
             currentValue = currentPetDef;
-            baseValue = coreStats.def;
+            baseValue = coreStats.def; 
+            maxValue = coreStats.def; 
             break;
         case 'meleeAttack': 
-            // Melee attack is now handled by WeaponDisplay and not directly tracked with +/-
+            
             return; 
         default:
             return;
     }
     
-    if (setter && currentValue !== null) {
+    if (setter && currentValue !== null && maxValue !== undefined) {
         let newValue = currentValue + delta;
-        if (statType === 'hp' || statType === 'sanity') {
-            newValue = Math.min(Math.max(newValue, 0), maxValue ?? Infinity);
-        } else if (statType === 'mv' || statType === 'def') {
-             if (operation === 'increment') {
-                newValue = Math.min(newValue, baseValue ?? Infinity); // Can't go above base for MV/DEF via buttons
-             } else {
-                newValue = Math.max(newValue, 0); // Can't go below 0
-             }
-        } 
+        newValue = Math.min(Math.max(newValue, 0), maxValue);
         setter(newValue);
     }
 };
@@ -889,7 +882,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         const { cost, ...abilityToAdd } = abilityInfo; 
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability]; 
         const newCharacterPoints = currentCP - abilityCost;
-        showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
+        
+        setTimeout(() => showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` }),0);
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
     setAbilityToAddId(undefined);
@@ -1127,13 +1121,43 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
 
   const getPetHpBarColorClass = () => {
-    if (currentPetHp === null || !currentCompanion?.parsedPetCoreStats?.maxHp) {
-      return '[&>div]:bg-gray-400'; // Default or indeterminate color
+    if (currentPetHp === null || !currentCompanion?.parsedPetCoreStats?.maxHp || currentCompanion.parsedPetCoreStats.maxHp === 0) {
+      return '[&>div]:bg-gray-400'; 
     }
     const percentage = (currentPetHp / currentCompanion.parsedPetCoreStats.maxHp) * 100;
     if (percentage <= 33) return '[&>div]:bg-red-500';
     if (percentage <= 66) return '[&>div]:bg-yellow-500';
     return '[&>div]:bg-green-500';
+  };
+
+  const getPetSanityBarColorClass = () => {
+    if (currentPetSanity === null || !currentCompanion?.parsedPetCoreStats?.maxSanity || currentCompanion.parsedPetCoreStats.maxSanity === 0) {
+      return '[&>div]:bg-gray-400';
+    }
+    const percentage = (currentPetSanity / currentCompanion.parsedPetCoreStats.maxSanity) * 100;
+    if (percentage <= 33) return '[&>div]:bg-red-500'; // Or a different color for sanity like dark blue
+    if (percentage <= 66) return '[&>div]:bg-yellow-500'; // Or light blue
+    return '[&>div]:bg-blue-400'; // Or standard blue
+  };
+  
+  const getPetMvBarColorClass = () => {
+    if (currentPetMv === null || !currentCompanion?.parsedPetCoreStats?.mv || currentCompanion.parsedPetCoreStats.mv === 0) {
+      return '[&>div]:bg-gray-400';
+    }
+    const percentage = (currentPetMv / currentCompanion.parsedPetCoreStats.mv) * 100;
+    if (percentage <= 33) return '[&>div]:bg-red-500';
+    if (percentage <= 66) return '[&>div]:bg-yellow-500';
+    return '[&>div]:bg-green-500';
+  };
+
+  const getPetDefBarColorClass = () => {
+     if (currentPetDef === null || !currentCompanion?.parsedPetCoreStats?.def || currentCompanion.parsedPetCoreStats.def === 0) {
+      return '[&>div]:bg-gray-400';
+    }
+    const percentage = (currentPetDef / currentCompanion.parsedPetCoreStats.def) * 100;
+    if (percentage <= 33) return '[&>div]:bg-red-500';
+    if (percentage <= 66) return '[&>div]:bg-yellow-500';
+    return '[&>div]:bg-gray-400'; // Defense often uses neutral colors
   };
 
 
@@ -1226,7 +1250,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                             <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
                         </h3>
                          {currentCompanion.petStats && (
-                             <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats}</p>
+                             <p className="text-sm text-muted-foreground mb-2">Raw Stats String: {currentCompanion.petStats}</p>
                         )}
                         
                         {currentCompanion.parsedPetCoreStats && (
@@ -1248,7 +1272,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                                 </Button>
                                             </div>
                                         </div>
-                                        <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={`h-1.5 ${getPetHpBarColorClass()}`} />
+                                        <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={cn("h-1.5", getPetHpBarColorClass())} />
                                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
                                     </div>
                                 )}
@@ -1269,7 +1293,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                                 </Button>
                                             </div>
                                         </div>
-                                        <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className="h-1.5 [&>div]:bg-blue-400" />
+                                        <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className={cn("h-1.5", getPetSanityBarColorClass())} />
                                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
                                     </div>
                                 )}
@@ -1290,7 +1314,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                                 </Button>
                                             </div>
                                         </div>
-                                        <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className="h-1.5 [&>div]:bg-green-500" />
+                                        <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className={cn("h-1.5", getPetMvBarColorClass())} />
                                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetMv} / {currentCompanion.parsedPetCoreStats.mv}</p>
                                     </div>
                                 )}
@@ -1311,13 +1335,13 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                                 </Button>
                                             </div>
                                         </div>
-                                        <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className="h-1.5 [&>div]:bg-gray-400" />
+                                        <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className={cn("h-1.5", getPetDefBarColorClass())} />
                                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetDef} / {currentCompanion.parsedPetCoreStats.def}</p>
                                     </div>
                                 )}
                                 {/* Pet Melee Attack Display */}
                                 {petMeleeWeaponForDisplay && (
-                                  <div className="md:col-span-2"> {/* Span across if possible */}
+                                  <div className="md:col-span-2"> 
                                     <WeaponDisplay weapon={petMeleeWeaponForDisplay} type="melee" />
                                   </div>
                                 )}
@@ -1400,7 +1424,3 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   );
 }
 
-
-
-
-    

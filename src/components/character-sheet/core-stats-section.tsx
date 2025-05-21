@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { Character, CharacterStatDefinition, CharacterStats, StatName } from '@/types/character';
-import { Heart, Footprints, Shield, Brain, UserMinus as Minus, UserPlus as Plus, UserCircle } from "lucide-react"; // Assuming UserMinus and UserPlus are available
+import { Heart, Footprints, Shield, Brain, UserCircle, UserMinus as Minus, UserPlus as Plus } from "lucide-react"; 
 
 export const statDefinitions: CharacterStatDefinition[] = [
   { id: 'hp', label: "Health Points (HP)", icon: Heart, description: "Your character's vitality. Reaching 0 HP usually means defeat." },
@@ -18,7 +18,7 @@ export const statDefinitions: CharacterStatDefinition[] = [
   { id: 'def', label: "Defense (DEF)", icon: Shield, description: "Reduces incoming damage." },
 ];
 
-export const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity'>, { cost: number; max: number; base: number }> = {
+export const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>, { cost: number; max: number; base: number }> = {
   hp: { cost: 5, max: 7, base: 1 },
   sanity: { cost: 10, max: 5, base: 1 },
   mv: { cost: 2, max: 6, base: 1 },
@@ -33,9 +33,9 @@ interface CoreStatsSectionProps {
   handleStatChange: (statName: StatName, value: number | string) => void;
   incrementStat: (statName: StatName) => void;
   decrementStat: (statName: StatName) => void;
-  handleBuyStatPoint: (statKey: Exclude<StatName, 'maxHp' | 'maxSanity'>) => void;
-  handleSellStatPoint: (statKey: Exclude<StatName, 'maxHp' | 'maxSanity'>) => void;
-  customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity'>, { cost: number; max: number; base: number }>;
+  handleBuyStatPoint: (statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>) => void;
+  handleSellStatPoint: (statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>) => void;
+  customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>, { cost: number; max: number; base: number }>;
 }
 
 export function CoreStatsSection({
@@ -47,15 +47,25 @@ export function CoreStatsSection({
   decrementStat,
   handleBuyStatPoint,
   handleSellStatPoint,
-  customStatPointBuyConfig: propCustomStatPointBuyConfig, // Renamed to avoid conflict if needed
+  customStatPointBuyConfig: propCustomStatPointBuyConfig, 
 }: CoreStatsSectionProps) {
 
   if (!editableCharacterData) return null;
+
+  const getProgressColorClass = (current: number, max: number): string => {
+    if (max === 0) return '[&>div]:bg-gray-400'; // Prevent division by zero, default color
+    const percentage = (current / max) * 100;
+    if (percentage <= 33) return '[&>div]:bg-red-500';
+    if (percentage <= 66) return '[&>div]:bg-yellow-500';
+    return '[&>div]:bg-green-500';
+  };
 
   const StatInputComponent: React.FC<{ def: CharacterStatDefinition }> = ({ def }) => {
     const isProgressStat = def.id === 'hp' || def.id === 'sanity';
     const currentValue = effectiveBaseStats[def.id] || 0;
     const maxValue = def.id === 'hp' ? effectiveBaseStats.maxHp : (def.id === 'sanity' ? effectiveBaseStats.maxSanity : undefined);
+    const progressColorClass = isProgressStat && maxValue !== undefined ? getProgressColorClass(currentValue, maxValue) : '[&>div]:bg-primary';
+
 
     return (
       <div className={cn("p-4 rounded-lg border border-border bg-card/50 shadow-md transition-all duration-300", highlightedStat === def.id ? "ring-2 ring-primary shadow-lg" : "shadow-md")}>
@@ -83,7 +93,7 @@ export function CoreStatsSection({
         </div>
         {isProgressStat && maxValue !== undefined && (
           <div className="mt-2">
-            <Progress value={(currentValue / maxValue) * 100 || 0} className="h-3 [&>div]:bg-primary" />
+            <Progress value={(currentValue / maxValue) * 100 || 0} className={cn("h-3", progressColorClass)} />
             <p className="text-xs text-muted-foreground text-right mt-1">{currentValue} / {maxValue}</p>
             { (def.id === 'hp' || def.id === 'sanity') &&
                 <div className="flex items-center gap-2 mt-2">
@@ -106,27 +116,27 @@ export function CoreStatsSection({
   };
 
   const CustomStatPointBuyComponent: React.FC<{
-    statKey: Exclude<StatName, 'maxHp' | 'maxSanity'>;
+    statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>;
     label: string;
     Icon: React.ElementType;
    }> = ({ statKey, label, Icon }) => {
     if (!editableCharacterData || editableCharacterData.id !== 'custom') return null;
 
-    const config = propCustomStatPointBuyConfig[statKey]; // Use the prop here
+    const config = propCustomStatPointBuyConfig[statKey]; 
     const baseValueFromTemplate = editableCharacterData.baseStats[statKey];
     const currentCP = editableCharacterData.characterPoints || 0;
 
-    // This displayedValue calculation needs to reflect the effectiveBaseStats if we want to show arsenal impact.
-    // For point-buy, we typically show the points *invested* by the user. Let's assume effectiveBaseStats IS what should be shown.
+    
     let displayedValue = effectiveBaseStats[statKey] || 0;
     let displayedMaxValue = (statKey === 'hp' ? effectiveBaseStats.maxHp : (statKey === 'sanity' ? effectiveBaseStats.maxSanity : undefined )) || 0;
     
-    // Ensure displayed value is not less than 1 after applying arsenal effects if base is 1
      if (baseValueFromTemplate >= 1) {
         displayedValue = Math.max(1, displayedValue);
         if (statKey === 'hp') displayedMaxValue = Math.max(1, effectiveBaseStats.maxHp || 0);
         if (statKey === 'sanity') displayedMaxValue = Math.max(1, effectiveBaseStats.maxSanity || 0);
     }
+
+    const progressColorClass = (statKey === 'hp' || statKey === 'sanity') && displayedMaxValue !== undefined ? getProgressColorClass(displayedValue, displayedMaxValue) : '[&>div]:bg-primary';
 
 
     return (
@@ -149,7 +159,7 @@ export function CoreStatsSection({
          <p className="text-xs text-muted-foreground">Base Points Invested: {baseValueFromTemplate} / {config.max} | Cost: {config.cost} CP per point</p>
         {(statKey === 'hp' || statKey === 'sanity') && (
           <div className="mt-2">
-            <Progress value={(displayedValue / displayedMaxValue) * 100 || 0} className="h-3 [&>div]:bg-primary" />
+            <Progress value={(displayedValue / displayedMaxValue) * 100 || 0} className={cn("h-3", progressColorClass)} />
             <p className="text-xs text-muted-foreground text-right mt-1">{displayedValue} / {displayedMaxValue}</p>
           </div>
         )}
@@ -165,7 +175,7 @@ export function CoreStatsSection({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {editableCharacterData.id === 'custom' ? (
           <>
-            {(Object.keys(propCustomStatPointBuyConfig) as Array<Exclude<StatName, 'maxHp' | 'maxSanity'>>).map(statKey => {
+            {(Object.keys(propCustomStatPointBuyConfig) as Array<Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>>).map(statKey => {
                 const statDef = statDefinitions.find(s => s.id === statKey);
                 if (!statDef) return null;
                 return (
