@@ -144,7 +144,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     const headers = rows[0] as string[];
     const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
-    console.log('[DEBUG] Sanitized Headers from Arsenal Google Sheet:', sanitizedHeaders);
     
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -305,16 +304,20 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         if (['true', 'yes', '1'].includes(petFlagValue)) {
             item.isPet = true;
 
-            const petNameFromCol = String(row[getColumnIndex(['pet name', 'companion name'])] || '').trim();
-            const abilityNameForPet = String(item.abilityName || '').trim(); 
+            const petNameColumnValue = String(row[getColumnIndex(['pet name', 'companion name'])] || '').trim();
+            const itemAbilityNameValue = String(item.abilityName || '').trim(); // This is the already parsed item.abilityName
 
-            if (petNameFromCol) {
-                item.petName = petNameFromCol;
-            } else if (abilityNameForPet && abilityNameForPet !== `Item ${rowIndex}`) {
-                item.petName = abilityNameForPet;
+            if (petNameColumnValue) {
+                item.petName = petNameColumnValue;
+                console.log(`[Pet Name Parsing] Using "Pet Name" column for '${item.petName}' for item originally named '${itemAbilityNameValue || 'Unnamed Item'}'`);
+            } else if (itemAbilityNameValue && !itemAbilityNameValue.startsWith('Item ') && itemAbilityNameValue !== `Item ${rowIndex}`) {
+                item.petName = itemAbilityNameValue;
+                console.log(`[Pet Name Parsing] Using "Ability Name" ('${item.petName}') as pet name for item originally named '${itemAbilityNameValue}' because "Pet Name" column was empty.`);
             } else {
                 item.petName = 'Companion';
+                console.log(`[Pet Name Parsing] Defaulting to 'Companion' for pet item (original name: '${itemAbilityNameValue || 'Unnamed Item'}') as "Pet Name" and "Ability Name" were empty or placeholder.`);
             }
+
 
             const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '').trim();
             if (petStatsRawString) { 
