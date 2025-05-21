@@ -41,9 +41,12 @@ export function ArsenalTabContent({
 
   const equippedArsenalCard = arsenalCards.find(card => card.id === editableCharacterData.selectedArsenalCardId) || null;
 
-  const renderArsenalItemsByCategory = (category: ArsenalItemCategory, itemsToRender?: ArsenalItem[]) => {
-    const items = itemsToRender || (equippedArsenalCard ? equippedArsenalCard.items.filter(item => item.category?.toUpperCase() === category.toUpperCase()) : []);
-    
+  // Helper function to render items by a specific category
+  const renderArsenalItemsByCategory = (category: ArsenalItemCategory, allArsenalItems: ArsenalItem[]) => {
+    const items = allArsenalItems.filter(
+      item => !item.isPet && item.category?.toUpperCase() === category.toUpperCase()
+    );
+
     if (items.length === 0) {
       return <p className="text-sm text-muted-foreground italic">No {category.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())} items in this arsenal.</p>;
     }
@@ -211,17 +214,17 @@ export function ArsenalTabContent({
           <Separator className="my-3" />
           <div>
             <h4 className="text-md font-semibold mb-2 text-accent">Load Out Items:</h4>
-            {renderArsenalItemsByCategory('LOAD OUT', equippedArsenalCard.items.filter(item => !item.isPet))}
+            {renderArsenalItemsByCategory('LOAD OUT', equippedArsenalCard.items)}
           </div>
            <Separator className="my-3" />
            <div>
             <h4 className="text-md font-semibold mb-2 text-accent">Bonus Items:</h4>
-            {renderArsenalItemsByCategory('BONUS', equippedArsenalCard.items.filter(item => !item.isPet))}
+            {renderArsenalItemsByCategory('BONUS', equippedArsenalCard.items)}
           </div>
            <Separator className="my-3" />
            <div>
             <h4 className="text-md font-semibold mb-2 text-accent">Elite Items:</h4>
-            {renderArsenalItemsByCategory('ELITE', equippedArsenalCard.items.filter(item => !item.isPet))}
+            {renderArsenalItemsByCategory('ELITE', equippedArsenalCard.items)}
           </div>
           <Separator className="my-3" />
           <div className="mt-3 text-xs space-y-0.5">
