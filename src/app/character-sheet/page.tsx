@@ -23,9 +23,10 @@ function parseEffectStatChange(statString: string | undefined): ParsedStatModifi
     'mv': 'mv', 'movement': 'mv',
     'def': 'def', 'defense': 'def',
     'sanity': 'sanity', 'max sanity': 'maxSanity', 'maxsanity': 'maxSanity',
-    'melee attack': 'meleeAttackMod', 'meleeattackmod': 'meleeAttackMod',
+    'melee attack': 'meleeAttackMod', 'meleeattackmod': 'meleeAttackMod', // This maps to arsenal card global mods
     'ranged attack': 'rangedAttackMod', 'rangedattackmod': 'rangedAttackMod',
     'ranged range': 'rangedRangeMod', 'rangedrangemod': 'rangedRangeMod',
+    // Note: 'meleeAttack' for CharacterStats is handled by parsePetStatsString if it's for a pet
   };
 
   for (const change of changes) {
@@ -72,7 +73,7 @@ function parsePetStatsString(statsString?: string): Partial<CharacterStats> | un
     return undefined;
   }
   const stats: Partial<CharacterStats> = {};
-  const statPattern = /(hp|maxhp|max hp|sanity|san|maxsanity|max sanity|mv|movement|def|defense)\s*[:\s]?\s*(\d+)/gi;
+  const statPattern = /(hp|maxhp|max hp|sanity|san|maxsanity|max sanity|mv|movement|def|defense|melee|melee attack|attack|atk)\s*[:\s]?\s*(\d+)/gi;
   let match;
 
   while ((match = statPattern.exec(statsString)) !== null) {
@@ -86,6 +87,7 @@ function parsePetStatsString(statsString?: string): Partial<CharacterStats> | un
       else if (key === 'maxsanity' || key === 'max sanity') { stats.maxSanity = value; }
       else if (key === 'mv' || key === 'movement') { stats.mv = value; }
       else if (key === 'def' || key === 'defense') { stats.def = value; }
+      else if (key === 'melee' || key === 'melee attack' || key === 'attack' || key === 'atk') { stats.meleeAttack = value; }
     }
   }
 
@@ -304,14 +306,12 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         if (['true', 'yes', '1'].includes(petFlagValue)) {
             item.isPet = true;
 
-            const itemAbilityNameValue = String(item.abilityName || '').trim(); // This is the already parsed item.abilityName
+            const itemAbilityNameValue = String(item.abilityName || '').trim(); 
 
             if (itemAbilityNameValue && !itemAbilityNameValue.startsWith('Item ') && itemAbilityNameValue !== `Item ${rowIndex}`) {
                 item.petName = itemAbilityNameValue;
-                // console.log(`[Pet Name Parsing] Using "Ability Name" ('${item.petName}') as pet name.`);
             } else {
-                item.petName = 'Companion'; // Default if Ability Name is empty or a placeholder
-                // console.log(`[Pet Name Parsing] Defaulting to 'Companion' as "Ability Name" was empty or placeholder ('${itemAbilityNameValue || 'Unnamed Item'}').`);
+                item.petName = 'Companion';
             }
 
 
@@ -326,16 +326,19 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
               }
             } else {
                 const effectStatChangeForPet = String(row[getColumnIndex(['effect stat change', 'effectstatchange'])] || '').trim();
-                if (effectStatChangeForPet && !item.parsedStatModifiers?.length) {
-                    console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column. Attempting to parse 'Effect Stat Change': "${effectStatChangeForPet}"`);
+                if (effectStatChangeForPet && !item.parsedStatModifiers?.length) { // Only use if not already parsed as general item mods
                     const parsedFromEffect = parsePetStatsString(effectStatChangeForPet);
                     item.parsedPetCoreStats = parsedFromEffect;
                     if (parsedFromEffect && Object.keys(parsedFromEffect).length > 0) {
                         item.petStats = effectStatChangeForPet; 
+                        console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column. Used 'Effect Stat Change': "${effectStatChangeForPet}"`);
                     } else {
                         item.parsedPetCoreStats = undefined;
                         console.warn(`[Pet Stats Parsing] Failed to parse pet stats from 'Effect Stat Change' for '${item.petName || item.abilityName}'. Parsed object: ${JSON.stringify(parsedFromEffect)}. Trackers may not display.`);
                     }
+                } else {
+                   console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column and no suitable 'Effect Stat Change' to parse. Trackers may not display.`);
+                   item.parsedPetCoreStats = undefined;
                 }
             }
 

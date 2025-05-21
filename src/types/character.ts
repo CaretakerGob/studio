@@ -1,5 +1,5 @@
 
-export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity';
+export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity' | 'meleeAttack'; // Added meleeAttack
 export type SkillName =
   'ath' |
   'cpu' |
@@ -22,6 +22,7 @@ export interface CharacterStats {
   def: number;
   sanity: number;
   maxSanity: number;
+  meleeAttack?: number; // Added meleeAttack
 }
 
 export interface Skills {
@@ -61,7 +62,7 @@ export interface Ability {
   name: string;
   type: AbilityType;
   description: string;
-  cost?: number | undefined; // Changed from string to number
+  cost?: number | undefined;
   range?: string;
   cooldown?: string;
   details?: string;
@@ -90,6 +91,6 @@ export interface Character {
   rangedWeapon?: RangedWeapon;
   characterPoints?: number;
   selectedArsenalCardId?: string | null;
-  savedCooldowns?: Record<string, number>; // Added
-  savedQuantities?: Record<string, number>; // Added
+  savedCooldowns?: Record<string, number>;
+  savedQuantities?: Record<string, number>;
 }
