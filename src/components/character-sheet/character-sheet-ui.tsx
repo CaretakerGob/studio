@@ -8,7 +8,7 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle, CardContent }
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, UserCircle, Swords, Package, Library, BookOpen, PawPrint, UserMinus, UserPlus, Shirt, Shield, Footprints, Sword as MeleeIcon, Brain, Heart } from "lucide-react";
+import { Save, UserCircle, Swords, Package, Library, BookOpen, PawPrint, UserMinus, UserPlus, Shirt, Shield, Footprints, Sword as MeleeIcon, Brain, Heart, Laptop, Star, VenetianMask, HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding } from "lucide-react";
 import type { CharacterStats, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import type { ArsenalCard, ArsenalItem } from '@/types/arsenal';
 import { Badge } from '@/components/ui/badge';
@@ -297,7 +297,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   const [currentPetSanity, setCurrentPetSanity] = useState<number | null>(null);
   const [currentPetMv, setCurrentPetMv] = useState<number | null>(null);
   const [currentPetDef, setCurrentPetDef] = useState<number | null>(null);
-
+  // Pet meleeAttack is displayed via WeaponDisplay, not tracked as currentPetMeleeAttack state
 
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
@@ -438,7 +438,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         setCurrentPetSanity(currentCompanion.parsedPetCoreStats.maxSanity ?? currentCompanion.parsedPetCoreStats.sanity ?? null);
         setCurrentPetMv(currentCompanion.parsedPetCoreStats.mv ?? null);
         setCurrentPetDef(currentCompanion.parsedPetCoreStats.def ?? null);
-        // Melee attack is now handled by WeaponDisplay
     } else {
         setCurrentPetHp(null);
         setCurrentPetSanity(null);
@@ -584,7 +583,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToLoad.avatarSeed = characterToLoad.avatarSeed || defaultTemplate.avatarSeed;
             characterToLoad.savedCooldowns = characterToLoad.savedCooldowns || {}; 
             characterToLoad.savedQuantities = characterToLoad.savedQuantities || {};
-            showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name}.` });
+            // Do not show toast here, let the "Load My Saved Custom" button handle toasts for custom characters
+            if (selectedCharacterId !== 'custom') {
+                 showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name}.` });
+            }
           } else {
             characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
             if (characterToLoad) { 
@@ -592,11 +594,16 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                 characterToLoad.savedCooldowns = {};
                 characterToLoad.savedQuantities = {};
             }
-            showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${characterToLoad?.name}. No saved data found.` });
+             // Do not show toast here for custom characters initially loading the default
+            if (selectedCharacterId !== 'custom') {
+                showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${characterToLoad?.name}. No saved data found.` });
+            }
           }
         } catch (err: any) {
           console.error("Error loading character from Firestore:", err);
-          showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default template.", variant: "destructive" });
+          if (selectedCharacterId !== 'custom') {
+            showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default template.", variant: "destructive" });
+          }
           if (defaultTemplate) {
             characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
              if (characterToLoad) { 
@@ -692,28 +699,57 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     handleStatChange(statName, (editableCharacterData.baseStats[statName] || 0) - 1);
   };
 
- const handlePetStatChange = (statType: 'hp' | 'sanity' | 'mv' | 'def', operation: 'increment' | 'decrement') => {
+ const handlePetStatChange = (statType: 'hp' | 'sanity' | 'mv' | 'def' | 'meleeAttack', operation: 'increment' | 'decrement') => {
     if (!currentCompanion || !currentCompanion.parsedPetCoreStats) return;
     const delta = operation === 'increment' ? 1 : -1;
     const coreStats = currentCompanion.parsedPetCoreStats;
 
+    let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
+    let currentValue: number | null = null;
+    let maxValue: number | undefined = undefined;
+    let baseValue: number | undefined = undefined;
+
+
     switch (statType) {
         case 'hp':
-            const maxHp = coreStats.maxHp ?? 0;
-            setCurrentPetHp(prev => Math.min(Math.max((prev ?? 0) + delta, 0), maxHp));
+            setter = setCurrentPetHp;
+            currentValue = currentPetHp;
+            maxValue = coreStats.maxHp;
             break;
         case 'sanity':
-            const maxSanity = coreStats.maxSanity ?? 0;
-            setCurrentPetSanity(prev => Math.min(Math.max((prev ?? 0) + delta, 0), maxSanity));
+            setter = setCurrentPetSanity;
+            currentValue = currentPetSanity;
+            maxValue = coreStats.maxSanity;
             break;
         case 'mv':
-            const baseMv = coreStats.mv ?? 0; 
-            setCurrentPetMv(prev => Math.min(Math.max((prev ?? 0) + delta, 0), baseMv));
+            setter = setCurrentPetMv;
+            currentValue = currentPetMv;
+            baseValue = coreStats.mv;
             break;
         case 'def':
-            const baseDef = coreStats.def ?? 0; 
-            setCurrentPetDef(prev => Math.min(Math.max((prev ?? 0) + delta, 0), baseDef));
+            setter = setCurrentPetDef;
+            currentValue = currentPetDef;
+            baseValue = coreStats.def;
             break;
+        // Melee Attack is handled by WeaponDisplay now
+        default:
+            return;
+    }
+    
+    if (setter && currentValue !== null) {
+        let newValue = currentValue + delta;
+        if (statType === 'hp' || statType === 'sanity') {
+            newValue = Math.min(Math.max(newValue, 0), maxValue ?? Infinity);
+        } else if (statType === 'mv' || statType === 'def') {
+             if (operation === 'increment') {
+                newValue = Math.min(newValue, baseValue ?? Infinity);
+             } else {
+                newValue = Math.max(newValue, 0);
+             }
+        } else { // meleeAttack handled differently or not at all here
+            newValue = Math.max(newValue, 0);
+        }
+        setter(newValue);
     }
 };
 
@@ -859,9 +895,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         const { cost, ...abilityToAdd } = abilityInfo; 
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability]; 
         const newCharacterPoints = currentCP - abilityCost;
+        showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
-    showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
     setAbilityToAddId(undefined);
   };
 
@@ -1185,11 +1221,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                         <h3 className="text-xl font-semibold mb-3 flex items-center">
                             <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
                         </h3>
-                        
-                        {currentCompanion.petStats && (
-                             <p className="text-sm text-muted-foreground mb-1">Raw Stats: {currentCompanion.petStats}</p>
+                         {currentCompanion.petStats && (
+                             <p className="text-sm text-muted-foreground mb-2">Raw Stats String: {currentCompanion.petStats}</p>
                         )}
-
+                        
                         {currentCompanion.parsedPetCoreStats && (
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-3">
                                 {/* HP Tracker */}
@@ -1360,4 +1395,5 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
+
 
