@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ChangeEvent } from 'react';
@@ -89,11 +90,11 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
     abilities: [
-      { id: 'gob_vital_shot', name: 'Vital Shot', type: 'Action', description: 'Re-rolls 2 missed Attack Dice.', details: 'A4/R5 - PHYS', cooldown: '2 round CD' },
-      { id: 'gob_wounding_strike', name: 'Wounding Strike', type: 'Action', description: 'Bypasses Targets Armor Effect. Damaged targets are WOUNDED for 2 rounds.', details: 'A3/R1' },
-      { id: 'gob_leadership', name: 'Leadership', type: 'Action', description: 'Roll 1 combat dice. Allies within 2 spaces increase their Attack or Defense by 1 for 1 round on a HIT.' },
-      { id: 'gob_quick_draw', name: 'Quick Draw', type: 'Interrupt', description: 'Push target back 1 space for each HIT.', details: 'A3/R3', cooldown: '2 round CD' },
-      { id: 'gob_flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6', maxQuantity: 3 },
+      { id: 'gob_vital_shot', name: 'Vital Shot', type: 'Action', description: 'Re-rolls 2 missed Attack Dice.', details: 'A4/R5 - PHYS', cooldown: '2 round CD', cost: 50 },
+      { id: 'gob_wounding_strike', name: 'Wounding Strike', type: 'Action', description: 'Bypasses Targets Armor Effect. Damaged targets are WOUNDED for 2 rounds.', details: 'A3/R1', cost: 50 },
+      { id: 'gob_leadership', name: 'Leadership', type: 'Action', description: 'Roll 1 combat dice. Allies within 2 spaces increase their Attack or Defense by 1 for 1 round on a HIT.', cost: 50 },
+      { id: 'gob_quick_draw', name: 'Quick Draw', type: 'Interrupt', description: 'Push target back 1 space for each HIT.', details: 'A3/R3', cooldown: '2 round CD', cost: 50 },
+      { id: 'gob_flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6', maxQuantity: 3, cost: 50 },
     ],
     characterPoints: 375,
     selectedArsenalCardId: null,
@@ -108,11 +109,11 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Saber", attack: 3 },
     rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
     abilities: [
-      { id: 'cass_death_knell', name: 'Death Knell', type: 'Action', description: 'Roll 1 additional Attack Dice for each HP Cassandra is below her Max HP.', details: 'A3/R3 - NETHER', cooldown: '3 round CD' },
-      { id: 'cass_anoint_weapon', name: 'Anoint Weapon', type: 'Action', description: 'Targets attacks are now of the ETHER element for 2 rounds.', details: 'R4' },
-      { id: 'cass_enrage', name: 'Enrage', type: 'Passive', description: "When Cassie's HP falls to 3 or less she gains the BERSERK buff." },
-      { id: 'cass_curse_x4', name: 'Curse x4', type: 'Interrupt', description: 'Target is inflicted with Hex for 1 round.', details: 'R4', maxQuantity: 4 },
-      { id: 'cass_healing_light_x4', name: 'Healing Light x4', type: 'Interrupt', description: 'Target regains 1 HP per HIT.', details: 'A3/R4', maxQuantity: 4 },
+      { id: 'cass_death_knell', name: 'Death Knell', type: 'Action', description: 'Roll 1 additional Attack Dice for each HP Cassandra is below her Max HP.', details: 'A3/R3 - NETHER', cooldown: '3 round CD', cost: 50 },
+      { id: 'cass_anoint_weapon', name: 'Anoint Weapon', type: 'Action', description: 'Targets attacks are now of the ETHER element for 2 rounds.', details: 'R4', cost: 50 },
+      { id: 'cass_enrage', name: 'Enrage', type: 'Passive', description: "When Cassie's HP falls to 3 or less she gains the BERSERK buff.", cost: 50 },
+      { id: 'cass_curse_x4', name: 'Curse x4', type: 'Interrupt', description: 'Target is inflicted with Hex for 1 round.', details: 'R4', maxQuantity: 4, cost: 50 },
+      { id: 'cass_healing_light_x4', name: 'Healing Light x4', type: 'Interrupt', description: 'Target regains 1 HP per HIT.', details: 'A3/R4', maxQuantity: 4, cost: 50 },
     ],
     characterPoints: 375,
     selectedArsenalCardId: null,
@@ -127,13 +128,13 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon." },
     abilities: [
-        { id: 'fei_flame_thrower', name: 'Flame Thrower', type: 'Action', description: 'Flamethrower action.', details: 'BEAM - A4/R4 - FIRE', cooldown: '2 round CD' },
-        { id: 'fei_shock_grenade', name: 'Shock Grenade', type: 'Action', description: 'Shock grenade action.', details: 'AOE - A3/R4 - ELEC', cooldown: '2 round CD' },
-        { id: 'fei_tricks_trade_action', name: 'Tricks of the Trade', type: 'Action', description: 'Choose one of the target\'s Abilities to be disabled for 1 round.', details: 'R6' },
-        { id: 'fei_taser_x2', name: 'Taser x2', type: 'Interrupt', description: 'Inflict PARALYZE for 1 round.', details: 'R4', maxQuantity: 2 },
-        { id: 'fei_blind_x3', name: 'Blind x3', type: 'Interrupt', description: 'Target is BLIND for 2 rounds.', details: 'R4', maxQuantity: 3 },
-        { id: 'fei_immobilize_x4', name: 'Immobilize x4', type: 'Interrupt', description: 'IMMOBILIZE value of 6.', details: 'R4', maxQuantity: 4 },
-        { id: 'fei_fanny_pack', name: 'Fanny Pack', type: 'Passive', description: 'Fei can equip 2 Relics or Utility Items without taking up a Gear slot.' },
+        { id: 'fei_flame_thrower', name: 'Flame Thrower', type: 'Action', description: 'Flamethrower action.', details: 'BEAM - A4/R4 - FIRE', cooldown: '2 round CD', cost: 50 },
+        { id: 'fei_shock_grenade', name: 'Shock Grenade', type: 'Action', description: 'Shock grenade action.', details: 'AOE - A3/R4 - ELEC', cooldown: '2 round CD', cost: 50 },
+        { id: 'fei_tricks_trade_action', name: 'Tricks of the Trade', type: 'Action', description: 'Choose one of the target\'s Abilities to be disabled for 1 round.', details: 'R6', cost: 50 },
+        { id: 'fei_taser_x2', name: 'Taser x2', type: 'Interrupt', description: 'Inflict PARALYZE for 1 round.', details: 'R4', maxQuantity: 2, cost: 50 },
+        { id: 'fei_blind_x3', name: 'Blind x3', type: 'Interrupt', description: 'Target is BLIND for 2 rounds.', details: 'R4', maxQuantity: 3, cost: 50 },
+        { id: 'fei_immobilize_x4', name: 'Immobilize x4', type: 'Interrupt', description: 'IMMOBILIZE value of 6.', details: 'R4', maxQuantity: 4, cost: 50 },
+        { id: 'fei_fanny_pack', name: 'Fanny Pack', type: 'Passive', description: 'Fei can equip 2 Relics or Utility Items without taking up a Gear slot.', cost: 50 },
       ],
     characterPoints: 375,
     selectedArsenalCardId: null,
@@ -148,12 +149,12 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Kunai", attack: 3 },
     rangedWeapon: { name: "Kunai", attack: 4, range: 2 },
     abilities: [
-      { id: 'michael_sneak_attack', name: 'Sneak Attack', type: 'Action', description: 'Target can roll max of 1 Defense from this Attack.', details: 'A2/R2' },
-      { id: 'michael_whip_maneuver', name: 'Whip Maneuver', type: 'Action', description: 'Roll 3 combat dice. Move target 1 space for each HIT.', details: 'R3' },
-      { id: 'michael_disarm', name: 'Disarm', type: 'Interrupt', description: 'Target is DISARMED for 1 round.', details: 'R3', cooldown: '2 round CD' },
-      { id: 'michael_morphine_x3', name: 'Morphine x3', type: 'Interrupt', description: 'Target gains a WARD of 2 but loses 1 Sanity.', details: 'R3', maxQuantity: 3 },
-      { id: 'michael_shady', name: 'Shady', type: 'Passive', description: 'Michael gains the STEALTH buff. Critical Hits triggered by Michael inflict 1 BLEED Point on the target.' },
-      { id: 'michael_nimble_fingers', name: 'Nimble Fingers', type: 'Passive', description: 'Michael can use 2 Interrupt Actions per round.' },
+      { id: 'michael_sneak_attack', name: 'Sneak Attack', type: 'Action', description: 'Target can roll max of 1 Defense from this Attack.', details: 'A2/R2', cost: 50 },
+      { id: 'michael_whip_maneuver', name: 'Whip Maneuver', type: 'Action', description: 'Roll 3 combat dice. Move target 1 space for each HIT.', details: 'R3', cost: 50 },
+      { id: 'michael_disarm', name: 'Disarm', type: 'Interrupt', description: 'Target is DISARMED for 1 round.', details: 'R3', cooldown: '2 round CD', cost: 50 },
+      { id: 'michael_morphine_x3', name: 'Morphine x3', type: 'Interrupt', description: 'Target gains a WARD of 2 but loses 1 Sanity.', details: 'R3', maxQuantity: 3, cost: 50 },
+      { id: 'michael_shady', name: 'Shady', type: 'Passive', description: 'Michael gains the STEALTH buff. Critical Hits triggered by Michael inflict 1 BLEED Point on the target.', cost: 50 },
+      { id: 'michael_nimble_fingers', name: 'Nimble Fingers', type: 'Passive', description: 'Michael can use 2 Interrupt Actions per round.', cost: 50 },
     ],
     characterPoints: 375,
     selectedArsenalCardId: null,
@@ -168,11 +169,11 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Martial Arts", attack: 2 },
     rangedWeapon: { name: "M7", attack: 3, range: 3 },
     abilities: [
-      { id: 'tamara_combat_medic', name: 'Combat Medic', type: 'Action', description: 'Target is Healed 1 HP for each HIT rolled.', details: 'A4/R4', cooldown: '2 round CD' },
-      { id: 'tamara_poison', name: 'Poison', type: 'Action', description: 'Target is afflicted with POISON for 2 rounds.', details: 'R3' },
-      { id: 'tamara_potion_of_amplification_x3', name: 'Potion of Amplification x3', type: 'Interrupt', description: 'Place Amplification Cloud on map. See Rules.', details: 'R4 - AOE', maxQuantity: 3 },
-      { id: 'tamara_team_player', name: 'Team Player', type: 'Interrupt', description: 'Friendly target can use any of their Actions as a Free Action.', details: 'R6', cooldown: '2 round CD' },
-      { id: 'tamara_bloody_knuckles', name: 'Bloody Knuckles', type: 'Passive', description: "Using a Melee Attack lowers all of Tammy's cooldowns by 1 round. Tammy is immune to Attacks of Opportunity." },
+      { id: 'tamara_combat_medic', name: 'Combat Medic', type: 'Action', description: 'Target is Healed 1 HP for each HIT rolled.', details: 'A4/R4', cooldown: '2 round CD', cost: 50 },
+      { id: 'tamara_poison', name: 'Poison', type: 'Action', description: 'Target is afflicted with POISON for 2 rounds.', details: 'R3', cost: 50 },
+      { id: 'tamara_potion_of_amplification_x3', name: 'Potion of Amplification x3', type: 'Interrupt', description: 'Place Amplification Cloud on map. See Rules.', details: 'R4 - AOE', maxQuantity: 3, cost: 50 },
+      { id: 'tamara_team_player', name: 'Team Player', type: 'Interrupt', description: 'Friendly target can use any of their Actions as a Free Action.', details: 'R6', cooldown: '2 round CD', cost: 50 },
+      { id: 'tamara_bloody_knuckles', name: 'Bloody Knuckles', type: 'Passive', description: "Using a Melee Attack lowers all of Tammy's cooldowns by 1 round. Tammy is immune to Attacks of Opportunity.", cost: 50 },
     ],
     characterPoints: 375,
     selectedArsenalCardId: null,
@@ -187,11 +188,11 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Katana", attack: 4 },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [
-      { id: 'trish_clean_cut', name: 'Clean Cut', type: 'Action', details: 'R1', description: 'Inflicts 4 damage, cannot Critically Hit or be used with Double Attack.'},
-      { id: 'trish_counter_strike_x2', name: 'Counter Strike x2', type: 'Interrupt', description: 'Reverse melee attack targetting Trish back to the attacker.', maxQuantity: 2},
-      { id: 'trish_deflection_x2', name: 'Deflection x2', type: 'Interrupt', description: 'Negate Ranged Attack targeting Trish or an adjacent ally.', maxQuantity: 2},
-      { id: 'trish_double_attack', name: 'Double Attack', type: 'Passive', description: 'If Trish has not taken a Move Action this round she can make a second Melee Attack.'},
-      { id: 'trish_iron_will', name: 'Iron Will', type: 'Passive', description: 'Everytime Trish inflicts damage she can restore the use of 1 of her Interrupts by 1. This cannot exceed initial count.'},
+      { id: 'trish_clean_cut', name: 'Clean Cut', type: 'Action', details: 'R1', description: 'Inflicts 4 damage, cannot Critically Hit or be used with Double Attack.', cost: 50},
+      { id: 'trish_counter_strike_x2', name: 'Counter Strike x2', type: 'Interrupt', description: 'Reverse melee attack targetting Trish back to the attacker.', maxQuantity: 2, cost: 50},
+      { id: 'trish_deflection_x2', name: 'Deflection x2', type: 'Interrupt', description: 'Negate Ranged Attack targeting Trish or an adjacent ally.', maxQuantity: 2, cost: 50},
+      { id: 'trish_double_attack', name: 'Double Attack', type: 'Passive', description: 'If Trish has not taken a Move Action this round she can make a second Melee Attack.', cost: 50},
+      { id: 'trish_iron_will', name: 'Iron Will', type: 'Passive', description: 'Everytime Trish inflicts damage she can restore the use of 1 of her Interrupts by 1. This cannot exceed initial count.', cost: 50},
     ],
     characterPoints: 375,
     selectedArsenalCardId: null,
@@ -206,12 +207,12 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Kukri", attack: 4 },
     rangedWeapon: { name: "Outlaw .44", attack: 3, range: 3 },
     abilities: [
-      { id: 'blake_mark_target', name: 'Mark Target', type: 'Action', details: 'R8', description: 'Target is MARKED for 1 round.'},
-      { id: 'blake_restock', name: 'Restock', type: 'Action', description: "Restock one of Blake's Interrupts by 1. Cannot exceed initial count."},
-      { id: 'blake_shotgun_x2', name: 'Shotgun x2', type: 'Interrupt', details: 'BEAM - A4/R3 - PHYS', description: 'Interrupt Attack.', maxQuantity: 2},
-      { id: 'blake_barricade_x1', name: 'Barricade x1', type: 'Interrupt', details: 'R2', description: 'Any allies adjacent of the Barricade gain the COVER Buff for 2 rounds.', maxQuantity: 1},
-      { id: 'blake_tricks_trade_x1', name: 'Tricks of the Trade x1', type: 'Interrupt', details: 'R4', description: 'Inflict TRICKS OF THE TRADE for 1 round.', maxQuantity: 1},
-      { id: 'blake_multi_attack', name: 'Multi-Attack', type: 'Passive', description: 'Re-roll 1 missed Attack dice. Max once per round.'},
+      { id: 'blake_mark_target', name: 'Mark Target', type: 'Action', details: 'R8', description: 'Target is MARKED for 1 round.', cost: 50},
+      { id: 'blake_restock', name: 'Restock', type: 'Action', description: "Restock one of Blake's Interrupts by 1. Cannot exceed initial count.", cost: 50},
+      { id: 'blake_shotgun_x2', name: 'Shotgun x2', type: 'Interrupt', details: 'BEAM - A4/R3 - PHYS', description: 'Interrupt Attack.', maxQuantity: 2, cost: 50},
+      { id: 'blake_barricade_x1', name: 'Barricade x1', type: 'Interrupt', details: 'R2', description: 'Any allies adjacent of the Barricade gain the COVER Buff for 2 rounds.', maxQuantity: 1, cost: 50},
+      { id: 'blake_tricks_trade_x1', name: 'Tricks of the Trade x1', type: 'Interrupt', details: 'R4', description: 'Inflict TRICKS OF THE TRADE for 1 round.', maxQuantity: 1, cost: 50},
+      { id: 'blake_multi_attack', name: 'Multi-Attack', type: 'Passive', description: 'Re-roll 1 missed Attack dice. Max once per round.', cost: 50},
     ],
     characterPoints: 375,
     selectedArsenalCardId: null,
@@ -226,12 +227,12 @@ const charactersData: Character[] = [
     meleeWeapon: { name: "Mace", attack: 3 },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [
-      { id: 'walter_wild_swing', name: 'Wild Swing', type: 'Action', details: 'A4/R1- CLEAVE', description: 'CLEAVE. 1 round CD.', cooldown: '1 round CD'},
-      { id: 'walter_swap_out', name: 'Swap Out', type: 'Action', description: 'Walter swaps between Arsenals.'},
-      { id: 'walter_blow_for_blow', name: 'Blow for Blow', type: 'Interrupt', details: 'R1', description: 'Walter Lowers the targets Defense by 1 for 1 round. 2 round CD.', cooldown: '2 round CD'},
-      { id: 'walter_intervene_x4', name: 'Intervene x4', type: 'Interrupt', details: 'R4', description: 'Walter takes space of another unit within range. Unit is moved to an adjacent open space.', maxQuantity: 4},
-      { id: 'walter_parry', name: 'Parry', type: 'Passive', description: 'Double Swords count as a block. Does not count for Perfect Defense. Allies adjacent to Walter also benefit from Parry.'},
-      { id: 'walter_load_out', name: 'Load Out', type: 'Passive', description: 'Walter can store 1 backup Arsenal that must be picked at the start of the Investigation.'},
+      { id: 'walter_wild_swing', name: 'Wild Swing', type: 'Action', details: 'A4/R1- CLEAVE', description: 'CLEAVE. 1 round CD.', cooldown: '1 round CD', cost: 50},
+      { id: 'walter_swap_out', name: 'Swap Out', type: 'Action', description: 'Walter swaps between Arsenals.', cost: 50},
+      { id: 'walter_blow_for_blow', name: 'Blow for Blow', type: 'Interrupt', details: 'R1', description: 'Walter Lowers the targets Defense by 1 for 1 round. 2 round CD.', cooldown: '2 round CD', cost: 50},
+      { id: 'walter_intervene_x4', name: 'Intervene x4', type: 'Interrupt', details: 'R4', description: 'Walter takes space of another unit within range. Unit is moved to an adjacent open space.', maxQuantity: 4, cost: 50},
+      { id: 'walter_parry', name: 'Parry', type: 'Passive', description: 'Double Swords count as a block. Does not count for Perfect Defense. Allies adjacent to Walter also benefit from Parry.', cost: 50},
+      { id: 'walter_load_out', name: 'Load Out', type: 'Passive', description: 'Walter can store 1 backup Arsenal that must be picked at the start of the Investigation.', cost: 50},
     ],
     characterPoints: 375,
     selectedArsenalCardId: null,
@@ -243,7 +244,7 @@ type AbilityWithCost = Ability & { cost: number };
 const allUniqueAbilities: AbilityWithCost[] = (() => {
   const abilitiesMap = new Map<string, AbilityWithCost>();
   charactersData.forEach(character => {
-    if (character.id === 'custom') return; // Skip custom character for populating unique abilities
+    if (character.id === 'custom') return;
     character.abilities.forEach(ability => {
       if (!abilitiesMap.has(ability.id)) {
         abilitiesMap.set(ability.id, { ...ability, cost: ability.cost ?? 50 });
@@ -347,7 +348,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.parsedWeaponStats?.attack !== undefined)) &&
+            !item.isPet && // Exclude pet items
+            (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT') &&
             item.parsedWeaponStats?.attack !== undefined &&
             !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
         );
@@ -363,7 +365,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     if (equippedArsenalCard?.meleeAttackMod) {
         weaponToDisplay.attack = (weaponToDisplay.attack || 0) + equippedArsenalCard.meleeAttackMod;
     }
-    if (weaponToDisplay.name === "Fists" && weaponToDisplay.attack === 1 && !editableCharacterData?.meleeWeapon?.name && !equippedArsenalCard?.meleeAttackMod && !equippedArsenalCard?.items.some(i => ((i.isFlaggedAsWeapon || i.category?.toUpperCase() === 'LOAD OUT') && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)))) {
+    if (weaponToDisplay.name === "Fists" && weaponToDisplay.attack === 1 && !editableCharacterData?.meleeWeapon?.name && !equippedArsenalCard?.meleeAttackMod && !equippedArsenalCard?.items.some(i => !i.isPet && ((i.isFlaggedAsWeapon || i.category?.toUpperCase() === 'LOAD OUT') && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)))) {
         return undefined;
     }
 
@@ -377,7 +379,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.parsedWeaponStats?.attack !== undefined)) &&
+             !item.isPet && // Exclude pet items
+             (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT') &&
              item.parsedWeaponStats?.attack !== undefined &&
              (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
           );
@@ -395,7 +398,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
           weaponToDisplay.attack = (weaponToDisplay.attack || 0) + (equippedArsenalCard.rangedAttackMod || 0);
           weaponToDisplay.range = (weaponToDisplay.range || 0) + (equippedArsenalCard.rangedRangeMod || 0);
       }
-    if (weaponToDisplay.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 && !editableCharacterData?.rangedWeapon?.name && !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod && !equippedArsenalCard?.items.some(i => ((i.isFlaggedAsWeapon || i.category?.toUpperCase() === 'LOAD OUT') && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)))) {
+    if (weaponToDisplay.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 && !editableCharacterData?.rangedWeapon?.name && !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod && !equippedArsenalCard?.items.some(i => !i.isPet && ((i.isFlaggedAsWeapon || i.category?.toUpperCase() === 'LOAD OUT') && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)))) {
       return undefined;
     }
 
@@ -499,20 +502,15 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
               displayLabel = `${templateChar.name} (Saved)`;
               finalName = savedUserVersion.name || templateChar.name;
           }
-      } else if (templateChar.id === 'custom' && editableCharacterData?.id === 'custom' && editableCharacterData.name !== 'Custom Character') {
-          // This case is tricky because characterDropdownOptions is global,
-          // but editableCharacterData.name is specific to the current view.
-          // For the dropdown itself, we should probably still show the template or saved name.
-          // The CharacterHeader component handles displaying the *current* editable name.
       }
       
       return {
         id: templateChar.id,
-        name: finalName, // This will be the name shown if loaded
-        displayNameInDropdown: displayLabel, // This is purely for the dropdown text
+        name: finalName,
+        displayNameInDropdown: displayLabel,
       };
     }).sort((a, b) => a.displayNameInDropdown.localeCompare(b.displayNameInDropdown));
-  }, [userSavedCharacters, charactersData]); // Removed editableCharacterData from here
+  }, [userSavedCharacters]);
 
  useEffect(() => {
     const loadCharacterData = async () => {
@@ -528,20 +526,18 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
-        // Always load the default 'Custom Character' template first
         characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
         if (characterToLoad) {
-            characterToLoad.name = defaultTemplate?.name || 'Custom Character'; // Ensure it's template name
+            characterToLoad.name = defaultTemplate?.name || 'Custom Character';
             characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
             characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
             characterToLoad.abilities = defaultTemplate?.abilities ? [...defaultTemplate.abilities] : [];
             characterToLoad.characterPoints = defaultTemplate?.characterPoints === undefined ? 375 : defaultTemplate.characterPoints;
             characterToLoad.selectedArsenalCardId = defaultTemplate?.selectedArsenalCardId || null;
-             // Ensure savedCooldowns/Quantities are not loaded from template
             characterToLoad.savedCooldowns = {};
             characterToLoad.savedQuantities = {};
         }
-        showToastHelper({ title: "Template Loaded", description: `Loaded default template for ${characterToLoad?.name}. Use 'Load My Saved Custom' to get your version.` });
+        // showToastHelper({ title: "Template Loaded", description: `Loaded default template for ${characterToLoad?.name}. Use 'Load My Saved Custom' to get your version.` });
 
       } else if (currentUser && auth.currentUser && defaultTemplate) {
         try {
@@ -550,7 +546,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
           if (docSnap.exists()) {
             characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
-            // Ensure all default fields are present if missing from saved data
             characterToLoad.name = characterToLoad.name || defaultTemplate.name;
             characterToLoad.baseStats = characterToLoad.baseStats || defaultTemplate.baseStats;
             characterToLoad.skills = characterToLoad.skills || defaultTemplate.skills;
@@ -568,7 +563,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
             if (characterToLoad) {
                 characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
-                characterToLoad.savedCooldowns = {}; // Ensure fresh start
+                characterToLoad.savedCooldowns = {}; 
                 characterToLoad.savedQuantities = {};
             }
             showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${characterToLoad?.name}. No saved data found.` });
@@ -580,7 +575,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
              if (characterToLoad) {
                 characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
-                characterToLoad.savedCooldowns = {}; // Ensure fresh start
+                characterToLoad.savedCooldowns = {}; 
                 characterToLoad.savedQuantities = {};
             }
           }
@@ -589,13 +584,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
          if (characterToLoad) {
             characterToLoad.selectedArsenalCardId = characterToLoad.selectedArsenalCardId || null;
-            characterToLoad.savedCooldowns = {}; // Ensure fresh start
+            characterToLoad.savedCooldowns = {};
             characterToLoad.savedQuantities = {};
         }
-      }
-
-      if (characterToLoad && !characterToLoad.skills) { // Should be redundant now
-        characterToLoad.skills = { ...initialSkills };
       }
       
       if (characterToLoad) {
@@ -733,7 +724,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const currentVal = editableCharacterData.baseStats[statKey];
     const currentPoints = editableCharacterData.characterPoints || 0;
 
-    if (currentVal <= 1) { // Check if current value is already at the minimum of 1
+    if (currentVal <= 1) {
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -801,7 +792,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToSet.characterPoints = charactersData.find(c => c.id === 'custom')?.characterPoints || 375;
         }
         characterToSet.selectedArsenalCardId = null;
-         // Clear saved cooldowns and quantities on reset
         characterToSet.savedCooldowns = {};
         characterToSet.savedQuantities = {};
         setEditableCharacterData(characterToSet);
@@ -824,23 +814,22 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     }
 
     const currentCP = editableCharacterData.characterPoints || 0;
-    const abilityCost = abilityInfo.cost ?? 0; // Ensure cost is a number
+    const abilityCost = abilityInfo.cost ?? 0;
+    const abilityNameForToast = abilityInfo.name;
 
     if (currentCP < abilityCost) {
         showToastHelper({ title: "Not Enough CP", description: `You need ${abilityCost} CP to add ${abilityInfo.name}. You have ${currentCP}.`, variant: "destructive" });
         return;
     }
     
-    const abilityNameForToast = abilityInfo.name; // Store for use in setTimeout
-
     setEditableCharacterData(prevData => {
         if (!prevData) return null;
-        const { cost, ...abilityToAdd } = abilityInfo; // Destructure cost out
-        const newAbilities = [...prevData.abilities, abilityToAdd as Ability]; // Add ability without cost prop
+        const { cost, ...abilityToAdd } = abilityInfo; 
+        const newAbilities = [...prevData.abilities, abilityToAdd as Ability]; 
         const newCharacterPoints = currentCP - abilityCost;
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
-     showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
+    showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
     setAbilityToAddId(undefined);
   };
 
@@ -1013,7 +1002,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
         const freshDefault = JSON.parse(JSON.stringify(defaultCustomTemplate));
 
-        // Merge saved data with defaults, prioritizing saved data
         savedData.name = savedData.name || freshDefault.name;
         savedData.baseStats = { ...freshDefault.baseStats, ...savedData.baseStats };
         savedData.skills = { ...freshDefault.skills, ...savedData.skills };
@@ -1024,10 +1012,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         savedData.rangedWeapon = savedData.rangedWeapon || freshDefault.rangedWeapon;
         savedData.imageUrl = savedData.imageUrl || freshDefault.imageUrl;
         savedData.avatarSeed = savedData.avatarSeed || freshDefault.avatarSeed;
-        savedData.savedCooldowns = savedData.savedCooldowns || {}; // Important
-        savedData.savedQuantities = savedData.savedQuantities || {}; // Important
+        savedData.savedCooldowns = savedData.savedCooldowns || {}; 
+        savedData.savedQuantities = savedData.savedQuantities || {};
 
-        setEditableCharacterData(JSON.parse(JSON.stringify(savedData))); // Deep copy to ensure new reference
+        setEditableCharacterData(JSON.parse(JSON.stringify(savedData))); 
         showToastHelper({ title: "Character Loaded", description: `Loaded your saved custom character: ${savedData.name}.` });
       } else {
         showToastHelper({ title: "Not Found", description: "No saved custom character found. Loaded default template.", variant: "destructive" });
@@ -1248,10 +1236,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                     arsenalCards={arsenalCards}
                     handleArsenalCardChange={handleArsenalCardChange}
                     currentCompanion={currentCompanion}
-                    currentPetHp={currentPetHp} // Pass currentPetHp
-                    currentPetSanity={currentPetSanity} // Pass currentPetSanity
-                    handleIncrementPetStat={handleIncrementPetStat} // Pass handler
-                    handleDecrementPetStat={handleDecrementPetStat} // Pass handler
+                    currentPetHp={currentPetHp} 
+                    currentPetSanity={currentPetSanity}
+                    handleIncrementPetStat={handleIncrementPetStat}
+                    handleDecrementPetStat={handleDecrementPetStat}
                     criticalArsenalError={criticalArsenalError}
                 />
             </TabsContent>
