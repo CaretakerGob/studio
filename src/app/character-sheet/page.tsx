@@ -72,26 +72,24 @@ function parsePetStatsString(statsString?: string): Partial<CharacterStats> | un
     return undefined;
   }
   const stats: Partial<CharacterStats> = {};
-  // Split by common delimiters: comma, semicolon, or one or more spaces NOT followed by a colon (to keep "Max HP: 10" together)
-  const statEntries = statsString.split(/\s*[,;]\s*(?![^:]*:)|(?<!:)\s+(?![^:]*:)/).map(s => s.trim()).filter(Boolean);
+  // Regex to find stat key-value pairs, allowing for different separators (colon or space) and optional commas/semicolons.
+  // It looks for patterns like "HP:10", "HP 10", "MV : 5", "DEF  2" etc.
+  const statPattern = /(hp|maxhp|max hp|sanity|san|maxsanity|max sanity|mv|movement|def|defense)\s*[:\s]?\s*(\d+)/gi;
+  let match;
 
-  statEntries.forEach(entry => {
-    const parts = entry.split(':');
-    if (parts.length === 2) {
-      let key = parts[0].trim().toLowerCase();
-      const value = parseInt(parts[1].trim(), 10);
+  while ((match = statPattern.exec(statsString)) !== null) {
+    let key = match[1].trim().toLowerCase();
+    const value = parseInt(match[2].trim(), 10);
 
-      if (!isNaN(value)) {
-        // More robust key matching
-        if (key === 'hp') { stats.hp = value; }
-        else if (key === 'maxhp' || key === 'max hp') { stats.maxHp = value; }
-        else if (key === 'sanity' || key === 'san') { stats.sanity = value; }
-        else if (key === 'maxsanity' || key === 'max sanity') { stats.maxSanity = value; }
-        else if (key === 'mv' || key === 'movement') { stats.mv = value; }
-        else if (key === 'def' || key === 'defense') { stats.def = value; }
-      }
+    if (!isNaN(value)) {
+      if (key === 'hp') { stats.hp = value; }
+      else if (key === 'maxhp' || key === 'max hp') { stats.maxHp = value; }
+      else if (key === 'sanity' || key === 'san') { stats.sanity = value; }
+      else if (key === 'maxsanity' || key === 'max sanity') { stats.maxSanity = value; }
+      else if (key === 'mv' || key === 'movement') { stats.mv = value; }
+      else if (key === 'def' || key === 'defense') { stats.def = value; }
     }
-  });
+  }
 
   // Default maxHp to hp if hp is defined and maxHp isn't
   if (stats.hp !== undefined && stats.maxHp === undefined) {
@@ -150,6 +148,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     const headers = rows[0] as string[];
     const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
+    console.log('[DEBUG] Sanitized Headers from Arsenal Google Sheet:', sanitizedHeaders);
     
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -325,15 +324,20 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             if (petStatsRawString) { 
               item.petStats = petStatsRawString;
               item.parsedPetCoreStats = parsePetStatsString(item.petStats);
+              if (!item.parsedPetCoreStats || Object.keys(item.parsedPetCoreStats).length === 0) {
+                console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has a 'Pet Stats' column, but parsing failed or yielded no stats. Raw string: "${item.petStats}". Trackers may not display.`);
+                item.parsedPetCoreStats = undefined; 
+              }
             } else {
-                // Fallback to effect stat change if pet stats is empty
                 const effectStatChangeForPet = String(row[getColumnIndex(['effect stat change', 'effectstatchange'])] || '').trim();
                 if (effectStatChangeForPet && !item.parsedStatModifiers?.length) {
+                    console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column. Attempting to parse 'Effect Stat Change': "${effectStatChangeForPet}"`);
                     item.parsedPetCoreStats = parsePetStatsString(effectStatChangeForPet);
                     if (item.parsedPetCoreStats && Object.keys(item.parsedPetCoreStats).length > 0) {
-                        item.petStats = effectStatChangeForPet; // Store the string we used
+                        item.petStats = effectStatChangeForPet; 
                     } else {
                         item.parsedPetCoreStats = undefined;
+                        console.warn(`[Pet Stats Parsing] Failed to parse pet stats from 'Effect Stat Change' for '${item.petName || item.abilityName}'. Trackers may not display.`);
                     }
                 }
             }
@@ -383,3 +387,4 @@ export default async function CharacterSheetPage() {
     </div>
   );
 }
+
