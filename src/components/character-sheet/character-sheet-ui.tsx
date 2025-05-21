@@ -297,7 +297,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   const [currentPetSanity, setCurrentPetSanity] = useState<number | null>(null);
   const [currentPetMv, setCurrentPetMv] = useState<number | null>(null);
   const [currentPetDef, setCurrentPetDef] = useState<number | null>(null);
-  // Pet meleeAttack is displayed via WeaponDisplay, not tracked as currentPetMeleeAttack state
 
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
@@ -370,10 +369,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            !item.isPet && // Ensure it's not a pet's attack
+            !item.isPet && 
             (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
             item.parsedWeaponStats?.attack !== undefined &&
-            !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) // Ensure it's melee (no range or range is 0)
+            !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
         );
 
         if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
@@ -401,10 +400,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-             !item.isPet && // Ensure it's not a pet's attack
+             !item.isPet && 
              (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
              item.parsedWeaponStats?.attack !== undefined &&
-             (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) // Ensure it has range > 0
+             (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
           );
 
           if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
@@ -553,17 +552,19 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
-        characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
-        if (characterToLoad) {
-            characterToLoad.name = defaultTemplate?.name || 'Custom Character'; 
-            characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
-            characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
-            characterToLoad.abilities = []; 
-            characterToLoad.characterPoints = defaultTemplate?.characterPoints === undefined ? 375 : defaultTemplate.characterPoints;
-            characterToLoad.selectedArsenalCardId = null; 
-            characterToLoad.savedCooldowns = {};
-            characterToLoad.savedQuantities = {};
-        }
+          // Always load the default custom template initially
+          characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
+          if (characterToLoad) {
+              characterToLoad.name = defaultTemplate?.name || 'Custom Character'; 
+              characterToLoad.baseStats = { ...(defaultTemplate?.baseStats || initialCustomCharacterStats) };
+              characterToLoad.skills = { ...(defaultTemplate?.skills || initialSkills) };
+              characterToLoad.abilities = []; 
+              characterToLoad.characterPoints = defaultTemplate?.characterPoints === undefined ? 375 : defaultTemplate.characterPoints;
+              characterToLoad.selectedArsenalCardId = null; 
+              characterToLoad.savedCooldowns = {};
+              characterToLoad.savedQuantities = {};
+          }
+          // No toast for loading default custom, as it's the starting point.
       } else if (currentUser && auth.currentUser && defaultTemplate) {
         try {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
@@ -571,6 +572,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
           if (docSnap.exists()) {
             characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
+            // Ensure all properties from default template are present if missing from saved data
             characterToLoad.name = characterToLoad.name || defaultTemplate.name;
             characterToLoad.baseStats = characterToLoad.baseStats || defaultTemplate.baseStats;
             characterToLoad.skills = characterToLoad.skills || defaultTemplate.skills;
@@ -583,10 +585,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToLoad.avatarSeed = characterToLoad.avatarSeed || defaultTemplate.avatarSeed;
             characterToLoad.savedCooldowns = characterToLoad.savedCooldowns || {}; 
             characterToLoad.savedQuantities = characterToLoad.savedQuantities || {};
-            // Do not show toast here, let the "Load My Saved Custom" button handle toasts for custom characters
-            if (selectedCharacterId !== 'custom') {
-                 showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name}.` });
-            }
+            showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name}.` });
           } else {
             characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
             if (characterToLoad) { 
@@ -594,16 +593,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                 characterToLoad.savedCooldowns = {};
                 characterToLoad.savedQuantities = {};
             }
-             // Do not show toast here for custom characters initially loading the default
-            if (selectedCharacterId !== 'custom') {
-                showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${characterToLoad?.name}. No saved data found.` });
-            }
+            showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${characterToLoad?.name}. No saved data found.` });
           }
         } catch (err: any) {
           console.error("Error loading character from Firestore:", err);
-          if (selectedCharacterId !== 'custom') {
-            showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default template.", variant: "destructive" });
-          }
+          showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default template.", variant: "destructive" });
           if (defaultTemplate) {
             characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
              if (characterToLoad) { 
@@ -613,7 +607,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             }
           }
         }
-      } else if (defaultTemplate) {
+      } else if (defaultTemplate) { // Not custom, and no user logged in
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
          if (characterToLoad) { 
             characterToLoad.selectedArsenalCardId = null;
@@ -731,7 +725,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             currentValue = currentPetDef;
             baseValue = coreStats.def;
             break;
-        // Melee Attack is handled by WeaponDisplay now
+        case 'meleeAttack': 
+            // Melee attack is now handled by WeaponDisplay and not directly tracked with +/-
+            return; 
         default:
             return;
     }
@@ -742,13 +738,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             newValue = Math.min(Math.max(newValue, 0), maxValue ?? Infinity);
         } else if (statType === 'mv' || statType === 'def') {
              if (operation === 'increment') {
-                newValue = Math.min(newValue, baseValue ?? Infinity);
+                newValue = Math.min(newValue, baseValue ?? Infinity); // Can't go above base for MV/DEF via buttons
              } else {
-                newValue = Math.max(newValue, 0);
+                newValue = Math.max(newValue, 0); // Can't go below 0
              }
-        } else { // meleeAttack handled differently or not at all here
-            newValue = Math.max(newValue, 0);
-        }
+        } 
         setter(newValue);
     }
 };
@@ -1132,6 +1126,16 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
   const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
 
+  const getPetHpBarColorClass = () => {
+    if (currentPetHp === null || !currentCompanion?.parsedPetCoreStats?.maxHp) {
+      return '[&>div]:bg-gray-400'; // Default or indeterminate color
+    }
+    const percentage = (currentPetHp / currentCompanion.parsedPetCoreStats.maxHp) * 100;
+    if (percentage <= 33) return '[&>div]:bg-red-500';
+    if (percentage <= 66) return '[&>div]:bg-yellow-500';
+    return '[&>div]:bg-green-500';
+  };
+
 
   if (authLoading || isLoadingCharacter || !editableCharacterData) {
     return (
@@ -1143,7 +1147,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   }
 
   let petMeleeWeaponForDisplay: Weapon | undefined = undefined;
-  if (currentCompanion?.parsedPetCoreStats?.meleeAttack && currentCompanion.parsedPetCoreStats.meleeAttack > 0) {
+  if (currentCompanion?.parsedPetCoreStats?.meleeAttack !== undefined && currentCompanion.parsedPetCoreStats.meleeAttack > 0) {
     petMeleeWeaponForDisplay = {
       name: currentCompanion.petName ? `${currentCompanion.petName}'s Attack` : "Natural Attack",
       attack: currentCompanion.parsedPetCoreStats.meleeAttack,
@@ -1222,7 +1226,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                             <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
                         </h3>
                          {currentCompanion.petStats && (
-                             <p className="text-sm text-muted-foreground mb-2">Raw Stats String: {currentCompanion.petStats}</p>
+                             <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats}</p>
                         )}
                         
                         {currentCompanion.parsedPetCoreStats && (
@@ -1244,7 +1248,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                                 </Button>
                                             </div>
                                         </div>
-                                        <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className="h-1.5 [&>div]:bg-red-500" />
+                                        <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={`h-1.5 ${getPetHpBarColorClass()}`} />
                                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
                                     </div>
                                 )}
@@ -1397,3 +1401,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 }
 
 
+
+
+    
