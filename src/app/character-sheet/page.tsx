@@ -68,29 +68,39 @@ function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range
 }
 
 function parsePetStatsString(statsString?: string): Partial<CharacterStats> | undefined {
-  if (!statsString || typeof statsString !== 'string' || statsString.trim() === '') return undefined;
-  
+  if (!statsString || typeof statsString !== 'string' || statsString.trim() === '') {
+    return undefined;
+  }
   const stats: Partial<CharacterStats> = {};
-  const statPairs = statsString.split(/\s+|,|;/).map(s => s.trim()).filter(Boolean);
+  // Split by common delimiters: comma, semicolon, or one or more spaces NOT followed by a colon (to keep "Max HP: 10" together)
+  const statEntries = statsString.split(/\s*[,;]\s*(?![^:]*:)|(?<!:)\s+(?![^:]*:)/).map(s => s.trim()).filter(Boolean);
 
-  statPairs.forEach(pair => {
-    const parts = pair.split(':');
+  statEntries.forEach(entry => {
+    const parts = entry.split(':');
     if (parts.length === 2) {
-      const key = parts[0].trim().toLowerCase();
+      let key = parts[0].trim().toLowerCase();
       const value = parseInt(parts[1].trim(), 10);
+
       if (!isNaN(value)) {
-        if (key === 'hp') { stats.hp = value; if (stats.maxHp === undefined) stats.maxHp = value; }
-        else if (key === 'maxhp' || key === 'max hp') stats.maxHp = value;
-        else if (key === 'sanity' || key === 'san') { stats.sanity = value; if (stats.maxSanity === undefined) stats.maxSanity = value; }
-        else if (key === 'maxsanity' || key === 'max sanity') stats.maxSanity = value;
-        else if (key === 'mv' || key === 'movement') stats.mv = value;
-        else if (key === 'def' || key === 'defense') stats.def = value;
+        // More robust key matching
+        if (key === 'hp') { stats.hp = value; }
+        else if (key === 'maxhp' || key === 'max hp') { stats.maxHp = value; }
+        else if (key === 'sanity' || key === 'san') { stats.sanity = value; }
+        else if (key === 'maxsanity' || key === 'max sanity') { stats.maxSanity = value; }
+        else if (key === 'mv' || key === 'movement') { stats.mv = value; }
+        else if (key === 'def' || key === 'defense') { stats.def = value; }
       }
     }
   });
 
-  if (stats.hp !== undefined && stats.maxHp === undefined) stats.maxHp = stats.hp;
-  if (stats.sanity !== undefined && stats.maxSanity === undefined) stats.maxSanity = stats.sanity;
+  // Default maxHp to hp if hp is defined and maxHp isn't
+  if (stats.hp !== undefined && stats.maxHp === undefined) {
+    stats.maxHp = stats.hp;
+  }
+  // Default maxSanity to sanity if sanity is defined and maxSanity isn't
+  if (stats.sanity !== undefined && stats.maxSanity === undefined) {
+    stats.maxSanity = stats.sanity;
+  }
   
   return Object.keys(stats).length > 0 ? stats : undefined;
 }
@@ -315,7 +325,19 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             if (petStatsRawString) { 
               item.petStats = petStatsRawString;
               item.parsedPetCoreStats = parsePetStatsString(item.petStats);
+            } else {
+                // Fallback to effect stat change if pet stats is empty
+                const effectStatChangeForPet = String(row[getColumnIndex(['effect stat change', 'effectstatchange'])] || '').trim();
+                if (effectStatChangeForPet && !item.parsedStatModifiers?.length) {
+                    item.parsedPetCoreStats = parsePetStatsString(effectStatChangeForPet);
+                    if (item.parsedPetCoreStats && Object.keys(item.parsedPetCoreStats).length > 0) {
+                        item.petStats = effectStatChangeForPet; // Store the string we used
+                    } else {
+                        item.parsedPetCoreStats = undefined;
+                    }
+                }
             }
+
 
             const petAbilitiesColumnIndex = getColumnIndex(['pet abilities', 'companion abilities']);
             if (petAbilitiesColumnIndex !== -1) {
@@ -328,8 +350,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const arsenal = arsenalsMap.get(arsenalId);
       if (arsenal) {
         const isPlaceholderName = item.abilityName === `Item ${rowIndex}`;
-        // An item is meaningful if it has a non-placeholder name, or is a pet, or is a weapon,
-        // or has a category, or has a description, or has an effect.
         const isMeaningfulItem = !isPlaceholderName ||
                                  item.isPet ||
                                  item.isFlaggedAsWeapon ||
@@ -339,7 +359,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         
         if (isMeaningfulItem) {
           if (item.isPet && isPlaceholderName && !item.petName) {
-            // Ensure pets get a default name if none explicitly provided and abilityName is placeholder
             item.petName = 'Companion'; 
           }
           arsenal.items.push(item as ArsenalItem);

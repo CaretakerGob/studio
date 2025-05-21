@@ -120,96 +120,19 @@ export function ArsenalTabContent({
           <CardTitle className="text-md text-accent mb-2">{equippedArsenalCard.name}</CardTitle>
           {equippedArsenalCard.description && <CardDescription className="text-xs mt-1 mb-2">{equippedArsenalCard.description}</CardDescription>}
           
-          {currentCompanion && currentCompanion.parsedPetCoreStats && (
-            <div className="my-3 p-3 rounded-lg border border-muted-foreground/30 bg-background/40 shadow-sm">
-              <h4 className="text-md font-semibold mb-2 text-primary flex items-center">
-                <PawPrint className="mr-2 h-5 w-5" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
-                  <div>
-                    <div className="flex items-center justify-between mb-0.5">
-                      <Label className="flex items-center text-xs font-medium">
-                        <UserCircle className="mr-1 h-3 w-3 text-red-500" /> HP
-                      </Label>
-                      <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('hp')} className="h-5 w-5">
-                          <UserMinus className="h-2.5 w-2.5" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={currentPetHp}
-                          readOnly
-                          className="w-10 h-5 text-center text-xs font-bold p-0.5"
-                        />
-                        <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('hp')} className="h-5 w-5">
-                          <UserPlus className="h-2.5 w-2.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className="h-1 [&>div]:bg-red-500" />
-                    <p className="text-[10px] text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
-                  </div>
-                )}
-                {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
-                   <div>
-                    <div className="flex items-center justify-between mb-0.5">
-                      <Label className="flex items-center text-xs font-medium">
-                        <UserCircle className="mr-1 h-3 w-3 text-blue-400" /> Sanity
-                      </Label>
-                      <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" onClick={() => handleDecrementPetStat('sanity')} className="h-5 w-5">
-                           <UserMinus className="h-2.5 w-2.5" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={currentPetSanity}
-                          readOnly
-                          className="w-10 h-5 text-center text-xs font-bold p-0.5"
-                        />
-                        <Button variant="outline" size="icon" onClick={() => handleIncrementPetStat('sanity')} className="h-5 w-5">
-                          <UserPlus className="h-2.5 w-2.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className="h-1 [&>div]:bg-blue-400" />
-                    <p className="text-[10px] text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
-                  </div>
-                )}
-                {currentCompanion.parsedPetCoreStats.mv !== undefined && (
-                  <div className="flex items-center justify-between text-xs col-span-1 sm:col-span-2 pt-1">
-                    <Label className="flex items-center font-medium"><UserCircle className="mr-1 h-3 w-3 text-green-500" /> MV</Label>
-                    <span className="font-semibold">{currentCompanion.parsedPetCoreStats.mv}</span>
-                  </div>
-                )}
-                {currentCompanion.parsedPetCoreStats.def !== undefined && (
-                   <div className="flex items-center justify-between text-xs col-span-1 sm:col-span-2">
-                    <Label className="flex items-center font-medium"><UserCircle className="mr-1 h-3 w-3 text-gray-400" /> DEF</Label>
-                    <span className="font-semibold">{currentCompanion.parsedPetCoreStats.def}</span>
-                  </div>
-                )}
-              </div>
-              {currentCompanion.petAbilities && (
-                <p className="text-[11px] text-muted-foreground mt-1.5 pt-1 border-t border-muted-foreground/10">
-                  <strong className="text-foreground/80">Abilities:</strong> {currentCompanion.petAbilities}
-                </p>
-              )}
-              {(currentCompanion.itemDescription || currentCompanion.type || currentCompanion.class || currentCompanion.effect || currentCompanion.secondaryEffect || currentCompanion.cd || (currentCompanion.petStats && (!currentCompanion.parsedPetCoreStats.hp && !currentCompanion.parsedPetCoreStats.sanity) )) && (
-                <div className="mt-2 pt-2 border-t border-muted-foreground/10 text-[11px] space-y-0.5">
-                  <p className="font-medium text-foreground/80">Additional Pet Details:</p>
-                  {currentCompanion.itemDescription && <p><strong className="text-muted-foreground">Desc:</strong> {currentCompanion.itemDescription}</p>}
-                  {currentCompanion.type && <p><strong className="text-muted-foreground">Type:</strong> {currentCompanion.type}</p>}
-                  {currentCompanion.class && <p><strong className="text-muted-foreground">Class:</strong> {currentCompanion.class}</p>}
-                  {currentCompanion.effect && <p><strong className="text-muted-foreground">Effect:</strong> {currentCompanion.effect}</p>}
-                  {currentCompanion.secondaryEffect && <p><strong className="text-muted-foreground">Secondary:</strong> {currentCompanion.secondaryEffect}</p>}
-                  {currentCompanion.cd && <p><strong className="text-muted-foreground">CD:</strong> {currentCompanion.cd}</p>}
-                  {currentCompanion.petStats && (!currentCompanion.parsedPetCoreStats.hp && !currentCompanion.parsedPetCoreStats.sanity) && (
-                      <p><strong className="text-muted-foreground">Raw Stats:</strong> {currentCompanion.petStats}</p>
-                  )}
-                </div>
-              )}
-            </div>
+          {/* Interactive Pet Stats Display - Now primarily in CharacterSheetUI's Stats & Equipment tab */}
+          {/* This section in ArsenalTabContent can show basic pet info if it's part of an item category */}
+          {equippedArsenalCard.items.find(item => item.isPet) && currentCompanion && (
+             <div className="my-3 p-3 rounded-lg border border-muted-foreground/30 bg-background/40 shadow-sm">
+                <h4 className="text-md font-semibold mb-2 text-primary flex items-center">
+                    <PawPrint className="mr-2 h-5 w-5" /> Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
+                </h4>
+                {currentCompanion.petStats && <p className="text-xs text-muted-foreground">Raw Stats: {currentCompanion.petStats}</p>}
+                {currentCompanion.petAbilities && <p className="text-xs text-muted-foreground">Abilities: {currentCompanion.petAbilities}</p>}
+                {currentCompanion.itemDescription && <p className="text-xs text-muted-foreground">Desc: {currentCompanion.itemDescription}</p>}
+             </div>
           )}
+
 
           <Separator className="my-3" />
           <div>
@@ -247,5 +170,3 @@ export function ArsenalTabContent({
     </div>
   );
 }
-
-    
