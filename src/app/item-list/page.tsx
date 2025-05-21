@@ -1,4 +1,5 @@
 
+
 import { google } from 'googleapis';
 import { EventsSheetUI, type EventsSheetData } from "@/components/events/events-sheet-ui"; // Updated import
 import type { Metadata } from 'next';
@@ -48,9 +49,8 @@ async function getSheetData(): Promise<EventsSheetData[]> { // Renamed function 
     }
 
     const headers = rows[0] as string[];
-    const sanitizedHeaders = headers.map(h => 
-      h.trim().toLowerCase().replace(/\s+(.)/g, (_match, chr) => chr.toUpperCase())
-    );
+    // Simplified sanitization if headers are expected to be simple like "Insert", "Color"
+    const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase());
     
     const insertIndex = sanitizedHeaders.indexOf('insert');
     const countIndex = sanitizedHeaders.indexOf('count');
@@ -63,7 +63,7 @@ async function getSheetData(): Promise<EventsSheetData[]> { // Renamed function 
     const missingRequiredHeaders = requiredHeaders.filter(expectedHeader => !sanitizedHeaders.includes(expectedHeader));
 
     if (missingRequiredHeaders.length > 0) {
-        const errorMessage = `Required headers (${requiredHeaders.join(', ')}) not found or mismatch in Google Sheet. Missing or mismatched: ${missingRequiredHeaders.join(', ')}. Please check sheet headers and range.`;
+        const errorMessage = `Required headers (${requiredHeaders.join(', ')}) not found or mismatch in Google Sheet. Missing or mismatched: ${missingRequiredHeaders.join(', ')}. Please check sheet headers and range. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMessage);
         return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: errorMessage }];
     }

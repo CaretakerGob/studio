@@ -1,4 +1,5 @@
 
+
 import { CharacterSheetUI } from "@/components/character-sheet/character-sheet-ui";
 import type { Metadata } from 'next';
 import { google } from 'googleapis';
@@ -142,8 +143,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     const headers = rows[0] as string[];
     const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
     
-    // Removed the console.log for sanitizedHeaders
-
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
         const index = sanitizedHeaders.indexOf(variation.toLowerCase());
@@ -156,7 +155,8 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     if (arsenalNameIndex === -1) {
         const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMsg);
-        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{abilityName: `Headers found: [${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
+        // Provide a dummy item in the items array for safe access in UI error display
+        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item', abilityName: `Headers found: [${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
     }
     
     const petFlagColumnVariations = ['pet', 'is pet', 'companion'];
