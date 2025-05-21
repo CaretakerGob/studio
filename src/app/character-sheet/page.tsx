@@ -304,18 +304,14 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         if (['true', 'yes', '1'].includes(petFlagValue)) {
             item.isPet = true;
 
-            const petNameColumnValue = String(row[getColumnIndex(['pet name', 'companion name'])] || '').trim();
             const itemAbilityNameValue = String(item.abilityName || '').trim(); // This is the already parsed item.abilityName
 
-            if (petNameColumnValue) {
-                item.petName = petNameColumnValue;
-                console.log(`[Pet Name Parsing] Using "Pet Name" column for '${item.petName}' for item originally named '${itemAbilityNameValue || 'Unnamed Item'}'`);
-            } else if (itemAbilityNameValue && !itemAbilityNameValue.startsWith('Item ') && itemAbilityNameValue !== `Item ${rowIndex}`) {
+            if (itemAbilityNameValue && !itemAbilityNameValue.startsWith('Item ') && itemAbilityNameValue !== `Item ${rowIndex}`) {
                 item.petName = itemAbilityNameValue;
-                console.log(`[Pet Name Parsing] Using "Ability Name" ('${item.petName}') as pet name for item originally named '${itemAbilityNameValue}' because "Pet Name" column was empty.`);
+                // console.log(`[Pet Name Parsing] Using "Ability Name" ('${item.petName}') as pet name.`);
             } else {
-                item.petName = 'Companion';
-                console.log(`[Pet Name Parsing] Defaulting to 'Companion' for pet item (original name: '${itemAbilityNameValue || 'Unnamed Item'}') as "Pet Name" and "Ability Name" were empty or placeholder.`);
+                item.petName = 'Companion'; // Default if Ability Name is empty or a placeholder
+                // console.log(`[Pet Name Parsing] Defaulting to 'Companion' as "Ability Name" was empty or placeholder ('${itemAbilityNameValue || 'Unnamed Item'}').`);
             }
 
 
