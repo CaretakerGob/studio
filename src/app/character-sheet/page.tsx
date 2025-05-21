@@ -142,7 +142,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     const headers = rows[0] as string[];
     const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
     
-    console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders); 
+    // Removed the console.log for sanitizedHeaders
 
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -297,7 +297,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         }
       }
       
-      const currentPetFlagColumnIndex = getColumnIndex(['pet', 'is pet', 'companion']); // Re-check variable name, should be petFlagHeaderIndex
+      const currentPetFlagColumnIndex = petFlagHeaderIndex; // Use the determined index
       if (currentPetFlagColumnIndex !== -1 && row[currentPetFlagColumnIndex] !== undefined && String(row[currentPetFlagColumnIndex]).trim() !== '') {
         const petFlagValue = String(row[currentPetFlagColumnIndex]).trim().toLowerCase();
         if (['true', 'yes', '1'].includes(petFlagValue)) {
@@ -333,7 +333,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         arsenal.items.push(item as ArsenalItem);
       } else if (arsenal && (item.isPet || item.isFlaggedAsWeapon) && item.abilityName === `Item ${rowIndex}`){ 
          if (item.isPet && !item.petName) item.petName = 'Unnamed Companion';
-         if (item.isFlaggedAsWeapon && !item.abilityName) item.abilityName = 'Unnamed Weapon'; // Corrected this line
+         if (item.isFlaggedAsWeapon && !item.abilityName && item.weaponDetails) item.abilityName = 'Unnamed Weapon'; 
          arsenal.items.push(item as ArsenalItem);
       }
     });
