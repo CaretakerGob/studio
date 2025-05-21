@@ -1,19 +1,18 @@
 
-
 export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity';
-export type SkillName = 
-  'ath' | 
+export type SkillName =
+  'ath' |
   'cpu' |
   'dare' |
-  'dec' | 
-  'emp' | 
+  'dec' |
+  'emp' |
   'eng' |
   'inv' |
-  'kno' | 
-  'occ' | 
+  'kno' |
+  'occ' |
   'pers' |
-  'sur' | 
-  'tac' | 
+  'sur' |
+  'tac' |
   'tun';
 
 export interface CharacterStats {
@@ -62,11 +61,11 @@ export interface Ability {
   name: string;
   type: AbilityType;
   description: string;
-  cost?: string; 
-  range?: string; 
-  cooldown?: string; 
+  cost?: number | undefined; // Changed from string to number
+  range?: string;
+  cooldown?: string;
   details?: string;
-  maxQuantity?: number; // Added for consumable charges
+  maxQuantity?: number;
 }
 
 export interface Weapon {
@@ -83,12 +82,14 @@ export interface Character {
   id: string;
   name: string;
   baseStats: CharacterStats;
-  skills?: Skills; 
+  skills?: Skills;
   abilities: Ability[];
   avatarSeed?: string;
-  imageUrl?: string; 
+  imageUrl?: string;
   meleeWeapon?: Weapon;
   rangedWeapon?: RangedWeapon;
   characterPoints?: number;
-  selectedArsenalCardId?: string | null; // Added to store the equipped arsenal card ID
+  selectedArsenalCardId?: string | null;
+  savedCooldowns?: Record<string, number>; // Added
+  savedQuantities?: Record<string, number>; // Added
 }
