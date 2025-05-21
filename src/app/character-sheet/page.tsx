@@ -72,8 +72,6 @@ function parsePetStatsString(statsString?: string): Partial<CharacterStats> | un
     return undefined;
   }
   const stats: Partial<CharacterStats> = {};
-  // Regex to find stat key-value pairs, allowing for different separators (colon or space) and optional commas/semicolons.
-  // It looks for patterns like "HP:10", "HP 10", "MV : 5", "DEF  2" etc.
   const statPattern = /(hp|maxhp|max hp|sanity|san|maxsanity|max sanity|mv|movement|def|defense)\s*[:\s]?\s*(\d+)/gi;
   let match;
 
@@ -91,11 +89,9 @@ function parsePetStatsString(statsString?: string): Partial<CharacterStats> | un
     }
   }
 
-  // Default maxHp to hp if hp is defined and maxHp isn't
   if (stats.hp !== undefined && stats.maxHp === undefined) {
     stats.maxHp = stats.hp;
   }
-  // Default maxSanity to sanity if sanity is defined and maxSanity isn't
   if (stats.sanity !== undefined && stats.maxSanity === undefined) {
     stats.maxSanity = stats.sanity;
   }
@@ -323,21 +319,23 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '').trim();
             if (petStatsRawString) { 
               item.petStats = petStatsRawString;
-              item.parsedPetCoreStats = parsePetStatsString(item.petStats);
-              if (!item.parsedPetCoreStats || Object.keys(item.parsedPetCoreStats).length === 0) {
-                console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has a 'Pet Stats' column, but parsing failed or yielded no stats. Raw string: "${item.petStats}". Trackers may not display.`);
+              const parsed = parsePetStatsString(item.petStats);
+              item.parsedPetCoreStats = parsed;
+              if (!parsed || Object.keys(parsed).length === 0) {
+                console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has a 'Pet Stats' column ("${item.petStats}"), but parsing failed or yielded no stats. Parsed object: ${JSON.stringify(parsed)}. Trackers may not display.`);
                 item.parsedPetCoreStats = undefined; 
               }
             } else {
                 const effectStatChangeForPet = String(row[getColumnIndex(['effect stat change', 'effectstatchange'])] || '').trim();
                 if (effectStatChangeForPet && !item.parsedStatModifiers?.length) {
                     console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column. Attempting to parse 'Effect Stat Change': "${effectStatChangeForPet}"`);
-                    item.parsedPetCoreStats = parsePetStatsString(effectStatChangeForPet);
-                    if (item.parsedPetCoreStats && Object.keys(item.parsedPetCoreStats).length > 0) {
+                    const parsedFromEffect = parsePetStatsString(effectStatChangeForPet);
+                    item.parsedPetCoreStats = parsedFromEffect;
+                    if (parsedFromEffect && Object.keys(parsedFromEffect).length > 0) {
                         item.petStats = effectStatChangeForPet; 
                     } else {
                         item.parsedPetCoreStats = undefined;
-                        console.warn(`[Pet Stats Parsing] Failed to parse pet stats from 'Effect Stat Change' for '${item.petName || item.abilityName}'. Trackers may not display.`);
+                        console.warn(`[Pet Stats Parsing] Failed to parse pet stats from 'Effect Stat Change' for '${item.petName || item.abilityName}'. Parsed object: ${JSON.stringify(parsedFromEffect)}. Trackers may not display.`);
                     }
                 }
             }
