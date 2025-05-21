@@ -52,8 +52,10 @@ export function CoreStatsSection({
 
   if (!editableCharacterData) return null;
 
-  const getProgressColorClass = (current: number, max: number): string => {
-    if (max === 0) return '[&>div]:bg-gray-400'; // Prevent division by zero, default color
+  const getStatProgressColorClass = (current: number | undefined, max: number | undefined): string => {
+    if (current === undefined || current === null || max === undefined || max === null || max === 0) {
+      return '[&>div]:bg-gray-400'; // Default color for undefined/error states
+    }
     const percentage = (current / max) * 100;
     if (percentage <= 33) return '[&>div]:bg-red-500';
     if (percentage <= 66) return '[&>div]:bg-yellow-500';
@@ -64,7 +66,7 @@ export function CoreStatsSection({
     const isProgressStat = def.id === 'hp' || def.id === 'sanity';
     const currentValue = effectiveBaseStats[def.id] || 0;
     const maxValue = def.id === 'hp' ? effectiveBaseStats.maxHp : (def.id === 'sanity' ? effectiveBaseStats.maxSanity : undefined);
-    const progressColorClass = isProgressStat && maxValue !== undefined ? getProgressColorClass(currentValue, maxValue) : '[&>div]:bg-primary';
+    const progressColorClass = isProgressStat ? getStatProgressColorClass(currentValue, maxValue) : '[&>div]:bg-primary';
 
 
     return (
@@ -136,7 +138,7 @@ export function CoreStatsSection({
         if (statKey === 'sanity') displayedMaxValue = Math.max(1, effectiveBaseStats.maxSanity || 0);
     }
 
-    const progressColorClass = (statKey === 'hp' || statKey === 'sanity') && displayedMaxValue !== undefined ? getProgressColorClass(displayedValue, displayedMaxValue) : '[&>div]:bg-primary';
+    const progressColorClass = (statKey === 'hp' || statKey === 'sanity') ? getStatProgressColorClass(displayedValue, displayedMaxValue) : '[&>div]:bg-primary';
 
 
     return (
