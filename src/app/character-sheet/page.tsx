@@ -85,12 +85,10 @@ function parsePetStatsString(statsString?: string): Partial<CharacterStats> | un
         else if (key === 'maxsanity' || key === 'max sanity') stats.maxSanity = value;
         else if (key === 'mv' || key === 'movement') stats.mv = value;
         else if (key === 'def' || key === 'defense') stats.def = value;
-        // Not parsing ATK/RNG into core CharacterStats for pets for now
       }
     }
   });
 
-  // Ensure maxHp and maxSanity are explicitly set if only hp/sanity were provided
   if (stats.hp !== undefined && stats.maxHp === undefined) stats.maxHp = stats.hp;
   if (stats.sanity !== undefined && stats.maxSanity === undefined) stats.maxSanity = stats.sanity;
   
@@ -155,8 +153,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     if (arsenalNameIndex === -1) {
         const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMsg);
-        // Provide a dummy item in the items array for safe access in UI error display
-        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item', abilityName: `Headers found: [${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
+        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item', abilityName: `[${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
     }
     
     const petFlagColumnVariations = ['pet', 'is pet', 'companion'];
@@ -229,7 +226,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
       const item: Partial<ArsenalItem> = {};
       item.id = `${arsenalId}_item_${rowIndex}`; 
-      item.isPet = false; // Initialize isPet to false
+      item.isPet = false; 
 
       const categoryIndex = getColumnIndex(['category']);
       if (categoryIndex !== -1) item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
@@ -297,7 +294,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         }
       }
       
-      const currentPetFlagColumnIndex = petFlagHeaderIndex; // Use the determined index
+      const currentPetFlagColumnIndex = petFlagHeaderIndex; 
       if (currentPetFlagColumnIndex !== -1 && row[currentPetFlagColumnIndex] !== undefined && String(row[currentPetFlagColumnIndex]).trim() !== '') {
         const petFlagValue = String(row[currentPetFlagColumnIndex]).trim().toLowerCase();
         if (['true', 'yes', '1'].includes(petFlagValue)) {
@@ -329,12 +326,24 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       }
       
       const arsenal = arsenalsMap.get(arsenalId);
-      if (arsenal && item.abilityName && item.abilityName !== `Item ${rowIndex}`) { 
-        arsenal.items.push(item as ArsenalItem);
-      } else if (arsenal && (item.isPet || item.isFlaggedAsWeapon) && item.abilityName === `Item ${rowIndex}`){ 
-         if (item.isPet && !item.petName) item.petName = 'Unnamed Companion';
-         if (item.isFlaggedAsWeapon && !item.abilityName && item.weaponDetails) item.abilityName = 'Unnamed Weapon'; 
-         arsenal.items.push(item as ArsenalItem);
+      if (arsenal) {
+        const isPlaceholderName = item.abilityName === `Item ${rowIndex}`;
+        // An item is meaningful if it has a non-placeholder name, or is a pet, or is a weapon,
+        // or has a category, or has a description, or has an effect.
+        const isMeaningfulItem = !isPlaceholderName ||
+                                 item.isPet ||
+                                 item.isFlaggedAsWeapon ||
+                                 item.category ||
+                                 (item.itemDescription && item.itemDescription.trim() !== '') ||
+                                 (item.effect && item.effect.trim() !== '');
+        
+        if (isMeaningfulItem) {
+          if (item.isPet && isPlaceholderName && !item.petName) {
+            // Ensure pets get a default name if none explicitly provided and abilityName is placeholder
+            item.petName = 'Companion'; 
+          }
+          arsenal.items.push(item as ArsenalItem);
+        }
       }
     });
 
@@ -355,6 +364,3 @@ export default async function CharacterSheetPage() {
     </div>
   );
 }
-
-
-    
