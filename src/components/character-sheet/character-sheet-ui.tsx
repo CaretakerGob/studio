@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"; // Added TabsContent
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Save, Swords, Package, Library, BookOpen, PawPrint, UserMinus, UserPlus,
@@ -318,23 +318,23 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   }, [toast]);
 
   // Effect for handling initial load based on query param or user default
-  useEffect(() => {
+ useEffect(() => {
     const determineInitialSelection = async () => {
       setIsLoadingCharacter(true);
       const loadParam = searchParams.get('load');
 
-      if (loadParam) {
-        if (loadParam !== selectedCharacterId) {
-          setSelectedCharacterId(loadParam);
-        }
-        // Clean the URL
+      if (loadParam && loadParam !== selectedCharacterId) {
+        setSelectedCharacterId(loadParam);
+         // Clean the URL
         const currentPathname = typeof window !== "undefined" ? window.location.pathname : "";
         const newUrl = typeof window !== "undefined" ? new URL(window.location.href) : null;
         if (newUrl) {
           newUrl.searchParams.delete('load');
           router.replace(newUrl.pathname + newUrl.search, { scroll: false });
         }
-      } else if (currentUser && !authLoading) {
+        // No need to setIsLoadingCharacter(false) here, let the next effect handle it
+        return;
+      } else if (currentUser && !authLoading && !loadParam) { // Check !loadParam here
         try {
           const prefsDocRef = doc(db, "userCharacters", currentUser.uid, "preferences", "userPrefs");
           const docSnap = await getDoc(prefsDocRef);
@@ -342,31 +342,34 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             const userDefaultId = docSnap.data()?.defaultCharacterId;
             if (userDefaultId && userDefaultId !== selectedCharacterId) {
               setSelectedCharacterId(userDefaultId);
-              setIsLoadingCharacter(false); // Early exit if default is set
+              // No need to setIsLoadingCharacter(false) here
               return;
             }
           }
         } catch (err) {
           console.error("Error fetching default character preference:", err);
-          // Proceed to fallback
         }
-        // Fallback if no default found or error fetching
+        // Fallback if no default found or error fetching, and no loadParam
         if (selectedCharacterId !== charactersData[0].id) {
             setSelectedCharacterId(charactersData[0].id);
         }
-
-      } else if (!currentUser && !authLoading) {
-         // Fallback if no user and not loading auth
+      } else if (!currentUser && !authLoading && !loadParam) {
+        // Fallback if no user, not loading auth, and no loadParam
         if (selectedCharacterId !== charactersData[0].id) {
             setSelectedCharacterId(charactersData[0].id);
         }
       }
-      setIsLoadingCharacter(false); // Ensure loading is false if not set by a specific load path
+      // If no specific navigation or default preference changed the ID,
+      // ensure loading is false IF selectedCharacterId is already set to something valid and no loadParam.
+      // Otherwise, the next effect will handle it.
+      if (!loadParam) {
+          setIsLoadingCharacter(false);
+      }
     };
 
     determineInitialSelection();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, currentUser, authLoading]); // Router is stable, selectedCharacterId will trigger next effect
+  }, [searchParams, currentUser, authLoading, router]); // Added router
 
 
   // Effect for loading actual character data once selectedCharacterId is determined
@@ -392,31 +395,27 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       
       const isCustomCharacterTemplateSelected = selectedCharacterId === 'custom';
 
-      // Always load the default template first if 'custom' is selected, unless a specific saved 'custom' (e.g. custom_timestamp) is loaded via URL
-      if (isCustomCharacterTemplateSelected && !searchParams.get('load')) {
+      // If custom is selected, always start with the default template unless loading a saved custom.
+      // The "Load My Saved Custom" button handles loading the specific saved version.
+      if (isCustomCharacterTemplateSelected) {
           characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
-          characterToLoad.templateId = 'custom'; // Ensure templateId is set for default custom.
+          characterToLoad.templateId = 'custom';
       } else if (currentUser && auth.currentUser) {
-        // If a specific character (saved or template) is selected (or loaded via URL)
-        const firestoreDocIdToLoad = selectedCharacterId; // Use the direct ID for fetching
+        const firestoreDocIdToLoad = selectedCharacterId;
         const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", firestoreDocIdToLoad);
         
         try {
             const docSnap = await getDoc(characterRef);
             if (docSnap.exists()) {
                 characterToLoad = { id: docSnap.id, ...docSnap.data() } as Character;
-                if (!characterToLoad.templateId) { // Ensure templateId is set for saved data
+                if (!characterToLoad.templateId) { 
                   characterToLoad.templateId = defaultTemplate.id;
                 }
                 showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name || defaultTemplate.name}.` });
             } else {
-                // No saved version for this ID, load its default template
                 characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
-                characterToLoad.templateId = selectedCharacterId; // Set templateId to the selected ID
-                 // Avoid toast for initial custom load if no saved version is found
-                if (!isCustomCharacterTemplateSelected) {
-                    showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}. No saved data found.` });
-                }
+                characterToLoad.templateId = selectedCharacterId; 
+                showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}. No saved data found.` });
             }
         } catch (err: any) {
             console.error("Error loading character from Firestore:", err);
@@ -424,13 +423,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToLoad.templateId = selectedCharacterId;
             showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default.", variant: "destructive" });
         }
-      } else { // No user logged in, load default template
+      } else { // No user logged in, or not 'custom' template selected
         characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
         characterToLoad.templateId = selectedCharacterId;
-         // Avoid toast for initial custom load
-         if (!isCustomCharacterTemplateSelected) {
-             showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}.` });
-         }
+         showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}.` });
       }
 
       if (characterToLoad) {
@@ -440,14 +436,14 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         characterToLoad.savedCooldowns = characterToLoad.savedCooldowns || {};
         characterToLoad.savedQuantities = characterToLoad.savedQuantities || {};
         setEditableCharacterData(characterToLoad);
-      } else if (defaultTemplate && !characterToLoad){
+      } else if (defaultTemplate && !characterToLoad){ // Should ideally not happen if defaultTemplate exists
         let fallbackChar = JSON.parse(JSON.stringify(defaultTemplate));
         fallbackChar.templateId = selectedCharacterId;
         setEditableCharacterData(fallbackChar);
         showToastHelper({ title: "Fallback", description: "Loaded default due to an issue.", variant: "destructive" });
-      } else {
+      } else { // Should only happen if defaultTemplate itself was not found earlier
         setEditableCharacterData(null);
-        showToastHelper({ title: "Error", description: "Could not determine character to load.", variant: "destructive" });
+        // Toast for this case is handled where defaultTemplate is checked
       }
       setAbilityToAddId(undefined);
       setSkillToPurchase(undefined);
@@ -456,12 +452,13 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     loadCharacterData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError]); // Removed userSavedCharacters and showToastHelper as they caused cycles, searchParams handled in first effect
+  }, [selectedCharacterId, currentUser, setAuthError]); // Removed userSavedCharacters and showToastHelper as they caused cycles
 
 
-  const parseCooldownRounds = useCallback((cooldownString?: string): number | undefined => {
+  const parseCooldownRounds = useCallback((cooldownString?: string | number): number | undefined => {
+    if (typeof cooldownString === 'number') return cooldownString;
     if (!cooldownString) return undefined;
-    const match = cooldownString.match(/\d+/);
+    const match = String(cooldownString).match(/\d+/);
     return match ? parseInt(match[0], 10) : undefined;
   }, []);
 
@@ -522,7 +519,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            !item.isPet && // Exclude pets
+            !item.isPet &&
             (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
             item.parsedWeaponStats?.attack !== undefined &&
             !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
@@ -555,7 +552,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-             !item.isPet && // Exclude pets
+             !item.isPet &&
              (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
              item.parsedWeaponStats?.attack !== undefined &&
              (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
@@ -815,19 +812,23 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             maxValue = baseValue; 
             break;
         case 'meleeAttack':
-            // Melee attack for pets is now displayed via WeaponDisplay, no direct +/- tracker.
+            // This case is handled by WeaponDisplay now, so no direct +/-.
+            // If we were to track it, it would be:
+            // setter = setCurrentPetMeleeAttack;
+            // currentValue = currentPetMeleeAttack;
+            // baseValue = coreStats.meleeAttack;
+            // maxValue = undefined; // Or some practical upper limit
             return; 
         default:
             return;
     }
 
-    if (setter && currentValue !== null) { // maxValue can be undefined for meleeAttack if we were still tracking it
+    if (setter && currentValue !== null) { 
         let newValue = currentValue + delta;
         
         if (statType === 'hp' || statType === 'sanity') {
           newValue = Math.min(Math.max(newValue, 0), maxValue || 0);
         } else if (statType === 'mv' || statType === 'def') {
-          // For MV/DEF, allow decrement to 0, increment up to baseValue
           newValue = Math.max(0, newValue);
           if (operation === 'increment') {
             newValue = Math.min(newValue, baseValue || 0);
@@ -985,7 +986,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         const newCharacterPoints = currentCP - abilityCost;
         
         // Defer toast call
-        showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
+        setTimeout(() => {
+          showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
+        }, 0);
         
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
@@ -1380,9 +1383,13 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                         <h3 className="text-xl font-semibold mb-3 flex items-center">
                             <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
                         </h3>
-                         {currentCompanion.petStats && (
-                             <p className="text-sm text-muted-foreground mb-2">Raw Stats String: {currentCompanion.petStats}</p>
+                         {currentCompanion.petStats && !currentCompanion.parsedPetCoreStats && (
+                             <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats}</p>
                         )}
+                         {currentCompanion.petStats && currentCompanion.parsedPetCoreStats && Object.keys(currentCompanion.parsedPetCoreStats).length === 0 && (
+                            <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats} (Could not parse for trackers)</p>
+                         )}
+
 
                         {currentCompanion.parsedPetCoreStats && (
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-3">
