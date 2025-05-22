@@ -5,7 +5,7 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star } from "lucide-react"; // Added Star
+import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -15,7 +15,7 @@ import { charactersData } from '@/components/character-sheet/character-sheet-ui'
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
-import { collection, getDocs, doc, deleteDoc, setDoc, updateDoc, getDoc } from "firebase/firestore"; // Added getDoc
+import { collection, getDocs, doc, deleteDoc, setDoc, updateDoc, getDoc } from "firebase/firestore";
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,7 @@ import { cn } from '@/lib/utils';
 // Helper function
 function baseTemplateName(characterTemplateId?: string): string {
     if (!characterTemplateId) return 'Unknown';
-    if (characterTemplateId === 'custom') return 'Custom';
+    if (characterTemplateId === 'custom') return 'Custom Character'; // Consistent "Custom Character"
     const template = charactersData.find(c => c.id === characterTemplateId);
     return template?.name || characterTemplateId.charAt(0).toUpperCase() + characterTemplateId.slice(1);
 }
@@ -112,8 +112,9 @@ export function ProfileUI() {
         const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string };
         return {
           ...data,
-          id: docSnap.id, 
-          templateId: data.templateId || (docSnap.id === 'custom' ? 'custom' : docSnap.id) 
+          id: docSnap.id,
+          templateId: data.templateId || (docSnap.id === 'custom' ? 'custom' : docSnap.id),
+          lastSaved: data.lastSaved || undefined
         };
       });
       setSavedCharacters(chars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
@@ -139,7 +140,6 @@ export function ProfileUI() {
       }
     } catch (err) {
       console.error("Error fetching default character preference:", err);
-      // Don't toast here, as it's a background load
       setDefaultCharacterId(null);
     } finally {
       setIsLoadingDefaultCharId(false);
@@ -159,7 +159,7 @@ export function ProfileUI() {
       setDefaultCharacterId(newDefaultId);
       if (newDefaultId) {
         const char = savedCharacters.find(c => c.id === newDefaultId);
-        toast({ title: "Default Character Set", description: `${char?.name || newDefaultId} is now your default.` });
+        toast({ title: "Default Character Set", description: `${char?.name || baseTemplateName(char?.templateId) || newDefaultId} is now your default.` });
       } else {
         toast({ title: "Default Character Cleared", description: "You no longer have a default character." });
       }
@@ -336,7 +336,7 @@ export function ProfileUI() {
     const charToLoad = savedCharacters.find(c => c.id === characterId);
     if (charToLoad) {
         router.push(`/character-sheet?load=${charToLoad.id}`);
-        toast({ title: "Loading Character", description: `Attempting to load ${charToLoad.name || charToLoad.id}...` });
+        toast({ title: "Loading Character", description: `Attempting to load ${charToLoad.name || baseTemplateName(charToLoad.templateId) || charToLoad.id}...` });
     } else {
         toast({ title: "Error", description: "Could not find character to load.", variant: "destructive" });
     }
@@ -356,15 +356,16 @@ export function ProfileUI() {
     setIsProcessing(true);
     const characterRef = doc(db, "userCharacters", auth.currentUser.uid, "characters", characterToRename.id);
     try {
+      const newName = renameInputValue.trim();
       await updateDoc(characterRef, {
-        name: renameInputValue.trim(),
+        name: newName,
         lastSaved: new Date().toISOString(),
       });
-      toast({ title: "Character Renamed", description: `${characterToRename.name || characterToRename.id} successfully renamed to ${renameInputValue.trim()}.` });
+      toast({ title: "Character Renamed", description: `${characterToRename.name || baseTemplateName(characterToRename.templateId) || characterToRename.id} successfully renamed to ${newName}.` });
       setSavedCharacters(prev =>
         prev.map(c =>
-          c.id === characterToRename.id ? { ...c, name: renameInputValue.trim(), lastSaved: new Date().toISOString() } : c
-        ).sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id))
+          c.id === characterToRename.id ? { ...c, name: newName, lastSaved: new Date().toISOString() } : c
+        ).sort((a, b) => (a.name || baseTemplateName(a.templateId) || a.id).localeCompare(b.name || baseTemplateName(b.templateId) || b.id))
       );
       setIsRenameDialogOpen(false);
       setCharacterToRename(null);
@@ -382,7 +383,7 @@ export function ProfileUI() {
     setIsProcessing(true);
     try {
       await deleteDoc(doc(db, "userCharacters", auth.currentUser.uid, "characters", charToDelete.id));
-      toast({ title: "Character Deleted", description: `${charToDelete.name || charToDelete.id} has been deleted.` });
+      toast({ title: "Character Deleted", description: `${charToDelete.name || baseTemplateName(charToDelete.templateId) || charToDelete.id} has been deleted.` });
       setSavedCharacters(prev => prev.filter(c => c.id !== charToDelete.id));
       if (defaultCharacterId === charToDelete.id) {
         await handleSetDefaultCharacter(null as any); // Unset default if deleted char was default
@@ -404,31 +405,33 @@ export function ProfileUI() {
 
     const originalTemplate = charactersData.find(c => c.id === (charToDuplicate.templateId || charToDuplicate.id));
     const originalTemplateName = originalTemplate?.name || 'Character';
+    const defaultCustomCharacter = charactersData.find(c => c.id === 'custom');
 
     let nameToCopy = charToDuplicate.name;
-    
-    if (!nameToCopy || (nameToCopy === originalTemplateName && charToDuplicate.id !== 'custom' && charToDuplicate.templateId !== 'custom')) {
+
+    if (!nameToCopy || (charToDuplicate.templateId !== 'custom' && nameToCopy === originalTemplateName)) {
       nameToCopy = originalTemplateName;
-    } else if (charToDuplicate.templateId === 'custom' && (!nameToCopy || nameToCopy === (charactersData.find(c=>c.id === 'custom')?.name))) {
-      nameToCopy = charactersData.find(c=>c.id === 'custom')?.name || 'Custom Character';
+    } else if (charToDuplicate.templateId === 'custom' && (!nameToCopy || nameToCopy === defaultCustomCharacter?.name)) {
+      nameToCopy = defaultCustomCharacter?.name || 'Custom Character';
     }
+
 
     const newCharacterId = `custom_${Date.now()}`;
 
     const newCharacterData: Character = {
       id: newCharacterId,
-      templateId: 'custom', 
+      templateId: 'custom', // Duplicates always become a new 'custom' character instance
       name: `${nameToCopy || 'Character'} (Copy)`,
-      baseStats: { ...(charToDuplicate.baseStats || charactersData.find(c=>c.id === 'custom')!.baseStats ) },
-      skills: { ...(charToDuplicate.skills || charactersData.find(c=>c.id === 'custom')!.skills ) },
-      abilities: Array.isArray(charToDuplicate.abilities) ? [...charToDuplicate.abilities] : [],
-      characterPoints: charToDuplicate.characterPoints !== undefined ? charToDuplicate.characterPoints : (charactersData.find(c=>c.id === 'custom')!.characterPoints || 375),
+      baseStats: { ...(charToDuplicate.baseStats || defaultCustomCharacter?.baseStats ) },
+      skills: { ...(charToDuplicate.skills || defaultCustomCharacter?.skills ) },
+      abilities: Array.isArray(charToDuplicate.abilities) ? [...charToDuplicate.abilities] : (defaultCustomCharacter?.abilities ? [...defaultCustomCharacter.abilities] : []),
+      characterPoints: charToDuplicate.characterPoints !== undefined ? charToDuplicate.characterPoints : (defaultCustomCharacter?.characterPoints || 375),
       selectedArsenalCardId: charToDuplicate.selectedArsenalCardId || null,
       savedCooldowns: { ...(charToDuplicate.savedCooldowns || {}) },
       savedQuantities: { ...(charToDuplicate.savedQuantities || {}) },
-      imageUrl: charToDuplicate.templateId === 'custom' && charToDuplicate.imageUrl 
+      imageUrl: charToDuplicate.templateId === 'custom' && charToDuplicate.imageUrl
                   ? charToDuplicate.imageUrl
-                  : charactersData.find(c => c.id === 'custom')?.imageUrl, 
+                  : defaultCustomCharacter?.imageUrl,
       avatarSeed: `${(nameToCopy || 'copy').toLowerCase().replace(/\s/g, '')}copy${Date.now()}`,
       lastSaved: new Date().toISOString(),
     };
@@ -442,7 +445,7 @@ export function ProfileUI() {
         ...newCharacterData,
       };
 
-      setSavedCharacters(prev => [...prev, newCharForState].sort((a,b) => (a.name||a.id).localeCompare(b.name||b.id)));
+      setSavedCharacters(prev => [...prev, newCharForState].sort((a,b) => (a.name||baseTemplateName(a.templateId)||a.id).localeCompare(b.name||baseTemplateName(b.templateId)||b.id)));
       toast({ title: "Character Duplicated", description: `${newCharacterData.name} has been created.` });
     } catch (err) {
       console.error("Error duplicating character:", err);
@@ -533,21 +536,20 @@ export function ProfileUI() {
               ) : savedCharacters.length > 0 ? (
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {savedCharacters.map(char => {
-                    const baseTemplate = charactersData.find(t => t.id === char.templateId);
-                    let finalDisplayName = char.name || 'Unnamed Character';
-                    
+                    const baseTemplate = charactersData.find(t => t.id === (char.templateId || char.id));
+                    let finalDisplayName = char.name || baseTemplate?.name || char.id;
+
                     if (char.templateId === 'custom') {
                         const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
                         finalDisplayName = (char.name && char.name !== defaultCustomName) ? `${char.name} (Custom Character)` : defaultCustomName;
                     } else if (baseTemplate) {
                          finalDisplayName = (char.name && char.name !== baseTemplate.name) ? `${char.name} (${baseTemplate.name})` : baseTemplate.name;
-                    } else if (char.name) {
+                    } else if (char.name) { // Fallback for older saved characters without templateId
                         finalDisplayName = char.name;
                     }
 
-
                     const avatarSrc = char.imageUrl || baseTemplate?.imageUrl || `https://placehold.co/40x40.png`;
-                    const avatarFallback = (char.name || char.id || "XX").substring(0, 2).toUpperCase();
+                    const avatarFallback = (finalDisplayName || char.id).substring(0, 2).toUpperCase();
                     const lastSavedDate = char.lastSaved ? new Date(char.lastSaved).toLocaleDateString() : "N/A";
                     const isCurrentDefault = char.id === defaultCharacterId;
 
@@ -561,18 +563,18 @@ export function ProfileUI() {
                           <div>
                             <p className="font-medium">{finalDisplayName}</p>
                             <p className="text-xs text-muted-foreground">
-                              Base: {baseTemplateName(char.templateId)}
+                              Base: {baseTemplateName(char.templateId || char.id)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               Last Saved: {lastSavedDate}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-2 self-end sm:self-center flex-wrap justify-end">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleSetDefaultCharacter(char.id)} 
+                        <div className="flex items-center space-x-2 self-end sm:self-center flex-wrap justify-end">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleSetDefaultCharacter(char.id)}
                             disabled={isProcessing || isLoadingDefaultCharId}
                             className={cn("h-7 w-7", isCurrentDefault ? "text-yellow-400 hover:text-yellow-500" : "text-muted-foreground hover:text-yellow-400")}
                             title={isCurrentDefault ? "Unset as Default" : "Set as Default"}
@@ -621,7 +623,7 @@ export function ProfileUI() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the character
-              <span className="font-semibold"> {charToDelete?.name || charToDelete?.id}</span>.
+              <span className="font-semibold"> {charToDelete?.name || baseTemplateName(charToDelete?.templateId) || charToDelete?.id}</span>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -636,7 +638,7 @@ export function ProfileUI() {
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename Character: {characterToRename?.name || characterToRename?.id}</DialogTitle>
+            <DialogTitle>Rename Character: {characterToRename?.name || baseTemplateName(characterToRename?.templateId) || characterToRename?.id}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 py-4">
             <Label htmlFor="renameCharacterInput">New Name</Label>
