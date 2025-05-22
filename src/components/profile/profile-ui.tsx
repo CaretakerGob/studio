@@ -1,7 +1,9 @@
 
 "use client";
 
-import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
+import type { FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -11,7 +13,7 @@ import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
 import type { Character } from '@/types/character';
-import { charactersData } from '@/components/character-sheet/character-sheet-ui';
+import { charactersData } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
@@ -41,8 +43,8 @@ import { cn } from '@/lib/utils';
 
 // Helper function
 function baseTemplateName(characterTemplateId?: string): string {
-    if (!characterTemplateId) return 'Unknown';
-    if (characterTemplateId === 'custom') return 'Custom Character'; // Consistent "Custom Character"
+    if (!characterTemplateId) return 'Unknown Base';
+    if (characterTemplateId === 'custom') return 'Custom Character';
     const template = charactersData.find(c => c.id === characterTemplateId);
     return template?.name || characterTemplateId.charAt(0).toUpperCase() + characterTemplateId.slice(1);
 }
@@ -102,7 +104,7 @@ export function ProfileUI() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  const fetchSavedCharacters = async () => {
+  const fetchSavedCharacters = useCallback(async () => {
     if (!currentUser || !auth.currentUser) return;
     setIsLoadingSavedChars(true);
     try {
@@ -125,9 +127,10 @@ export function ProfileUI() {
     } finally {
       setIsLoadingSavedChars(false);
     }
-  };
+  }, [currentUser, toast]);
 
-  const fetchDefaultCharacterPreference = async () => {
+
+  const fetchDefaultCharacterPreference = useCallback(async () => {
     if (!currentUser || !auth.currentUser) return;
     setIsLoadingDefaultCharId(true);
     try {
@@ -144,9 +147,17 @@ export function ProfileUI() {
     } finally {
       setIsLoadingDefaultCharId(false);
     }
-  };
+  }, [currentUser]);
 
-  const handleSetDefaultCharacter = async (characterId: string) => {
+  useEffect(() => {
+    if(currentUser) {
+      fetchSavedCharacters();
+      fetchDefaultCharacterPreference();
+    }
+  }, [currentUser, fetchSavedCharacters, fetchDefaultCharacterPreference]);
+
+
+  const handleSetDefaultCharacter = async (characterId: string | null) => {
     if (!currentUser || !auth.currentUser) {
       toast({ title: "Not Logged In", description: "Please log in to set a default character.", variant: "destructive" });
       return;
@@ -349,22 +360,44 @@ export function ProfileUI() {
   };
 
   const handleRenameCharacter = async () => {
-    if (!characterToRename || !currentUser || !auth.currentUser || !renameInputValue.trim()) {
-      toast({ title: "Error", description: "Character or new name is missing.", variant: "destructive" });
+    if (!characterToRename || !currentUser || !auth.currentUser) {
+      toast({ title: "Error", description: "Character or user session is missing.", variant: "destructive" });
       return;
     }
     setIsProcessing(true);
+
+    const trimmedNewName = renameInputValue.trim();
+    let finalNameToSave: string;
+    let toastTitle: string;
+    let toastDescription: string;
+
+    if (!trimmedNewName) { // User blanked the field, intending to reset
+      const baseTemplateForReset = charactersData.find(c => c.id === (characterToRename.templateId || characterToRename.id));
+      const originalTemplateName = baseTemplateForReset?.name || (characterToRename.templateId === 'custom' ? "Custom Character" : characterToRename.templateId);
+
+      if (characterToRename.templateId === 'custom') {
+        finalNameToSave = originalTemplateName; // Resets to "Custom Character"
+      } else {
+        finalNameToSave = `Custom ${originalTemplateName}`;
+      }
+      toastTitle = "Name Reset to Default Format";
+      toastDescription = `Character name for '${characterToRename.name || baseTemplateName(characterToRename.templateId) || characterToRename.id}' has been set to: ${finalNameToSave}.`;
+    } else { // User provided a new name
+      finalNameToSave = trimmedNewName;
+      toastTitle = "Character Renamed";
+      toastDescription = `'${characterToRename.name || baseTemplateName(characterToRename.templateId) || characterToRename.id}' successfully renamed to '${finalNameToSave}'.`;
+    }
+
     const characterRef = doc(db, "userCharacters", auth.currentUser.uid, "characters", characterToRename.id);
     try {
-      const newName = renameInputValue.trim();
       await updateDoc(characterRef, {
-        name: newName,
+        name: finalNameToSave,
         lastSaved: new Date().toISOString(),
       });
-      toast({ title: "Character Renamed", description: `${characterToRename.name || baseTemplateName(characterToRename.templateId) || characterToRename.id} successfully renamed to ${newName}.` });
+      toast({ title: toastTitle, description: toastDescription });
       setSavedCharacters(prev =>
         prev.map(c =>
-          c.id === characterToRename.id ? { ...c, name: newName, lastSaved: new Date().toISOString() } : c
+          c.id === characterToRename.id ? { ...c, name: finalNameToSave, lastSaved: new Date().toISOString() } : c
         ).sort((a, b) => (a.name || baseTemplateName(a.templateId) || a.id).localeCompare(b.name || baseTemplateName(b.templateId) || b.id))
       );
       setIsRenameDialogOpen(false);
@@ -386,7 +419,8 @@ export function ProfileUI() {
       toast({ title: "Character Deleted", description: `${charToDelete.name || baseTemplateName(charToDelete.templateId) || charToDelete.id} has been deleted.` });
       setSavedCharacters(prev => prev.filter(c => c.id !== charToDelete.id));
       if (defaultCharacterId === charToDelete.id) {
-        await handleSetDefaultCharacter(null as any); // Unset default if deleted char was default
+        // Explicitly pass null to handleSetDefaultCharacter if it expects a string or null
+        await handleSetDefaultCharacter(null);
       }
     } catch (err) {
       console.error("Error deleting character:", err);
@@ -537,19 +571,23 @@ export function ProfileUI() {
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {savedCharacters.map(char => {
                     const baseTemplate = charactersData.find(t => t.id === (char.templateId || char.id));
-                    let finalDisplayName = char.name || baseTemplate?.name || char.id;
+                    let finalDisplayName: string;
 
                     if (char.templateId === 'custom') {
-                        const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
-                        finalDisplayName = (char.name && char.name !== defaultCustomName) ? `${char.name} (Custom Character)` : defaultCustomName;
+                        finalDisplayName = (char.name && char.name !== (baseTemplate?.name || "Custom Character")) 
+                                            ? `${char.name} (Custom Character)` 
+                                            : (baseTemplate?.name || "Custom Character");
                     } else if (baseTemplate) {
-                         finalDisplayName = (char.name && char.name !== baseTemplate.name) ? `${char.name} (${baseTemplate.name})` : baseTemplate.name;
-                    } else if (char.name) { // Fallback for older saved characters without templateId
-                        finalDisplayName = char.name;
+                        finalDisplayName = (char.name && char.name !== baseTemplate.name) 
+                                            ? `${char.name} (${baseTemplate.name})` 
+                                            : baseTemplate.name;
+                    } else {
+                        finalDisplayName = char.name || char.id; // Fallback
                     }
 
+
                     const avatarSrc = char.imageUrl || baseTemplate?.imageUrl || `https://placehold.co/40x40.png`;
-                    const avatarFallback = (finalDisplayName || char.id).substring(0, 2).toUpperCase();
+                    const avatarFallback = (char.name || char.id).substring(0, 2).toUpperCase();
                     const lastSavedDate = char.lastSaved ? new Date(char.lastSaved).toLocaleDateString() : "N/A";
                     const isCurrentDefault = char.id === defaultCharacterId;
 
@@ -571,7 +609,7 @@ export function ProfileUI() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 self-end sm:self-center flex-wrap justify-end">
-                          <Button
+                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleSetDefaultCharacter(char.id)}
@@ -646,12 +684,18 @@ export function ProfileUI() {
               id="renameCharacterInput"
               value={renameInputValue}
               onChange={(e) => setRenameInputValue(e.target.value)}
-              placeholder={characterToRename?.templateId === 'custom' ? "Enter new character name" : "Enter new name for this template"}
+              placeholder={characterToRename?.templateId === 'custom' ? "Enter new character name (leave blank to reset)" : "Enter new name (leave blank to reset)"}
               disabled={isProcessing}
             />
             {characterToRename?.templateId !== 'custom' && baseTemplateName(characterToRename?.templateId) && (
                  <p className="text-xs text-muted-foreground">
                     Original template: {baseTemplateName(characterToRename?.templateId)}.
+                    Leaving blank will rename to: "Custom {baseTemplateName(characterToRename?.templateId)}".
+                 </p>
+            )}
+             {characterToRename?.templateId === 'custom' && (
+                 <p className="text-xs text-muted-foreground">
+                    Leaving blank will reset name to "Custom Character".
                  </p>
             )}
           </div>
@@ -661,7 +705,7 @@ export function ProfileUI() {
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="button" onClick={handleRenameCharacter} disabled={!renameInputValue.trim() || isProcessing}>
+            <Button type="button" onClick={handleRenameCharacter} disabled={isProcessing}>
               {isProcessing ? "Saving..." : "Save Name"}
             </Button>
           </DialogFooter>
@@ -670,6 +714,3 @@ export function ProfileUI() {
     </Card>
   );
 }
-
-
-    
