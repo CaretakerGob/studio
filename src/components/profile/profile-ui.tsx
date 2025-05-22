@@ -5,16 +5,17 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye } from "lucide-react"; // Added ListChecks, Trash2, Eye
+import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
-import type { Character } from '@/types/character'; // Import Character type
-import { auth, storage, db } from '@/lib/firebase'; // Import db
+import type { Character } from '@/types/character';
+import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
-import { collection, getDocs, doc, deleteDoc } from "firebase/firestore"; // Import Firestore functions
+import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 import { AuthForm } from './auth-form';
 import { UserProfileDisplay } from './user-profile-display';
@@ -29,13 +30,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  // AlertDialogTrigger, // No longer needed here as the button itself will trigger state change
 } from "@/components/ui/alert-dialog";
 
 
 export function ProfileUI() {
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError, signUp, login, logout } = useAuth();
+  const router = useRouter(); // Initialize useRouter
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -169,7 +170,7 @@ export function ProfileUI() {
           profileUpdates.photoURL = newPhotoURL;
         }
         
-        if (Object.keys(profileUpdates).length > 0 && auth.currentUser) { // Check auth.currentUser again
+        if (Object.keys(profileUpdates).length > 0 && auth.currentUser) {
           await updateProfile(auth.currentUser, profileUpdates);
           if (displayNameChanged && !selectedFile) {
              toast({ title: "Display Name Updated", description: "Your display name has been saved." });
@@ -244,9 +245,8 @@ export function ProfileUI() {
   };
 
   const handleLoadCharacter = (characterId: string) => {
-    // Placeholder: Implement navigation to character sheet with characterId
-    toast({ title: "Load Character", description: `Loading character ${characterId}... (Functionality to be implemented)` });
-    // Example: router.push(`/character-sheet?load=${characterId}`);
+    router.push(`/character-sheet?load=${characterId}`);
+    toast({ title: "Loading Character", description: `Attempting to load character ${characterId}...` });
   };
 
   const confirmDeleteCharacter = async () => {
@@ -259,7 +259,7 @@ export function ProfileUI() {
       console.error("Error deleting character:", err);
       toast({ title: "Delete Failed", description: "Could not delete character.", variant: "destructive" });
     }
-    setCharToDelete(null); // Close dialog
+    setCharToDelete(null);
   };
 
 
@@ -349,10 +349,9 @@ export function ProfileUI() {
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleLoadCharacter(char.id)} disabled>
-                          <Eye className="mr-1 h-4 w-4" /> Load (Soon)
+                        <Button variant="outline" size="sm" onClick={() => handleLoadCharacter(char.id)}>
+                          <Eye className="mr-1 h-4 w-4" /> Load
                         </Button>
-                        {/* Removed AlertDialogTrigger wrapper, Button now directly sets state */}
                         <Button variant="destructive" size="sm" onClick={() => setCharToDelete(char)}>
                             <Trash2 className="mr-1 h-4 w-4" /> Delete
                         </Button>

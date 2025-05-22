@@ -8,7 +8,12 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle, CardContent }
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, UserCircle, Swords, Package, Library, BookOpen, PawPrint, UserMinus, UserPlus, Shirt, Shield, Footprints, Sword as MeleeIcon, Brain, Heart, Laptop, Star, VenetianMask, HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding } from "lucide-react";
+import { useRouter, useSearchParams } from 'next/navigation'; // Import useRouter and useSearchParams
+import { 
+  Save, UserCircle, Swords, Package, Library, BookOpen, PawPrint, UserMinus, UserPlus, 
+  Shirt, Shield, Footprints, Sword as MeleeIcon, Brain, Heart, Laptop, Star, VenetianMask, 
+  HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding 
+} from "lucide-react";
 import type { CharacterStats, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
 import type { ArsenalCard, ArsenalItem } from '@/types/arsenal';
 import { Badge } from '@/components/ui/badge';
@@ -302,12 +307,28 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const showToastHelper = useCallback((options: { title: string; description: string; variant?: "default" | "destructive" }) => {
     setTimeout(() => {
         toast(options);
     }, 0);
   }, [toast]);
+
+  useEffect(() => {
+    const loadCharacterId = searchParams.get('load');
+    if (loadCharacterId) {
+      if (selectedCharacterId !== loadCharacterId) {
+        setSelectedCharacterId(loadCharacterId);
+      }
+      // Clean up the URL query parameter to prevent re-triggering on refresh
+      const currentPathname = window.location.pathname;
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('load');
+      router.replace(newUrl.pathname + newUrl.search, { scroll: false });
+    }
+  }, [searchParams, router, selectedCharacterId]); // Added selectedCharacterId
 
   const parseCooldownRounds = useCallback((cooldownString?: string): number | undefined => {
     if (!cooldownString) return undefined;
@@ -460,8 +481,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const newMaxQTs: Record<string, number> = {};
       const newInitialCurrentQTs: Record<string, number> = {};
 
-      const savedCDs = editableCharacterData.savedCooldowns;
-      const savedQTs = editableCharacterData.savedQuantities;
+      const savedCDs = editableCharacterData.savedCooldowns || {};
+      const savedQTs = editableCharacterData.savedQuantities || {};
 
       editableCharacterData.abilities.forEach(ability => {
         if (ability.cooldown && (ability.type === 'Action' || ability.type === 'Interrupt')) {
@@ -554,6 +575,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
+          // Always load the default custom template first.
           characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
           if (characterToLoad) {
               characterToLoad.name = defaultTemplate?.name || 'Custom Character'; 
@@ -572,6 +594,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
           if (docSnap.exists()) {
             characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
+            // Ensure all base properties from template are present if missing in saved data
             characterToLoad.name = characterToLoad.name || defaultTemplate.name;
             characterToLoad.baseStats = characterToLoad.baseStats || defaultTemplate.baseStats;
             characterToLoad.skills = characterToLoad.skills || defaultTemplate.skills;
@@ -702,7 +725,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     let maxValue: number | undefined = undefined; 
     let baseValue: number | undefined = undefined; 
 
-
     switch (statType) {
         case 'hp':
             setter = setCurrentPetHp;
@@ -727,7 +749,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             maxValue = coreStats.def; 
             break;
         case 'meleeAttack': 
-            
+             // Melee attack is no longer tracked with +/- buttons directly on its numeric value
             return; 
         default:
             return;
@@ -735,7 +757,16 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     
     if (setter && currentValue !== null && maxValue !== undefined) {
         let newValue = currentValue + delta;
-        newValue = Math.min(Math.max(newValue, 0), maxValue);
+        // For MV and DEF, allow decrementing but cap increment at their base value
+        if (statType === 'mv' || statType === 'def') {
+             if (operation === 'increment') {
+                 newValue = Math.min(currentValue + 1, maxValue); // Cap at initial max (base value)
+             } else {
+                 newValue = Math.max(currentValue -1, 0); // Min value is 0
+             }
+        } else { // For HP and Sanity
+            newValue = Math.min(Math.max(newValue, 0), maxValue);
+        }
         setter(newValue);
     }
 };
@@ -883,6 +914,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability]; 
         const newCharacterPoints = currentCP - abilityCost;
         
+        // Defer toast to avoid state update during render
         setTimeout(() => showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` }),0);
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
@@ -1031,7 +1063,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     } catch (error) {
       console.error("Error saving character: ", error);
       showToastHelper({ title: "Save Failed", description: "Could not save character data. Please try again.", variant: "destructive" });
-      if(setAuthError) setAuthError("Failed to save character data.");
+      if(setAuthError && error instanceof Error) setAuthError("Failed to save character data." + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -1135,9 +1167,9 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       return '[&>div]:bg-gray-400';
     }
     const percentage = (currentPetSanity / currentCompanion.parsedPetCoreStats.maxSanity) * 100;
-    if (percentage <= 33) return '[&>div]:bg-red-500'; // Or a different color for sanity like dark blue
-    if (percentage <= 66) return '[&>div]:bg-yellow-500'; // Or light blue
-    return '[&>div]:bg-blue-400'; // Or standard blue
+    if (percentage <= 33) return '[&>div]:bg-red-500';
+    if (percentage <= 66) return '[&>div]:bg-yellow-500';
+    return '[&>div]:bg-blue-400';
   };
   
   const getPetMvBarColorClass = () => {
@@ -1157,7 +1189,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const percentage = (currentPetDef / currentCompanion.parsedPetCoreStats.def) * 100;
     if (percentage <= 33) return '[&>div]:bg-red-500';
     if (percentage <= 66) return '[&>div]:bg-yellow-500';
-    return '[&>div]:bg-gray-400'; // Defense often uses neutral colors
+    return '[&>div]:bg-gray-400';
   };
 
 
@@ -1352,6 +1384,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                 <strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}
                             </p>
                         )}
+                         {currentCompanion.itemDescription && currentCompanion.itemDescription.trim() !== '' && (
+                            <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-muted-foreground/20">
+                                <strong className="text-foreground">Description:</strong> {currentCompanion.itemDescription}
+                            </p>
+                        )}
                     </div>
                   </>
                 )}
@@ -1424,3 +1461,4 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   );
 }
 
+    
