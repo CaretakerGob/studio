@@ -6,13 +6,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardTitle, CardDescription, CardFooter, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Save, Swords, Package, Library, BookOpen, PawPrint,
   Heart, Shield, Footprints, Brain, Laptop, Star, VenetianMask, Sparkles,
   HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding,
-  Sword as MeleeIcon, UserMinus as Minus, UserPlus as Plus, UserCircle as UserCircleIcon
+  Sword as MeleeIcon, UserMinus as Minus, UserPlus as Plus, UserCircle as UserCircleIcon, Shirt
 } from "lucide-react";
 import type { CharacterStats, StatName, Character, Ability, AbilityType, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from '@/types/character';
 import type { ArsenalCard, ArsenalItem } from '@/types/arsenal';
@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import { TabsContent } from '@/components/ui/tabs'; // Added this import based on error
+import { Badge } from '@/components/ui/badge';
 
 
 import { useToast } from '@/hooks/use-toast';
@@ -333,7 +333,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   }, [rawArsenalCards]);
 
 
- // Effect for determining INITIAL character ID based on query param or user default
+  // Effect for determining INITIAL character ID based on query param or user default
   useEffect(() => {
     if (authLoading) {
       setIsLoadingCharacter(true);
@@ -358,7 +358,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           let newSelectedId = charactersData[0].id; // Default to first template
           if (docSnap.exists()) {
             const userDefaultId = docSnap.data()?.defaultCharacterId;
-             // Check if default ID is valid among templates or potentially saved characters
             if (userDefaultId && (charactersData.some(c => c.id === userDefaultId) || userSavedCharacters.some(c => c.id === userDefaultId))) {
               newSelectedId = userDefaultId;
             }
@@ -391,15 +390,12 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       if (setAuthError) setAuthError(null);
 
       let characterToLoad: Character | undefined | null = undefined;
-      let defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
+      const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
       
       if (selectedCharacterId === 'custom') {
-          // Always load the default 'custom' template from charactersData first
           characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
           if (characterToLoad) {
             characterToLoad.templateId = 'custom';
-            // Toast for default load is handled later or not at all for 'custom' to avoid noise
-            // showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${characterToLoad.name || selectedCharacterId}.` });
           }
       } else if (currentUser && auth.currentUser) {
         const firestoreDocIdToLoad = selectedCharacterId;
@@ -430,7 +426,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       }
 
       if (characterToLoad) {
-        const baseTemplateForStats = charactersData.find(c => c.id === (characterToLoad.templateId || characterToLoad.id));
+        const baseTemplateForStats = charactersData.find(c => c.id === (characterToLoad?.templateId || characterToLoad?.id));
         characterToLoad.baseStats = { ...(baseTemplateForStats?.baseStats || initialBaseStats) , ...characterToLoad.baseStats };
         characterToLoad.skills = { ...(baseTemplateForStats?.skills || initialSkills) , ...characterToLoad.skills };
         characterToLoad.abilities = Array.isArray(characterToLoad.abilities) ? characterToLoad.abilities : (baseTemplateForStats?.abilities || []);
@@ -438,15 +434,13 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         characterToLoad.savedQuantities = characterToLoad.savedQuantities || {};
         setEditableCharacterData(characterToLoad);
       } else if (defaultTemplate && !characterToLoad){ 
-        let fallbackChar = JSON.parse(JSON.stringify(defaultTemplate));
+        let fallbackChar: Character = JSON.parse(JSON.stringify(defaultTemplate));
         fallbackChar.templateId = selectedCharacterId;
         setEditableCharacterData(fallbackChar);
         showToastHelper({ title: "Fallback", description: "Loaded default due to an issue.", variant: "destructive" });
       } else {
         setEditableCharacterData(null); 
-        if (!defaultTemplate && selectedCharacterId !== 'custom') { 
-            showToastHelper({ title: "Error", description: `Template for ID "${selectedCharacterId}" not found.`, variant: "destructive" });
-        }
+        showToastHelper({ title: "Error", description: `Template for ID "${selectedCharacterId}" not found.`, variant: "destructive" });
       }
       setAbilityToAddId(undefined);
       setSkillToPurchase(undefined);
@@ -457,8 +451,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       loadCharacterData();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, initialIdProcessed, setAuthError, showToastHelper, parseCooldownRounds]); // parseCooldownRounds added as it is used within
-
+  }, [selectedCharacterId, currentUser, initialIdProcessed, setAuthError, showToastHelper]); // `parseCooldownRounds` removed as it's defined above and stable via useCallback
 
   const equippedArsenalCard = useMemo(() => {
     if (!editableCharacterData?.selectedArsenalCardId || !arsenalCards) {
@@ -474,23 +467,23 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     const arsenalGrantedAbilities: Ability[] = [];
 
     if (equippedArsenalCard && equippedArsenalCard.items) {
-      equippedArsenalCard.items.forEach(item => {
-        const createAbility = (type: AbilityType) => ({
-            id: `arsenal-${equippedArsenalCard.id}-${item.id}-${type.replace(/\s+/g, '')}`,
-            name: item.abilityName || `Arsenal ${type}`,
-            type: type,
-            description: item.itemDescription || item.effect || `Granted by ${item.abilityName || 'equipped arsenal'}.`,
-            cooldown: item.cd,
-            maxQuantity: item.qty,
-            details: item.class || item.type,
-            cost: 0, // Arsenal abilities are not purchased
-        });
+        equippedArsenalCard.items.forEach(item => {
+            const createAbility = (type: AbilityType, baseName: string) => ({
+                id: `arsenal-${equippedArsenalCard.id}-${item.id}-${type.replace(/\s+/g, '')}`,
+                name: item.abilityName || baseName,
+                type: type,
+                description: item.itemDescription || item.effect || `Granted by ${item.abilityName || 'equipped arsenal'}.`,
+                cooldown: item.cd,
+                maxQuantity: item.qty,
+                details: item.class || item.type,
+                cost: 0, // Arsenal abilities are not purchased
+            });
 
-        if (item.isAction) arsenalGrantedAbilities.push(createAbility('Action'));
-        if (item.isInterrupt) arsenalGrantedAbilities.push(createAbility('Interrupt'));
-        if (item.isPassive) arsenalGrantedAbilities.push(createAbility('Passive'));
-        if (item.isFreeAction) arsenalGrantedAbilities.push(createAbility('FREE Action'));
-      });
+            if (item.isAction) arsenalGrantedAbilities.push(createAbility('Action', 'Arsenal Action'));
+            if (item.isInterrupt) arsenalGrantedAbilities.push(createAbility('Interrupt', 'Arsenal Interrupt'));
+            if (item.isPassive) arsenalGrantedAbilities.push(createAbility('Passive', 'Arsenal Passive'));
+            if (item.isFreeAction) arsenalGrantedAbilities.push(createAbility('FREE Action', 'Arsenal FREE Action'));
+        });
     }
     return [...baseAbilities, ...arsenalGrantedAbilities];
   }, [editableCharacterData?.abilities, equippedArsenalCard]);
@@ -499,6 +492,12 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const abilitiesJSONKey = useMemo(() => JSON.stringify(effectiveAbilities), [effectiveAbilities]);
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.savedCooldowns), [editableCharacterData?.savedCooldowns]);
   const savedQuantitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.savedQuantities), [editableCharacterData?.savedQuantities]);
+
+
+  const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
+  const [maxAbilityCooldowns, setMaxAbilityCooldowns] = useState<Record<string, number>>({});
+  const [currentAbilityQuantities, setCurrentAbilityQuantities] = useState<Record<string, number>>({});
+  const [maxAbilityQuantities, setMaxAbilityQuantities] = useState<Record<string, number>>({});
 
 
   useEffect(() => {
@@ -516,6 +515,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           const maxRounds = parseCooldownRounds(String(ability.cooldown));
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
+            // Only restore saved cooldowns for base character abilities, not arsenal-granted ones
             if (editableCharacterData.abilities.find(ba => ba.id === ability.id) && savedCDs[ability.id] !== undefined) {
               newInitialCurrentCDs[ability.id] = savedCDs[ability.id];
             } else {
@@ -525,6 +525,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt' || ability.type === 'FREE Action')) {
           newMaxQTs[ability.id] = ability.maxQuantity;
+           // Only restore saved quantities for base character abilities
            if (editableCharacterData.abilities.find(ba => ba.id === ability.id) && savedQTs[ability.id] !== undefined) {
              newInitialCurrentQTs[ability.id] = savedQTs[ability.id];
            } else {
@@ -544,12 +545,12 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id, // Re-evaluate if the character itself changes
-      abilitiesJSONKey,        // When the list of effective abilities changes
-      savedCooldownsJSONKey,   // When saved cooldowns for base abilities change
-      savedQuantitiesJSONKey,  // When saved quantities for base abilities change
+      editableCharacterData?.id, 
+      abilitiesJSONKey,        
+      savedCooldownsJSONKey,   
+      savedQuantitiesJSONKey,  
       parseCooldownRounds,
-      editableCharacterData?.abilities // To differentiate base abilities for saved state loading
+      editableCharacterData?.abilities 
     ]);
 
   useEffect(() => {
@@ -635,18 +636,18 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         if (editableCharacterData.templateId === 'custom') {
             if (editableCharacterData.name && editableCharacterData.name !== defaultCustomName) {
                 currentOptionToUpdate.displayNameInDropdown = `${editableCharacterData.name} (Custom Character)`;
-            } else if (currentOptionToUpdate.isSaved) {
+            } else if (currentOptionToUpdate.isSaved && editableCharacterData.name === defaultCustomName) {
                  currentOptionToUpdate.displayNameInDropdown = `${defaultCustomName} (Saved)`;
             } else { 
-                 currentOptionToUpdate.displayNameInDropdown = defaultCustomName;
+                 currentOptionToUpdate.displayNameInDropdown = editableCharacterData.name || defaultCustomName;
             }
         } else if (baseTemplateForCurrent) {
             if (editableCharacterData.name && editableCharacterData.name !== baseTemplateForCurrent.name) {
                 currentOptionToUpdate.displayNameInDropdown = `${editableCharacterData.name} (${baseTemplateForCurrent.name})`;
-            } else if (currentOptionToUpdate.isSaved) {
+            } else if (currentOptionToUpdate.isSaved && editableCharacterData.name === baseTemplateForCurrent.name) { // Only show (Saved) if name hasn't been changed from template
                 currentOptionToUpdate.displayNameInDropdown = `${baseTemplateForCurrent.name} (Saved)`;
             } else {
-                currentOptionToUpdate.displayNameInDropdown = baseTemplateForCurrent.name;
+                currentOptionToUpdate.displayNameInDropdown = editableCharacterData.name || baseTemplateForCurrent.name;
             }
         }
         optionsMap.set(editableCharacterData.id, currentOptionToUpdate);
@@ -657,8 +658,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
 
   // id here is the actual character ID (templateId like 'gob', 'custom', or a specific saved ID like 'custom_timestamp')
-  const handleCharacterDropdownChange = (id: string) 
-   => {
+  const handleCharacterDropdownChange = (id: string) => {
     setSelectedCharacterId(id);
   };
 
@@ -755,7 +755,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             maxValue = baseValue;
             break;
         case 'meleeAttack':
-            // This case is handled by WeaponDisplay, no longer a direct tracker here.
+            // This case is handled by WeaponDisplay for the pet's melee attack
             return; 
         default:
             return;
@@ -833,11 +833,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     });
   };
 
-  const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
-  const [maxAbilityCooldowns, setMaxAbilityCooldowns] = useState<Record<string, number>>({});
-  const [currentAbilityQuantities, setCurrentAbilityQuantities] = useState<Record<string, number>>({});
-  const [maxAbilityQuantities, setMaxAbilityQuantities] = useState<Record<string, number>>({});
-
 
   const handleIncrementCooldown = (abilityId: string) => {
     setCurrentAbilityCooldowns(prev => ({
@@ -872,20 +867,19 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     const originalCharacterTemplate = charactersData.find(c => c.id === templateIdToResetTo);
 
     if (originalCharacterTemplate) {
-        let characterToSet: Character = JSON.parse(JSON.stringify(originalCharacterTemplate));
+        let characterToSet: Character;
 
         if (templateIdToResetTo === 'custom') {
-            const customDefault = charactersData.find(c => c.id === 'custom');
-            if (customDefault) {
-              characterToSet = JSON.parse(JSON.stringify(customDefault));
-              characterToSet.name = customDefault.name || 'Custom Character'; 
-              characterToSet.baseStats = { ...initialCustomCharacterStats }; 
-              characterToSet.skills = { ...initialSkills };
-              characterToSet.abilities = []; 
-              characterToSet.characterPoints = customDefault.characterPoints ?? 375;
-            }
+            const customDefault = charactersData.find(c => c.id === 'custom')!; // Should always exist
+            characterToSet = JSON.parse(JSON.stringify(customDefault)); 
+            characterToSet.name = customDefault.name; 
+            characterToSet.baseStats = { ...initialCustomCharacterStats }; 
+            characterToSet.skills = { ...initialSkills };
+            characterToSet.abilities = []; 
+            characterToSet.characterPoints = customDefault.characterPoints ?? 375;
         } else {
-           characterToSet.name = originalCharacterTemplate.name; 
+           characterToSet = JSON.parse(JSON.stringify(originalCharacterTemplate));
+           characterToSet.name = originalCharacterTemplate.name; // Ensure name is from template
         }
         
         characterToSet.templateId = templateIdToResetTo; 
@@ -1247,7 +1241,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            !item.isPet && // Explicitly exclude pets
+            !item.isPet && 
             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
             item.parsedWeaponStats?.attack !== undefined &&
             !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
@@ -1284,7 +1278,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-             !item.isPet && // Explicitly exclude pets
+             !item.isPet && 
              (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
              item.parsedWeaponStats?.attack !== undefined &&
              (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
@@ -1456,133 +1450,128 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                       <WeaponDisplay weapon={currentRangedWeapon} type="ranged" equippedArsenalCard={equippedArsenalCard} baseRangedWeaponName={editableCharacterData.rangedWeapon?.name} />
                   </div>
               </div>
-               {currentCompanion && (
-                  <>
-                    <Separator />
-                    <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
-                        <h3 className="text-xl font-semibold mb-3 flex items-center">
-                            <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
-                        </h3>
-                        {currentCompanion.petStats && !currentCompanion.parsedPetCoreStats && (
-                             <p className="text-sm text-muted-foreground mb-2">Raw Stats String (Failed to parse for trackers): {currentCompanion.petStats}</p>
-                        )}
-                        {currentCompanion.petStats && currentCompanion.parsedPetCoreStats && Object.keys(currentCompanion.parsedPetCoreStats).length === 0 && (
-                            <p className="text-sm text-muted-foreground mb-2">Raw Stats String: {currentCompanion.petStats} (Could not parse for trackers)</p>
-                        )}
-                         {currentCompanion.parsedPetCoreStats && (
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-3">
-
-                                {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <Label className="flex items-center text-sm font-medium">
-                                                <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
-                                            </Label>
-                                            <div className="flex items-center gap-1">
-                                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'decrement')} className="h-6 w-6">
-                                                    <Minus className="h-3 w-3" />
-                                                </Button>
-                                                <Input type="number" value={currentPetHp} readOnly className="w-12 h-6 text-center text-sm font-bold p-1"/>
-                                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'increment')} className="h-6 w-6">
-                                                    <Plus className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={cn("h-1.5", getPetHpBarColorClass())} />
-                                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
-                                    </div>
-                                )}
-
-                                {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <Label className="flex items-center text-sm font-medium">
-                                                <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
-                                            </Label>
-                                             <div className="flex items-center gap-1">
-                                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'decrement')} className="h-6 w-6">
-                                                    <Minus className="h-3 w-3" />
-                                                </Button>
-                                                <Input type="number" value={currentPetSanity} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
-                                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'increment')} className="h-6 w-6">
-                                                    <Plus className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className={cn("h-1.5", getPetSanityBarColorClass())} />
-                                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
-                                    </div>
-                                )}
-
-                                {currentCompanion.parsedPetCoreStats.mv !== undefined && currentPetMv !== null && (
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <Label className="flex items-center text-sm font-medium">
-                                                <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
-                                            </Label>
-                                             <div className="flex items-center gap-1">
-                                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'decrement')} className="h-6 w-6">
-                                                    <Minus className="h-3 w-3" />
-                                                </Button>
-                                                <Input type="number" value={currentPetMv} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
-                                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'increment')} className="h-6 w-6">
-                                                    <Plus className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className={cn("h-1.5", getPetMvBarColorClass())} />
-                                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetMv} / {currentCompanion.parsedPetCoreStats.mv}</p>
-                                    </div>
-                                )}
-
-                                {currentCompanion.parsedPetCoreStats.def !== undefined && currentPetDef !== null && (
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <Label className="flex items-center text-sm font-medium">
-                                                <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
-                                            </Label>
-                                             <div className="flex items-center gap-1">
-                                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'decrement')} className="h-6 w-6">
-                                                    <Minus className="h-3 w-3" />
-                                                </Button>
-                                                <Input type="number" value={currentPetDef} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
-                                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'increment')} className="h-6 w-6">
-                                                    <Plus className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className={cn("h-1.5", getPetDefBarColorClass())} />
-                                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetDef} / {currentCompanion.parsedPetCoreStats.def}</p>
-                                    </div>
-                                )}
-
-                                {petMeleeWeaponForDisplay && (
-                                  <div className="md:col-span-2">
-                                    <WeaponDisplay weapon={petMeleeWeaponForDisplay} type="melee" />
-                                  </div>
-                                )}
+              {currentCompanion && (
+                <>
+                  <Separator />
+                  <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+                    <h3 className="text-xl font-semibold mb-3 flex items-center">
+                      <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
+                    </h3>
+                    {(currentCompanion.petStats && !currentCompanion.parsedPetCoreStats) && (
+                      <p className="text-sm text-muted-foreground mb-2">Raw Stats (Failed to parse for trackers): {currentCompanion.petStats}</p>
+                    )}
+                    {(currentCompanion.petStats && currentCompanion.parsedPetCoreStats && Object.keys(currentCompanion.parsedPetCoreStats).length === 0) && (
+                      <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats} (Could not parse for trackers)</p>
+                    )}
+                    {currentCompanion.parsedPetCoreStats && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-3">
+                        {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="flex items-center text-sm font-medium">
+                                <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'decrement')} className="h-6 w-6">
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <Input type="number" value={currentPetHp} readOnly className="w-12 h-6 text-center text-sm font-bold p-1"/>
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'increment')} className="h-6 w-6">
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
+                            <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={cn("h-1.5", getPetHpBarColorClass())} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
+                          </div>
                         )}
-                        {currentCompanion.petAbilities && (
-                            <p className="text-xs text-muted-foreground mt-3 pt-2 border-t border-muted-foreground/20">
-                                <strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}
-                            </p>
+                        {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="flex items-center text-sm font-medium">
+                                <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'decrement')} className="h-6 w-6">
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <Input type="number" value={currentPetSanity} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'increment')} className="h-6 w-6">
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className={cn("h-1.5", getPetSanityBarColorClass())} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
+                          </div>
                         )}
-                         {currentCompanion.itemDescription && currentCompanion.itemDescription.trim() !== '' && (
-                            <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-muted-foreground/20">
-                                <strong className="text-foreground">Description:</strong> {currentCompanion.itemDescription}
-                            </p>
+                        {currentCompanion.parsedPetCoreStats.mv !== undefined && currentPetMv !== null && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="flex items-center text-sm font-medium">
+                                <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'decrement')} className="h-6 w-6">
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <Input type="number" value={currentPetMv} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'increment')} className="h-6 w-6">
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className={cn("h-1.5", getPetMvBarColorClass())} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetMv} / {currentCompanion.parsedPetCoreStats.mv}</p>
+                          </div>
                         )}
-                         {currentCompanion.petStats && currentCompanion.parsedPetCoreStats === undefined && (
-                            <p className="text-xs text-destructive-foreground bg-destructive p-2 rounded-md mt-2">
-                                Note: The 'Pet Stats' string "{currentCompanion.petStats}" could not be fully parsed for interactive trackers. Ensure it follows a format like "HP:10 MV:5 DEF:2 SAN:3 ATK:1".
-                            </p>
+                        {currentCompanion.parsedPetCoreStats.def !== undefined && currentPetDef !== null && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="flex items-center text-sm font-medium">
+                                <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'decrement')} className="h-6 w-6">
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <Input type="number" value={currentPetDef} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'increment')} className="h-6 w-6">
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                            <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className={cn("h-1.5", getPetDefBarColorClass())} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetDef} / {currentCompanion.parsedPetCoreStats.def}</p>
+                          </div>
                         )}
-                    </div>
-                  </>
-                )}
+                        {petMeleeWeaponForDisplay && (
+                          <div className="md:col-span-2">
+                            <WeaponDisplay weapon={petMeleeWeaponForDisplay} type="melee" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {currentCompanion.petAbilities && (
+                      <p className="text-xs text-muted-foreground mt-3 pt-2 border-t border-muted-foreground/20">
+                        <strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}
+                      </p>
+                    )}
+                    {currentCompanion.itemDescription && currentCompanion.itemDescription.trim() !== '' && (
+                      <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-muted-foreground/20">
+                        <strong className="text-foreground">Description:</strong> {currentCompanion.itemDescription}
+                      </p>
+                    )}
+                    {currentCompanion.petStats && currentCompanion.parsedPetCoreStats === undefined && (
+                      <p className="text-xs text-destructive-foreground bg-destructive p-2 rounded-md mt-2">
+                        Note: The 'Pet Stats' string "{currentCompanion.petStats}" could not be fully parsed for interactive trackers. Ensure it follows a format like "HP:10 MV:5 DEF:2 SAN:3 ATK:1".
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </TabsContent>
-
+            
             <TabsContent value="abilities" className="mt-6">
               <AbilitiesSection
                 editableCharacterData={editableCharacterData}
@@ -1649,6 +1638,4 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   );
 }
 
-
     
-
