@@ -7,15 +7,15 @@ import Image from 'next/image';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"; // Added TabsContent
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Save, Swords, Package, Library, BookOpen, PawPrint, UserMinus, UserPlus,
+  Save, Swords, Package, Library, BookOpen, PawPrint,
   Heart, Shield, Footprints, Brain, Laptop, Star, VenetianMask,
   HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding,
   Sword as MeleeIcon,
 } from "lucide-react";
-import type { CharacterStats, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from "@/types/character";
+import type { CharacterStats, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from '@/types/character';
 import type { ArsenalCard, ArsenalItem } from '@/types/arsenal';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
@@ -268,7 +268,7 @@ export const charactersData: Character[] = [
 
 type AbilityWithCost = Ability & { cost: number };
 
-const allUniqueAbilities: AbilityWithCost[] = (() => {
+export const allUniqueAbilities: AbilityWithCost[] = (() => {
   const abilitiesMap = new Map<string, AbilityWithCost>();
   charactersData.forEach(character => {
     if (character.id === 'custom') return; // Skip custom template abilities for the master list
@@ -299,6 +299,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   const [skillToPurchase, setSkillToPurchase] = useState<SkillName | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingCharacter, setIsLoadingCharacter] = useState(true);
+  const [initialIdProcessed, setInitialIdProcessed] = useState(false);
+
 
   const [currentPetHp, setCurrentPetHp] = useState<number | null>(null);
   const [currentPetSanity, setCurrentPetSanity] = useState<number | null>(null);
@@ -317,62 +319,63 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     }, 0);
   }, [toast]);
 
-  // Effect for handling initial load based on query param or user default
- useEffect(() => {
-    const determineInitialSelection = async () => {
-      setIsLoadingCharacter(true);
-      const loadParam = searchParams.get('load');
+  // Effect for determining INITIAL character ID based on query param or user default
+  useEffect(() => {
+    if (initialIdProcessed && !searchParams.get('load')) {
+      // If initial determination is done and there's no NEW 'load' param, don't re-evaluate.
+      // This prevents overriding a user's dropdown selection after a 'load' param has been processed and cleared.
+      return;
+    }
+    
+    const loadParam = searchParams.get('load');
 
-      if (loadParam && loadParam !== selectedCharacterId) {
-        setSelectedCharacterId(loadParam);
-         // Clean the URL
-        const currentPathname = typeof window !== "undefined" ? window.location.pathname : "";
-        const newUrl = typeof window !== "undefined" ? new URL(window.location.href) : null;
-        if (newUrl) {
-          newUrl.searchParams.delete('load');
-          router.replace(newUrl.pathname + newUrl.search, { scroll: false });
-        }
-        // No need to setIsLoadingCharacter(false) here, let the next effect handle it
-        return;
-      } else if (currentUser && !authLoading && !loadParam) { // Check !loadParam here
-        try {
-          const prefsDocRef = doc(db, "userCharacters", currentUser.uid, "preferences", "userPrefs");
-          const docSnap = await getDoc(prefsDocRef);
-          if (docSnap.exists()) {
-            const userDefaultId = docSnap.data()?.defaultCharacterId;
-            if (userDefaultId && userDefaultId !== selectedCharacterId) {
-              setSelectedCharacterId(userDefaultId);
-              // No need to setIsLoadingCharacter(false) here
-              return;
-            }
-          }
-        } catch (err) {
-          console.error("Error fetching default character preference:", err);
-        }
-        // Fallback if no default found or error fetching, and no loadParam
-        if (selectedCharacterId !== charactersData[0].id) {
-            setSelectedCharacterId(charactersData[0].id);
-        }
-      } else if (!currentUser && !authLoading && !loadParam) {
-        // Fallback if no user, not loading auth, and no loadParam
-        if (selectedCharacterId !== charactersData[0].id) {
-            setSelectedCharacterId(charactersData[0].id);
-        }
+    if (loadParam) {
+      setSelectedCharacterId(loadParam);
+      setInitialIdProcessed(true); // Mark that we've processed an explicit load/initial set
+      // Clean the URL
+      const currentPathname = typeof window !== "undefined" ? window.location.pathname : "";
+      const newUrl = typeof window !== "undefined" ? new URL(window.location.href) : null;
+      if (newUrl) {
+        newUrl.searchParams.delete('load');
+        router.replace(newUrl.pathname + newUrl.search, { scroll: false });
       }
-      // If no specific navigation or default preference changed the ID,
-      // ensure loading is false IF selectedCharacterId is already set to something valid and no loadParam.
-      // Otherwise, the next effect will handle it.
-      if (!loadParam) {
-          setIsLoadingCharacter(false);
-      }
-    };
+      return; // Priority given to loadParam, data loading will be handled by the next effect
+    }
 
-    determineInitialSelection();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, currentUser, authLoading, router]); // Added router
+    // Only proceed if no loadParam was processed in this specific effect execution
+    // and if we haven't done the initial processing yet.
+    if (!initialIdProcessed) {
+        if (currentUser && !authLoading) {
+            const prefsDocRef = doc(db, "userCharacters", currentUser.uid, "preferences", "userPrefs");
+            getDoc(prefsDocRef).then(docSnap => {
+                if (docSnap.exists()) {
+                    const userDefaultId = docSnap.data()?.defaultCharacterId;
+                    if (userDefaultId) {
+                        setSelectedCharacterId(userDefaultId);
+                    } else {
+                        setSelectedCharacterId(charactersData[0].id); // Global default
+                    }
+                } else {
+                    setSelectedCharacterId(charactersData[0].id); // Global default
+                }
+                setInitialIdProcessed(true);
+            }).catch(err => {
+                console.error("Error fetching default character preference:", err);
+                setSelectedCharacterId(charactersData[0].id); // Fallback
+                setInitialIdProcessed(true);
+            });
+        } else if (!currentUser && !authLoading) {
+            // Not logged in, no auth loading, use global default
+            setSelectedCharacterId(charactersData[0].id);
+            setInitialIdProcessed(true);
+        }
+        // If auth is still loading, this effect will re-run when authLoading becomes false,
+        // and initialIdProcessed is still false, allowing default loading.
+    }
+  }, [searchParams, currentUser, authLoading, router, initialIdProcessed]);
 
 
-  // Effect for loading actual character data once selectedCharacterId is determined
+  // Effect for loading actual character data once selectedCharacterId is determined OR current user changes
   useEffect(() => {
     const loadCharacterData = async () => {
       if (!selectedCharacterId) {
@@ -386,20 +389,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       let characterToLoad: Character | undefined | null = undefined;
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
-      if (!defaultTemplate) {
-        showToastHelper({ title: "Error", description: `Template for ID "${selectedCharacterId}" not found.`, variant: "destructive" });
-        setEditableCharacterData(null);
-        setIsLoadingCharacter(false);
-        return;
-      }
-      
-      const isCustomCharacterTemplateSelected = selectedCharacterId === 'custom';
-
-      // If custom is selected, always start with the default template unless loading a saved custom.
-      // The "Load My Saved Custom" button handles loading the specific saved version.
-      if (isCustomCharacterTemplateSelected) {
-          characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
-          characterToLoad.templateId = 'custom';
+      if (selectedCharacterId === 'custom') { // Always load default for "custom" ID initially
+          characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
+          if (characterToLoad) characterToLoad.templateId = 'custom';
+          showToastHelper({ title: "Template Loaded", description: "Loaded default Custom Character template. Use 'Load My Saved Custom' for your version." });
       } else if (currentUser && auth.currentUser) {
         const firestoreDocIdToLoad = selectedCharacterId;
         const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", firestoreDocIdToLoad);
@@ -409,24 +402,26 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             if (docSnap.exists()) {
                 characterToLoad = { id: docSnap.id, ...docSnap.data() } as Character;
                 if (!characterToLoad.templateId) { 
-                  characterToLoad.templateId = defaultTemplate.id;
+                  characterToLoad.templateId = defaultTemplate?.id || selectedCharacterId;
                 }
-                showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name || defaultTemplate.name}.` });
+                showToastHelper({ title: "Character Loaded", description: `Loaded saved version of ${characterToLoad.name || defaultTemplate?.name}.` });
             } else {
-                characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
-                characterToLoad.templateId = selectedCharacterId; 
-                showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}. No saved data found.` });
+                characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
+                if (characterToLoad) characterToLoad.templateId = selectedCharacterId; 
+                showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate?.name}. No saved data found.` });
             }
         } catch (err: any) {
             console.error("Error loading character from Firestore:", err);
-            characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
-            characterToLoad.templateId = selectedCharacterId;
+            characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
+            if (characterToLoad) characterToLoad.templateId = selectedCharacterId;
             showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default.", variant: "destructive" });
         }
       } else { // No user logged in, or not 'custom' template selected
-        characterToLoad = JSON.parse(JSON.stringify(defaultTemplate));
-        characterToLoad.templateId = selectedCharacterId;
-         showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}.` });
+        characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
+        if (characterToLoad) characterToLoad.templateId = selectedCharacterId;
+        if (defaultTemplate) {
+             showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}.` });
+        }
       }
 
       if (characterToLoad) {
@@ -436,14 +431,16 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         characterToLoad.savedCooldowns = characterToLoad.savedCooldowns || {};
         characterToLoad.savedQuantities = characterToLoad.savedQuantities || {};
         setEditableCharacterData(characterToLoad);
-      } else if (defaultTemplate && !characterToLoad){ // Should ideally not happen if defaultTemplate exists
+      } else if (defaultTemplate && !characterToLoad){ 
         let fallbackChar = JSON.parse(JSON.stringify(defaultTemplate));
         fallbackChar.templateId = selectedCharacterId;
         setEditableCharacterData(fallbackChar);
         showToastHelper({ title: "Fallback", description: "Loaded default due to an issue.", variant: "destructive" });
-      } else { // Should only happen if defaultTemplate itself was not found earlier
+      } else { 
         setEditableCharacterData(null);
-        // Toast for this case is handled where defaultTemplate is checked
+        if (!defaultTemplate) {
+            showToastHelper({ title: "Error", description: `Template for ID "${selectedCharacterId}" not found.`, variant: "destructive" });
+        }
       }
       setAbilityToAddId(undefined);
       setSkillToPurchase(undefined);
@@ -452,7 +449,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     loadCharacterData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError]); // Removed userSavedCharacters and showToastHelper as they caused cycles
+  }, [selectedCharacterId, currentUser, setAuthError, showToastHelper, parseCooldownRounds]); 
 
 
   const parseCooldownRounds = useCallback((cooldownString?: string | number): number | undefined => {
@@ -698,7 +695,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                       : `${customTemplate?.name || 'Custom Character'} (Saved)`;
       } else if (baseTemplate) {
         displayName = (savedChar.name && savedChar.name !== baseTemplate.name)
-                      ? `${savedChar.name} (${baseTemplate.name} - Saved)`
+                      ? `${savedChar.name} (${baseTemplate.name})`
                       : `${baseTemplate.name} (Saved)`;
       } else {
          displayName = `${savedChar.name || templateId} (Saved Document)`;
@@ -718,6 +715,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   // id here is the templateId ('custom', 'gob', etc.)
   const handleCharacterDropdownChange = (id: string) => {
     setSelectedCharacterId(id);
+    setInitialIdProcessed(true); // User has made an explicit choice
   };
 
   const handleCustomCharacterNameChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -812,12 +810,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             maxValue = baseValue; 
             break;
         case 'meleeAttack':
-            // This case is handled by WeaponDisplay now, so no direct +/-.
-            // If we were to track it, it would be:
-            // setter = setCurrentPetMeleeAttack;
-            // currentValue = currentPetMeleeAttack;
-            // baseValue = coreStats.meleeAttack;
-            // maxValue = undefined; // Or some practical upper limit
             return; 
         default:
             return;
@@ -985,10 +977,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         const newAbilities = [...prevData.abilities, abilityToAddWithoutCostField as Ability];
         const newCharacterPoints = currentCP - abilityCost;
         
-        // Defer toast call
-        setTimeout(() => {
-          showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
-        }, 0);
+        showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
         
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
@@ -1127,12 +1116,15 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const effectiveTemplateId = editableCharacterData.templateId || editableCharacterData.id;
 
       let docIdForFirestore: string;
-      if (editableCharacterData.id.startsWith("custom_")) { 
-         docIdForFirestore = editableCharacterData.id;
-      } else if (effectiveTemplateId === 'custom') { 
-         docIdForFirestore = 'custom';
+      // If the character being saved is a custom one based on a template (e.g. "gob_saved_by_user")
+      // or a truly unique custom one (e.g. "custom_123"), its ID will be used directly.
+      // If it's the *direct* 'custom' template being modified, its ID is 'custom'.
+      if (editableCharacterData.id.startsWith("custom_") || (editableCharacterData.id !== 'custom' && editableCharacterData.templateId === 'custom')) {
+         docIdForFirestore = editableCharacterData.id; // Use existing unique ID for custom characters
+      } else if (effectiveTemplateId === 'custom' && editableCharacterData.id === 'custom') { 
+         docIdForFirestore = 'custom'; // Saving the base 'custom' template
       } else { 
-         docIdForFirestore = effectiveTemplateId;
+         docIdForFirestore = effectiveTemplateId; // Saving a version of a predefined template like 'gob'
       }
 
 
@@ -1177,11 +1169,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       showToastHelper({ title: "Not Logged In", description: "Please log in to load your saved character.", variant: "destructive" });
       return;
     }
-    if (selectedCharacterId !== 'custom') {
-        setSelectedCharacterId('custom'); 
-    }
-
-
+    // No need to change selectedCharacterId here, this button specifically loads the 'custom' ID saved data.
+    
     setIsLoadingCharacter(true);
     try {
       const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", "custom"); 
@@ -1203,8 +1192,14 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         savedData.avatarSeed = savedData.avatarSeed || freshDefault.avatarSeed;
         savedData.savedCooldowns = savedData.savedCooldowns || {};
         savedData.savedQuantities = savedData.savedQuantities || {};
+        savedData.selectedArsenalCardId = savedData.selectedArsenalCardId === undefined ? null : savedData.selectedArsenalCardId;
+
 
         setEditableCharacterData(JSON.parse(JSON.stringify(savedData)));
+        if (selectedCharacterId !== 'custom') { // If current template isn't custom, switch to it
+            setSelectedCharacterId('custom');
+        }
+        setInitialIdProcessed(true); // Mark that a specific version has been loaded
         showToastHelper({ title: "Character Loaded", description: `Loaded your saved custom character: ${savedData.name}.` });
       } else {
         showToastHelper({ title: "Not Found", description: "No saved custom character found. Loaded default template.", variant: "destructive" });
@@ -1221,6 +1216,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             characterToSet.savedCooldowns = {};
             characterToSet.savedQuantities = {};
             setEditableCharacterData(characterToSet);
+            if (selectedCharacterId !== 'custom') {
+                setSelectedCharacterId('custom');
+            }
+            setInitialIdProcessed(true);
         }
       }
     } catch (err) {
@@ -1402,11 +1401,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                             </Label>
                                             <div className="flex items-center gap-1">
                                                 <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'decrement')} className="h-6 w-6">
-                                                    <UserMinus className="h-3 w-3" />
+                                                    <Minus className="h-3 w-3" />
                                                 </Button>
                                                 <Input type="number" value={currentPetHp} readOnly className="w-12 h-6 text-center text-sm font-bold p-1"/>
                                                 <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'increment')} className="h-6 w-6">
-                                                    <UserPlus className="h-3 w-3" />
+                                                    <Plus className="h-3 w-3" />
                                                 </Button>
                                             </div>
                                         </div>
@@ -1423,11 +1422,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                             </Label>
                                              <div className="flex items-center gap-1">
                                                 <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'decrement')} className="h-6 w-6">
-                                                    <UserMinus className="h-3 w-3" />
+                                                    <Minus className="h-3 w-3" />
                                                 </Button>
                                                 <Input type="number" value={currentPetSanity} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
                                                 <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'increment')} className="h-6 w-6">
-                                                    <UserPlus className="h-3 w-3" />
+                                                    <Plus className="h-3 w-3" />
                                                 </Button>
                                             </div>
                                         </div>
@@ -1444,11 +1443,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                             </Label>
                                              <div className="flex items-center gap-1">
                                                 <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'decrement')} className="h-6 w-6">
-                                                    <UserMinus className="h-3 w-3" />
+                                                    <Minus className="h-3 w-3" />
                                                 </Button>
                                                 <Input type="number" value={currentPetMv} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
                                                 <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'increment')} className="h-6 w-6">
-                                                    <UserPlus className="h-3 w-3" />
+                                                    <Plus className="h-3 w-3" />
                                                 </Button>
                                             </div>
                                         </div>
@@ -1465,11 +1464,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                                             </Label>
                                              <div className="flex items-center gap-1">
                                                 <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'decrement')} className="h-6 w-6">
-                                                    <UserMinus className="h-3 w-3" />
+                                                    <Minus className="h-3 w-3" />
                                                 </Button>
                                                 <Input type="number" value={currentPetDef} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
                                                 <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'increment')} className="h-6 w-6">
-                                                    <UserPlus className="h-3 w-3" />
+                                                    <Plus className="h-3 w-3" />
                                                 </Button>
                                             </div>
                                         </div>
