@@ -80,7 +80,8 @@ export interface RangedWeapon extends Weapon {
 }
 
 export interface Character {
-  id: string;
+  id: string; // For templates, this is 'gob', 'custom', etc. For saved instances, it's the Firestore doc ID.
+  templateId?: string; // Explicitly store the original template ID for saved instances.
   name: string;
   baseStats: CharacterStats;
   skills?: Skills;
@@ -93,6 +94,4 @@ export interface Character {
   selectedArsenalCardId?: string | null;
   savedCooldowns?: Record<string, number>;
   savedQuantities?: Record<string, number>;
-  lastSaved?: string; // Added lastSaved timestamp
-}
-
+  lastSaved?: string;
