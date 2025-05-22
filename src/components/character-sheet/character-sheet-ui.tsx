@@ -13,7 +13,7 @@ import {
   Save, Swords, Package, Library, BookOpen, PawPrint,
   Heart, Shield, Footprints, Brain, Laptop, Star, VenetianMask,
   HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding,
-  Sword as MeleeIcon,
+  Sword as MeleeIcon, UserMinus as Minus, UserPlus as Plus, UserCircle as UserCircleIcon // Renamed UserCircle import
 } from "lucide-react";
 import type { CharacterStats, StatName, Character, Ability, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from '@/types/character';
 import type { ArsenalCard, ArsenalItem } from '@/types/arsenal';
@@ -21,6 +21,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +35,6 @@ import { WeaponDisplay } from './weapon-display';
 import { SkillsSection } from './skills-section';
 import { AbilitiesSection } from './abilities-section';
 import { ArsenalTabContent } from './arsenal-tab-content';
-import { Badge } from '@/components/ui/badge';
 
 
 const initialBaseStats: CharacterStats = { // For default templates if not otherwise specified
@@ -319,19 +319,25 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     }, 0);
   }, [toast]);
 
+  const parseCooldownRounds = useCallback((cooldownString?: string | number): number | undefined => {
+    if (typeof cooldownString === 'number') return cooldownString;
+    if (!cooldownString) return undefined;
+    const match = String(cooldownString).match(/\d+/);
+    return match ? parseInt(match[0], 10) : undefined;
+  }, []);
+
   // Effect for determining INITIAL character ID based on query param or user default
   useEffect(() => {
-    if (initialIdProcessed && !searchParams.get('load')) {
-      // If initial determination is done and there's no NEW 'load' param, don't re-evaluate.
-      // This prevents overriding a user's dropdown selection after a 'load' param has been processed and cleared.
-      return;
+    if (authLoading) {
+      setIsLoadingCharacter(true);
+      return; // Wait for auth state to be resolved
     }
-    
+
     const loadParam = searchParams.get('load');
 
-    if (loadParam) {
+    if (loadParam && !initialIdProcessed) {
       setSelectedCharacterId(loadParam);
-      setInitialIdProcessed(true); // Mark that we've processed an explicit load/initial set
+      setInitialIdProcessed(true); // Mark that we've processed an explicit load
       // Clean the URL
       const currentPathname = typeof window !== "undefined" ? window.location.pathname : "";
       const newUrl = typeof window !== "undefined" ? new URL(window.location.href) : null;
@@ -339,18 +345,18 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         newUrl.searchParams.delete('load');
         router.replace(newUrl.pathname + newUrl.search, { scroll: false });
       }
-      return; // Priority given to loadParam, data loading will be handled by the next effect
+      return; // Data loading will be handled by the next effect triggered by selectedCharacterId change
     }
 
     // Only proceed if no loadParam was processed in this specific effect execution
-    // and if we haven't done the initial processing yet.
-    if (!initialIdProcessed) {
-        if (currentUser && !authLoading) {
+    // and if we haven't done the initial processing for default loading yet.
+    if (!loadParam && !initialIdProcessed) {
+        if (currentUser) {
             const prefsDocRef = doc(db, "userCharacters", currentUser.uid, "preferences", "userPrefs");
             getDoc(prefsDocRef).then(docSnap => {
                 if (docSnap.exists()) {
                     const userDefaultId = docSnap.data()?.defaultCharacterId;
-                    if (userDefaultId) {
+                    if (userDefaultId && charactersData.some(c => c.id === userDefaultId)) {
                         setSelectedCharacterId(userDefaultId);
                     } else {
                         setSelectedCharacterId(charactersData[0].id); // Global default
@@ -364,13 +370,11 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                 setSelectedCharacterId(charactersData[0].id); // Fallback
                 setInitialIdProcessed(true);
             });
-        } else if (!currentUser && !authLoading) {
-            // Not logged in, no auth loading, use global default
+        } else {
+            // Not logged in, use global default
             setSelectedCharacterId(charactersData[0].id);
             setInitialIdProcessed(true);
         }
-        // If auth is still loading, this effect will re-run when authLoading becomes false,
-        // and initialIdProcessed is still false, allowing default loading.
     }
   }, [searchParams, currentUser, authLoading, router, initialIdProcessed]);
 
@@ -389,10 +393,12 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       let characterToLoad: Character | undefined | null = undefined;
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
-      if (selectedCharacterId === 'custom') { // Always load default for "custom" ID initially
+      if (selectedCharacterId === 'custom') {
           characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
-          if (characterToLoad) characterToLoad.templateId = 'custom';
-          showToastHelper({ title: "Template Loaded", description: "Loaded default Custom Character template. Use 'Load My Saved Custom' for your version." });
+          if (characterToLoad) {
+            characterToLoad.templateId = 'custom';
+            // Don't show toast here if it's the default 'custom' load, wait for specific "Load my custom" button
+          }
       } else if (currentUser && auth.currentUser) {
         const firestoreDocIdToLoad = selectedCharacterId;
         const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", firestoreDocIdToLoad);
@@ -420,7 +426,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
         if (characterToLoad) characterToLoad.templateId = selectedCharacterId;
         if (defaultTemplate) {
-             showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}.` });
+             // Avoid toast on initial default load, only if explicitly changed.
+             // showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name}.` });
         }
       }
 
@@ -449,151 +456,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     loadCharacterData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, setAuthError, showToastHelper, parseCooldownRounds]); 
-
-
-  const parseCooldownRounds = useCallback((cooldownString?: string | number): number | undefined => {
-    if (typeof cooldownString === 'number') return cooldownString;
-    if (!cooldownString) return undefined;
-    const match = String(cooldownString).match(/\d+/);
-    return match ? parseInt(match[0], 10) : undefined;
-  }, []);
-
-  const equippedArsenalCard = useMemo(() => {
-    if (!editableCharacterData?.selectedArsenalCardId || !arsenalCards) {
-      return null;
-    }
-    const card = arsenalCards.find(card => card.id === editableCharacterData.selectedArsenalCardId) || null;
-    if (card?.id?.startsWith('error-') || card?.id?.startsWith('warning-')) return null;
-    return card;
-  }, [editableCharacterData?.selectedArsenalCardId, arsenalCards]);
-
-  const effectiveBaseStats = useMemo(() => {
-    if (!editableCharacterData) return { ...initialBaseStats };
-    let base = { ...editableCharacterData.baseStats };
-
-    if (equippedArsenalCard) {
-        base.hp = Math.max(0, (base.hp || 0) + (equippedArsenalCard.hpMod || 0));
-        base.maxHp = Math.max(1, (base.maxHp || 0) + (equippedArsenalCard.maxHpMod || 0));
-        base.mv = Math.max(0, (base.mv || 0) + (equippedArsenalCard.mvMod || 0));
-        base.def = Math.max(0, (base.def || 0) + (equippedArsenalCard.defMod || 0));
-        base.sanity = Math.max(0, (base.sanity || 0) + (equippedArsenalCard.sanityMod || 0));
-        base.maxSanity = Math.max(1, (base.maxSanity || 0) + (equippedArsenalCard.maxSanityMod || 0));
-    }
-
-    if (equippedArsenalCard && equippedArsenalCard.items) {
-      equippedArsenalCard.items.forEach(item => {
-        if (!item.isPet && item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
-          item.parsedStatModifiers.forEach(mod => {
-            const statKey = mod.targetStat as keyof CharacterStats;
-            if (statKey in base && typeof (base[statKey]) === 'number') {
-              (base[statKey] as number) = Math.max(
-                (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0,
-                (base[statKey] as number) + mod.value
-              );
-            }
-          });
-        }
-      });
-    }
-
-    if (base.hp > base.maxHp) base.hp = base.maxHp;
-    if (base.sanity > base.maxSanity) base.sanity = base.maxSanity;
-
-
-    return base;
-  }, [editableCharacterData, equippedArsenalCard]);
-
-  const characterSkills = useMemo(() => {
-      return editableCharacterData?.skills || initialSkills;
-  }, [editableCharacterData]);
-
- const currentMeleeWeapon = useMemo(() => {
-    if (!editableCharacterData) return undefined;
-    let weaponToDisplay: Weapon | undefined = editableCharacterData.meleeWeapon
-        ? { ...editableCharacterData.meleeWeapon }
-        : { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" };
-
-    if (equippedArsenalCard?.items) {
-        const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            !item.isPet &&
-            (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
-            item.parsedWeaponStats?.attack !== undefined &&
-            !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
-        );
-
-        if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
-            weaponToDisplay = {
-                name: arsenalMeleeItem.abilityName || 'Arsenal Melee',
-                attack: arsenalMeleeItem.parsedWeaponStats.attack,
-                flavorText: arsenalMeleeItem.itemDescription || arsenalMeleeItem.parsedWeaponStats.rawDetails,
-            };
-        }
-    }
-    if (equippedArsenalCard?.meleeAttackMod && weaponToDisplay) {
-        weaponToDisplay.attack = (weaponToDisplay.attack || 0) + equippedArsenalCard.meleeAttackMod;
-    }
-    
-    if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === 1 && !editableCharacterData.meleeWeapon?.name && !equippedArsenalCard?.meleeAttackMod && !equippedArsenalCard?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon === true || i.category?.toUpperCase() === 'LOAD OUT'  || i.type?.toUpperCase() === 'WEAPON') && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) {
-        return undefined;
-    }
-
-    return weaponToDisplay;
-  }, [editableCharacterData, equippedArsenalCard]);
-
-  const currentRangedWeapon = useMemo(() => {
-    if (!editableCharacterData) return undefined;
-      let weaponToDisplay: RangedWeapon | undefined = editableCharacterData.rangedWeapon
-          ? { ...editableCharacterData.rangedWeapon }
-          : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" };
-
-      if (equippedArsenalCard?.items) {
-          const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-             !item.isPet &&
-             (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
-             item.parsedWeaponStats?.attack !== undefined &&
-             (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
-          );
-
-          if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
-              weaponToDisplay = {
-                  name: arsenalRangedItem.abilityName || 'Arsenal Ranged',
-                  attack: arsenalRangedItem.parsedWeaponStats.attack,
-                  range: arsenalRangedItem.parsedWeaponStats.range,
-                  flavorText: arsenalRangedItem.itemDescription || arsenalRangedItem.parsedWeaponStats.rawDetails,
-              };
-          }
-      }
-      if (equippedArsenalCard && weaponToDisplay) {
-          weaponToDisplay.attack = (weaponToDisplay.attack || 0) + (equippedArsenalCard.rangedAttackMod || 0);
-          weaponToDisplay.range = (weaponToDisplay.range || 0) + (equippedArsenalCard.rangedRangeMod || 0);
-      }
-    
-    if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 && !editableCharacterData.rangedWeapon?.name && !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod && !equippedArsenalCard?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon === true || i.category?.toUpperCase() === 'LOAD OUT'  || i.type?.toUpperCase() === 'WEAPON') && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) {
-      return undefined;
-    }
-
-      return weaponToDisplay;
-  }, [editableCharacterData, equippedArsenalCard]);
-
-  const currentCompanion = useMemo(() => {
-    if (!equippedArsenalCard || !equippedArsenalCard.items) return null;
-    return equippedArsenalCard.items.find(item => item.isPet === true) || null;
-  }, [equippedArsenalCard]);
-
- useEffect(() => {
-    if (currentCompanion && currentCompanion.parsedPetCoreStats) {
-        setCurrentPetHp(currentCompanion.parsedPetCoreStats.maxHp ?? currentCompanion.parsedPetCoreStats.hp ?? null);
-        setCurrentPetSanity(currentCompanion.parsedPetCoreStats.maxSanity ?? currentCompanion.parsedPetCoreStats.sanity ?? null);
-        setCurrentPetMv(currentCompanion.parsedPetCoreStats.mv ?? null);
-        setCurrentPetDef(currentCompanion.parsedPetCoreStats.def ?? null);
-    } else {
-        setCurrentPetHp(null);
-        setCurrentPetSanity(null);
-        setCurrentPetMv(null);
-        setCurrentPetDef(null);
-    }
-}, [currentCompanion]);
+  }, [selectedCharacterId, currentUser, setAuthError, showToastHelper]); 
 
 
   const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
@@ -715,7 +578,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
   // id here is the templateId ('custom', 'gob', etc.)
   const handleCharacterDropdownChange = (id: string) => {
     setSelectedCharacterId(id);
-    setInitialIdProcessed(true); // User has made an explicit choice
+    // setInitialIdProcessed(true); // User has made an explicit choice via dropdown
   };
 
   const handleCustomCharacterNameChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -810,7 +673,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
             maxValue = baseValue; 
             break;
         case 'meleeAttack':
-            return; 
+            return; // Melee Attack is displayed, not tracked with +/-
         default:
             return;
     }
@@ -977,6 +840,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         const newAbilities = [...prevData.abilities, abilityToAddWithoutCostField as Ability];
         const newCharacterPoints = currentCP - abilityCost;
         
+        // Use a helper for toast to avoid direct call during render/state update
         showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
         
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
@@ -1116,15 +980,13 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const effectiveTemplateId = editableCharacterData.templateId || editableCharacterData.id;
 
       let docIdForFirestore: string;
-      // If the character being saved is a custom one based on a template (e.g. "gob_saved_by_user")
-      // or a truly unique custom one (e.g. "custom_123"), its ID will be used directly.
-      // If it's the *direct* 'custom' template being modified, its ID is 'custom'.
+      
       if (editableCharacterData.id.startsWith("custom_") || (editableCharacterData.id !== 'custom' && editableCharacterData.templateId === 'custom')) {
-         docIdForFirestore = editableCharacterData.id; // Use existing unique ID for custom characters
+         docIdForFirestore = editableCharacterData.id; 
       } else if (effectiveTemplateId === 'custom' && editableCharacterData.id === 'custom') { 
-         docIdForFirestore = 'custom'; // Saving the base 'custom' template
+         docIdForFirestore = 'custom'; 
       } else { 
-         docIdForFirestore = effectiveTemplateId; // Saving a version of a predefined template like 'gob'
+         docIdForFirestore = effectiveTemplateId; 
       }
 
 
@@ -1169,8 +1031,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       showToastHelper({ title: "Not Logged In", description: "Please log in to load your saved character.", variant: "destructive" });
       return;
     }
-    // No need to change selectedCharacterId here, this button specifically loads the 'custom' ID saved data.
-    
+        
     setIsLoadingCharacter(true);
     try {
       const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", "custom"); 
@@ -1196,10 +1057,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
 
         setEditableCharacterData(JSON.parse(JSON.stringify(savedData)));
-        if (selectedCharacterId !== 'custom') { // If current template isn't custom, switch to it
+        if (selectedCharacterId !== 'custom') { 
             setSelectedCharacterId('custom');
         }
-        setInitialIdProcessed(true); // Mark that a specific version has been loaded
+        setInitialIdProcessed(true); 
         showToastHelper({ title: "Character Loaded", description: `Loaded your saved custom character: ${savedData.name}.` });
       } else {
         showToastHelper({ title: "Not Found", description: "No saved custom character found. Loaded default template.", variant: "destructive" });
@@ -1293,6 +1154,143 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     return '[&>div]:bg-gray-400'; 
   };
 
+  const equippedArsenalCard = useMemo(() => {
+    if (!editableCharacterData?.selectedArsenalCardId || !arsenalCards) {
+      return null;
+    }
+    const card = arsenalCards.find(card => card.id === editableCharacterData.selectedArsenalCardId) || null;
+    if (card?.id?.startsWith('error-') || card?.id?.startsWith('warning-')) return null;
+    return card;
+  }, [editableCharacterData?.selectedArsenalCardId, arsenalCards]);
+
+  const effectiveBaseStats = useMemo(() => {
+    if (!editableCharacterData) return { ...initialBaseStats };
+    let base = { ...editableCharacterData.baseStats };
+
+    if (equippedArsenalCard) {
+        base.hp = Math.max(0, (base.hp || 0) + (equippedArsenalCard.hpMod || 0));
+        base.maxHp = Math.max(1, (base.maxHp || 0) + (equippedArsenalCard.maxHpMod || 0));
+        base.mv = Math.max(0, (base.mv || 0) + (equippedArsenalCard.mvMod || 0));
+        base.def = Math.max(0, (base.def || 0) + (equippedArsenalCard.defMod || 0));
+        base.sanity = Math.max(0, (base.sanity || 0) + (equippedArsenalCard.sanityMod || 0));
+        base.maxSanity = Math.max(1, (base.maxSanity || 0) + (equippedArsenalCard.maxSanityMod || 0));
+    }
+
+    if (equippedArsenalCard && equippedArsenalCard.items) {
+      equippedArsenalCard.items.forEach(item => {
+        if (!item.isPet && item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
+          item.parsedStatModifiers.forEach(mod => {
+            const statKey = mod.targetStat as keyof CharacterStats;
+            if (statKey in base && typeof (base[statKey]) === 'number') {
+              (base[statKey] as number) = Math.max(
+                (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0,
+                (base[statKey] as number) + mod.value
+              );
+            }
+          });
+        }
+      });
+    }
+
+    if (base.hp > base.maxHp) base.hp = base.maxHp;
+    if (base.sanity > base.maxSanity) base.sanity = base.maxSanity;
+
+
+    return base;
+  }, [editableCharacterData, equippedArsenalCard]);
+
+  const characterSkills = useMemo(() => {
+      return editableCharacterData?.skills || initialSkills;
+  }, [editableCharacterData]);
+
+ const currentMeleeWeapon = useMemo(() => {
+    if (!editableCharacterData) return undefined;
+    let weaponToDisplay: Weapon | undefined = editableCharacterData.meleeWeapon
+        ? { ...editableCharacterData.meleeWeapon }
+        : { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" };
+
+    if (equippedArsenalCard?.items) {
+        const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
+            !item.isPet && // Exclude pets
+            (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
+            item.parsedWeaponStats?.attack !== undefined &&
+            !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
+        );
+
+        if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
+            weaponToDisplay = {
+                name: arsenalMeleeItem.abilityName || 'Arsenal Melee',
+                attack: arsenalMeleeItem.parsedWeaponStats.attack,
+                flavorText: arsenalMeleeItem.itemDescription || arsenalMeleeItem.parsedWeaponStats.rawDetails,
+            };
+        }
+    }
+    if (equippedArsenalCard?.meleeAttackMod && weaponToDisplay) {
+        weaponToDisplay.attack = (weaponToDisplay.attack || 0) + equippedArsenalCard.meleeAttackMod;
+    }
+    
+    if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === 1 && !editableCharacterData.meleeWeapon?.name && !equippedArsenalCard?.meleeAttackMod && !equippedArsenalCard?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon === true || i.category?.toUpperCase() === 'LOAD OUT'  || i.type?.toUpperCase() === 'WEAPON') && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) {
+        return undefined;
+    }
+
+    return weaponToDisplay;
+  }, [editableCharacterData, equippedArsenalCard]);
+
+  const currentRangedWeapon = useMemo(() => {
+    if (!editableCharacterData) return undefined;
+      let weaponToDisplay: RangedWeapon | undefined = editableCharacterData.rangedWeapon
+          ? { ...editableCharacterData.rangedWeapon }
+          : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" };
+
+      if (equippedArsenalCard?.items) {
+          const arsenalRangedItem = equippedArsenalCard.items.find(item =>
+             !item.isPet && // Exclude pets
+             (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
+             item.parsedWeaponStats?.attack !== undefined &&
+             (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
+          );
+
+          if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
+              weaponToDisplay = {
+                  name: arsenalRangedItem.abilityName || 'Arsenal Ranged',
+                  attack: arsenalRangedItem.parsedWeaponStats.attack,
+                  range: arsenalRangedItem.parsedWeaponStats.range,
+                  flavorText: arsenalRangedItem.itemDescription || arsenalRangedItem.parsedWeaponStats.rawDetails,
+              };
+          }
+      }
+      if (equippedArsenalCard && weaponToDisplay) {
+          weaponToDisplay.attack = (weaponToDisplay.attack || 0) + (equippedArsenalCard.rangedAttackMod || 0);
+          weaponToDisplay.range = (weaponToDisplay.range || 0) + (equippedArsenalCard.rangedRangeMod || 0);
+      }
+    
+    if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 && !editableCharacterData.rangedWeapon?.name && !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod && !equippedArsenalCard?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon === true || i.category?.toUpperCase() === 'LOAD OUT'  || i.type?.toUpperCase() === 'WEAPON') && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) {
+      return undefined;
+    }
+
+      return weaponToDisplay;
+  }, [editableCharacterData, equippedArsenalCard]);
+
+  const currentCompanion = useMemo(() => {
+    if (!equippedArsenalCard || !equippedArsenalCard.items) return null;
+    return equippedArsenalCard.items.find(item => item.isPet === true) || null;
+  }, [equippedArsenalCard]);
+
+ useEffect(() => {
+    if (currentCompanion && currentCompanion.parsedPetCoreStats) {
+        setCurrentPetHp(currentCompanion.parsedPetCoreStats.maxHp ?? currentCompanion.parsedPetCoreStats.hp ?? null);
+        setCurrentPetSanity(currentCompanion.parsedPetCoreStats.maxSanity ?? currentCompanion.parsedPetCoreStats.sanity ?? null);
+        setCurrentPetMv(currentCompanion.parsedPetCoreStats.mv ?? null);
+        setCurrentPetDef(currentCompanion.parsedPetCoreStats.def ?? null);
+        // currentPetMeleeAttack is derived for display, not tracked as state
+    } else {
+        setCurrentPetHp(null);
+        setCurrentPetSanity(null);
+        setCurrentPetMv(null);
+        setCurrentPetDef(null);
+    }
+}, [currentCompanion]);
+
 
   if (authLoading || isLoadingCharacter || !editableCharacterData) {
     return (
@@ -1380,16 +1378,14 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                     <Separator />
                     <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
                         <h3 className="text-xl font-semibold mb-3 flex items-center">
-                            <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || currentCompanion.abilityName || 'Unnamed Companion'}
+                            <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
                         </h3>
-                         {currentCompanion.petStats && !currentCompanion.parsedPetCoreStats && (
+                        {currentCompanion.petStats && !currentCompanion.parsedPetCoreStats && (
                              <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats}</p>
                         )}
-                         {currentCompanion.petStats && currentCompanion.parsedPetCoreStats && Object.keys(currentCompanion.parsedPetCoreStats).length === 0 && (
+                        {currentCompanion.petStats && currentCompanion.parsedPetCoreStats && Object.keys(currentCompanion.parsedPetCoreStats).length === 0 && (
                             <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats} (Could not parse for trackers)</p>
-                         )}
-
-
+                        )}
                         {currentCompanion.parsedPetCoreStats && (
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-3">
                                 
