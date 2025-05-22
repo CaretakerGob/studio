@@ -5,28 +5,22 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog } from "lucide-react"; // Added Copy, UserCog
+import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
 import type { Character } from '@/types/character';
-import { charactersData } from '@/components/character-sheet/character-sheet-ui';
+import { charactersData } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
-import { collection, getDocs, doc, deleteDoc, setDoc, addDoc } from "firebase/firestore"; // Added setDoc, addDoc
+import { collection, getDocs, doc, deleteDoc, setDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-
-
-import { AuthForm } from './auth-form';
-import { UserProfileDisplay } from './user-profile-display';
-import { EditProfileForm } from './edit-profile-form';
-import { Skeleton } from '../ui/skeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +31,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+import { AuthForm } from './auth-form';
+import { UserProfileDisplay } from './user-profile-display';
+import { EditProfileForm } from './edit-profile-form';
+import { Skeleton } from '../ui/skeleton';
+
+
+// Helper function
+function baseTemplateName(characterTemplateId?: string): string {
+    if (!characterTemplateId) return 'Unknown';
+    if (characterTemplateId === 'custom') return 'Custom';
+    const template = charactersData.find(c => c.id === characterTemplateId);
+    return template?.name || characterTemplateId.charAt(0).toUpperCase() + characterTemplateId.slice(1);
+}
 
 
 export function ProfileUI() {
@@ -57,17 +65,15 @@ export function ProfileUI() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false); // General processing state
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [savedCharacters, setSavedCharacters] = useState<Character[]>([]);
   const [isLoadingSavedChars, setIsLoadingSavedChars] = useState(false);
   const [charToDelete, setCharToDelete] = useState<Character | null>(null);
 
-  // State for Rename Dialog
   const [characterToRename, setCharacterToRename] = useState<Character | null>(null);
   const [renameInputValue, setRenameInputValue] = useState<string>("");
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState<boolean>(false);
-
 
   useEffect(() => {
     if (currentUser) {
@@ -96,21 +102,14 @@ export function ProfileUI() {
       const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
       const querySnapshot = await getDocs(charactersCollectionRef);
       const chars = querySnapshot.docs.map(docSnap => {
-        const data = docSnap.data() as Omit<Character, 'id'>; // Firestore doc ID is separate
-        return { ...data, id: docSnap.id }; // Use Firestore doc ID as the instance ID
-      });
-      
-      // Map Firestore doc ID to template ID for comparison with charactersData
-      const mappedChars = chars.map(c => {
-        const templateMatch = charactersData.find(t => t.id === c.id || `custom_${t.id}` === c.id); // Check if the Firestore ID is a template ID or a custom one derived from it
+        const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string };
         return {
-          ...c,
-          templateId: templateMatch ? templateMatch.id : (c.id.startsWith("custom_") ? "custom" : c.id) // This line is tricky, assuming 'id' in Firestore doc IS the template or custom_ ID
+          ...data,
+          id: docSnap.id, // This is the Firestore document ID
+          templateId: data.templateId || (docSnap.id === 'custom' ? 'custom' : docSnap.id) // Ensure templateId is set
         };
       });
-      
-      setSavedCharacters(mappedChars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
-
+      setSavedCharacters(chars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
     } catch (err) {
       console.error("Error fetching saved characters for profile:", err);
       toast({ title: "Load Error", description: "Could not fetch your saved characters.", variant: "destructive" });
@@ -282,13 +281,8 @@ export function ProfileUI() {
   };
 
   const handleLoadCharacter = (characterId: string) => {
-    // The 'characterId' here is the Firestore document ID.
-    // The Character Sheet page expects the 'templateId' or the 'custom_...' ID in the 'load' query param.
-    // We need to find the character's original template ID or its 'custom_...' ID to pass.
     const charToLoad = savedCharacters.find(c => c.id === characterId);
     if (charToLoad) {
-        // Use charToLoad.id if it's already in 'custom_timestamp' format or a base template id like 'gob'
-        // This assumes charToLoad.id is the correct identifier for the CharacterSheet page.
         router.push(`/character-sheet?load=${charToLoad.id}`);
         toast({ title: "Loading Character", description: `Attempting to load ${charToLoad.name || charToLoad.id}...` });
     } else {
@@ -308,14 +302,13 @@ export function ProfileUI() {
       return;
     }
     setIsProcessing(true);
-    // 'characterToRename.id' here is the Firestore document ID.
     const characterRef = doc(db, "userCharacters", auth.currentUser.uid, "characters", characterToRename.id);
     try {
       await updateDoc(characterRef, {
         name: renameInputValue.trim(),
         lastSaved: new Date().toISOString(),
       });
-      toast({ title: "Character Renamed", description: `${characterToRename.name} successfully renamed to ${renameInputValue.trim()}.` });
+      toast({ title: "Character Renamed", description: `${characterToRename.name || characterToRename.id} successfully renamed to ${renameInputValue.trim()}.` });
       setSavedCharacters(prev =>
         prev.map(c =>
           c.id === characterToRename.id ? { ...c, name: renameInputValue.trim(), lastSaved: new Date().toISOString() } : c
@@ -335,7 +328,6 @@ export function ProfileUI() {
   const confirmDeleteCharacter = async () => {
     if (!charToDelete || !currentUser || !auth.currentUser) return;
     setIsProcessing(true);
-    // 'charToDelete.id' here is the Firestore document ID.
     try {
       await deleteDoc(doc(db, "userCharacters", auth.currentUser.uid, "characters", charToDelete.id));
       toast({ title: "Character Deleted", description: `${charToDelete.name || charToDelete.id} has been deleted.` });
@@ -355,28 +347,45 @@ export function ProfileUI() {
     }
     setIsProcessing(true);
 
-    const newCharacterData: Omit<Character, 'id'> & { templateId: string } = { // Omit 'id' for addDoc, include templateId
-      templateId: charToDuplicate.templateId || charToDuplicate.id, // Store original template ID or 'custom'
-      name: `${charToDuplicate.name || charToDuplicate.templateId || 'Character'} (Copy)`,
-      baseStats: { ...(charToDuplicate.baseStats || charactersData.find(c=>c.id === (charToDuplicate.templateId || charToDuplicate.id))?.baseStats || charactersData.find(c=>c.id === 'custom')!.baseStats ) },
-      skills: { ...(charToDuplicate.skills || charactersData.find(c=>c.id === (charToDuplicate.templateId || charToDuplicate.id))?.skills || charactersData.find(c=>c.id === 'custom')!.skills ) },
+    const originalTemplate = charactersData.find(c => c.id === (charToDuplicate.templateId || charToDuplicate.id));
+    const originalTemplateName = originalTemplate?.name || 'Character';
+
+    let nameToCopy = charToDuplicate.name;
+    // If name is missing, or it's a template whose name wasn't changed by user (and not the base "custom" template being duplicated)
+    if (!nameToCopy || (nameToCopy === originalTemplateName && charToDuplicate.id !== 'custom' && charToDuplicate.templateId !== 'custom')) {
+      nameToCopy = originalTemplateName;
+    } else if (charToDuplicate.templateId === 'custom' && (!nameToCopy || nameToCopy === (charactersData.find(c=>c.id === 'custom')?.name))) {
+      // If it's a custom character still using the default "Custom Character" name
+      nameToCopy = charactersData.find(c=>c.id === 'custom')?.name || 'Custom Character';
+    }
+
+    const newCharacterId = `custom_${Date.now()}`;
+
+    const newCharacterData: Character = {
+      id: newCharacterId,
+      templateId: 'custom', // All duplicates become true custom characters
+      name: `${nameToCopy} (Copy)`,
+      baseStats: { ...(charToDuplicate.baseStats || charactersData.find(c=>c.id === 'custom')!.baseStats ) },
+      skills: { ...(charToDuplicate.skills || charactersData.find(c=>c.id === 'custom')!.skills ) },
       abilities: Array.isArray(charToDuplicate.abilities) ? [...charToDuplicate.abilities] : [],
-      characterPoints: charToDuplicate.characterPoints !== undefined ? charToDuplicate.characterPoints : (charactersData.find(c=>c.id === (charToDuplicate.templateId || charToDuplicate.id))?.characterPoints || 375),
+      characterPoints: charToDuplicate.characterPoints !== undefined ? charToDuplicate.characterPoints : (charactersData.find(c=>c.id === 'custom')!.characterPoints || 375),
       selectedArsenalCardId: charToDuplicate.selectedArsenalCardId || null,
       savedCooldowns: { ...(charToDuplicate.savedCooldowns || {}) },
       savedQuantities: { ...(charToDuplicate.savedQuantities || {}) },
-      imageUrl: charToDuplicate.imageUrl || charactersData.find(c=>c.id === (charToDuplicate.templateId || charToDuplicate.id))?.imageUrl,
-      avatarSeed: charToDuplicate.avatarSeed || `${(charToDuplicate.name || charToDuplicate.id).toLowerCase().replace(/\s/g, '')}${Date.now()}`,
+      imageUrl: charToDuplicate.templateId === 'custom' && charToDuplicate.imageUrl // If original is custom & has image, use it
+                  ? charToDuplicate.imageUrl
+                  : charactersData.find(c => c.id === 'custom')?.imageUrl, // Otherwise use default custom image
+      avatarSeed: `${nameToCopy?.toLowerCase().replace(/\s/g, '') || 'copy'}copy${Date.now()}`,
       lastSaved: new Date().toISOString(),
     };
 
     try {
       const charactersCollectionRef = collection(db, "userCharacters", currentUser.uid, "characters");
-      const newDocRef = await addDoc(charactersCollectionRef, newCharacterData);
-      
+      const newDocRef = doc(charactersCollectionRef, newCharacterId);
+      await setDoc(newDocRef, newCharacterData);
+
       const newCharForState: Character = {
         ...newCharacterData,
-        id: newDocRef.id, // This is the new Firestore document ID
       };
 
       setSavedCharacters(prev => [...prev, newCharForState].sort((a,b) => (a.name||a.id).localeCompare(b.name||b.id)));
@@ -470,22 +479,18 @@ export function ProfileUI() {
               ) : savedCharacters.length > 0 ? (
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {savedCharacters.map(char => {
-                    // char.id here is the Firestore document ID
-                    // char.templateId (added in fetch) is the original template ID or 'custom'
-                    const baseTemplate = charactersData.find(t => t.id === (char.templateId || char.id));
-                    
-                    let finalDisplayName = char.name || (baseTemplate?.name || char.id);
+                    const baseTemplate = charactersData.find(t => t.id === char.templateId);
+                    let finalDisplayName = char.name || 'Unnamed Character'; // Default if name is somehow undefined
+
                     if (char.templateId === 'custom') {
-                        const customTemplateName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
-                        if (char.name && char.name !== customTemplateName) {
-                            finalDisplayName = `${char.name} (Custom Character)`;
-                        } else {
-                            finalDisplayName = customTemplateName;
-                        }
-                    } else if (baseTemplate && char.name && char.name !== baseTemplate.name) {
-                        finalDisplayName = `${char.name} (${baseTemplate.name})`;
+                        const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
+                        finalDisplayName = (char.name && char.name !== defaultCustomName) ? `${char.name} (Custom Character)` : defaultCustomName;
                     } else if (baseTemplate) {
-                        finalDisplayName = baseTemplate.name;
+                        finalDisplayName = (char.name && char.name !== baseTemplate.name) ? `${char.name} (${baseTemplate.name})` : baseTemplate.name;
+                    }
+                    // Fallback if baseTemplate not found but char.name exists
+                    else if (char.name) {
+                        finalDisplayName = char.name;
                     }
 
 
@@ -503,7 +508,7 @@ export function ProfileUI() {
                           <div>
                             <p className="font-medium">{finalDisplayName}</p>
                             <p className="text-xs text-muted-foreground">
-                              Template: {baseTemplate?.name || (char.templateId === 'custom' ? 'Custom' : char.templateId || 'Unknown')}
+                              Base: {baseTemplateName(char.templateId)}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               Last Saved: {lastSavedDate}
@@ -565,7 +570,6 @@ export function ProfileUI() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Rename Character Dialog */}
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -602,128 +606,4 @@ export function ProfileUI() {
   );
 }
 
-// Helper function to get base template name for the rename dialog
-function baseTemplateName(characterTemplateId?: string): string | null {
-    if (!characterTemplateId || characterTemplateId === 'custom') return null;
-    const template = charactersData.find(c => c.id === characterTemplateId);
-    return template?.name || characterTemplateId;
-}
-
-interface Character {
-  id: string; // This will now be the Firestore document ID for saved characters
-  templateId?: string; // This will store the original template ID ('gob', 'custom', etc.)
-  name?: string;
-  baseStats?: CharacterStats;
-  skills?: import('@/types/character').Skills; // Using import type for Skills
-  abilities: import('@/types/character').Ability[]; // Using import type for Ability
-  avatarSeed?: string;
-  imageUrl?: string;
-  characterPoints?: number;
-  selectedArsenalCardId?: string | null;
-  savedCooldowns?: Record<string, number>;
-  savedQuantities?: Record<string, number>;
-  lastSaved?: string;
-}
-```
-  </change>
-  <change>
-    <file>/home/user/studio/src/types/character.ts</file>
-    <content><![CDATA[
-export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity' | 'meleeAttack';
-export type SkillName =
-  'ath' |
-  'cpu' |
-  'dare' |
-  'dec' |
-  'emp' |
-  'eng' |
-  'inv' |
-  'kno' |
-  'occ' |
-  'pers' |
-  'sur' |
-  'tac' |
-  'tun';
-
-export interface CharacterStats {
-  hp: number;
-  maxHp: number;
-  mv: number;
-  def: number;
-  sanity: number;
-  maxSanity: number;
-  meleeAttack?: number;
-}
-
-export interface Skills {
-  ath?: number;
-  cpu?: number;
-  dare?: number;
-  dec?: number;
-  emp?: number;
-  eng?: number;
-  inv?: number;
-  kno?: number;
-  occ?: number;
-  pers?: number;
-  sur?: number;
-  tac?: number;
-  tun?: number;
-}
-
-export interface CharacterStatDefinition {
-  id: StatName;
-  label: string;
-  icon: React.ElementType;
-  description?: string;
-}
-
-export interface SkillDefinition {
-  id: SkillName;
-  label: string;
-  icon: React.ElementType;
-  description?: string;
-}
-
-export type AbilityType = "Action" | "Interrupt" | "Passive";
-
-export interface Ability {
-  id: string;
-  name: string;
-  type: AbilityType;
-  description: string;
-  cost?: number | undefined;
-  range?: string;
-  cooldown?: string;
-  details?: string;
-  maxQuantity?: number;
-}
-
-export interface Weapon {
-  name: string;
-  attack: number;
-  flavorText?: string;
-}
-
-export interface RangedWeapon extends Weapon {
-  range: number;
-}
-
-export interface Character {
-  id: string; // For templates, this is 'gob', 'custom', etc. For saved instances, it's the Firestore doc ID.
-  templateId?: string; // Explicitly store the original template ID for saved instances.
-  name: string;
-  baseStats: CharacterStats;
-  skills?: Skills;
-  abilities: Ability[];
-  avatarSeed?: string;
-  imageUrl?: string;
-  meleeWeapon?: Weapon;
-  rangedWeapon?: RangedWeapon;
-  characterPoints?: number;
-  selectedArsenalCardId?: string | null;
-  savedCooldowns?: Record<string, number>;
-  savedQuantities?: Record<string, number>;
-  lastSaved?: string;
-}
-
+    
