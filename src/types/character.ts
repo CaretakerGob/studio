@@ -55,7 +55,7 @@ export interface SkillDefinition {
   description?: string;
 }
 
-export type AbilityType = "Action" | "Interrupt" | "Passive";
+export type AbilityType = "Action" | "Interrupt" | "Passive" | "FREE Action";
 
 export interface Ability {
   id: string;
@@ -95,3 +95,4 @@ export interface Character {
   savedCooldowns?: Record<string, number>;
   savedQuantities?: Record<string, number>;
   lastSaved?: string;
+}
