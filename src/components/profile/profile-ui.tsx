@@ -15,7 +15,8 @@ import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
 import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar imports
 
 import { AuthForm } from './auth-form';
 import { UserProfileDisplay } from './user-profile-display';
@@ -36,7 +37,7 @@ import {
 export function ProfileUI() {
   const { toast } = useToast();
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError, signUp, login, logout } = useAuth();
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -125,13 +126,13 @@ export function ProfileUI() {
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
-    if (!isEditing && currentUser) { 
+    if (!isEditing && currentUser) {
       setEditFormData({ displayName: currentUser.displayName || "" });
       setSelectedFile(null);
       setPreviewUrl(null);
     }
   };
-  
+
   const handleCancelEdit = () => {
     setIsEditing(false);
     if (currentUser) {
@@ -169,7 +170,7 @@ export function ProfileUI() {
         if (selectedFile && newPhotoURL) {
           profileUpdates.photoURL = newPhotoURL;
         }
-        
+
         if (Object.keys(profileUpdates).length > 0 && auth.currentUser) {
           await updateProfile(auth.currentUser, profileUpdates);
           if (displayNameChanged && !selectedFile) {
@@ -181,7 +182,7 @@ export function ProfileUI() {
           }
         }
       }
-      
+
       setIsEditing(false);
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -237,11 +238,11 @@ export function ProfileUI() {
       description: "You have been successfully logged out.",
     });
   };
-  
+
   const toggleSignUpMode = () => {
     setIsSigningUp(!isSigningUp);
-    setFormData({ email: "", password: "", passwordConfirmation: "", displayName: "" }); 
-    if(setAuthError) setAuthError(null); 
+    setFormData({ email: "", password: "", passwordConfirmation: "", displayName: "" });
+    if(setAuthError) setAuthError(null);
   };
 
   const handleLoadCharacter = (characterId: string) => {
@@ -334,30 +335,47 @@ export function ProfileUI() {
               </h3>
               {isLoadingSavedChars ? (
                  <div className="space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
                  </div>
               ) : savedCharacters.length > 0 ? (
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                  {savedCharacters.map(char => (
-                    <Card key={char.id} className="p-3 bg-card/50 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{char.name || `Character ID: ${char.id}`}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Type: {char.id === 'custom' ? 'Custom Character' : char.id.charAt(0).toUpperCase() + char.id.slice(1)}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleLoadCharacter(char.id)}>
-                          <Eye className="mr-1 h-4 w-4" /> Load
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => setCharToDelete(char)}>
-                            <Trash2 className="mr-1 h-4 w-4" /> Delete
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
+                <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                  {savedCharacters.map(char => {
+                    const baseTemplate = charactersData.find(c => c.id === char.id);
+                    let templateTypeName = char.id === 'custom' ? "Custom Character" : baseTemplate?.name || (char.id.charAt(0).toUpperCase() + char.id.slice(1));
+                    const avatarSrc = char.imageUrl || baseTemplate?.imageUrl || `https://placehold.co/40x40.png`;
+                    const avatarFallback = (char.name || char.id).substring(0, 2).toUpperCase();
+                    const lastSavedDate = char.lastSaved ? new Date(char.lastSaved).toLocaleDateString() : "Not available";
+
+                    return (
+                      <Card key={char.id} className="p-3 bg-card/50 flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={avatarSrc} alt={char.name || char.id} data-ai-hint="character avatar" />
+                            <AvatarFallback>{avatarFallback}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{char.name || `Character ID: ${char.id}`}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Type: {templateTypeName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Last Saved: {lastSavedDate}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button variant="outline" size="sm" onClick={() => handleLoadCharacter(char.id)}>
+                            <Eye className="mr-1 h-4 w-4" /> Load
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => setCharToDelete(char)}>
+                              <Trash2 className="mr-1 h-4 w-4" /> Delete
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               ) : (
                 <Alert variant="default" className="border-dashed">
@@ -398,5 +416,3 @@ export function ProfileUI() {
     </Card>
   );
 }
-
-    

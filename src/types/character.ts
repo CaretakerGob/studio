@@ -1,5 +1,5 @@
 
-export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity' | 'meleeAttack'; // Added meleeAttack
+export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity' | 'meleeAttack';
 export type SkillName =
   'ath' |
   'cpu' |
@@ -22,7 +22,7 @@ export interface CharacterStats {
   def: number;
   sanity: number;
   maxSanity: number;
-  meleeAttack?: number; // Added meleeAttack
+  meleeAttack?: number;
 }
 
 export interface Skills {
@@ -93,4 +93,6 @@ export interface Character {
   selectedArsenalCardId?: string | null;
   savedCooldowns?: Record<string, number>;
   savedQuantities?: Record<string, number>;
+  lastSaved?: string; // Added lastSaved timestamp
 }
+
