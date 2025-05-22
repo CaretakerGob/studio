@@ -11,13 +11,17 @@ import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
 import type { Character } from '@/types/character';
-import { charactersData } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
+import { charactersData } from '@/components/character-sheet/character-sheet-ui';
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
-import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore"; // Import updateDoc
 import { useRouter } from 'next/navigation';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input"; // Import Input
+import { Label } from "@/components/ui/label"; // Import Label
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"; // Import Dialog components
+
 
 import { AuthForm } from './auth-form';
 import { UserProfileDisplay } from './user-profile-display';
@@ -58,6 +62,11 @@ export function ProfileUI() {
   const [isLoadingSavedChars, setIsLoadingSavedChars] = useState(false);
   const [charToDelete, setCharToDelete] = useState<Character | null>(null);
 
+  // State for Rename Dialog
+  const [characterToRename, setCharacterToRename] = useState<Character | null>(null);
+  const [renameInputValue, setRenameInputValue] = useState<string>("");
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState<boolean>(false);
+
 
   useEffect(() => {
     if (currentUser) {
@@ -86,7 +95,7 @@ export function ProfileUI() {
       const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
       const querySnapshot = await getDocs(charactersCollectionRef);
       const chars = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Character));
-      setSavedCharacters(chars);
+      setSavedCharacters(chars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
     } catch (err) {
       console.error("Error fetching saved characters for profile:", err);
       toast({ title: "Load Error", description: "Could not fetch your saved characters.", variant: "destructive" });
@@ -251,6 +260,39 @@ export function ProfileUI() {
     toast({ title: "Loading Character", description: `Attempting to load character ${characterId}...` });
   };
 
+  const openRenameDialog = (char: Character) => {
+    setCharacterToRename(char);
+    setRenameInputValue(char.name || "");
+    setIsRenameDialogOpen(true);
+  };
+
+  const handleRenameCharacter = async () => {
+    if (!characterToRename || !currentUser || !auth.currentUser || !renameInputValue.trim()) {
+      toast({ title: "Error", description: "Character or new name is missing.", variant: "destructive" });
+      return;
+    }
+
+    const characterRef = doc(db, "userCharacters", auth.currentUser.uid, "characters", characterToRename.id);
+    try {
+      await updateDoc(characterRef, {
+        name: renameInputValue.trim(),
+        lastSaved: new Date().toISOString(),
+      });
+      toast({ title: "Character Renamed", description: `${characterToRename.name} successfully renamed to ${renameInputValue.trim()}.` });
+      setSavedCharacters(prev =>
+        prev.map(c =>
+          c.id === characterToRename.id ? { ...c, name: renameInputValue.trim(), lastSaved: new Date().toISOString() } : c
+        ).sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id))
+      );
+      setIsRenameDialogOpen(false);
+      setCharacterToRename(null);
+    } catch (err) {
+      console.error("Error renaming character:", err);
+      toast({ title: "Rename Failed", description: "Could not rename character.", variant: "destructive" });
+    }
+  };
+
+
   const confirmDeleteCharacter = async () => {
     if (!charToDelete || !currentUser || !auth.currentUser) return;
     try {
@@ -344,7 +386,14 @@ export function ProfileUI() {
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                   {savedCharacters.map(char => {
                     const baseTemplate = charactersData.find(c => c.id === char.id);
-                    let templateTypeName = char.id === 'custom' ? "Custom Character" : baseTemplate?.name || (char.id.charAt(0).toUpperCase() + char.id.slice(1));
+                    let templateTypeName = "";
+                    if (char.id === 'custom') {
+                      templateTypeName = ` (Custom Character)`;
+                    } else if (baseTemplate) {
+                      templateTypeName = ` (Template: ${baseTemplate.name})`;
+                    } else {
+                      templateTypeName = ` (Template: ${char.id.charAt(0).toUpperCase() + char.id.slice(1)})`;
+                    }
                     const avatarSrc = char.imageUrl || baseTemplate?.imageUrl || `https://placehold.co/40x40.png`;
                     const avatarFallback = (char.name || char.id).substring(0, 2).toUpperCase();
                     const lastSavedDate = char.lastSaved ? new Date(char.lastSaved).toLocaleDateString() : "Not available";
@@ -357,10 +406,7 @@ export function ProfileUI() {
                             <AvatarFallback>{avatarFallback}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{char.name || `Character ID: ${char.id}`}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Type: {templateTypeName}
-                            </p>
+                            <p className="font-medium">{char.name || `Character ID: ${char.id}`}{char.id !== 'custom' && baseTemplate && char.name !== baseTemplate.name ? ` (Template: ${baseTemplate.name})` : (char.id === 'custom' ? ' (Custom Character)' : '')}</p>
                             <p className="text-xs text-muted-foreground">
                               Last Saved: {lastSavedDate}
                             </p>
@@ -369,6 +415,9 @@ export function ProfileUI() {
                         <div className="flex items-center space-x-2">
                           <Button variant="outline" size="sm" onClick={() => handleLoadCharacter(char.id)}>
                             <Eye className="mr-1 h-4 w-4" /> Load
+                          </Button>
+                           <Button variant="outline" size="sm" onClick={() => openRenameDialog(char)}>
+                            <Edit3 className="mr-1 h-4 w-4" /> Rename
                           </Button>
                           <Button variant="destructive" size="sm" onClick={() => setCharToDelete(char)}>
                               <Trash2 className="mr-1 h-4 w-4" /> Delete
@@ -414,7 +463,46 @@ export function ProfileUI() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rename Character Dialog */}
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Character: {characterToRename?.name || characterToRename?.id}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label htmlFor="renameCharacterInput">New Name</Label>
+            <Input
+              id="renameCharacterInput"
+              value={renameInputValue}
+              onChange={(e) => setRenameInputValue(e.target.value)}
+              placeholder={characterToRename?.id === 'custom' ? "Enter new character name" : "Enter new name for this template"}
+            />
+            {characterToRename?.id !== 'custom' && baseTemplateName(characterToRename?.id) && (
+                 <p className="text-xs text-muted-foreground">
+                    Original template: {baseTemplateName(characterToRename?.id)}.
+                 </p>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" onClick={() => setIsRenameDialogOpen(false)}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={handleRenameCharacter} disabled={!renameInputValue.trim()}>
+              Save Name
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
 
+// Helper function to get base template name for the rename dialog
+function baseTemplateName(characterId?: string): string | null {
+    if (!characterId || characterId === 'custom') return null;
+    const template = charactersData.find(c => c.id === characterId);
+    return template?.name || characterId;
+}
