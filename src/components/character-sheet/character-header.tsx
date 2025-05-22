@@ -6,11 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CardHeader, CardDescription, CardTitle, CardContent } from "@/components/ui/card"; // Added CardContent
+import { CardHeader, CardDescription, CardTitle, CardContent } from "@/components/ui/card";
 import { UserCircle, RotateCcw, Edit2, UserCog, Award } from "lucide-react";
 import type { User } from 'firebase/auth';
 import type { Character } from '@/types/character';
-import { Separator } from '@/components/ui/separator'; // Added Separator import
+import { Separator } from '@/components/ui/separator';
+import { charactersData } from './character-sheet-ui'; // Import charactersData
 
 interface CharacterHeaderProps {
   selectedCharacterId: string;
@@ -39,10 +40,16 @@ export function CharacterHeader({
   if (!editableCharacterData) {
     return (
         <CardHeader>
-            <CardTitle>Loading Character...</CardTitle>
+            <CardTitle className="text-3xl">Loading Character...</CardTitle>
         </CardHeader>
     )
   }
+
+  // Determine the display name for the main title area based on the currently viewed/edited character
+  // This name will update when "Reset Template" is pressed because editableCharacterData.name gets reset.
+  const characterDisplayNameForTitle = editableCharacterData.name || 
+                                     (charactersData.find(c => c.id === selectedCharacterId)?.name) || 
+                                     "Character";
 
   return (
     <>
@@ -50,7 +57,7 @@ export function CharacterHeader({
         <div className="flex items-center justify-between">
             <div className="flex items-center">
                 <UserCircle className="mr-3 h-10 w-10 text-primary" />
-                <CardTitle className="text-3xl">Character Sheet</CardTitle>
+                <CardTitle className="text-3xl">{characterDisplayNameForTitle}</CardTitle>
             </div>
             <Button variant="ghost" onClick={onResetStats} size="sm">
                 <RotateCcw className="mr-2 h-4 w-4" /> Reset Template
@@ -58,7 +65,7 @@ export function CharacterHeader({
         </div>
         <CardDescription>Manage your character's attributes, abilities, and status.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6"> {/* Added CardContent wrapper as it was missing */}
+      <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           <div className="md:col-span-1 space-y-4">
             <div className="w-full">
