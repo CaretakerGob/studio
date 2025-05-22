@@ -11,12 +11,13 @@ import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
 import type { Character } from '@/types/character';
+import { charactersData } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
 import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
 import { useRouter } from 'next/navigation';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar imports
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; 
 
 import { AuthForm } from './auth-form';
 import { UserProfileDisplay } from './user-profile-display';
@@ -416,3 +417,4 @@ export function ProfileUI() {
     </Card>
   );
 }
+

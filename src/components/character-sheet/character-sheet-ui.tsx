@@ -74,7 +74,7 @@ const skillDefinitions: SkillDefinition[] = [
 ];
 
 
-const charactersData: Character[] = [
+export const charactersData: Character[] = [
   {
     id: 'custom',
     name: 'Custom Character',
@@ -392,7 +392,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            !item.isPet &&
+            !item.isPet && // Explicitly exclude pets
             (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
             item.parsedWeaponStats?.attack !== undefined &&
             !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
@@ -410,7 +410,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         weaponToDisplay.attack = (weaponToDisplay.attack || 0) + equippedArsenalCard.meleeAttackMod;
     }
     if (weaponToDisplay.name === "Fists" && weaponToDisplay.attack === 1 && !editableCharacterData?.meleeWeapon?.name && !equippedArsenalCard?.meleeAttackMod && !equippedArsenalCard?.items.some(i => !i.isPet && ((i.isFlaggedAsWeapon || i.category?.toUpperCase() === 'LOAD OUT'  || i.type?.toUpperCase() === 'WEAPON') && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)))) {
-        // No specific character weapon, no arsenal weapon/mod that overrides fists
         return undefined;
     }
 
@@ -424,7 +423,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-             !item.isPet &&
+             !item.isPet && // Explicitly exclude pets
              (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'LOAD OUT' || item.type?.toUpperCase() === 'WEAPON') &&
              item.parsedWeaponStats?.attack !== undefined &&
              (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0)
@@ -444,7 +443,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
           weaponToDisplay.range = (weaponToDisplay.range || 0) + (equippedArsenalCard.rangedRangeMod || 0);
       }
     if (weaponToDisplay.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 && !editableCharacterData?.rangedWeapon?.name && !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod && !equippedArsenalCard?.items.some(i => !i.isPet && ((i.isFlaggedAsWeapon || i.category?.toUpperCase() === 'LOAD OUT'  || i.type?.toUpperCase() === 'WEAPON') && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)))) {
-      // No specific character weapon, no arsenal weapon/mod that overrides default "None"
       return undefined;
     }
 
@@ -511,10 +509,10 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       setCurrentAbilityQuantities({});
     }
   }, [
-      editableCharacterData?.id,
-      abilitiesJSONKey,
-      savedCooldownsJSONKey,
-      savedQuantitiesJSONKey,
+      editableCharacterData?.id, // Only need ID if abilities themselves don't trigger re-evaluation
+      abilitiesJSONKey, // Key to re-run if abilities array content changes
+      savedCooldownsJSONKey, // Key to re-run if saved cooldowns content changes
+      savedQuantitiesJSONKey, // Key to re-run if saved quantities content changes
       parseCooldownRounds
     ]);
 
@@ -577,7 +575,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
       if (selectedCharacterId === 'custom') {
-          // Always load the default custom template first.
           characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : undefined;
           if (characterToLoad) {
               characterToLoad.name = defaultTemplate?.name || 'Custom Character';
@@ -588,6 +585,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
               characterToLoad.selectedArsenalCardId = null;
               characterToLoad.savedCooldowns = {};
               characterToLoad.savedQuantities = {};
+              showToastHelper({ title: "Template Loaded", description: `Loaded default template for ${characterToLoad.name}. Use 'Load My Saved Custom' to get your version.` });
           }
       } else if (currentUser && auth.currentUser && defaultTemplate) {
         try {
@@ -596,7 +594,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
           if (docSnap.exists()) {
             characterToLoad = { id: selectedCharacterId, ...docSnap.data() } as Character;
-            // Ensure all base properties from template are present if missing in saved data
             characterToLoad.name = characterToLoad.name || defaultTemplate.name;
             characterToLoad.baseStats = characterToLoad.baseStats || defaultTemplate.baseStats;
             characterToLoad.skills = characterToLoad.skills || defaultTemplate.skills;
@@ -629,6 +626,8 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
                 characterToLoad.savedCooldowns = {};
                 characterToLoad.savedQuantities = {};
             }
+          } else {
+             characterToLoad = undefined;
           }
         }
       } else if (defaultTemplate) {
@@ -644,7 +643,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         setEditableCharacterData(characterToLoad);
       } else {
         setEditableCharacterData(null);
-        showToastHelper({ title: "Error", description: "Could not load character data.", variant: "destructive" });
+        showToastHelper({ title: "Error", description: "Selected character template not found.", variant: "destructive" });
       }
       setAbilityToAddId(undefined);
       setSkillToPurchase(undefined);
@@ -717,7 +716,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     handleStatChange(statName, (editableCharacterData.baseStats[statName] || 0) - 1);
   };
 
- const handlePetStatChange = (statType: 'hp' | 'sanity' | 'mv' | 'def' | 'meleeAttack', operation: 'increment' | 'decrement') => {
+ const handlePetStatChange = (statType: 'hp' | 'sanity' | 'mv' | 'def', operation: 'increment' | 'decrement') => {
     if (!currentCompanion || !currentCompanion.parsedPetCoreStats) return;
     const delta = operation === 'increment' ? 1 : -1;
     const coreStats = currentCompanion.parsedPetCoreStats;
@@ -725,7 +724,6 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValue: number | undefined = undefined;
-    let baseValue: number | undefined = undefined;
 
     switch (statType) {
         case 'hp':
@@ -741,33 +739,20 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
         case 'mv':
             setter = setCurrentPetMv;
             currentValue = currentPetMv;
-            baseValue = coreStats.mv;
-            maxValue = coreStats.mv;
+            maxValue = coreStats.mv; 
             break;
         case 'def':
             setter = setCurrentPetDef;
             currentValue = currentPetDef;
-            baseValue = coreStats.def;
-            maxValue = coreStats.def;
+            maxValue = coreStats.def; 
             break;
-        // Melee attack is no longer handled by +/- buttons directly here.
-        case 'meleeAttack':
-            return;
         default:
             return;
     }
 
     if (setter && currentValue !== null && maxValue !== undefined) {
         let newValue = currentValue + delta;
-        if (statType === 'mv' || statType === 'def') {
-             if (operation === 'increment') {
-                 newValue = Math.min(currentValue + 1, maxValue);
-             } else {
-                 newValue = Math.max(currentValue -1, 0);
-             }
-        } else {
-            newValue = Math.min(Math.max(newValue, 0), maxValue);
-        }
+        newValue = Math.min(Math.max(newValue, 0), maxValue);
         setter(newValue);
     }
 };
@@ -810,7 +795,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const currentVal = editableCharacterData.baseStats[statKey] || 0;
     const currentPoints = editableCharacterData.characterPoints || 0;
 
-    if (currentVal <= 1) {
+    if (currentVal <= 1) { // Prevent going below 1
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -901,7 +886,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     }
 
     const currentCP = editableCharacterData.characterPoints || 0;
-    const abilityCost = abilityInfo.cost ?? 0;
+    const abilityCost = abilityInfo.cost ?? 0; // Ensure cost is a number
     const abilityNameForToast = abilityInfo.name;
 
     if (currentCP < abilityCost) {
@@ -911,10 +896,13 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
 
     setEditableCharacterData(prevData => {
         if (!prevData) return null;
-        const { cost, ...abilityToAdd } = abilityInfo;
+        const { cost, ...abilityToAdd } = abilityInfo; // Destructure cost out
         const newAbilities = [...prevData.abilities, abilityToAdd as Ability];
         const newCharacterPoints = currentCP - abilityCost;
+        
+        // Defer toast to avoid state update during render issues
         showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
+        
         return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
     });
     setAbilityToAddId(undefined);
@@ -1189,7 +1177,7 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     const percentage = (currentPetDef / currentCompanion.parsedPetCoreStats.def) * 100;
     if (percentage <= 33) return '[&>div]:bg-red-500';
     if (percentage <= 66) return '[&>div]:bg-yellow-500';
-    return '[&>div]:bg-gray-400'; // Changed to gray as DEF usually doesn't "deplete" in green/yellow fashion
+    return '[&>div]:bg-gray-400'; 
   };
 
 
@@ -1460,3 +1448,4 @@ export function CharacterSheetUI({ arsenalCards }: CharacterSheetUIProps) {
     </Card>
   );
 }
+
