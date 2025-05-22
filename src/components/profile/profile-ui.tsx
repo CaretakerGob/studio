@@ -109,7 +109,7 @@ export function ProfileUI() {
       const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
       const querySnapshot = await getDocs(charactersCollectionRef);
       const chars = querySnapshot.docs.map(docSnap => {
-        const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string };
+        const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string; lastSaved?: string };
         return {
           ...data,
           id: docSnap.id,
@@ -570,7 +570,7 @@ export function ProfileUI() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2 self-end sm:self-center flex-wrap justify-end">
+                        <div className="flex items-center gap-2 self-end sm:self-center flex-wrap justify-end">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -670,3 +670,6 @@ export function ProfileUI() {
     </Card>
   );
 }
+
+
+    
