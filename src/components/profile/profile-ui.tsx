@@ -29,7 +29,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  // AlertDialogTrigger, // No longer needed here as the button itself will trigger state change
 } from "@/components/ui/alert-dialog";
 
 
@@ -101,7 +101,7 @@ export function ProfileUI() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    if (authError) setAuthError(null);
+    if (authError && setAuthError) setAuthError(null);
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -143,7 +143,7 @@ export function ProfileUI() {
   const handleSaveChanges = async (e: FormEvent) => {
     e.preventDefault();
     if (!currentUser || !auth.currentUser) {
-      setAuthError("Not authenticated. Please log in again.");
+      if (setAuthError) setAuthError("Not authenticated. Please log in again.");
       return;
     }
 
@@ -169,7 +169,7 @@ export function ProfileUI() {
           profileUpdates.photoURL = newPhotoURL;
         }
         
-        if (Object.keys(profileUpdates).length > 0) {
+        if (Object.keys(profileUpdates).length > 0 && auth.currentUser) { // Check auth.currentUser again
           await updateProfile(auth.currentUser, profileUpdates);
           if (displayNameChanged && !selectedFile) {
              toast({ title: "Display Name Updated", description: "Your display name has been saved." });
@@ -352,11 +352,10 @@ export function ProfileUI() {
                         <Button variant="outline" size="sm" onClick={() => handleLoadCharacter(char.id)} disabled>
                           <Eye className="mr-1 h-4 w-4" /> Load (Soon)
                         </Button>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" onClick={() => setCharToDelete(char)}>
-                                <Trash2 className="mr-1 h-4 w-4" /> Delete
-                            </Button>
-                        </AlertDialogTrigger>
+                        {/* Removed AlertDialogTrigger wrapper, Button now directly sets state */}
+                        <Button variant="destructive" size="sm" onClick={() => setCharToDelete(char)}>
+                            <Trash2 className="mr-1 h-4 w-4" /> Delete
+                        </Button>
                       </div>
                     </Card>
                   ))}
