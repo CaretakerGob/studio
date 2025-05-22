@@ -11,16 +11,16 @@ import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
 import type { Character } from '@/types/character';
-import { charactersData } from '@/components/character-sheet/character-sheet-ui';
+import { charactersData } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
-import { collection, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore"; // Import updateDoc
+import { collection, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input"; // Import Input
-import { Label } from "@/components/ui/label"; // Import Label
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"; // Import Dialog components
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 
 
 import { AuthForm } from './auth-form';
@@ -386,14 +386,26 @@ export function ProfileUI() {
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                   {savedCharacters.map(char => {
                     const baseTemplate = charactersData.find(c => c.id === char.id);
-                    let templateTypeName = "";
+                    let finalDisplayName = char.name || `Character ID: ${char.id}`;
+
                     if (char.id === 'custom') {
-                      templateTypeName = ` (Custom Character)`;
+                        const customTemplateName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
+                        if (char.name && char.name !== customTemplateName) {
+                            finalDisplayName = `${char.name} (Custom Character)`;
+                        } else {
+                            finalDisplayName = "Custom Character";
+                        }
                     } else if (baseTemplate) {
-                      templateTypeName = ` (Template: ${baseTemplate.name})`;
-                    } else {
-                      templateTypeName = ` (Template: ${char.id.charAt(0).toUpperCase() + char.id.slice(1)})`;
+                        if (char.name && char.name !== baseTemplate.name) {
+                            finalDisplayName = `${char.name} (${baseTemplate.name})`;
+                        } else {
+                            finalDisplayName = baseTemplate.name;
+                        }
+                    } else if (char.id !== 'custom') {
+                        // Fallback for template not found, unlikely if charactersData is complete
+                        finalDisplayName = `${char.name || char.id} (${char.id.charAt(0).toUpperCase() + char.id.slice(1)})`;
                     }
+
                     const avatarSrc = char.imageUrl || baseTemplate?.imageUrl || `https://placehold.co/40x40.png`;
                     const avatarFallback = (char.name || char.id).substring(0, 2).toUpperCase();
                     const lastSavedDate = char.lastSaved ? new Date(char.lastSaved).toLocaleDateString() : "Not available";
@@ -406,7 +418,7 @@ export function ProfileUI() {
                             <AvatarFallback>{avatarFallback}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{char.name || `Character ID: ${char.id}`}{char.id !== 'custom' && baseTemplate && char.name !== baseTemplate.name ? ` (Template: ${baseTemplate.name})` : (char.id === 'custom' ? ' (Custom Character)' : '')}</p>
+                            <p className="font-medium">{finalDisplayName}</p>
                             <p className="text-xs text-muted-foreground">
                               Last Saved: {lastSavedDate}
                             </p>
@@ -506,3 +518,4 @@ function baseTemplateName(characterId?: string): string | null {
     const template = charactersData.find(c => c.id === characterId);
     return template?.name || characterId;
 }
+
