@@ -5,18 +5,33 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, ShieldCheck, LogOut } from "lucide-react";
+import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye } from "lucide-react"; // Added ListChecks, Trash2, Eye
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
-import { auth, storage } from '@/lib/firebase';
+import type { Character } from '@/types/character'; // Import Character type
+import { auth, storage, db } from '@/lib/firebase'; // Import db
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
+import { collection, getDocs, doc, deleteDoc } from "firebase/firestore"; // Import Firestore functions
 
 import { AuthForm } from './auth-form';
 import { UserProfileDisplay } from './user-profile-display';
 import { EditProfileForm } from './edit-profile-form';
+import { Skeleton } from '../ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 export function ProfileUI() {
   const { toast } = useToast();
@@ -36,6 +51,11 @@ export function ProfileUI() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const [savedCharacters, setSavedCharacters] = useState<Character[]>([]);
+  const [isLoadingSavedChars, setIsLoadingSavedChars] = useState(false);
+  const [charToDelete, setCharToDelete] = useState<Character | null>(null);
+
+
   useEffect(() => {
     if (currentUser) {
       setFormData({ email: currentUser.email || "", password: "", passwordConfirmation: "", displayName: currentUser.displayName || "" });
@@ -43,16 +63,36 @@ export function ProfileUI() {
       setSelectedFile(null);
       setPreviewUrl(null);
       setIsEditing(false);
-      setIsSigningUp(false); // Ensure not in signup mode if logged in
+      setIsSigningUp(false);
+      fetchSavedCharacters();
     } else {
-      // Reset for logged-out state
       setFormData({ email: "", password: "", passwordConfirmation: "", displayName: "" });
       setEditFormData({ displayName: "" });
       setSelectedFile(null);
       setPreviewUrl(null);
-      setIsSigningUp(false); // Default to login form
+      setIsSigningUp(false);
+      setSavedCharacters([]);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
+
+  const fetchSavedCharacters = async () => {
+    if (!currentUser || !auth.currentUser) return;
+    setIsLoadingSavedChars(true);
+    try {
+      const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
+      const querySnapshot = await getDocs(charactersCollectionRef);
+      const chars = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Character));
+      setSavedCharacters(chars);
+    } catch (err) {
+      console.error("Error fetching saved characters for profile:", err);
+      toast({ title: "Load Error", description: "Could not fetch your saved characters.", variant: "destructive" });
+      setSavedCharacters([]);
+    } finally {
+      setIsLoadingSavedChars(false);
+    }
+  };
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -84,7 +124,7 @@ export function ProfileUI() {
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
-    if (!isEditing && currentUser) { // When entering edit mode
+    if (!isEditing && currentUser) { 
       setEditFormData({ displayName: currentUser.displayName || "" });
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -199,9 +239,29 @@ export function ProfileUI() {
   
   const toggleSignUpMode = () => {
     setIsSigningUp(!isSigningUp);
-    setFormData({ email: "", password: "", passwordConfirmation: "", displayName: "" }); // Reset form
-    if(setAuthError) setAuthError(null); // Clear errors
+    setFormData({ email: "", password: "", passwordConfirmation: "", displayName: "" }); 
+    if(setAuthError) setAuthError(null); 
   };
+
+  const handleLoadCharacter = (characterId: string) => {
+    // Placeholder: Implement navigation to character sheet with characterId
+    toast({ title: "Load Character", description: `Loading character ${characterId}... (Functionality to be implemented)` });
+    // Example: router.push(`/character-sheet?load=${characterId}`);
+  };
+
+  const confirmDeleteCharacter = async () => {
+    if (!charToDelete || !currentUser || !auth.currentUser) return;
+    try {
+      await deleteDoc(doc(db, "userCharacters", auth.currentUser.uid, "characters", charToDelete.id));
+      toast({ title: "Character Deleted", description: `${charToDelete.name || charToDelete.id} has been deleted.` });
+      setSavedCharacters(prev => prev.filter(c => c.id !== charToDelete.id));
+    } catch (err) {
+      console.error("Error deleting character:", err);
+      toast({ title: "Delete Failed", description: "Could not delete character.", variant: "destructive" });
+    }
+    setCharToDelete(null); // Close dialog
+  };
+
 
   if (authLoading && !currentUser) {
     return (
@@ -269,13 +329,44 @@ export function ProfileUI() {
           <>
             <Separator />
             <div>
-              <h3 className="text-lg font-semibold mb-3 text-primary">Saved Data (Placeholder)</h3>
-              <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground bg-card/50">
-                <p>Your saved custom characters and other game data will appear here.</p>
-                <Button variant="outline" className="mt-3" disabled>
-                  Manage Saved Characters (Coming Soon)
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold mb-3 text-primary flex items-center">
+                <ListChecks className="mr-2 h-5 w-5" /> Manage Saved Characters
+              </h3>
+              {isLoadingSavedChars ? (
+                 <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                 </div>
+              ) : savedCharacters.length > 0 ? (
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  {savedCharacters.map(char => (
+                    <Card key={char.id} className="p-3 bg-card/50 flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{char.name || `Character ID: ${char.id}`}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Type: {char.id === 'custom' ? 'Custom Character' : char.id.charAt(0).toUpperCase() + char.id.slice(1)}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => handleLoadCharacter(char.id)} disabled>
+                          <Eye className="mr-1 h-4 w-4" /> Load (Soon)
+                        </Button>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm" onClick={() => setCharToDelete(char)}>
+                                <Trash2 className="mr-1 h-4 w-4" /> Delete
+                            </Button>
+                        </AlertDialogTrigger>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Alert variant="default" className="border-dashed">
+                  <AlertTitle>No Saved Characters</AlertTitle>
+                  <AlertDescription>You haven&apos;t saved any characters yet. Go to the Character Sheet to save one!</AlertDescription>
+                </Alert>
+              )}
             </div>
             <Separator />
             <div className="space-y-3">
@@ -289,11 +380,25 @@ export function ProfileUI() {
           </>
         )}
       </CardContent>
-      {!currentUser && (
-        <CardFooter className="flex justify-center">
-          {/* This toggle is now part of AuthForm */}
-        </CardFooter>
-      )}
+       <AlertDialog open={!!charToDelete} onOpenChange={(open) => !open && setCharToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the character
+              <span className="font-semibold"> {charToDelete?.name || charToDelete?.id}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCharToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCharacter} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+              Yes, delete character
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
+
+    
