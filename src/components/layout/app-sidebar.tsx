@@ -13,18 +13,18 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Dices, Layers, UserCircle, Home, Settings, PanelLeft, List, CalendarDays, ClipboardList, User } from 'lucide-react'; // Added User
+import { Dices, Layers, UserCircle, Home, Settings, PanelLeft, List, CalendarDays, ClipboardList, User, Share2 } from 'lucide-react'; // Added Share2
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/character-sheet', label: 'Character Sheet', icon: UserCircle },
   { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
   { href: '/card-generator', label: 'Card Generator', icon: Layers },
-  // { href: '/turn-tracker', label: 'Turn Tracker', icon: Users }, // Commented out Turn Tracker
   { href: '/events', label: 'Item List', icon: List },
   { href: '/item-list', label: 'Events', icon: CalendarDays },
   { href: '/investigations', label: 'Investigations', icon: ClipboardList },
-  { href: '/profile', label: 'User Profile', icon: User }, // Added Profile link
+  { href: '/shared-space', label: 'Shared Space', icon: Share2 },
+  { href: '/profile', label: 'User Profile', icon: User },
 ];
 
 export function AppSidebar() {

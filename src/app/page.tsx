@@ -1,8 +1,8 @@
 
-import Link from 'next/link'; // Added this import
+import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User } from "lucide-react"; // Added Home, User
+import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2 } from "lucide-react"; // Added Share2
 
 export default function HomePage() {
   const features = [
@@ -12,7 +12,8 @@ export default function HomePage() {
     { name: "Item List", href: "/events", icon: List, description: "View a list of items from the game." },
     { name: "Events", href: "/item-list", icon: CalendarDays, description: "Generate random events from game data." },
     { name: "Investigations", href: "/investigations", icon: ClipboardList, description: "Manage and track your investigations." },
-    { name: "User Profile", href: "/profile", icon: User, description: "Manage your profile and saved data." }, // Added Profile card
+    { name: "Shared Space", href: "/shared-space", icon: Share2, description: "Join or create a shared session." },
+    { name: "User Profile", href: "/profile", icon: User, description: "Manage your profile and saved data." },
   ];
 
   return (
