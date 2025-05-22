@@ -7,13 +7,13 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star } from "lucide-react";
+import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star, CircleDot } from "lucide-react"; // Added CircleDot for online status
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
 import type { Character } from '@/types/character';
-import { charactersData } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
+import { charactersData } from '@/components/character-sheet/character-sheet-ui';
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
@@ -44,7 +44,8 @@ import { cn } from '@/lib/utils';
 // Helper function
 function baseTemplateName(characterTemplateId?: string): string {
     if (!characterTemplateId) return 'Unknown Base';
-    if (characterTemplateId === 'custom') return 'Custom Character';
+    const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
+    if (characterTemplateId === 'custom') return defaultCustomName;
     const template = charactersData.find(c => c.id === characterTemplateId);
     return template?.name || characterTemplateId.charAt(0).toUpperCase() + characterTemplateId.slice(1);
 }
@@ -80,6 +81,13 @@ export function ProfileUI() {
 
   const [defaultCharacterId, setDefaultCharacterId] = useState<string | null>(null);
   const [isLoadingDefaultCharId, setIsLoadingDefaultCharId] = useState(false);
+
+  // Simulated friends list
+  const simulatedFriends = [
+    { id: 'friend1', name: 'Beast Slayer 9000', avatarSeed: 'friendone', isOnline: true },
+    { id: 'friend2', name: 'RotB_Master', avatarSeed: 'friendtwo', isOnline: false },
+    { id: 'friend3', name: 'Critter Getter', avatarSeed: 'friendthree', isOnline: true },
+  ];
 
 
   useEffect(() => {
@@ -370,19 +378,18 @@ export function ProfileUI() {
     let finalNameToSave: string;
     let toastTitle: string;
     let toastDescription: string;
+    const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
 
-    if (!trimmedNewName) { // User blanked the field, intending to reset
+    if (!trimmedNewName) { 
       const baseTemplateForReset = charactersData.find(c => c.id === (characterToRename.templateId || characterToRename.id));
-      const originalTemplateName = baseTemplateForReset?.name || (characterToRename.templateId === 'custom' ? "Custom Character" : characterToRename.templateId);
-
       if (characterToRename.templateId === 'custom') {
-        finalNameToSave = originalTemplateName; // Resets to "Custom Character"
+        finalNameToSave = defaultCustomName; 
       } else {
-        finalNameToSave = `Custom ${originalTemplateName}`;
+        finalNameToSave = `Custom ${baseTemplateForReset?.name || characterToRename.templateId}`;
       }
       toastTitle = "Name Reset to Default Format";
       toastDescription = `Character name for '${characterToRename.name || baseTemplateName(characterToRename.templateId) || characterToRename.id}' has been set to: ${finalNameToSave}.`;
-    } else { // User provided a new name
+    } else { 
       finalNameToSave = trimmedNewName;
       toastTitle = "Character Renamed";
       toastDescription = `'${characterToRename.name || baseTemplateName(characterToRename.templateId) || characterToRename.id}' successfully renamed to '${finalNameToSave}'.`;
@@ -419,7 +426,6 @@ export function ProfileUI() {
       toast({ title: "Character Deleted", description: `${charToDelete.name || baseTemplateName(charToDelete.templateId) || charToDelete.id} has been deleted.` });
       setSavedCharacters(prev => prev.filter(c => c.id !== charToDelete.id));
       if (defaultCharacterId === charToDelete.id) {
-        // Explicitly pass null to handleSetDefaultCharacter if it expects a string or null
         await handleSetDefaultCharacter(null);
       }
     } catch (err) {
@@ -454,7 +460,7 @@ export function ProfileUI() {
 
     const newCharacterData: Character = {
       id: newCharacterId,
-      templateId: 'custom', // Duplicates always become a new 'custom' character instance
+      templateId: 'custom', 
       name: `${nameToCopy || 'Character'} (Copy)`,
       baseStats: { ...(charToDuplicate.baseStats || defaultCustomCharacter?.baseStats ) },
       skills: { ...(charToDuplicate.skills || defaultCustomCharacter?.skills ) },
@@ -572,17 +578,18 @@ export function ProfileUI() {
                   {savedCharacters.map(char => {
                     const baseTemplate = charactersData.find(t => t.id === (char.templateId || char.id));
                     let finalDisplayName: string;
+                    const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
 
                     if (char.templateId === 'custom') {
-                        finalDisplayName = (char.name && char.name !== (baseTemplate?.name || "Custom Character")) 
+                        finalDisplayName = (char.name && char.name !== defaultCustomName) 
                                             ? `${char.name} (Custom Character)` 
-                                            : (baseTemplate?.name || "Custom Character");
+                                            : defaultCustomName;
                     } else if (baseTemplate) {
                         finalDisplayName = (char.name && char.name !== baseTemplate.name) 
                                             ? `${char.name} (${baseTemplate.name})` 
                                             : baseTemplate.name;
                     } else {
-                        finalDisplayName = char.name || char.id; // Fallback
+                        finalDisplayName = char.name || char.id; 
                     }
 
 
@@ -643,6 +650,41 @@ export function ProfileUI() {
                 </Alert>
               )}
             </div>
+
+            <Separator />
+            {/* Simulated Friends List Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-primary flex items-center">
+                <Users className="mr-2 h-5 w-5" /> Friends (Simulated)
+              </h3>
+              <div className="space-y-2">
+                {simulatedFriends.map(friend => (
+                  <Card key={friend.id} className="p-3 bg-card/50 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={`https://picsum.photos/seed/${friend.avatarSeed}/40/40`} alt={friend.name} data-ai-hint="friend avatar" />
+                        <AvatarFallback>{friend.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <p className="font-medium">{friend.name}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <CircleDot className={cn("h-4 w-4", friend.isOnline ? "text-green-500 fill-green-500" : "text-muted-foreground")} />
+                      <span className={cn("text-xs", friend.isOnline ? "text-green-500" : "text-muted-foreground")}>
+                        {friend.isOnline ? "Online" : "Offline"}
+                      </span>
+                    </div>
+                  </Card>
+                ))}
+                <Alert variant="default" className="border-dashed mt-2">
+                    <AlertTitle className="text-sm">Note</AlertTitle>
+                    <AlertDescription className="text-xs">
+                        This friends list is for demonstration purposes. Real-time status and friend management would require further backend integration.
+                    </AlertDescription>
+                </Alert>
+              </div>
+            </div>
+
+
             <Separator />
             <div className="space-y-3">
               <Button variant="outline" className="w-full flex items-center justify-center" disabled>
@@ -684,7 +726,11 @@ export function ProfileUI() {
               id="renameCharacterInput"
               value={renameInputValue}
               onChange={(e) => setRenameInputValue(e.target.value)}
-              placeholder={characterToRename?.templateId === 'custom' ? "Enter new character name (leave blank to reset)" : "Enter new name (leave blank to reset)"}
+              placeholder={
+                characterToRename?.templateId === 'custom' 
+                ? "Enter new name (leave blank to reset to 'Custom Character')" 
+                : `Enter new name (leave blank to reset to 'Custom ${baseTemplateName(characterToRename?.templateId)}')`
+              }
               disabled={isProcessing}
             />
             {characterToRename?.templateId !== 'custom' && baseTemplateName(characterToRename?.templateId) && (
@@ -714,3 +760,6 @@ export function ProfileUI() {
     </Card>
   );
 }
+
+
+    
