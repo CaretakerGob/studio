@@ -5,17 +5,17 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog } from "lucide-react";
+import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star } from "lucide-react"; // Added Star
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SignUpCredentials } from '@/types/auth';
 import type { Character } from '@/types/character';
-import { charactersData } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
+import { charactersData } from '@/components/character-sheet/character-sheet-ui';
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
-import { collection, getDocs, doc, deleteDoc, setDoc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, deleteDoc, setDoc, updateDoc, getDoc } from "firebase/firestore"; // Added getDoc
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ import { AuthForm } from './auth-form';
 import { UserProfileDisplay } from './user-profile-display';
 import { EditProfileForm } from './edit-profile-form';
 import { Skeleton } from '../ui/skeleton';
+import { cn } from '@/lib/utils';
 
 
 // Helper function
@@ -65,7 +66,7 @@ export function ProfileUI() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // General processing state for Firestore ops
 
   const [savedCharacters, setSavedCharacters] = useState<Character[]>([]);
   const [isLoadingSavedChars, setIsLoadingSavedChars] = useState(false);
@@ -74,6 +75,10 @@ export function ProfileUI() {
   const [characterToRename, setCharacterToRename] = useState<Character | null>(null);
   const [renameInputValue, setRenameInputValue] = useState<string>("");
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState<boolean>(false);
+
+  const [defaultCharacterId, setDefaultCharacterId] = useState<string | null>(null);
+  const [isLoadingDefaultCharId, setIsLoadingDefaultCharId] = useState(false);
+
 
   useEffect(() => {
     if (currentUser) {
@@ -84,6 +89,7 @@ export function ProfileUI() {
       setIsEditing(false);
       setIsSigningUp(false);
       fetchSavedCharacters();
+      fetchDefaultCharacterPreference();
     } else {
       setFormData({ email: "", password: "", passwordConfirmation: "", displayName: "" });
       setEditFormData({ displayName: "" });
@@ -91,6 +97,7 @@ export function ProfileUI() {
       setPreviewUrl(null);
       setIsSigningUp(false);
       setSavedCharacters([]);
+      setDefaultCharacterId(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
@@ -105,8 +112,8 @@ export function ProfileUI() {
         const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string };
         return {
           ...data,
-          id: docSnap.id, // This is the Firestore document ID
-          templateId: data.templateId || (docSnap.id === 'custom' ? 'custom' : docSnap.id) // Ensure templateId is set
+          id: docSnap.id, 
+          templateId: data.templateId || (docSnap.id === 'custom' ? 'custom' : docSnap.id) 
         };
       });
       setSavedCharacters(chars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
@@ -116,6 +123,51 @@ export function ProfileUI() {
       setSavedCharacters([]);
     } finally {
       setIsLoadingSavedChars(false);
+    }
+  };
+
+  const fetchDefaultCharacterPreference = async () => {
+    if (!currentUser || !auth.currentUser) return;
+    setIsLoadingDefaultCharId(true);
+    try {
+      const prefsDocRef = doc(db, "userCharacters", auth.currentUser.uid, "preferences", "userPrefs");
+      const docSnap = await getDoc(prefsDocRef);
+      if (docSnap.exists()) {
+        setDefaultCharacterId(docSnap.data()?.defaultCharacterId || null);
+      } else {
+        setDefaultCharacterId(null);
+      }
+    } catch (err) {
+      console.error("Error fetching default character preference:", err);
+      // Don't toast here, as it's a background load
+      setDefaultCharacterId(null);
+    } finally {
+      setIsLoadingDefaultCharId(false);
+    }
+  };
+
+  const handleSetDefaultCharacter = async (characterId: string) => {
+    if (!currentUser || !auth.currentUser) {
+      toast({ title: "Not Logged In", description: "Please log in to set a default character.", variant: "destructive" });
+      return;
+    }
+    setIsProcessing(true);
+    const newDefaultId = defaultCharacterId === characterId ? null : characterId;
+    try {
+      const prefsDocRef = doc(db, "userCharacters", auth.currentUser.uid, "preferences", "userPrefs");
+      await setDoc(prefsDocRef, { defaultCharacterId: newDefaultId }, { merge: true });
+      setDefaultCharacterId(newDefaultId);
+      if (newDefaultId) {
+        const char = savedCharacters.find(c => c.id === newDefaultId);
+        toast({ title: "Default Character Set", description: `${char?.name || newDefaultId} is now your default.` });
+      } else {
+        toast({ title: "Default Character Cleared", description: "You no longer have a default character." });
+      }
+    } catch (err) {
+      console.error("Error setting default character:", err);
+      toast({ title: "Error", description: "Could not update default character preference.", variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -332,6 +384,9 @@ export function ProfileUI() {
       await deleteDoc(doc(db, "userCharacters", auth.currentUser.uid, "characters", charToDelete.id));
       toast({ title: "Character Deleted", description: `${charToDelete.name || charToDelete.id} has been deleted.` });
       setSavedCharacters(prev => prev.filter(c => c.id !== charToDelete.id));
+      if (defaultCharacterId === charToDelete.id) {
+        await handleSetDefaultCharacter(null as any); // Unset default if deleted char was default
+      }
     } catch (err) {
       console.error("Error deleting character:", err);
       toast({ title: "Delete Failed", description: "Could not delete character.", variant: "destructive" });
@@ -351,11 +406,10 @@ export function ProfileUI() {
     const originalTemplateName = originalTemplate?.name || 'Character';
 
     let nameToCopy = charToDuplicate.name;
-    // If name is missing, or it's a template whose name wasn't changed by user (and not the base "custom" template being duplicated)
+    
     if (!nameToCopy || (nameToCopy === originalTemplateName && charToDuplicate.id !== 'custom' && charToDuplicate.templateId !== 'custom')) {
       nameToCopy = originalTemplateName;
     } else if (charToDuplicate.templateId === 'custom' && (!nameToCopy || nameToCopy === (charactersData.find(c=>c.id === 'custom')?.name))) {
-      // If it's a custom character still using the default "Custom Character" name
       nameToCopy = charactersData.find(c=>c.id === 'custom')?.name || 'Custom Character';
     }
 
@@ -363,8 +417,8 @@ export function ProfileUI() {
 
     const newCharacterData: Character = {
       id: newCharacterId,
-      templateId: 'custom', // All duplicates become true custom characters
-      name: `${nameToCopy} (Copy)`,
+      templateId: 'custom', 
+      name: `${nameToCopy || 'Character'} (Copy)`,
       baseStats: { ...(charToDuplicate.baseStats || charactersData.find(c=>c.id === 'custom')!.baseStats ) },
       skills: { ...(charToDuplicate.skills || charactersData.find(c=>c.id === 'custom')!.skills ) },
       abilities: Array.isArray(charToDuplicate.abilities) ? [...charToDuplicate.abilities] : [],
@@ -372,10 +426,10 @@ export function ProfileUI() {
       selectedArsenalCardId: charToDuplicate.selectedArsenalCardId || null,
       savedCooldowns: { ...(charToDuplicate.savedCooldowns || {}) },
       savedQuantities: { ...(charToDuplicate.savedQuantities || {}) },
-      imageUrl: charToDuplicate.templateId === 'custom' && charToDuplicate.imageUrl // If original is custom & has image, use it
+      imageUrl: charToDuplicate.templateId === 'custom' && charToDuplicate.imageUrl 
                   ? charToDuplicate.imageUrl
-                  : charactersData.find(c => c.id === 'custom')?.imageUrl, // Otherwise use default custom image
-      avatarSeed: `${nameToCopy?.toLowerCase().replace(/\s/g, '') || 'copy'}copy${Date.now()}`,
+                  : charactersData.find(c => c.id === 'custom')?.imageUrl, 
+      avatarSeed: `${(nameToCopy || 'copy').toLowerCase().replace(/\s/g, '')}copy${Date.now()}`,
       lastSaved: new Date().toISOString(),
     };
 
@@ -471,7 +525,7 @@ export function ProfileUI() {
               <h3 className="text-lg font-semibold mb-3 text-primary flex items-center">
                 <ListChecks className="mr-2 h-5 w-5" /> Manage Saved Characters
               </h3>
-              {(isLoadingSavedChars || isProcessing) ? (
+              {(isLoadingSavedChars || isProcessing || isLoadingDefaultCharId) ? (
                  <div className="space-y-2">
                     <Skeleton className="h-20 w-full" />
                     <Skeleton className="h-20 w-full" />
@@ -480,16 +534,14 @@ export function ProfileUI() {
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {savedCharacters.map(char => {
                     const baseTemplate = charactersData.find(t => t.id === char.templateId);
-                    let finalDisplayName = char.name || 'Unnamed Character'; // Default if name is somehow undefined
-
+                    let finalDisplayName = char.name || 'Unnamed Character';
+                    
                     if (char.templateId === 'custom') {
                         const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
                         finalDisplayName = (char.name && char.name !== defaultCustomName) ? `${char.name} (Custom Character)` : defaultCustomName;
                     } else if (baseTemplate) {
-                        finalDisplayName = (char.name && char.name !== baseTemplate.name) ? `${char.name} (${baseTemplate.name})` : baseTemplate.name;
-                    }
-                    // Fallback if baseTemplate not found but char.name exists
-                    else if (char.name) {
+                         finalDisplayName = (char.name && char.name !== baseTemplate.name) ? `${char.name} (${baseTemplate.name})` : baseTemplate.name;
+                    } else if (char.name) {
                         finalDisplayName = char.name;
                     }
 
@@ -497,6 +549,7 @@ export function ProfileUI() {
                     const avatarSrc = char.imageUrl || baseTemplate?.imageUrl || `https://placehold.co/40x40.png`;
                     const avatarFallback = (char.name || char.id || "XX").substring(0, 2).toUpperCase();
                     const lastSavedDate = char.lastSaved ? new Date(char.lastSaved).toLocaleDateString() : "N/A";
+                    const isCurrentDefault = char.id === defaultCharacterId;
 
                     return (
                       <Card key={char.id} className="p-3 bg-card/50 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
@@ -516,6 +569,16 @@ export function ProfileUI() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-1 sm:space-x-2 self-end sm:self-center flex-wrap justify-end">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleSetDefaultCharacter(char.id)} 
+                            disabled={isProcessing || isLoadingDefaultCharId}
+                            className={cn("h-7 w-7", isCurrentDefault ? "text-yellow-400 hover:text-yellow-500" : "text-muted-foreground hover:text-yellow-400")}
+                            title={isCurrentDefault ? "Unset as Default" : "Set as Default"}
+                          >
+                            <Star className={cn("h-5 w-5", isCurrentDefault && "fill-current")} />
+                          </Button>
                           <Button variant="outline" size="sm" onClick={() => handleLoadCharacter(char.id)} disabled={isProcessing}>
                             <Eye className="mr-1 h-4 w-4" /> Load
                           </Button>
@@ -605,5 +668,3 @@ export function ProfileUI() {
     </Card>
   );
 }
-
-    
