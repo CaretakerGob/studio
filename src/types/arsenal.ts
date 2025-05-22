@@ -4,33 +4,33 @@ import type { CharacterStats } from '@/types/character';
 export type ArsenalItemCategory = 'WEAPON' | 'GEAR' | 'INTERRUPT' | 'PASSIVE' | 'ACTION' | 'LOAD OUT' | 'LOADOUT' | 'BONUS' | 'ELITE';
 
 export interface ParsedStatModifier {
-  targetStat: string; 
+  targetStat: string;
   value: number;
 }
 
 export interface ArsenalItem {
-  id: string; 
+  id: string;
   category?: ArsenalItemCategory;
   level?: number;
   qty?: number;
   cd?: string;
-  abilityName?: string; 
-  type?: string; 
-  class?: string; 
-  itemDescription?: string; 
+  abilityName?: string;
+  type?: string;
+  class?: string;
+  itemDescription?: string;
   effect?: string;
   secondaryEffect?: string;
   toggle?: boolean;
   isFlaggedAsWeapon?: boolean;
-  effectStatChangeString?: string; 
+  effectStatChangeString?: string;
   secondaryEffectStatChangeString?: string;
-  weaponDetails?: string; 
-  
+  weaponDetails?: string;
+
   parsedStatModifiers?: ParsedStatModifier[];
-  parsedWeaponStats?: { 
+  parsedWeaponStats?: {
     attack?: number;
     range?: number;
-    rawDetails?: string; 
+    rawDetails?: string;
   };
 
   // Companion/Pet related fields
@@ -39,15 +39,21 @@ export interface ArsenalItem {
   petStats?: string; // Raw string from sheet
   petAbilities?: string;
   parsedPetCoreStats?: Partial<CharacterStats>; // Parsed HP, MaxHP, MV, DEF, Sanity, MaxSanity
+
+  // Flags for ability types
+  isAction?: boolean;
+  isInterrupt?: boolean;
+  isPassive?: boolean;
+  isFreeAction?: boolean;
 }
 
 export interface ArsenalCard {
-  id: string; 
-  name: string; 
-  description?: string; 
+  id: string;
+  name: string;
+  description?: string;
   imageUrlFront?: string;
   imageUrlBack?: string;
-  items: ArsenalItem[]; 
+  items: ArsenalItem[];
 
   hpMod?: number;
   maxHpMod?: number;
@@ -59,4 +65,3 @@ export interface ArsenalCard {
   rangedAttackMod?: number;
   rangedRangeMod?: number;
 }
-

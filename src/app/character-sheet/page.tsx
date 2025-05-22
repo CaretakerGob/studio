@@ -159,6 +159,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     if (arsenalNameIndex === -1) {
         const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMsg);
+        console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders);
         return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item', abilityName: `[${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
     }
     
@@ -278,7 +279,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       if (secondaryEffectIndex !== -1) item.secondaryEffect = String(row[secondaryEffectIndex] || '');
       
       const toggleIndex = getColumnIndex(['toggle']);
-      if (toggleIndex !== -1) item.toggle = ['true', 'yes', '1'].includes(String(row[toggleIndex] || '').toLowerCase());
+      if (toggleIndex !== -1) item.toggle = ['true', 'yes', '1', 'y'].includes(String(row[toggleIndex] || '').toLowerCase());
       
       const effectStatChangeIndex = getColumnIndex(['effect stat change', 'effectstatchange']);
       if (effectStatChangeIndex !== -1 && row[effectStatChangeIndex]) {
@@ -288,7 +289,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       
       const weaponFlagColumnIndex = getColumnIndex(['weapon']);
       if (weaponFlagColumnIndex !== -1 && row[weaponFlagColumnIndex]) {
-        item.isFlaggedAsWeapon = ['true', 'yes', '1'].includes(String(row[weaponFlagColumnIndex] || '').toLowerCase());
+        item.isFlaggedAsWeapon = ['true', 'yes', '1', 'y'].includes(String(row[weaponFlagColumnIndex] || '').toLowerCase());
       }
 
       const weaponStatsStringColumnIndex = getColumnIndex(['weapon details', 'effect description', 'effect', 'stats']);
@@ -303,15 +304,17 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const currentPetFlagColumnIndex = petFlagHeaderIndex; 
       if (currentPetFlagColumnIndex !== -1 && row[currentPetFlagColumnIndex] !== undefined && String(row[currentPetFlagColumnIndex]).trim() !== '') {
         const petFlagValue = String(row[currentPetFlagColumnIndex]).trim().toLowerCase();
-        if (['true', 'yes', '1'].includes(petFlagValue)) {
+        if (['true', 'yes', '1', 'y'].includes(petFlagValue)) {
             item.isPet = true;
 
             const itemAbilityNameValue = String(item.abilityName || '').trim(); 
 
             if (itemAbilityNameValue && !itemAbilityNameValue.startsWith('Item ') && itemAbilityNameValue !== `Item ${rowIndex}`) {
                 item.petName = itemAbilityNameValue;
+                // console.log(`[Pet Name Parsing] Pet '${item.petName}' used 'Ability Name': "${itemAbilityNameValue}"`);
             } else {
                 item.petName = 'Companion';
+                // console.log(`[Pet Name Parsing] Pet defaulted to 'Companion' because 'Ability Name' was placeholder or missing.`);
             }
 
 
@@ -326,7 +329,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
               }
             } else {
                 const effectStatChangeForPet = String(row[getColumnIndex(['effect stat change', 'effectstatchange'])] || '').trim();
-                if (effectStatChangeForPet && !item.parsedStatModifiers?.length) { // Only use if not already parsed as general item mods
+                if (effectStatChangeForPet && !item.parsedStatModifiers?.length) { 
                     const parsedFromEffect = parsePetStatsString(effectStatChangeForPet);
                     item.parsedPetCoreStats = parsedFromEffect;
                     if (parsedFromEffect && Object.keys(parsedFromEffect).length > 0) {
@@ -350,6 +353,20 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             }
         }
       }
+
+      // Ability type flags
+      const trueValues = ['true', 'yes', '1', 'y'];
+      const isActionIndex = getColumnIndex(['is action', 'isaction']);
+      if (isActionIndex !== -1) item.isAction = trueValues.includes(String(row[isActionIndex] || '').toLowerCase());
+      
+      const isInterruptIndex = getColumnIndex(['is interrupt', 'isinterrupt']);
+      if (isInterruptIndex !== -1) item.isInterrupt = trueValues.includes(String(row[isInterruptIndex] || '').toLowerCase());
+
+      const isPassiveIndex = getColumnIndex(['is passive', 'ispassive']);
+      if (isPassiveIndex !== -1) item.isPassive = trueValues.includes(String(row[isPassiveIndex] || '').toLowerCase());
+
+      const isFreeActionIndex = getColumnIndex(['is free action', 'isfreeaction']);
+      if (isFreeActionIndex !== -1) item.isFreeAction = trueValues.includes(String(row[isFreeActionIndex] || '').toLowerCase());
       
       const arsenal = arsenalsMap.get(arsenalId);
       if (arsenal) {
