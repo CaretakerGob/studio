@@ -30,8 +30,7 @@ export default function HomePage() {
       style={{
         backgroundImage: `url(${backgroundImageUrl})`,
       }}
-      // Removed bg-fixed as a diagnostic step
-      className="min-h-screen bg-contain bg-center bg-no-repeat"
+      className="min-h-screen bg-cover bg-center bg-no-repeat" // Changed bg-contain to bg-cover
       data-ai-hint="dark fantasy background"
     >
       <div className="container mx-auto py-12 px-4 flex flex-col relative z-10 bg-transparent">
