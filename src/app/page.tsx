@@ -30,7 +30,7 @@ export default function HomePage() {
       style={{
         backgroundImage: `url(${backgroundImageUrl})`,
       }}
-      className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed"
+      className="min-h-screen bg-contain bg-center bg-no-repeat bg-fixed"
       data-ai-hint="dark fantasy background"
     >
       <div className="container mx-auto py-12 px-4 flex flex-col min-h-screen relative z-10 bg-transparent">
