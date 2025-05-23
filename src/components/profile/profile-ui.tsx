@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star, CircleDot, Users } from "lucide-react"; // Added Users
+import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star, CircleDot, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -16,7 +16,7 @@ import type { Character } from '@/types/character';
 import { charactersData } from '@/components/character-sheet/character-sheet-ui';
 import { auth, storage, db } from '@/lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { updateProfile } from "firebase/auth";
+import { updateProfile, sendPasswordResetEmail } from "firebase/auth"; // Added sendPasswordResetEmail
 import { collection, getDocs, doc, deleteDoc, setDoc, updateDoc, getDoc } from "firebase/firestore";
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -496,6 +496,34 @@ export function ProfileUI() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!currentUser || !currentUser.email) {
+      toast({
+        title: "Error",
+        description: "You must be logged in and have a verified email to change your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      await sendPasswordResetEmail(auth, currentUser.email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: `A password reset link has been sent to ${currentUser.email}. Please check your inbox.`,
+      });
+    } catch (err: any) {
+      console.error("Error sending password reset email:", err);
+      toast({
+        title: "Error Sending Email",
+        description: err.message || "Could not send password reset email. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
 
   if (authLoading && !currentUser) {
     return (
@@ -688,8 +716,14 @@ export function ProfileUI() {
 
             <Separator />
             <div className="space-y-3">
-              <Button variant="outline" className="w-full flex items-center justify-center" disabled>
-                <ShieldCheck className="mr-2 h-4 w-4" /> Change Password (Placeholder)
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center" 
+                onClick={handleChangePassword}
+                disabled={!currentUser || isProcessing || authLoading}
+              >
+                <ShieldCheck className="mr-2 h-4 w-4" /> 
+                {isProcessing ? "Processing..." : "Change Password"}
               </Button>
               <Button variant="destructive" onClick={handleLogout} className="w-full flex items-center justify-center" disabled={isProcessing || authLoading}>
                 <LogOut className="mr-2 h-4 w-4" /> {isProcessing ? "Processing..." : (authLoading ? "Logging out..." : "Log Out")}
@@ -761,3 +795,5 @@ export function ProfileUI() {
     </Card>
   );
 }
+
+    
