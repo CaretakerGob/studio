@@ -33,8 +33,8 @@ export default function HomePage() {
       className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed"
       data-ai-hint="dark fantasy background"
     >
-      <div className="container mx-auto py-12 px-4 flex flex-col min-h-screen relative z-10">
-        <header className="text-center mb-12 bg-black/60 backdrop-blur-sm p-6 rounded-lg shadow-xl">
+      <div className="container mx-auto py-12 px-4 flex flex-col min-h-screen relative z-10 bg-transparent">
+        <header className="text-center mb-12 bg-black/70 backdrop-blur-md p-6 rounded-lg shadow-xl">
           <h1 className="text-5xl font-bold text-primary mb-4">Riddle of the Beast Companion</h1>
           <p className="text-xl text-white max-w-2xl mx-auto">
             Your essential toolkit for navigating the horrors and challenges of the RotB board game. Dive in and enhance your gameplay experience!
@@ -43,13 +43,13 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 flex-grow">
           {features.map((feature) => (
-            <Card key={feature.name} className="shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col bg-card/90 backdrop-blur-sm">
+            <Card key={feature.name} className="shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col bg-card/80 backdrop-blur-sm border-primary/30">
               <CardHeader className="flex-grow">
                 <div className="flex items-center gap-3 mb-2">
                   <feature.icon className="h-8 w-8 text-primary" />
                   <CardTitle className="text-2xl">{feature.name}</CardTitle>
                 </div>
-                <CardDescription>{feature.description}</CardDescription>
+                <CardDescription className="text-card-foreground/80">{feature.description}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Link href={feature.href} passHref>
@@ -62,7 +62,7 @@ export default function HomePage() {
           ))}
         </div>
 
-        <footer className="w-full py-8 mt-16 border-t border-border/50 text-center bg-black/70 backdrop-blur-sm rounded-t-lg">
+        <footer className="w-full py-8 mt-16 border-t border-border/30 text-center bg-black/70 backdrop-blur-md rounded-t-lg">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {footerLinks.map((link) => (
