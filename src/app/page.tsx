@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon } from "lucide-react"; // Added Share2, HelpCircle, FileText, ShieldCheckIcon
+import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon } from "lucide-react";
 
 export default function HomePage() {
   const features = [
@@ -18,9 +18,9 @@ export default function HomePage() {
 
   const footerLinks = [
     { name: "Home", href: "/", icon: Home },
-    { name: "FAQs", href: "/faq", icon: HelpCircle }, // Placeholder link
-    { name: "Terms of Service", href: "/terms", icon: FileText }, // Placeholder link
-    { name: "Privacy Policy", href: "/privacy", icon: ShieldCheckIcon }, // Placeholder link
+    { name: "FAQs", href: "/faq", icon: HelpCircle },
+    { name: "Terms of Service", href: "/terms", icon: FileText },
+    { name: "Privacy Policy", href: "/privacy", icon: ShieldCheckIcon },
   ];
 
   return (
@@ -67,7 +67,7 @@ export default function HomePage() {
             &copy; {new Date().getFullYear()} RotB Companion App. The Black Easter is coming!
           </p>
           <p className="text-xs text-muted-foreground/70 mt-1">
-            This is a fan-made companion app. Riddle of the Beast and all associated properties are trademarks of their respective owners.
+            This is the OFFICIAL Riddle of the Beast board game companion app and all associated properties are trademarks of their respective owners.
           </p>
         </div>
       </footer>
