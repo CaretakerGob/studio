@@ -30,7 +30,7 @@ export default function HomePage() {
       style={{
         backgroundImage: `url(${backgroundImageUrl})`,
       }}
-      className="min-h-screen bg-cover bg-center bg-no-repeat" // Changed bg-contain to bg-cover
+      className="min-h-screen bg-cover bg-center bg-no-repeat"
       data-ai-hint="dark fantasy background"
     >
       <div className="container mx-auto py-12 px-4 flex flex-col relative z-10 bg-transparent">
@@ -41,9 +41,13 @@ export default function HomePage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 flex-grow">
+        {/* Updated container for feature cards */}
+        <div className="flex overflow-x-auto py-4 space-x-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 md:space-x-0 md:py-0">
           {features.map((feature) => (
-            <Card key={feature.name} className="shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col bg-card/80 backdrop-blur-sm border-primary/30">
+            <Card 
+              key={feature.name} 
+              className="w-4/5 sm:w-3/5 md:w-full shrink-0 shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col bg-card/80 backdrop-blur-sm border-primary/30"
+            >
               <CardHeader className="flex-grow">
                 <div className="flex items-center gap-3 mb-2">
                   <feature.icon className="h-8 w-8 text-primary" />
