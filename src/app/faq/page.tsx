@@ -27,10 +27,6 @@ const appFaqs = [
     answer: "The Card Generator allows you to draw random cards from various game decks. First, select a deck from the dropdown menu. Then, click 'Draw Random Card'. Some cards are marked as 'holdable' (often items or specific clash cards). When drawn, holdable cards will appear in the main display area and also be added to your 'Held Cards' section. You can 'play' a held card by clicking on it in that section, which will move it to the main display as the most recent card."
   },
   {
-    question: "My Google Sheet data for Events or Investigations isn't showing up. What's wrong?",
-    answer: "This usually indicates an issue with your environment variable setup or Google Sheet sharing permissions. Please double-check the following:\n1. Your `.env.local` file (in the project root) has the correct `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `YOUR_SHEET_ID` (e.g., `EVENTS_GOOGLE_SHEET_ID`), and `YOUR_SHEET_RANGE` (e.g., `EVENTS_GOOGLE_SHEET_RANGE`).\n2. The Google Sheet ID and Range are correct for the specific data you're trying to load.\n3. The Google Sheet has been shared with the `GOOGLE_SERVICE_ACCOUNT_EMAIL` with at least 'Viewer' permissions.\n4. You have restarted your Next.js development server after making any changes to the `.env.local` file."
-  },
-  {
     question: "How do I use the 'Shared Space'?",
     answer: "The 'Shared Space' is a feature for collaborative play. To join a session, you need an access code from the session host. Enter this code on the Shared Space page. Currently, the access code is hardcoded as 'BEAST_PARTY' for demonstration purposes. In a full implementation, hosts would generate unique codes."
   }
