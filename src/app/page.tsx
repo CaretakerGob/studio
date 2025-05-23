@@ -33,8 +33,8 @@ export default function HomePage() {
       className="min-h-screen bg-cover bg-center bg-no-repeat"
       data-ai-hint="dark fantasy background"
     >
-      <div className="container mx-auto py-12 px-4 flex flex-col relative z-10 bg-transparent">
-        <header className="text-center mb-12 bg-black/70 backdrop-blur-md p-6 rounded-lg shadow-xl">
+      <div className="container mx-auto py-6 px-4 flex flex-col h-screen overflow-hidden md:min-h-screen md:py-12 md:overflow-visible relative z-10 bg-transparent">
+        <header className="text-center mb-6 md:mb-12 bg-black/70 backdrop-blur-md p-6 rounded-lg shadow-xl flex-shrink-0">
           <h1 className="text-5xl font-bold text-primary mb-4">Riddle of the Beast Companion</h1>
           <p className="text-xl text-white max-w-2xl mx-auto">
             Your essential toolkit for navigating the horrors and challenges of the RotB board game. Dive in and enhance your gameplay experience!
@@ -42,7 +42,9 @@ export default function HomePage() {
         </header>
 
         {/* Updated container for feature cards */}
-        <div className="flex flex-col space-y-6 py-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 md:space-y-0 md:py-0">
+        <div className="flex-grow overflow-y-auto flex flex-col space-y-6 py-4 
+                        md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 md:space-y-0 md:py-0 
+                        md:flex-grow-0 md:overflow-visible">
           {features.map((feature) => (
             <Card
               key={feature.name}
@@ -66,7 +68,7 @@ export default function HomePage() {
           ))}
         </div>
 
-        <footer className="w-full py-8 mt-16 border-t border-border/30 text-center bg-black/70 backdrop-blur-md rounded-t-lg">
+        <footer className="w-full py-6 md:py-8 mt-8 md:mt-16 border-t border-border/30 text-center bg-black/70 backdrop-blur-md rounded-t-lg flex-shrink-0">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {footerLinks.map((link) => (
