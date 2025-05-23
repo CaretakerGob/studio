@@ -33,7 +33,7 @@ export default function HomePage() {
       className="min-h-screen bg-contain bg-center bg-no-repeat bg-fixed"
       data-ai-hint="dark fantasy background"
     >
-      <div className="container mx-auto py-12 px-4 flex flex-col min-h-screen relative z-10 bg-transparent">
+      <div className="container mx-auto py-12 px-4 flex flex-col relative z-10 bg-transparent"> {/* Removed min-h-screen here */}
         <header className="text-center mb-12 bg-black/70 backdrop-blur-md p-6 rounded-lg shadow-xl">
           <h1 className="text-5xl font-bold text-primary mb-4">Riddle of the Beast Companion</h1>
           <p className="text-xl text-white max-w-2xl mx-auto">
