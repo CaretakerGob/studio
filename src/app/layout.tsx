@@ -34,10 +34,8 @@ export default function RootLayout({
         <AuthProvider> {/* Wrap with AuthProvider */}
           <SidebarProvider defaultOpen>
             <AppSidebar />
-            <SidebarInset>
-              <main className="p-4 md:p-6 lg:p-8">
-                {children}
-              </main>
+            <SidebarInset className="p-4 md:p-6 lg:p-8"> {/* Apply padding directly here */}
+              {children} {/* Page content will be rendered here */}
             </SidebarInset>
           </SidebarProvider>
           <Toaster />
