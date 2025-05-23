@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star, CircleDot } from "lucide-react"; // Added CircleDot for online status
+import { User, ShieldCheck, LogOut, Edit3, ListChecks, Trash2, Eye, Copy, UserCog, Star, CircleDot, Users } from "lucide-react"; // Added Users
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -379,20 +379,21 @@ export function ProfileUI() {
     let toastTitle: string;
     let toastDescription: string;
     const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
+    const baseTemplateForReset = charactersData.find(c => c.id === (characterToRename.templateId || characterToRename.id));
 
-    if (!trimmedNewName) { 
-      const baseTemplateForReset = charactersData.find(c => c.id === (characterToRename.templateId || characterToRename.id));
+
+    if (!trimmedNewName) {
       if (characterToRename.templateId === 'custom') {
-        finalNameToSave = defaultCustomName; 
+        finalNameToSave = defaultCustomName;
       } else {
-        finalNameToSave = `Custom ${baseTemplateForReset?.name || characterToRename.templateId}`;
+        finalNameToSave = `Custom ${baseTemplateForReset?.name || baseTemplateName(characterToRename.templateId)}`;
       }
-      toastTitle = "Name Reset to Default Format";
-      toastDescription = `Character name for '${characterToRename.name || baseTemplateName(characterToRename.templateId) || characterToRename.id}' has been set to: ${finalNameToSave}.`;
-    } else { 
+      toastTitle = "Name Reset";
+      toastDescription = `Character name for '${characterToRename.name || baseTemplateName(characterToRename.templateId)}' reset to: ${finalNameToSave}.`;
+    } else {
       finalNameToSave = trimmedNewName;
       toastTitle = "Character Renamed";
-      toastDescription = `'${characterToRename.name || baseTemplateName(characterToRename.templateId) || characterToRename.id}' successfully renamed to '${finalNameToSave}'.`;
+      toastDescription = `'${characterToRename.name || baseTemplateName(characterToRename.templateId)}' successfully renamed to '${finalNameToSave}'.`;
     }
 
     const characterRef = doc(db, "userCharacters", auth.currentUser.uid, "characters", characterToRename.id);
@@ -760,6 +761,3 @@ export function ProfileUI() {
     </Card>
   );
 }
-
-
-    
