@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2 } from "lucide-react"; // Added Share2
+import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon } from "lucide-react"; // Added Share2, HelpCircle, FileText, ShieldCheckIcon
 
 export default function HomePage() {
   const features = [
@@ -16,8 +16,15 @@ export default function HomePage() {
     { name: "User Profile", href: "/profile", icon: User, description: "Manage your profile and saved data." },
   ];
 
+  const footerLinks = [
+    { name: "Home", href: "/", icon: Home },
+    { name: "FAQs", href: "/faq", icon: HelpCircle }, // Placeholder link
+    { name: "Terms of Service", href: "/terms", icon: FileText }, // Placeholder link
+    { name: "Privacy Policy", href: "/privacy", icon: ShieldCheckIcon }, // Placeholder link
+  ];
+
   return (
-    <div className="container mx-auto py-12 px-4">
+    <div className="container mx-auto py-12 px-4 flex flex-col min-h-screen">
       <header className="text-center mb-12">
         <h1 className="text-5xl font-bold text-primary mb-4">Riddle of the Beast Companion</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -25,10 +32,10 @@ export default function HomePage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 flex-grow">
         {features.map((feature) => (
-          <Card key={feature.name} className="shadow-xl hover:shadow-primary/50 transition-shadow duration-300">
-            <CardHeader>
+          <Card key={feature.name} className="shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col">
+            <CardHeader className="flex-grow">
               <div className="flex items-center gap-3 mb-2">
                 <feature.icon className="h-8 w-8 text-primary" />
                 <CardTitle className="text-2xl">{feature.name}</CardTitle>
@@ -46,8 +53,23 @@ export default function HomePage() {
         ))}
       </div>
 
-      <footer className="text-center mt-16 text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} RotB Companion App. The Black Easter is coming!</p>
+      <footer className="w-full py-8 mt-16 border-t border-border text-center">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {footerLinks.map((link) => (
+              <Link key={link.name} href={link.href} className="text-muted-foreground hover:text-primary transition-colors duration-200 flex items-center justify-center sm:justify-start">
+                <link.icon className="h-5 w-5 mr-2 shrink-0" />
+                {link.name}
+              </Link>
+            ))}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} RotB Companion App. The Black Easter is coming!
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            This is a fan-made companion app. Riddle of the Beast and all associated properties are trademarks of their respective owners.
+          </p>
+        </div>
       </footer>
     </div>
   );
