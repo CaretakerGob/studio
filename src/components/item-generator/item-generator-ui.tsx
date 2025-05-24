@@ -6,17 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea'; // For longer stat focus input
 import { WandSparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ItemGeneratorInput, ItemGeneratorOutput } from '@/ai/flows/item-generator-flow';
-import { generateGameItem } from '@/ai/flows/item-generator-flow'; // Import the flow directly
+import { generateGameItem } from '@/ai/flows/item-generator-flow';
 
 const itemTypes: ItemGeneratorInput['itemType'][] = ["Gear", "Melee Weapon", "Ranged Weapon", "Augment", "Utility", "Consumable"];
+const rarities: NonNullable<ItemGeneratorInput['rarity']>[] = ["Common", "Uncommon", "Rare", "Artifact"];
 
 export function ItemGeneratorUI() {
   const [itemType, setItemType] = useState<ItemGeneratorInput['itemType'] | undefined>(undefined);
   const [theme, setTheme] = useState<string>('');
+  const [rarity, setRarity] = useState<ItemGeneratorInput['rarity'] | undefined>(undefined);
+  const [statFocus, setStatFocus] = useState<string>('');
   const [generatedItem, setGeneratedItem] = useState<ItemGeneratorOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -25,7 +29,7 @@ export function ItemGeneratorUI() {
     if (!itemType) {
       toast({
         title: "Item Type Required",
-        description: "Please select an item type to generate.",
+        description: "Please select an item category to generate.",
         variant: "destructive",
       });
       return;
@@ -36,9 +40,10 @@ export function ItemGeneratorUI() {
 
     try {
       const input: ItemGeneratorInput = { itemType };
-      if (theme.trim() !== '') {
-        input.theme = theme.trim();
-      }
+      if (theme.trim() !== '') input.theme = theme.trim();
+      if (rarity) input.rarity = rarity;
+      if (statFocus.trim() !== '') input.statFocus = statFocus.trim();
+      
       const result = await generateGameItem(input);
       setGeneratedItem(result);
       toast({
@@ -63,10 +68,10 @@ export function ItemGeneratorUI() {
         <CardHeader>
           <div className="flex items-center">
             <WandSparkles className="mr-3 h-8 w-8 text-primary" />
-            <CardTitle className="text-2xl">Item Generator</CardTitle>
+            <CardTitle className="text-2xl">AI Item Generator</CardTitle>
           </div>
           <CardDescription>
-            Select an item category and optionally provide a theme to generate a unique game item using AI.
+            Define parameters to generate a unique game item for Riddle of the Beast.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -93,12 +98,41 @@ export function ItemGeneratorUI() {
               type="text"
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
-              placeholder="e.g., cursed, ancient, fire, holy relic"
+              placeholder="e.g., cursed, ancient, fire, bio-mechanical"
             />
-            <p className="text-xs text-muted-foreground">
-              Provide a theme, material, or concept like "shadowy dagger", "elven cloak", "potion of giant strength".
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="raritySelect">Rarity (Optional)</Label>
+            <Select value={rarity} onValueChange={(value) => setRarity(value as ItemGeneratorInput['rarity'])}>
+              <SelectTrigger id="raritySelect" className="w-full">
+                <SelectValue placeholder="Select item rarity..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={undefined as any}>Any (AI Decides)</SelectItem>
+                {rarities.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="statFocusInput">Specific Stat Focus / Effect (Optional)</Label>
+            <Textarea
+              id="statFocusInput"
+              value={statFocus}
+              onChange={(e) => setStatFocus(e.target.value)}
+              placeholder="e.g., 'Grants temporary invisibility', 'Boosts defense against spirits', 'High electricity damage with a chance to stun'"
+              rows={3}
+            />
+             <p className="text-xs text-muted-foreground">
+              Describe a desired mechanical outcome or stat emphasis.
             </p>
           </div>
+
 
           <Button onClick={handleSubmit} className="w-full bg-primary hover:bg-primary/90" disabled={isLoading || !itemType}>
             {isLoading ? (
@@ -130,7 +164,19 @@ export function ItemGeneratorUI() {
         <Card className="shadow-xl animate-in fade-in duration-500">
           <CardHeader>
             <CardTitle className="text-xl text-primary">{generatedItem.itemName}</CardTitle>
-            <CardDescription>Category: {generatedItem.itemTypeGenerated}</CardDescription>
+            <div className="flex justify-between items-center text-sm">
+              <CardDescription>Category: {generatedItem.itemTypeGenerated}</CardDescription>
+              {generatedItem.rarityGenerated && (
+                <Badge variant={
+                  generatedItem.rarityGenerated === "Artifact" ? "destructive" :
+                  generatedItem.rarityGenerated === "Rare" ? "default" : // Primary color
+                  generatedItem.rarityGenerated === "Uncommon" ? "secondary" :
+                  "outline" // Common
+                }>
+                  {generatedItem.rarityGenerated}
+                </Badge>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
@@ -138,7 +184,7 @@ export function ItemGeneratorUI() {
               <p className="whitespace-pre-line">{generatedItem.description}</p>
             </div>
             <div>
-              <h4 className="font-semibold text-muted-foreground">Stats/Effects:</h4>
+              <h4 className="font-semibold text-muted-foreground">Game Effect:</h4>
               <p className="whitespace-pre-line">{generatedItem.gameEffect}</p>
             </div>
           </CardContent>
