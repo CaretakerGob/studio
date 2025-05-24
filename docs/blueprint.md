@@ -1,4 +1,4 @@
-# **App Name**: Beast Companion
+# **App Name**: Riddl of the Beast App Companion
 
 ## Core Features:
 
