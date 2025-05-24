@@ -118,7 +118,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
   if (missingVars.length > 0) {
     const detailedErrorMessage = `Arsenal Cards Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables are correctly set in your .env.local file.`;
     console.error(detailedErrorMessage);
-    return [{ id: 'error-arsenal', name: 'System Error', description: detailedErrorMessage, items:[] } as ArsenalCard];
+    return [{ id: 'error-arsenal', name: 'System Error', description: detailedErrorMessage, items:[{id: 'error-item-env', abilityName: detailedErrorMessage} as ArsenalItem] } as ArsenalCard];
   }
 
   try {
@@ -145,7 +145,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     const headers = rows[0] as string[];
     const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
-    // console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders); // Keep this for debugging if needed
     
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -160,7 +159,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMsg);
         // console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders);
-        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item', abilityName: `[${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
+        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item-header', abilityName: `Headers found: [${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
     }
     
     const petFlagColumnVariations = ['pet', 'is pet', 'companion'];
@@ -231,7 +230,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         arsenalsMap.set(arsenalId, card as ArsenalCard);
       }
 
-      const item: Partial<ArsenalItem> = { isPet: false }; // Initialize isPet to false
+      const item: Partial<ArsenalItem> = { isPet: false }; 
       item.id = `${arsenalId}_item_${rowIndex}`; 
       
       const categoryIndex = getColumnIndex(['category']);
@@ -305,15 +304,12 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         const petFlagValue = String(row[currentPetFlagColumnIndex]).trim().toLowerCase();
         if (['true', 'yes', '1', 'y'].includes(petFlagValue)) {
             item.isPet = true;
-
             const itemAbilityNameValue = String(item.abilityName || '').trim(); 
-
             if (itemAbilityNameValue && !itemAbilityNameValue.startsWith('Item ') && itemAbilityNameValue !== `Item ${rowIndex}`) {
                 item.petName = itemAbilityNameValue;
             } else {
-                item.petName = 'Companion';
+                item.petName = 'Companion'; // Default if ability name is placeholder
             }
-
 
             const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '').trim();
             if (petStatsRawString) { 
@@ -325,23 +321,25 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
                 item.parsedPetCoreStats = undefined; 
               }
             } else {
+                // Fallback to "Effect Stat Change" if "Pet Stats" is empty
                 const effectStatChangeForPet = String(row[getColumnIndex(['effect stat change', 'effectstatchange'])] || '').trim();
                 if (effectStatChangeForPet && !item.parsedStatModifiers?.length) { 
                     const parsedFromEffect = parsePetStatsString(effectStatChangeForPet);
                     item.parsedPetCoreStats = parsedFromEffect;
                     if (parsedFromEffect && Object.keys(parsedFromEffect).length > 0) {
-                        item.petStats = effectStatChangeForPet; 
-                        console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column. Used 'Effect Stat Change': "${effectStatChangeForPet}"`);
+                        item.petStats = effectStatChangeForPet; // Store the string that was parsed
+                        console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column. Used 'Effect Stat Change': "${effectStatChangeForPet}" for stats. Parsed: ${JSON.stringify(parsedFromEffect)}`);
                     } else {
+                        // No warning here if effectStatChangeForPet was empty or unparseable, as it's a fallback.
+                        // This indicates a pet that might be defined by abilities only.
                         item.parsedPetCoreStats = undefined;
-                        console.warn(`[Pet Stats Parsing] Failed to parse pet stats from 'Effect Stat Change' for '${item.petName || item.abilityName}'. Parsed object: ${JSON.stringify(parsedFromEffect)}. Trackers may not display.`);
                     }
                 } else {
-                   console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column and no suitable 'Effect Stat Change' to parse. Trackers may not display.`);
-                   item.parsedPetCoreStats = undefined;
+                    // This case is for a pet with no "Pet Stats" column and no suitable "Effect Stat Change" fallback.
+                    // It's a valid scenario if the pet is defined by abilities alone. No warning needed here.
+                    item.parsedPetCoreStats = undefined;
                 }
             }
-
 
             const petAbilitiesColumnIndex = getColumnIndex(['pet abilities', 'companion abilities']);
             if (petAbilitiesColumnIndex !== -1) {
@@ -351,7 +349,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         }
       }
 
-      // Ability type flags
       const trueValues = ['true', 'yes', '1', 'y'];
       const isActionIndex = getColumnIndex(['is action', 'isaction']);
       if (isActionIndex !== -1) item.isAction = trueValues.includes(String(row[isActionIndex] || '').toLowerCase());
