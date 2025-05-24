@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon, WandSparkles } from "lucide-react";
+import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon, WandSparkles, Store } from "lucide-react";
 
 export default function HomePage() {
   const features = [
@@ -12,6 +12,7 @@ export default function HomePage() {
     { name: "Item List", href: "/events", icon: List, description: "View a list of items from the game." },
     { name: "Events", href: "/item-list", icon: CalendarDays, description: "Generate random events from game data." },
     { name: "Investigations", href: "/investigations", icon: ClipboardList, description: "Manage and track your investigations." },
+    { name: "Whispers & Wares", href: "/shop", icon: Store, description: "Purchase unique items and gear." },
     { name: "Item Generator (AI)", href: "/item-generator", icon: WandSparkles, description: "Generate unique game items using AI." },
     { name: "Shared Space", href: "/shared-space", icon: Share2, description: "Join or create a shared session." },
     { name: "User Profile", href: "/profile", icon: User, description: "Manage your profile and saved data." },
@@ -48,7 +49,7 @@ export default function HomePage() {
           {features.map((feature) => (
             <Card
               key={feature.name}
-              className="w-full shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col bg-card/90 backdrop-blur-sm border-primary/30"
+              className="w-full shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col bg-card/80 backdrop-blur-sm border-primary/30"
             >
               <CardHeader className="flex-grow p-4 md:p-6">
                 <div className="flex items-center gap-3 mb-2">
