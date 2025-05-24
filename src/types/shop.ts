@@ -1,4 +1,7 @@
 
+export type ShopItemCategory = 'Defense' | 'Melee Weapon' | 'Ranged Weapon' | 'Augment' | 'Utility' | 'Consumable' | 'Relic';
+export type UtilitySubCategory = 'Ammunition' | 'Bombs' | 'Traps' | 'Healing' | 'Battery' | 'Miscellaneous';
+
 export interface ShopItem {
   id: string;
   name: string;
@@ -6,8 +9,8 @@ export interface ShopItem {
   cost: number;
   imageUrl?: string;
   dataAiHint?: string;
-  category: 'Defense' | 'Melee Weapon' | 'Ranged Weapon' | 'Augment' | 'Utility' | 'Consumable' | 'Relic';
-  subCategory?: 'Ammunition' | 'Bombs' | 'Traps' | 'Healing' | 'Battery' | 'Miscellaneous'; // For Utility
+  category: ShopItemCategory;
+  subCategory?: UtilitySubCategory; // Specifically for Utility items
   stock?: number; // For consumables or limited items, default to unlimited if not set
 
   // Weapon-specific
