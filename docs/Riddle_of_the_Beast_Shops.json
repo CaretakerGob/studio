@@ -1,0 +1,1227 @@
+{
+  "Defense Gear Shop": [
+    {
+      "Name": "Riot Shield",
+      "Cost": 4,
+      "Effect": "-2 damage from Range Attacks."
+    },
+    {
+      "Name": "Body Armor",
+      "Cost": 4,
+      "Effect": "-2 damage from Melee Attacks."
+    },
+    {
+      "Name": "Helmet",
+      "Cost": 6,
+      "Effect": "Lower damage received by Critical Hits by 2."
+    },
+    {
+      "Name": "Riot Helm",
+      "Cost": 10,
+      "Effect": "Lower damage received by Critical Hits by 3."
+    },
+    {
+      "Name": "Cheap Kevlar",
+      "Cost": 6,
+      "Effect": "Reroll one defense dice. Wearer can no longer achieve Perfect Defense."
+    },
+    {
+      "Name": "Chain Vest",
+      "Cost": 6,
+      "Effect": "Set Defense value to 3"
+    },
+    {
+      "Name": "Tactical Armor",
+      "Cost": 10,
+      "Effect": "Increase units with a natural Defense of 3 to 4."
+    },
+    {
+      "Name": "Leather Armor",
+      "Cost": 6,
+      "Effect": "Increase Max HP by 1"
+    },
+    {
+      "Name": "Studded Leather",
+      "Cost": 10,
+      "Effect": "Increase Max HP by 2"
+    },
+    {
+      "Name": "Brown Coat",
+      "Cost": 6,
+      "Effect": "+1 to all Sanity Checks"
+    },
+    {
+      "Name": "Chest Plate",
+      "Cost": 10,
+      "Effect": "Requires 2 more Bleed Points to HEMORRHAGE"
+    },
+    {
+      "Name": "Scale Armor",
+      "Cost": 10,
+      "Effect": "Immune to WOUNDING"
+    },
+    {
+      "Name": "Rosary",
+      "Cost": 12,
+      "Effect": "Immune to MAX HP damage"
+    },
+    {
+      "Name": "Flame Resistant",
+      "Cost": 3,
+      "Effect": "-1 damage from FIRE"
+    },
+    {
+      "Name": "Frost Resistant",
+      "Cost": 3,
+      "Effect": "-1 damage from ICE"
+    },
+    {
+      "Name": "Shock Resistant",
+      "Cost": 3,
+      "Effect": "-1 damage from ELEC"
+    },
+    {
+      "Name": "Flame Ward",
+      "Cost": 8,
+      "Effect": "-3 damage from FIRE; +2 from ICE"
+    },
+    {
+      "Name": "Frost Ward",
+      "Cost": 8,
+      "Effect": "-3 damage from ICE; +2 from ELEC"
+    },
+    {
+      "Name": "Shock Ward",
+      "Cost": 8,
+      "Effect": "-3 damage from ELEC; +2 from ICE"
+    },
+    {
+      "Name": "Flame Retardant",
+      "Cost": 12,
+      "Effect": "Immune to FIRE Status Effect"
+    },
+    {
+      "Name": "Frost Retardant",
+      "Cost": 12,
+      "Effect": "Immune to ICE Status Effect"
+    },
+    {
+      "Name": "Shock Retardant",
+      "Cost": 12,
+      "Effect": "Immune to ELEC Status Effect"
+    },
+    {
+      "Name": "Battery Packs",
+      "Cost": 6,
+      "Effect": "Lowers cool down time of all Beam attacks by one."
+    },
+    {
+      "Name": "Grenade Belt",
+      "Cost": 6,
+      "Effect": "Lowers cool down time of all AOE attacks by one."
+    },
+    {
+      "Name": "Wrist Sling",
+      "Cost": 4,
+      "Effect": "Immune to DISARM status effect"
+    },
+    {
+      "Name": "Sun Glasses",
+      "Cost": 4,
+      "Effect": "Immune to BLIND status effect"
+    },
+    {
+      "Name": "Pumps",
+      "Cost": 2,
+      "Effect": "Movement +1 'Jump higher and move faster'"
+    },
+    {
+      "Name": "Athletic Shoe",
+      "Cost": 6,
+      "Effect": "Movement +2"
+    },
+    {
+      "Name": "Knee Pad",
+      "Cost": 6,
+      "Effect": "INTERRUPT: Evasive roll - 2 space any direction - 1 round CD."
+    },
+    {
+      "Name": "Precision Scope",
+      "Cost": 8,
+      "Effect": "Increase Range by 2"
+    },
+    {
+      "Name": "Thermal Scope",
+      "Cost": 10,
+      "Effect": "Ignore Stealth on targets when attacking"
+    },
+    {
+      "Name": "Stealth Suit",
+      "Cost": 15,
+      "Effect": "Lower Range value of all enemy attacks by 2 when targeted"
+    },
+    {
+      "Name": "Utility Pouch",
+      "Cost": 2,
+      "Effect": "Increase max use of one Interrupt ability by 2"
+    },
+    {
+      "Name": "Utility Pouch +1",
+      "Cost": 6,
+      "Effect": "Increase max use of one Interrupt ability by 3"
+    },
+    {
+      "Name": "Utility Pouch of Holding",
+      "Cost": 10,
+      "Effect": "Choose one Interrupt, it is no longer consumed upon use but instead triggers a 2 round CD."
+    },
+    {
+      "Name": "Thief's Glove",
+      "Cost": 6,
+      "Effect": "Character can make a free melee attack when stealing against an enemy."
+    },
+    {
+      "Name": "Tin Foil Hat",
+      "Cost": 2,
+      "Effect": "The foil protects your head from the government."
+    }
+  ],
+  "Melee Weapon Shop": [
+    {
+      "Name": "Bat",
+      "Cost": 2,
+      "Class": "Blunt",
+      "Attack": "A2",
+      "Effect": ""
+    },
+    {
+      "Name": "Crowbar",
+      "Cost": 6,
+      "Class": "Blunt",
+      "Attack": "A3",
+      "Effect": "Critical Hits inflict FLINCH for 1 turn"
+    },
+    {
+      "Name": "Sledge Hammer",
+      "Cost": 10,
+      "Class": "Blunt",
+      "Attack": "A4",
+      "Effect": ""
+    },
+    {
+      "Name": "Silver Mace",
+      "Cost": 13,
+      "Class": "Blunt",
+      "Attack": "A3",
+      "Effect": "Treat as Silver. See Undying Template."
+    },
+    {
+      "Name": "Mace",
+      "Cost": 13,
+      "Class": "Blunt",
+      "Attack": "A5",
+      "Effect": ""
+    },
+    {
+      "Name": "Baton",
+      "Cost": 8,
+      "Class": "Blunt",
+      "Attack": "A3",
+      "Effect": "Critical Hits disarm target for 1 turn. 2 round CD upon success."
+    },
+    {
+      "Name": "Wooden Stakes",
+      "Cost": 2,
+      "Class": "Exotic",
+      "Attack": "A2",
+      "Effect": "Treat as a Stake. See Undying Template."
+    },
+    {
+      "Name": "Holy Ash Stake",
+      "Cost": 6,
+      "Class": "Exotic",
+      "Attack": "A2",
+      "Effect": "Treat as a Stake. Double Damage vs Vampires. Consumed on kill."
+    },
+    {
+      "Name": "Keen Kukri",
+      "Cost": 8,
+      "Class": "Exotic",
+      "Attack": "A3",
+      "Effect": "Critical Hits inflict +1 BLEED point"
+    },
+    {
+      "Name": "Tri-dagger",
+      "Cost": 13,
+      "Class": "Exotic",
+      "Attack": "A4",
+      "Effect": ""
+    },
+    {
+      "Name": "Falchion",
+      "Cost": 15,
+      "Class": "Exotic",
+      "Attack": "A5",
+      "Effect": ""
+    },
+    {
+      "Name": "Broadsword",
+      "Cost": 4,
+      "Class": "Large",
+      "Attack": "A3",
+      "Effect": "Critical Hits inflict FLINCH for 1 turn"
+    },
+    {
+      "Name": "Battle Axe",
+      "Cost": 7,
+      "Class": "Large",
+      "Attack": "A4",
+      "Effect": "Make a second attack against adjacent enemy"
+    },
+    {
+      "Name": "Claymore",
+      "Cost": 11,
+      "Class": "Large",
+      "Attack": "A5",
+      "Effect": ""
+    },
+    {
+      "Name": "Buster Sword",
+      "Cost": 15,
+      "Class": "Large",
+      "Attack": "A6",
+      "Effect": "Cannot use an Interrupt same turn"
+    },
+    {
+      "Name": "Epee",
+      "Cost": 4,
+      "Class": "Nimble",
+      "Attack": "A2",
+      "Effect": ""
+    },
+    {
+      "Name": "Rapier",
+      "Cost": 8,
+      "Class": "Nimble",
+      "Attack": "A3",
+      "Effect": "Critical Hit inflict 1 point of BLEED"
+    },
+    {
+      "Name": "Silver Saber",
+      "Cost": 12,
+      "Class": "Nimble",
+      "Attack": "A3",
+      "Effect": "Treat as Silver. See Undying Template."
+    },
+    {
+      "Name": "Saber",
+      "Cost": 12,
+      "Class": "Nimble",
+      "Attack": "A4",
+      "Effect": ""
+    },
+    {
+      "Name": "Bowie Knife",
+      "Cost": 6,
+      "Class": "Nimble",
+      "Attack": "A2",
+      "Effect": "If Critical Hit, attack again. Once per turn."
+    },
+    {
+      "Name": "Elite Tactical Knife",
+      "Cost": 12,
+      "Class": "Nimble",
+      "Attack": "A4",
+      "Effect": "If Critical Hit, attack again. Once per turn."
+    },
+    {
+      "Name": "Spade",
+      "Cost": 2,
+      "Class": "Polearm",
+      "Attack": "A2/R2",
+      "Effect": ""
+    },
+    {
+      "Name": "Spear",
+      "Cost": 6,
+      "Class": "Polearm",
+      "Attack": "A3/R2",
+      "Effect": "Critical Hit inflict 1 point of BLEED"
+    },
+    {
+      "Name": "Halberd",
+      "Cost": 10,
+      "Class": "Polearm",
+      "Attack": "A4/R2",
+      "Effect": "Can target enemies at Range 1 or 2"
+    },
+    {
+      "Name": "Glaive",
+      "Cost": 13,
+      "Class": "Polearm",
+      "Attack": "A5/R2",
+      "Effect": ""
+    },
+    {
+      "Name": "Machete",
+      "Cost": 2,
+      "Class": "Sword",
+      "Attack": "A2",
+      "Effect": ""
+    },
+    {
+      "Name": "Gladius",
+      "Cost": 6,
+      "Class": "Sword",
+      "Attack": "A3",
+      "Effect": ""
+    },
+    {
+      "Name": "Silver Sword",
+      "Cost": 10,
+      "Class": "Sword",
+      "Attack": "A3",
+      "Effect": "Treat as Silver. See Undying Template."
+    },
+    {
+      "Name": "Long sword",
+      "Cost": 10,
+      "Class": "Sword",
+      "Attack": "A4",
+      "Effect": ""
+    },
+    {
+      "Name": "Katana",
+      "Cost": 13,
+      "Class": "Sword",
+      "Attack": "A5",
+      "Effect": "Critical Hit inflict 1 point of BLEED"
+    },
+    {
+      "Name": "Silver Wolf Blade",
+      "Cost": 20,
+      "Class": "Sword",
+      "Attack": "A4",
+      "Effect": "Treat as Silver. Reroll vs COTN/Monster"
+    },
+    {
+      "Name": "Naganata",
+      "Cost": 16,
+      "Class": "Polearm/Sword",
+      "Attack": "A4/R2",
+      "Effect": "Critical Hit inflict 1 point of BLEED"
+    },
+    {
+      "Name": "Ninchaku",
+      "Cost": 8,
+      "Class": "Blunt/Nimble",
+      "Attack": "A2",
+      "Effect": ""
+    },
+    {
+      "Name": "Electric Chainsaw",
+      "Cost": 6,
+      "Class": "Large",
+      "Attack": "A3",
+      "Effect": "Critical Hits inflict 3x damage. No Interrupts."
+    },
+    {
+      "Name": "Gas Chainsaw",
+      "Cost": 10,
+      "Class": "Large",
+      "Attack": "A4",
+      "Effect": "Critical Hits inflict 3x damage. No Interrupts."
+    },
+    {
+      "Name": "Scimitar",
+      "Cost": 9,
+      "Class": "Exotic/Nimble",
+      "Attack": "A3",
+      "Effect": "Critical Hits inflict +1 BLEED point"
+    },
+    {
+      "Name": "Silver Stake",
+      "Cost": 10,
+      "Class": "Exotic/Nimble",
+      "Attack": "A2",
+      "Effect": "Treat as Silver or Stake. See Undying Template."
+    },
+    {
+      "Name": "Sword Breaker",
+      "Cost": 8,
+      "Class": "Exotic",
+      "Attack": "A3",
+      "Effect": "Lower target Melee by 1 per Double Sword. 1 turn."
+    },
+    {
+      "Name": "Whip",
+      "Cost": 3,
+      "Class": "Exotic",
+      "Attack": "A3/R3",
+      "Effect": "Critical Hits FLINCH"
+    },
+    {
+      "Name": "Chain Whip",
+      "Cost": 8,
+      "Class": "Exotic",
+      "Attack": "A4/R3",
+      "Effect": "Critical Hits FLINCH"
+    },
+    {
+      "Name": "Scythe",
+      "Cost": 13,
+      "Class": "Exotic/Polearm",
+      "Attack": "A3/R2",
+      "Effect": ""
+    },
+    {
+      "Name": "No Dachi",
+      "Cost": 18,
+      "Class": "Large/Sword",
+      "Attack": "A5",
+      "Effect": ""
+    }
+  ],
+  "Range Weapon Shop Part 1": [
+    {
+      "Name": "Shortbow",
+      "Cost": 3,
+      "Class": "Bow",
+      "Attack": "A2/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "Longbow",
+      "Cost": 7,
+      "Class": "Bow",
+      "Attack": "A3/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "Recurve Bow",
+      "Cost": 11,
+      "Class": "Bow",
+      "Attack": "A4/R6",
+      "Effect": "Critical Hits inflict +1 BLEED point"
+    },
+    {
+      "Name": "Compound Bow",
+      "Cost": 14,
+      "Class": "Bow",
+      "Attack": "A5/R4",
+      "Effect": "Re-roll 1 of the targets Defense Dice"
+    },
+    {
+      "Name": "Kestrel",
+      "Cost": 20,
+      "Class": "Bow/Sniper",
+      "Attack": "A5/R5",
+      "Effect": ""
+    },
+    {
+      "Name": "Ameli",
+      "Cost": 9,
+      "Class": "LMG",
+      "Attack": "A4/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "Pecheneg",
+      "Cost": 12,
+      "Class": "LMG",
+      "Attack": "A5/R4",
+      "Effect": "INTERRUPT \u2013 Targeted is MARKED for 1 turn"
+    },
+    {
+      "Name": "AAT-52",
+      "Cost": 16,
+      "Class": "LMG",
+      "Attack": "A6/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "22 Magnum",
+      "Cost": 8,
+      "Class": "Magnum",
+      "Attack": "A3/R3",
+      "Effect": ""
+    },
+    {
+      "Name": "Desert Eagle",
+      "Cost": 12,
+      "Class": "Magnum",
+      "Attack": "A4/R3",
+      "Effect": "WOUND effect lasts for 2 turns."
+    },
+    {
+      "Name": "44 Cal Magnum",
+      "Cost": 15,
+      "Class": "Magnum",
+      "Attack": "A5/R3",
+      "Effect": "Re-roll 1 of the targets Defense Dice"
+    },
+    {
+      "Name": "Colt Python",
+      "Cost": 18,
+      "Class": "Magnum/Revolver",
+      "Attack": "A4/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "Model 460",
+      "Cost": 20,
+      "Class": "Magnum/Sniper",
+      "Attack": "A5/R4",
+      "Effect": "Critical Hits WOUND target for 2 turns"
+    },
+    {
+      "Name": "High-Point",
+      "Cost": 2,
+      "Class": "Pistol",
+      "Attack": "A2/R2",
+      "Effect": ""
+    },
+    {
+      "Name": "9MM Shield",
+      "Cost": 7,
+      "Class": "Pistol",
+      "Attack": "A3/R3",
+      "Effect": "Critical Hits do not inflict bonus damage but cause the target to FLINCH"
+    }
+  ],
+  "Range Weapon Shop Part 2": [
+    {
+      "Name": "G-17",
+      "Cost": 8,
+      "Class": "Pistol",
+      "Attack": "A3/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "Beretta",
+      "Cost": 10,
+      "Class": "Pistol",
+      "Attack": "A3/R3",
+      "Effect": "Make a second attack with this weapon."
+    },
+    {
+      "Name": "1911",
+      "Cost": 12,
+      "Class": "Pistol",
+      "Attack": "A4/R3",
+      "Effect": ""
+    },
+    {
+      "Name": "Derringer",
+      "Cost": 8,
+      "Class": "Pistol/Rapid",
+      "Attack": "A2/R3",
+      "Effect": ""
+    },
+    {
+      "Name": "Rough Rider",
+      "Cost": 10,
+      "Class": "Pistol/Revolver",
+      "Attack": "A3/R3",
+      "Effect": "+1 damage to targets with DEF of 2 or less"
+    },
+    {
+      "Name": "The Judge",
+      "Cost": 16,
+      "Class": "Pistol/Shotgun",
+      "Attack": "A3/R3",
+      "Effect": "+1 damage to targets with DEF of 3 or less"
+    },
+    {
+      "Name": "Machine Pistol",
+      "Cost": 12,
+      "Class": "Pistol/SMG",
+      "Attack": "A3/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "Throwing Blade",
+      "Cost": 3,
+      "Class": "Rapid",
+      "Attack": "A2/R2",
+      "Effect": ""
+    },
+    {
+      "Name": "Shuriken",
+      "Cost": 7,
+      "Class": "Rapid",
+      "Attack": "A3/R2",
+      "Effect": ""
+    },
+    {
+      "Name": "Boomerang",
+      "Cost": 8,
+      "Class": "Rapid",
+      "Attack": "A2/R2",
+      "Effect": "Interrupt CD is not triggered on a MISS"
+    },
+    {
+      "Name": "Kunai",
+      "Cost": 11,
+      "Class": "Rapid",
+      "Attack": "A3/R3",
+      "Effect": "Critical Hits inflict 1 point of BLEED"
+    },
+    {
+      "Name": "Ninja Star",
+      "Cost": 14,
+      "Class": "Rapid",
+      "Attack": "A4/R3",
+      "Effect": "Critical Hits WOUND target for 1 turn"
+    },
+    {
+      "Name": "Snub-nose",
+      "Cost": 3,
+      "Class": "Revolver",
+      "Attack": "A2/R3",
+      "Effect": ""
+    },
+    {
+      "Name": "Colt Mark III",
+      "Cost": 7,
+      "Class": "Revolver",
+      "Attack": "A3/R3",
+      "Effect": "Fan the Hammer can Critically Hit with this gun"
+    },
+    {
+      "Name": "Ruger SP101",
+      "Cost": 11,
+      "Class": "Revolver",
+      "Attack": "A3/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "Rhino",
+      "Cost": 14,
+      "Class": "Revolver",
+      "Attack": "A4/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "AR-15",
+      "Cost": 8,
+      "Class": "Rifle",
+      "Attack": "A3/R5",
+      "Effect": ""
+    },
+    {
+      "Name": "FAMAS",
+      "Cost": 12,
+      "Class": "Rifle",
+      "Attack": "A4/R6",
+      "Effect": "Damaged targets are MARKED for 1 turn."
+    },
+    {
+      "Name": "AK-47",
+      "Cost": 16,
+      "Class": "Rifle",
+      "Attack": "A5/R5",
+      "Effect": "Critical Hits inflict FLINCH for 1 turn"
+    },
+    {
+      "Name": "Savage 6.5 CRD",
+      "Cost": 16,
+      "Class": "Rifle",
+      "Attack": "A4/R7",
+      "Effect": "+1 damage to targets with DEF of 2 or less"
+    },
+    {
+      "Name": "Colt Model 635",
+      "Cost": 12,
+      "Class": "Rifle/SMG",
+      "Attack": "A3/R4",
+      "Effect": ""
+    },
+    {
+      "Name": "M-16",
+      "Cost": 20,
+      "Class": "Rifle/SMG",
+      "Attack": "A4/R6",
+      "Effect": "Critical Hits inflict FLINCH for 1 turn"
+    },
+    {
+      "Name": "AR-10",
+      "Cost": 13,
+      "Class": "Rifle/Sniper",
+      "Attack": "A4/R6",
+      "Effect": "Critical Hits WOUND target for 1 turn"
+    },
+    {
+      "Name": "Stoner SR-25",
+      "Cost": 16,
+      "Class": "Rifle/Sniper",
+      "Attack": "A4/R7",
+      "Effect": ""
+    },
+    {
+      "Name": "Sawed Off",
+      "Cost": 8,
+      "Class": "Shotgun",
+      "Attack": "A3/R3",
+      "Effect": ""
+    },
+    {
+      "Name": "Under barrel",
+      "Cost": 9,
+      "Class": "Shotgun",
+      "Attack": "A3/R3",
+      "Effect": "Adds Shotgun Class to a Rifle. Does not take up a Gear slot."
+    },
+    {
+      "Name": "Slug Arrow",
+      "Cost": 9,
+      "Class": "Shotgun",
+      "Attack": "A3/R3",
+      "Effect": "Adds Shotgun Class to a Bow. Does not take up a Gear slot."
+    },
+    {
+      "Name": "Security Model",
+      "Cost": 12,
+      "Class": "Shotgun",
+      "Attack": "A4/R3",
+      "Effect": ""
+    },
+    {
+      "Name": "Browning BPS",
+      "Cost": 12,
+      "Class": "Shotgun",
+      "Attack": "A3/R5",
+      "Effect": "Critical Hits inflict 1 point of BLEED"
+    },
+    {
+      "Name": "Pump Action",
+      "Cost": 16,
+      "Class": "Shotgun",
+      "Attack": "A5/R3",
+      "Effect": ""
+    },
+    {
+      "Name": "Benelli",
+      "Cost": 18,
+      "Class": "Shotgun",
+      "Attack": "A6/R4",
+      "Effect": "Re-roll 1 of the targets Defense Dice"
+    },
+    {
+      "Name": "Mossberg 500",
+      "Cost": 6,
+      "Class": "Shotgun",
+      "Attack": "SPECIAL",
+      "Effect": "Take 1 turn to load cartridge then pick 1 of 3 values"
+    },
+    {
+      "Name": "Mac 10",
+      "Cost": 8,
+      "Class": "SMG",
+      "Attack": "A3/R3",
+      "Effect": ""
+    },
+    {
+      "Name": "Uzi",
+      "Cost": 10,
+      "Class": "SMG",
+      "Attack": "A3/R4",
+      "Effect": "Critical Hits inflict FLINCH for 1 turn"
+    },
+    {
+      "Name": "MP5",
+      "Cost": 12,
+      "Class": "SMG",
+      "Attack": "A4/R5",
+      "Effect": "Damaged targets FLINCH for 1 turn"
+    },
+    {
+      "Name": "Scout Rifle",
+      "Cost": 6,
+      "Class": "Sniper",
+      "Attack": "A2/R7",
+      "Effect": ""
+    },
+    {
+      "Name": "Model 70 Sharpshooter",
+      "Cost": 10,
+      "Class": "Sniper",
+      "Attack": "A3/R8",
+      "Effect": "Critical Hits inflict 1 point of BLEED"
+    },
+    {
+      "Name": "Predator",
+      "Cost": 13,
+      "Class": "Sniper",
+      "Attack": "A4/R7",
+      "Effect": "INTERRUPT \u2013 Targeted is MARKED for 1 turn"
+    },
+    {
+      "Name": "SV-98",
+      "Cost": 16,
+      "Class": "Sniper",
+      "Attack": "A5/R8",
+      "Effect": "Critical Hits WOUND target for 1 turn"
+    },
+    {
+      "Name": "Barrett 50 Cal",
+      "Cost": 20,
+      "Class": "Sniper",
+      "Attack": "A6/R8",
+      "Effect": "Re-roll 1 of the targets Defense Dice"
+    }
+  ],
+  "Augment Shop": [
+    {
+      "Name": "Swiss Army Knife",
+      "Cost": 6,
+      "Effect": "+2 when attempting an Engineering skill check."
+    },
+    {
+      "Name": "Ninja mask",
+      "Cost": 6,
+      "Effect": "+2 when attempting a Deception skill check."
+    },
+    {
+      "Name": "First Aid Kit",
+      "Cost": 6,
+      "Effect": "+2 when attempting an Empathy skill check."
+    },
+    {
+      "Name": "Fitness Tracker",
+      "Cost": 6,
+      "Effect": "+2 when attempting an Athletics skill check."
+    },
+    {
+      "Name": "The Art of War",
+      "Cost": 6,
+      "Effect": "+2 when attempting a Tactician skill check."
+    },
+    {
+      "Name": "Self Help book",
+      "Cost": 6,
+      "Effect": "+2 when attempting a Personality skill check."
+    },
+    {
+      "Name": "Bug out bag",
+      "Cost": 6,
+      "Effect": "+2 when attempting a Survival skill check."
+    },
+    {
+      "Name": "Wiki",
+      "Cost": 6,
+      "Effect": "+2 when attempting a Knowledge skill check."
+    },
+    {
+      "Name": "Not Wiki",
+      "Cost": 6,
+      "Effect": "+2 when attempting a Computer Use skill check."
+    },
+    {
+      "Name": "Book of Shadows",
+      "Cost": 6,
+      "Effect": "+2 when attempting an Occult skill check."
+    },
+    {
+      "Name": "Magnifying Glass",
+      "Cost": 6,
+      "Effect": "+2 when attempting an Investigation skill check."
+    },
+    {
+      "Name": "Driving Gloves",
+      "Cost": 6,
+      "Effect": "+2 when attempting a Dare Devil skill check."
+    },
+    {
+      "Name": "Rule Book",
+      "Cost": 15,
+      "Effect": "Upgrade a Hunter's non-trained skill to skill level 2. Consumed on use. Cannot be used on Tuner or skills with existing value."
+    }
+  ],
+  "Utility - Ammo": [
+    {
+      "Name": "Incendiary Rounds",
+      "Cost": 6,
+      "Category": "Ammo",
+      "Effect": "Ranged attacks inflict FIRE. 2 uses."
+    },
+    {
+      "Name": "Cryo Rounds",
+      "Cost": 6,
+      "Category": "Ammo",
+      "Effect": "Ranged attacks inflict ICE. 2 uses."
+    },
+    {
+      "Name": "Shock Rounds",
+      "Cost": 6,
+      "Category": "Ammo",
+      "Effect": "Ranged attacks inflict ELEC. 2 uses."
+    },
+    {
+      "Name": "Silver Bullets",
+      "Cost": 8,
+      "Category": "Ammo",
+      "Effect": "Treats ranged attacks as Silver. 2 uses."
+    },
+    {
+      "Name": "Hollow Points",
+      "Cost": 4,
+      "Category": "Ammo",
+      "Effect": "+1 damage vs targets with DEF 2 or lower. 2 uses."
+    },
+    {
+      "Name": "AP Rounds",
+      "Cost": 6,
+      "Category": "Ammo",
+      "Effect": "Ignore 1 Defense Die from the target. 2 uses."
+    }
+  ],
+  "Utility - Bombs": [
+    {
+      "Name": "Frag Grenade",
+      "Cost": 6,
+      "Category": "Bomb",
+      "Effect": "A4/R4 Physical AOE. 3 round cooldown."
+    },
+    {
+      "Name": "Molotov Cocktail",
+      "Cost": 6,
+      "Category": "Bomb",
+      "Effect": "A3/R3 FIRE AOE. Inflicts Burn. 3 round cooldown."
+    },
+    {
+      "Name": "Flashbang",
+      "Cost": 6,
+      "Category": "Bomb",
+      "Effect": "Targets in radius become BLIND. 3 round cooldown."
+    },
+    {
+      "Name": "Cryo Grenade",
+      "Cost": 6,
+      "Category": "Bomb",
+      "Effect": "A2/R3 ICE AOE. Inflicts Freeze. 3 round cooldown."
+    },
+    {
+      "Name": "EMP Grenade",
+      "Cost": 6,
+      "Category": "Bomb",
+      "Effect": "Disables enemy electronics for 1 round. 3 round cooldown."
+    }
+  ],
+  "Utility - Traps": [
+    {
+      "Name": "Bear Trap",
+      "Cost": 6,
+      "Category": "Trap",
+      "Effect": "Immobilizes enemy who enters space. 2 charges."
+    },
+    {
+      "Name": "Tripwire",
+      "Cost": 4,
+      "Category": "Trap",
+      "Effect": "Triggers when enemy crosses. Inflicts FLINCH. 2 uses."
+    },
+    {
+      "Name": "Shock Pad",
+      "Cost": 6,
+      "Category": "Trap",
+      "Effect": "Triggers on contact. Inflicts SHOCK. 2 uses."
+    },
+    {
+      "Name": "Silver Snare",
+      "Cost": 8,
+      "Category": "Trap",
+      "Effect": "Triggers on Undead. Counts as Silver. 2 uses."
+    }
+  ],
+  "Utility - Healing": [
+    {
+      "Name": "First Aid Spray",
+      "Cost": 6,
+      "Category": "Healing",
+      "Effect": "Heal 2 HP to all adjacent allies. 2 uses."
+    },
+    {
+      "Name": "Med Patch",
+      "Cost": 4,
+      "Category": "Healing",
+      "Effect": "Heal 3 HP to self or adjacent ally. 1 use."
+    },
+    {
+      "Name": "Painkillers",
+      "Cost": 3,
+      "Category": "Healing",
+      "Effect": "Negate next instance of damage. 1 use."
+    },
+    {
+      "Name": "Revival Syringe",
+      "Cost": 8,
+      "Category": "Healing",
+      "Effect": "Revive a downed ally with 1 HP. 1 use."
+    }
+  ],
+  "Utility - Lights": [
+    {
+      "Name": "Flashlight",
+      "Cost": 2,
+      "Category": "Battery and Lights",
+      "Effect": "Illuminates a room. Removes Darkness status. 3 uses."
+    },
+    {
+      "Name": "Headlamp",
+      "Cost": 3,
+      "Category": "Battery and Lights",
+      "Effect": "Removes Stealth from hidden enemies. 2 uses."
+    },
+    {
+      "Name": "Glowstick",
+      "Cost": 1,
+      "Category": "Battery and Lights",
+      "Effect": "Light source. Disposable, 1 use."
+    },
+    {
+      "Name": "Goggles",
+      "Cost": 5,
+      "Category": "Battery and Lights",
+      "Effect": "Negate Blind status. 2 uses."
+    },
+    {
+      "Name": "Signal Flare",
+      "Cost": 4,
+      "Category": "Battery and Lights",
+      "Effect": "Illuminate outdoor zone. Interrupt: Force retreat on BASE targets. 1 use."
+    }
+  ],
+  "Utility - Misc": [
+    {
+      "Name": "Rope",
+      "Cost": 2,
+      "Category": "Miscellaneous",
+      "Effect": "Can traverse vertical spaces or pull objects. 2 uses."
+    },
+    {
+      "Name": "Walkie Talkie",
+      "Cost": 4,
+      "Category": "Miscellaneous",
+      "Effect": "Allows communication over distance. Reduces CD by 1."
+    },
+    {
+      "Name": "Coffee",
+      "Cost": 2,
+      "Category": "Miscellaneous",
+      "Effect": "Grants +1 Action for 1 round. 1 use."
+    },
+    {
+      "Name": "Laser Pointer",
+      "Cost": 3,
+      "Category": "Miscellaneous",
+      "Effect": "Target enemy becomes TAUNTED. 1 use."
+    },
+    {
+      "Name": "Utility Belt",
+      "Cost": 6,
+      "Category": "Miscellaneous",
+      "Effect": "Equip 1 extra Utility item. Passive."
+    }
+  ],
+  "Consumables": [
+    {
+      "Name": "Bandage",
+      "Cost": 2,
+      "Effect": "Heals 1 HP. Single use."
+    },
+    {
+      "Name": "Energy Drink",
+      "Cost": 3,
+      "Effect": "+1 Movement for 1 round. Single use."
+    },
+    {
+      "Name": "Focus Pill",
+      "Cost": 3,
+      "Effect": "+1 to next Skill Check. Single use."
+    },
+    {
+      "Name": "Smoke Bomb",
+      "Cost": 4,
+      "Effect": "Target zone becomes obscured. BLIND enemies in it for 1 round."
+    },
+    {
+      "Name": "Adrenaline Shot",
+      "Cost": 5,
+      "Effect": "+1 Action for 1 round. Single use."
+    },
+    {
+      "Name": "Ether Vial",
+      "Cost": 5,
+      "Effect": "Restores 1 SAN. Single use."
+    },
+    {
+      "Name": "Molotov",
+      "Cost": 6,
+      "Effect": "FIRE damage to one target. Inflicts BURN. Single use."
+    },
+    {
+      "Name": "Cryo Capsule",
+      "Cost": 6,
+      "Effect": "ICE damage to one target. Inflicts FREEZE. Single use."
+    },
+    {
+      "Name": "Shock Capsule",
+      "Cost": 6,
+      "Effect": "ELEC damage to one target. Inflicts SHOCK. Single use."
+    }
+  ],
+  "Relics": [
+    {
+      "Name": "Book of Shadows",
+      "Cost": 8,
+      "Effect": "Cast occult spells. Roll Occult Check or fail. 3 abilities, different checks."
+    },
+    {
+      "Name": "Cursed Dagger",
+      "Cost": 10,
+      "Effect": "Inflicts BLEED on Critical Hit. Requires Occult check to use."
+    },
+    {
+      "Name": "Black Mirror",
+      "Cost": 12,
+      "Effect": "Reveal hidden enemies in the area. One use per battle. Occult check required."
+    },
+    {
+      "Name": "Witch's Coin",
+      "Cost": 6,
+      "Effect": "Flip to negate a negative status effect. Occult check required."
+    },
+    {
+      "Name": "Ghost Lantern",
+      "Cost": 10,
+      "Effect": "Summons light from beyond. Ignores DARKNESS. Occult check each use."
+    },
+    {
+      "Name": "Severed Hand",
+      "Cost": 9,
+      "Effect": "Can force an enemy to drop an item. Occult check required."
+    },
+    {
+      "Name": "Necrophone",
+      "Cost": 14,
+      "Effect": "Speak to the dead. Grants hint or story clue. One use per Investigation."
+    },
+    {
+      "Name": "Demon Tooth",
+      "Cost": 10,
+      "Effect": "Counts as Silver. Inflicts +1 damage on Creatures of the Night."
+    },
+    {
+      "Name": "Spirit Bell",
+      "Cost": 8,
+      "Effect": "Stun undead target for 1 round. Requires Occult check."
+    },
+    {
+      "Name": "Crypt Compass",
+      "Cost": 7,
+      "Effect": "Reveals direction of nearest occult item. One use per battle."
+    }
+  ]
+}
+what changes need to be made to the code now?

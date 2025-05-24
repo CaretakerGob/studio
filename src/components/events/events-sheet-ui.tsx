@@ -25,6 +25,8 @@ interface EventsSheetUIProps {
   cardDescription: string;
 }
 
+// Note: Ensure these images are optimized for web performance (e.g., compressed, appropriate format).
+// Large unoptimized images can significantly impact loading time and rendering performance.
 const eventBackgroundImages: Record<string, string> = {
   "Black Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FBlack%20Chaos%20BG.png?alt=media&token=bdde52e0-a4ed-4ca7-829a-15e76738d1f7",
   "Blue Chaos": "https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Events%2FChaos%2FBlue%20Chaos%20BG.png?alt=media&token=3dc71f42-2bc3-4346-ae47-06c40f3d0c7d",
@@ -45,6 +47,13 @@ const RANDOM_CHAOS_EVENT = "random_chaos_event";
 const RANDOM_ORDER_EVENT = "random_order_event";
 
 export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIProps) {
+  // State for pre-filtered event data
+  // drawableItems excludes system messages (errors/warnings)
+  // chaosEvents and orderEvents are pre-filtered for their respective types
+  // Pre-filtering helps optimize random event generation by avoiding repeated filtering of the entire list.
+  const [drawableItems, setDrawableItems] = useState<EventsSheetData[]>([]);
+  const [chaosEvents, setChaosEvents] = useState<EventsSheetData[]>([]);
+  const [orderEvents, setOrderEvents] = useState<EventsSheetData[]>([]);
   const [selectedRandomType, setSelectedRandomType] = useState<string | undefined>(undefined);
   const [selectedChaosColor, setSelectedChaosColor] = useState<string | undefined>(undefined);
   const [selectedOrderColor, setSelectedOrderColor] = useState<string | undefined>(undefined);
@@ -63,9 +72,18 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
 
   useEffect(() => {
     if (items && items.length > 0) {
+      // Pre-filter items to exclude system messages
+      const filteredDrawableItems = items.filter(item => !(item.Type === 'System' && (item.Color === 'Error' || item.Color === 'Warning')));
+      setDrawableItems(filteredDrawableItems);
+
       const uniqueColors = Array.from(new Set(items.map(item => item.Color).filter(Boolean) as string[]));
       setAvailableChaosColors(uniqueColors.filter(color => color.includes("Chaos")).sort());
       setAvailableOrderColors(uniqueColors.filter(color => color.includes("Order")).sort());
+      
+      // Pre-filter items based on type for quicker access during generation
+      setChaosEvents(filteredDrawableItems.filter(item => item.Color.includes("Chaos")));
+      setOrderEvents(filteredDrawableItems.filter(item => item.Color.includes("Order")));
+
     } else {
       setAvailableChaosColors([]);
       setAvailableOrderColors([]);
@@ -107,23 +125,19 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
     let filteredItems: EventsSheetData[] = [];
     let toastMessageDescription = "";
 
-    // Filter out system error messages from the pool of items to draw from
-    const drawableItems = items.filter(item => !(item.Type === 'System' && (item.Color === 'Error' || item.Color === 'Warning')));
-
-
     if (selectedRandomType) {
       if (selectedRandomType === RANDOM_ANY_COLOR) {
         filteredItems = drawableItems;
         toastMessageDescription = "A random event from all colors has been drawn.";
       } else if (selectedRandomType === RANDOM_CHAOS_EVENT) {
-        filteredItems = drawableItems.filter(item => item.Color.includes("Chaos"));
+        filteredItems = chaosEvents;
         toastMessageDescription = "A random Chaos event has been drawn.";
       } else if (selectedRandomType === RANDOM_ORDER_EVENT) {
-        filteredItems = drawableItems.filter(item => item.Color.includes("Order"));
+        filteredItems = orderEvents;
         toastMessageDescription = "A random Order event has been drawn.";
       }
     } else if (selectedChaosColor) {
-      filteredItems = drawableItems.filter(item => item.Color === selectedChaosColor);
+      filteredItems = drawableItems.filter(item => item.Color === selectedChaosColor); // Still need to filter by specific color
       toastMessageDescription = `A random event for "${selectedChaosColor}" has been drawn.`;
     } else if (selectedOrderColor) {
       filteredItems = drawableItems.filter(item => item.Color === selectedOrderColor);
@@ -161,7 +175,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
   };
   
   const systemErrorItem = items.find(item => item.Type === 'System' && item.Color === 'Error');
-  const isGenerateButtonDisabled = (!selectedRandomType && !selectedChaosColor && !selectedOrderColor) || isLoading || !!systemErrorItem || items.length === 0;
+  const isGenerateButtonDisabled = (!selectedRandomType && !selectedChaosColor && !selectedOrderColor) || isLoading || !!systemErrorItem || drawableItems.length === 0;
 
 
   return (
@@ -207,7 +221,7 @@ export function EventsSheetUI({ items, title, cardDescription }: EventsSheetUIPr
               eventKey={eventKey}
               eventBackgroundImages={eventBackgroundImages}
               systemError={!!systemErrorItem}
-              systemErrorMessage={systemErrorItem?.Description}
+              systemErrorMessage={systemErrorItem?.Description || "An unknown system error occurred."}
               itemsLength={items.filter(item => !(item.Type === 'System' && (item.Color === 'Error' || item.Color === 'Warning'))).length}
             />
           </CardContent>

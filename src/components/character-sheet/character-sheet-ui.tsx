@@ -1345,6 +1345,38 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       return weaponToDisplay;
   }, [editableCharacterData, equippedArsenalCard]);
 
+  const arsenalWeaponsToDisplay = useMemo(() => {
+    if (!equippedArsenalCard?.items) return { ranged: [], melee: [] };
+
+    const arsenalWeaponItems = equippedArsenalCard.items
+      .filter(item =>
+        !item.isPet && // Exclude pet items
+        (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
+        item.parsedWeaponStats?.attack !== undefined
+      );
+
+    const rangedArsenalWeapons = arsenalWeaponItems
+      .filter(item => item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 0)
+      .map(item => ({
+          name: item.abilityName || item.itemName || 'Unnamed Ranged Arsenal Weapon',
+          attack: item.parsedWeaponStats?.attack ?? 0,
+          range: item.parsedWeaponStats?.range ?? 0,
+          flavorText: item.itemDescription || item.parsedWeaponStats?.rawDetails || '',
+      }));
+
+    const meleeArsenalWeapons = arsenalWeaponItems
+        .filter(item => !(item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 0)) // Consider anything without explicit range as melee
+        .map(item => ({
+          name: item.abilityName || item.itemName || 'Unnamed Melee Arsenal Weapon',
+          attack: item.parsedWeaponStats?.attack ?? 0,
+          range: undefined, // Ensure range is undefined for melee
+          flavorText: item.itemDescription || item.parsedWeaponStats?.rawDetails || '',
+      }));
+
+    return { ranged: rangedArsenalWeapons, melee: meleeArsenalWeapons };
+  }, [equippedArsenalCard]);
+
+
   const currentCompanion = useMemo(() => {
     if (!equippedArsenalCard || !equippedArsenalCard.items) return null;
     return equippedArsenalCard.items.find(item => item.isPet === true) || null;
@@ -1486,6 +1518,223 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                       <WeaponDisplay weapon={currentRangedWeapon} type="ranged" equippedArsenalCard={equippedArsenalCard} baseRangedWeaponName={editableCharacterData.rangedWeapon?.name} />
                   </div>
               </div>
+              {(arsenalWeaponsToDisplay.ranged.length > 0 || arsenalWeaponsToDisplay.melee.length > 0) && (
+                <>
+                 <Separator/>
+                 <div>
+                    <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Arsenal Weapons</h3>
+                    {arsenalWeaponsToDisplay.ranged.length > 0 && (
+                        <div className="mb-6">
+                            <h4 className="text-lg font-semibold mb-2 flex items-center"><Sparkles className="mr-1 h-5 w-5 text-amber-400" /> Ranged Arsenal Weapons</h4> {/* Using Sparkles, Swords is fine too */}
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {arsenalWeaponsToDisplay.ranged.map((weapon, index) => (
+                                    <WeaponDisplay key={`arsenal-ranged-${index}`} weapon={weapon} type="ranged" isArsenalWeapon={true} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                     {arsenalWeaponsToDisplay.melee.length > 0 && (
+                        <div>
+                            <h4 className="text-lg font-semibold mb-2 flex items-center"><Swords className="mr-1 h-5 w-5 text-primary" /> Melee Arsenal Weapons</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {arsenalWeaponsToDisplay.melee.map((weapon, index) => (
+                                    <WeaponDisplay key={`arsenal-melee-${index}`} weapon={weapon} type="melee" isArsenalWeapon={true} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    </div>
+                 </div>
+                </>)}
+              {currentCompanion && (
+                <>
+                  <Separator />
+                  <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+                    <h3 className="text-xl font-semibold mb-3 flex items-center">
+                      <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
+                    </h3>
+                     {currentCompanion.petStats && !currentCompanion.parsedPetCoreStats && (
+                        <p className="text-sm text-muted-foreground mb-2">Raw Stats (Failed to parse for trackers): {currentCompanion.petStats}</p>
+                    )}
+                    {currentCompanion.petStats && currentCompanion.parsedPetCoreStats && Object.keys(currentCompanion.parsedPetCoreStats).length === 0 && (
+                        <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats} (Could not parse for trackers)</p>
+                    )}
+
+                    {currentCompanion.parsedPetCoreStats && (currentCompanion.parsedPetCoreStats.maxHp || currentCompanion.parsedPetCoreStats.maxSanity || currentCompanion.parsedPetCoreStats.mv || currentCompanion.parsedPetCoreStats.def || currentCompanion.parsedPetCoreStats.meleeAttack ) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-3">
+                        {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="flex items-center text-sm font-medium">
+                                <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'decrement')} className="h-6 w-6">
+                                  <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Minus */}
+                                </Button>
+                                <Input type="number" value={currentPetHp} readOnly className="w-12 h-6 text-center text-sm font-bold p-1"/>
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'increment')} className="h-6 w-6">
+                                  <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Plus */}
+                                </Button>
+                              </div>
+                            </div>
+                            <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={cn("h-1.5", getPetHpBarColorClass())} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
+                          </div>
+                        )}
+                        {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="flex items-center text-sm font-medium">
+                                <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'decrement')} className="h-6 w-6">
+                                   <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Minus */}
+                                </Button>
+                                <Input type="number" value={currentPetSanity} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'increment')} className="h-6 w-6">
+                                  <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Plus */}
+                                </Button>
+                              </div>
+                            </div>
+                            <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className={cn("h-1.5", getPetSanityBarColorClass())} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
+                          </div>
+                        )}
+                        {currentCompanion.parsedPetCoreStats.mv !== undefined && currentPetMv !== null && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="flex items-center text-sm font-medium">
+                                <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'decrement')} className="h-6 w-6">
+                                  <UserCog className="h-3 w-3" /> {/* Placeholder */}
+                                </Button>
+                                <Input type="number" value={currentPetMv} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'increment')} className="h-6 w-6">
+                                   <UserCog className="h-3 w-3" /> {/* Placeholder */}
+                                </Button>
+                              </div>
+                            </div>
+                            <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className={cn("h-1.5", getPetMvBarColorClass())} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetMv} / {currentCompanion.parsedPetCoreStats.mv}</p>
+                          </div>
+                        )}
+                        {currentCompanion.parsedPetCoreStats.def !== undefined && currentPetDef !== null && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <Label className="flex items-center text-sm font-medium">
+                                <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'decrement')} className="h-6 w-6">
+                                  <UserCog className="h-3 w-3" /> {/* Placeholder */}
+                                </Button>
+                                <Input type="number" value={currentPetDef} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'increment')} className="h-6 w-6">
+                                  <UserCog className="h-3 w-3" /> {/* Placeholder */}
+                                </Button>
+                              </div>
+                            </div>
+                            <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className={cn("h-1.5", getPetDefBarColorClass())} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetDef} / {currentCompanion.parsedPetCoreStats.def}</p>
+                          </div>
+                        )}
+                        {petMeleeWeaponForDisplay && (
+                          <div className="md:col-span-2">
+                            <WeaponDisplay weapon={petMeleeWeaponForDisplay} type="melee" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {currentCompanion.petAbilities && (
+                      <p className="text-xs text-muted-foreground mt-3 pt-2 border-t border-muted-foreground/20">
+                        <strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}
+                      </p>
+                    )}
+                    {currentCompanion.petStats && currentCompanion.parsedPetCoreStats === undefined && (
+                      <p className="text-xs text-destructive-foreground bg-destructive p-2 rounded-md mt-2">
+                        Note: The 'Pet Stats' string "{currentCompanion.petStats}" could not be fully parsed for interactive trackers. Ensure it follows a format like "HP:10 MV:5 DEF:2 SAN:3 ATK:1".
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="abilities" className="mt-6">
+              <AbilitiesSection
+                editableCharacterData={editableCharacterData}
+                allUniqueAbilities={allUniqueAbilities}
+                categorizedAbilities={categorizedAbilities}
+                abilityToAddId={abilityToAddId}
+                setAbilityToAddId={setAbilityToAddId}
+                handleAddAbilityToCustomCharacter={handleAddAbilityToCustomCharacter}
+                currentAbilityCooldowns={currentAbilityCooldowns}
+                maxAbilityCooldowns={maxAbilityCooldowns}
+                handleIncrementCooldown={handleIncrementCooldown}
+                handleDecrementCooldown={handleDecrementCooldown}
+                currentAbilityQuantities={currentAbilityQuantities}
+                maxAbilityQuantities={maxAbilityQuantities}
+                handleIncrementQuantity={handleIncrementQuantity}
+                handleDecrementQuantity={handleDecrementQuantity}
+              />
+            </TabsContent>
+            
+            <TabsContent value="arsenal" className="mt-6 space-y-6">
+                <ArsenalTabContent
+                    editableCharacterData={editableCharacterData}
+                    arsenalCards={arsenalCards}
+                    handleArsenalCardChange={handleArsenalCardChange}
+                    currentCompanion={currentCompanion}
+                    currentPetHp={currentPetHp} 
+                    currentPetSanity={currentPetSanity} 
+                    handleIncrementPetStat={(statType) => handlePetStatChange(statType as 'hp' | 'sanity' | 'mv' | 'def', 'increment')}
+                    handleDecrementPetStat={(statType) => handlePetStatChange(statType as 'hp' | 'sanity' | 'mv' | 'def', 'decrement')}
+                    criticalArsenalError={criticalArsenalError}
+                />
+            </TabsContent>
+
+            <TabsContent value="skills" className="mt-6 space-y-6">
+              <SkillsSection
+                editableCharacterData={editableCharacterData}
+                characterSkills={characterSkills}
+                skillDefinitions={skillDefinitions}
+                skillToPurchase={skillToPurchase}
+                setSkillToPurchase={setSkillToPurchase}
+                handlePurchaseSkill={handlePurchaseSkill}
+                handleIncreaseSkillLevel={handleIncreaseSkillLevel}
+                handleDecreaseSkillLevel={handleDecreaseSkillLevel}
+                handleRemoveSkill={handleRemoveSkill}
+                purchasedSkills={purchasedSkills}
+              />
+            </TabsContent>
+          </Tabs>
+
+        </CardContent>
+        <CardFooter className="flex justify-end pt-6">
+          <Button
+            size="lg"
+            className="bg-primary hover:bg-primary/90"
+            onClick={handleSaveCharacter}
+            disabled={!currentUser || !editableCharacterData || authLoading || isSaving}
+          >
+            <Save className="mr-2 h-5 w-5" />
+            {isSaving ? "Saving..." : "Save Character"}
+          </Button>
+        </CardFooter>
+      </div>
+    </Card>
+  );
+}
+
+                        ))}
+                    </div>
+                 </div>
+                </>)}
               {currentCompanion && (
                 <>
                   <Separator />

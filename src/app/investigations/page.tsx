@@ -1,94 +1,133 @@
+"use client";
 
-import { google } from 'googleapis';
+import React, { useEffect, useState } from 'react';
 import { InvestigationsUI } from "@/components/investigations/investigations-ui";
-import type { InvestigationData } from "@/types/investigation";
 import type { Metadata } from 'next';
+import type { InvestigationData } from "@/types/investigation";
 
-export const metadata: Metadata = {
-  title: 'Investigations - Beast Companion',
-  description: 'Generate random investigation encounters.', // Updated description
-};
+// Import the shared Google Sheets utility function
+import { fetchSheetData } from '@/lib/googleSheets';
 
-async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> {
-  const {
-    GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    GOOGLE_PRIVATE_KEY,
-    INVESTIGATIONS_GOOGLE_SHEET_ID,
-    INVESTIGATIONS_GOOGLE_SHEET_RANGE,
-  } = process.env;
+// Define the worker
+const investigationDataWorker = typeof window !== 'undefined' ? new Worker(new URL('@/workers/investigation-data.worker.ts', import.meta.url)) : null;
 
-  const missingVars: string[] = [];
-  if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) missingVars.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
-  if (!GOOGLE_PRIVATE_KEY) missingVars.push('GOOGLE_PRIVATE_KEY');
-  if (!INVESTIGATIONS_GOOGLE_SHEET_ID) missingVars.push('INVESTIGATIONS_GOOGLE_SHEET_ID');
-  if (!INVESTIGATIONS_GOOGLE_SHEET_RANGE) missingVars.push('INVESTIGATIONS_GOOGLE_SHEET_RANGE');
+export default function InvestigationsPage() {
+  const [investigationsData, setInvestigationsData] = useState<InvestigationData[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (missingVars.length > 0) {
-    const detailedErrorMessage = `Investigations Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, INVESTIGATIONS_GOOGLE_SHEET_ID, INVESTIGATIONS_GOOGLE_SHEET_RANGE) are correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.`;
-    console.error(detailedErrorMessage);
-    // Return a single error object that matches InvestigationData structure for consistent handling in UI
-    return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: detailedErrorMessage } as unknown as InvestigationData];
+  useEffect(() => {
+    const loadInvestigationsData = async () => {
+      setIsLoading(true);
+      setError(null);
+      setInvestigationsData(null); // Clear previous data
+
+      if (!investigationDataWorker) {
+        setError('Web Workers are not supported in this environment.');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const {
+          INVESTIGATIONS_GOOGLE_SHEET_ID,
+          INVESTIGATIONS_GOOGLE_SHEET_RANGE,
+        } = process.env;
+
+        if (!INVESTIGATIONS_GOOGLE_SHEET_ID || !INVESTIGATIONS_GOOGLE_SHEET_RANGE) {
+           const missingVars = [];
+           if (!INVESTIGATIONS_GOOGLE_SHEET_ID) missingVars.push('INVESTIGATIONS_GOOGLE_SHEET_ID');
+           if (!INVESTIGATIONS_GOOGLE_SHEET_RANGE) missingVars.push('INVESTIGATIONS_GOOGLE_SHEET_RANGE');
+           const errorMessage = `Google Sheets environment variables are not configured for Investigations. Missing: ${missingVars.join(', ')}. Please ensure they are set in your .env.local file.`;
+           setError(errorMessage);
+           console.error(errorMessage); // Log error on the client side
+           setIsLoading(false);
+           return;
+        }
+
+        // Fetch raw data from Google Sheets
+        const rows = await fetchSheetData(
+          spreadsheetId: INVESTIGATIONS_GOOGLE_SHEET_ID,
+          range: INVESTIGATIONS_GOOGLE_SHEET_RANGE,
+        );
+
+        if (!rows || rows.length === 0) {
+          const warningMessage = `No data found in Investigations Google Sheet ID: ${INVESTIGATIONS_GOOGLE_SHEET_ID} at range: ${INVESTIGATIONS_GOOGLE_SHEET_RANGE}.`;
+          setError(warningMessage);
+          console.warn(warningMessage);
+          setIsLoading(false);
+          return;
+        }
+
+        // Send the raw data to the worker for processing
+        investigationDataWorker.postMessage({ type: 'processInvestigationData', payload: rows });
+
+        // Listen for the worker's response
+        investigationDataWorker.onmessage = (event) => {
+          const { type, payload } = event.data;
+          if (type === 'investigationDataProcessed') {
+            setInvestigationsData(payload as InvestigationData[]);
+            setIsLoading(false);
+          } else if (type === 'error') {
+            setError(`Worker error: ${payload}`);
+            console.error('Worker reported an error:', payload);
+            setIsLoading(false);
+          }
+        };
+
+        // Handle potential worker errors
+        investigationDataWorker.onerror = (event) => {
+          setError(`Worker error: ${event.message}`);
+          console.error('Web Worker error:', event);
+          setIsLoading(false);
+        };
+
+      } catch (err: any) {
+        setError(`Failed to fetch or process investigation data: ${err.message || String(err)}`);
+        console.error("Error in loading investigation data:", err);
+        setIsLoading(false);
+      }
+    };
+
+    loadInvestigationsData();
+
+    // Clean up the worker on component unmount
+    return () => {
+      if (investigationDataWorker) {
+        investigationDataWorker.onmessage = null;
+        investigationDataWorker.onerror = null;
+        // investigationDataWorker.terminate();
+      }
+    };
+  }, []); // Empty dependency array means this effect runs once on mount
+
+  // Render loading state, error state, or the UI component
+  if (isLoading) {
+    return <div className="w-full text-center py-10">Loading Investigations...</div>;
   }
 
-  try {
-    const auth = new google.auth.JWT(
-      GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      undefined,
-      GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-      ['https://www.googleapis.com/auth/spreadsheets.readonly']
+  if (error) {
+    return (
+      <div className="w-full text-center py-10 text-destructive">
+        <p>Error loading Investigations:</p>
+        <p className="text-sm mt-2 whitespace-pre-wrap">{error}</p>
+      </div>
     );
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: INVESTIGATIONS_GOOGLE_SHEET_ID,
-      range: INVESTIGATIONS_GOOGLE_SHEET_RANGE,
-    });
-
-    const rows = response.data.values;
-
-    if (!rows || rows.length === 0) {
-      const warningMessage = `No data found in Investigations Google Sheet ID: ${INVESTIGATIONS_GOOGLE_SHEET_ID} at range: ${INVESTIGATIONS_GOOGLE_SHEET_RANGE}.`;
-      console.warn(warningMessage);
-      return [{ 'Location Color': 'Warning', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: warningMessage } as unknown as InvestigationData];
-    }
-
-    const headers = rows[0] as string[];
-    const sanitizedHeaders = headers.map(h => String(h || '').trim()); 
-
-    return rows.slice(1).map((row: any[]): InvestigationData => {
-      const investigationEntry: any = {};
-      sanitizedHeaders.forEach((header, index) => {
-        investigationEntry[header] = row[index] || '';
-      });
-      // Ensure all potential keys from InvestigationData are present, even if empty
-      const defaultEntry: InvestigationData = {
-        'Location Color': '',
-        '1d6 Roll': '',
-        NPC: '',
-        Unit: '',
-        Persona: '',
-        Demand: '',
-        'Skill Check': '',
-        Goals: '',
-        Passive: '',
-        Description: '', // Added Description explicitly as it might not always be in sheets
-      };
-      return { ...defaultEntry, ...investigationEntry } as InvestigationData;
-    });
-
-  } catch (error) {
-    console.error("Error fetching Investigation data from Google Sheets API:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: `Could not load Investigation data. Error: ${errorMessage}` } as unknown as InvestigationData];
   }
-}
 
-export default async function InvestigationsPage() {
-  const investigationsData = await getInvestigationsFromGoogleSheet();
+  if (!investigationsData) {
+     return <div className="w-full text-center py-10 text-muted-foreground">No Investigations available.</div>;
+  }
+
   return (
     <div className="w-full">
       <InvestigationsUI investigations={investigationsData} />
     </div>
   );
 }
+
+// Optional: Metadata can remain here
+export const metadata: Metadata = {
+  title: 'Investigations - Beast Companion',
+  description: 'Generate random investigation encounters.', // Updated description
+};

@@ -1,101 +1,133 @@
+"use client";
 
-
-import { google } from 'googleapis';
-import { EventsSheetUI, type EventsSheetData } from "@/components/events/events-sheet-ui"; // Updated import
+import React, { useEffect, useState } from 'react';
+import { EventCardUI } from "@/components/event-card/event-card-ui";
 import type { Metadata } from 'next';
+import type { EventData } from '@/types/event';
 
-export const metadata: Metadata = {
-  title: 'Events - Beast Companion', // This page displays the Google Sheet data, which the user calls "Events"
-  description: 'Generate a random event from game events loaded from Google Sheets.', // Updated description
-};
+// Import the shared Google Sheets utility function
+import { fetchSheetData } from '@/lib/googleSheets';
 
-// This page is for the "/item-list" route, which is linked by "Events" in the sidebar.
-// It will display the ITEM data from the Google Sheet (which the user refers to as Events).
-async function getSheetData(): Promise<EventsSheetData[]> { // Renamed function and return type
-  const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID, GOOGLE_SHEET_RANGE } = process.env;
+// Define the worker
+const eventDataWorker = typeof window !== 'undefined' ? new Worker(new URL('@/workers/event-data.worker.ts', import.meta.url)) : null;
 
-  const missingVars: string[] = [];
-  if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) missingVars.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
-  if (!GOOGLE_PRIVATE_KEY) missingVars.push('GOOGLE_PRIVATE_KEY');
-  if (!GOOGLE_SHEET_ID) missingVars.push('GOOGLE_SHEET_ID'); 
-  if (!GOOGLE_SHEET_RANGE) missingVars.push('GOOGLE_SHEET_RANGE'); 
+export default function EventListPage() {
+  const [eventData, setEventData] = useState<EventData[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (missingVars.length > 0) {
-    const detailedErrorMessage = `Google Sheets API environment variables for game data are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID, GOOGLE_SHEET_RANGE) are correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.`;
-    console.error(detailedErrorMessage);
-    return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: detailedErrorMessage }];
+  useEffect(() => {
+    const loadEventData = async () => {
+      setIsLoading(true);
+      setError(null);
+      setEventData(null); // Clear previous data
+
+      if (!eventDataWorker) {
+        setError('Web Workers are not supported in this environment.');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const {
+          EVENTS_GOOGLE_SHEET_ID,
+          EVENTS_GOOGLE_SHEET_RANGE,
+        } = process.env;
+
+        if (!EVENTS_GOOGLE_SHEET_ID || !EVENTS_GOOGLE_SHEET_RANGE) {
+           const missingVars = [];
+           if (!EVENTS_GOOGLE_SHEET_ID) missingVars.push('EVENTS_GOOGLE_SHEET_ID');
+           if (!EVENTS_GOOGLE_SHEET_RANGE) missingVars.push('EVENTS_GOOGLE_SHEET_RANGE');
+           const errorMessage = `Google Sheets environment variables are not configured for Events. Missing: ${missingVars.join(', ')}. Please ensure they are set in your .env.local file.`;
+           setError(errorMessage);
+           console.error(errorMessage); // Log error on the client side
+           setIsLoading(false);
+           return;
+        }
+
+        // Fetch raw data from Google Sheets
+        const rows = await fetchSheetData(
+          spreadsheetId: EVENTS_GOOGLE_SHEET_ID,
+          range: EVENTS_GOOGLE_SHEET_RANGE,
+        );
+
+        if (!rows || rows.length === 0) {
+          const warningMessage = `No data found in Events Google Sheet ID: ${EVENTS_GOOGLE_SHEET_ID} at range: ${EVENTS_GOOGLE_SHEET_RANGE}.`;
+          setError(warningMessage);
+          console.warn(warningMessage);
+          setIsLoading(false);
+          return;
+        }
+
+        // Send the raw data to the worker for processing
+        eventDataWorker.postMessage({ type: 'processEventData', payload: rows });
+
+        // Listen for the worker's response
+        eventDataWorker.onmessage = (event) => {
+          const { type, payload } = event.data;
+          if (type === 'eventDataProcessed') {
+            setEventData(payload as EventData[]);
+            setIsLoading(false);
+          } else if (type === 'error') {
+            setError(`Worker error: ${payload}`);
+            console.error('Worker reported an error:', payload);
+            setIsLoading(false);
+          }
+        };
+
+        // Handle potential worker errors
+        eventDataWorker.onerror = (event) => {
+          setError(`Worker error: ${event.message}`);
+          console.error('Web Worker error:', event);
+          setIsLoading(false);
+        };
+
+      } catch (err: any) {
+        setError(`Failed to fetch or process event data: ${err.message || String(err)}`);
+        console.error("Error in loading event data:", err);
+        setIsLoading(false);
+      }
+    };
+
+    loadEventData();
+
+    // Clean up the worker on component unmount
+    return () => {
+      if (eventDataWorker) {
+        eventDataWorker.onmessage = null;
+        eventDataWorker.onerror = null;
+        // eventDataWorker.terminate();
+      }
+    };
+  }, []); // Empty dependency array means this effect runs once on mount
+
+  // Render loading state, error state, or the UI component
+  if (isLoading) {
+    return <div className="w-full text-center py-10">Loading Events...</div>;
   }
 
-  try {
-    const auth = new google.auth.JWT(
-      GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      undefined,
-      GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'), 
-      ['https://www.googleapis.com/auth/spreadsheets.readonly']
+  if (error) {
+    return (
+      <div className="w-full text-center py-10 text-destructive">
+        <p>Error loading Events:</p>
+        <p className="text-sm mt-2 whitespace-pre-wrap">{error}</p>
+      </div>
     );
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: GOOGLE_SHEET_ID, 
-      range: GOOGLE_SHEET_RANGE, 
-    });
-
-    const rows = response.data.values;
-
-    if (!rows || rows.length === 0) {
-      console.warn(`No data found in Google Sheet ID: ${GOOGLE_SHEET_ID} at range: ${GOOGLE_SHEET_RANGE}.`);
-      return [{ Insert: '', Count: '', Color: 'Warning', Type: 'System', Description: `No data found in Google Sheet ID: ${GOOGLE_SHEET_ID} at range: ${GOOGLE_SHEET_RANGE}.` }];
-    }
-
-    const headers = rows[0] as string[];
-    // Simplified sanitization for direct mapping if headers are "Color", "Type", "Description", "Insert", "Count"
-    const sanitizedHeaders = headers.map(h => String(h || '').trim());
-    
-    // Find indices based on exact (case-insensitive) header names
-    const getIndex = (name: string) => sanitizedHeaders.findIndex(h => h.toLowerCase() === name.toLowerCase());
-
-    const insertIndex = getIndex('Insert');
-    const countIndex = getIndex('Count');
-    const colorIndex = getIndex('Color');
-    const typeIndex = getIndex('Type');
-    const descriptionIndex = getIndex('Description');
-
-    // Check for essential headers
-    const requiredHeaderNames = ['Color', 'Type', 'Description'];
-    const missingRequiredHeaders = requiredHeaderNames.filter(expectedHeader => getIndex(expectedHeader) === -1);
-
-    if (missingRequiredHeaders.length > 0) {
-        const errorMessage = `Required headers (${requiredHeaderNames.join(', ')}) not found or mismatch in Google Sheet. Missing or mismatched: ${missingRequiredHeaders.join(', ')}. Please check sheet headers and range. Headers found: [${sanitizedHeaders.join(', ')}]`;
-        console.error(errorMessage);
-        return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: errorMessage }];
-    }
-
-
-    return rows.slice(1).map((row: any[]): EventsSheetData => ({
-      Insert: insertIndex !== -1 ? (row[insertIndex] || '') : '',
-      Count: countIndex !== -1 ? (row[countIndex] || '') : '',
-      Color: colorIndex !== -1 ? (row[colorIndex] || '') : '', // Should always exist due to check above
-      Type: typeIndex !== -1 ? (row[typeIndex] || '') : '', // Should always exist
-      Description: descriptionIndex !== -1 ? (row[descriptionIndex] || '') : '', // Should always exist
-    }));
-
-  } catch (error) {
-    console.error("Error fetching data from Google Sheets API:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: `Could not load game data from Google Sheets. Error: ${errorMessage}` }];
   }
-}
 
-export default async function DisplayEventsFromSheetPage() { 
-  const eventsData = await getSheetData(); // Renamed variable
+  if (!eventData) {
+     return <div className="w-full text-center py-10 text-muted-foreground">No Events available.</div>;
+  }
+
   return (
     <div className="w-full">
-      <EventsSheetUI // Updated component usage
-        items={eventsData} // Prop name is items, but data is eventsData
-        title="Events" // This page is titled "Events"
-        cardDescription="Select a color and generate a random event." // Updated description
-      />
+      <EventCardUI eventData={eventData} />
     </div>
   );
 }
+
+// Optional: Metadata can remain here
+export const metadata: Metadata = {
+  title: 'Event List - Beast Companion',
+  description: 'Browse and manage event cards.',
+};

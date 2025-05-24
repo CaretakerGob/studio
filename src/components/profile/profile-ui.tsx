@@ -15,7 +15,7 @@ import type { SignUpCredentials } from '@/types/auth';
 import type { Character } from '@/types/character';
 import { charactersData } from '@/components/character-sheet/character-sheet-ui';
 import { auth, storage, db } from '@/lib/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile, sendPasswordResetEmail } from "firebase/auth"; // Added sendPasswordResetEmail
 import { collection, getDocs, doc, deleteDoc, setDoc, updateDoc, getDoc } from "firebase/firestore";
 import { useRouter } from 'next/navigation';
@@ -39,6 +39,8 @@ import { UserProfileDisplay } from './user-profile-display';
 import { EditProfileForm } from './edit-profile-form';
 import { Skeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
+import { query, orderBy, limit, startAfter } from 'firebase/firestore';
+import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 
 // Helper function
@@ -73,6 +75,8 @@ export function ProfileUI() {
 
   const [savedCharacters, setSavedCharacters] = useState<Character[]>([]);
   const [isLoadingSavedChars, setIsLoadingSavedChars] = useState(false);
+  const [lastCharacterDocument, setLastCharacterDocument] = useState<DocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreCharacters, setHasMoreCharacters] = useState(true);
   const [charToDelete, setCharToDelete] = useState<Character | null>(null);
 
   const [characterToRename, setCharacterToRename] = useState<Character | null>(null);
@@ -97,7 +101,7 @@ export function ProfileUI() {
       setSelectedFile(null);
       setPreviewUrl(null);
       setIsEditing(false);
-      setIsSigningUp(false);
+      setIsSigningUp(false); // Ensure signup mode is off on login
       fetchSavedCharacters();
       fetchDefaultCharacterPreference();
     } else {
@@ -106,19 +110,65 @@ export function ProfileUI() {
       setSelectedFile(null);
       setPreviewUrl(null);
       setIsSigningUp(false);
-      setSavedCharacters([]);
+      setSavedCharacters([]); // Clear characters on logout
       setDefaultCharacterId(null);
+      setLastCharacterDocument(null); // Reset pagination state
+      setHasMoreCharacters(true); // Assume more chars exist for a new user
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  const fetchSavedCharacters = useCallback(async () => {
+  const fetchSavedCharacters = useCallback(async (loadMore = false) => {
     if (!currentUser || !auth.currentUser) return;
     setIsLoadingSavedChars(true);
     try {
       const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
-      const querySnapshot = await getDocs(charactersCollectionRef);
+      let charactersQuery = query(
+        charactersCollectionRef,
+        orderBy('lastSaved', 'desc'), // Order by last saved for consistent pagination
+        limit(10) // Fetch 10 characters at a time
+      );
+
+      if (loadMore && lastCharacterDocument) {
+        charactersQuery = query(charactersQuery, startAfter(lastCharacterDocument));
+      }
+
+      const querySnapshot = await getDocs(charactersQuery);
       const chars = querySnapshot.docs.map(docSnap => {
+        const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string; lastSaved?: string };
+        return {
+          ...data,
+          templateId: data.templateId || (docSnap.id === 'custom' ? 'custom' : docSnap.id),
+          lastSaved: data.lastSaved || undefined
+        };
+      });
+      setSavedCharacters(chars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
+    } catch (err) {
+      console.error("Error fetching initial saved characters for profile:", err);
+      toast({ title: "Load Error", description: "Could not fetch your saved characters.", variant: "destructive" });
+      setSavedCharacters([]);
+    } finally {
+      setIsLoadingSavedChars(false);
+    }
+  }, [currentUser, toast]);
+
+  const fetchSavedCharactersPaginated = useCallback(async (startAfterDoc: DocumentSnapshot<DocumentData> | null) => {
+    if (!currentUser || !auth.currentUser) return;
+    setIsLoadingSavedChars(true);
+    try {
+      const charactersCollectionRef = collection(db, "userCharacters", auth.currentUser.uid, "characters");
+      let charactersQuery = query(
+        charactersCollectionRef,
+        orderBy('lastSaved', 'desc'), // Order by last saved for consistent pagination
+        limit(10) // Fetch 10 characters at a time
+      );
+
+      if (startAfterDoc) {
+        charactersQuery = query(charactersQuery, startAfter(startAfterDoc));
+      }
+
+      const querySnapshot = await getDocs(charactersQuery);
+      const newChars = querySnapshot.docs.map(docSnap => {
         const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string; lastSaved?: string };
         return {
           ...data,
@@ -127,9 +177,15 @@ export function ProfileUI() {
           lastSaved: data.lastSaved || undefined
         };
       });
-      setSavedCharacters(chars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
+
+      setSavedCharacters(prevChars =>
+        [...prevChars, ...newChars].sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id))
+      );
+      setLastCharacterDocument(querySnapshot.docs[querySnapshot.docs.length - 1] || null);
+      setHasMoreCharacters(newChars.length === 10); // If we got 10, there might be more
+
     } catch (err) {
-      console.error("Error fetching saved characters for profile:", err);
+      console.error("Error fetching paginated saved characters for profile:", err);
       toast({ title: "Load Error", description: "Could not fetch your saved characters.", variant: "destructive" });
       setSavedCharacters([]);
     } finally {
@@ -158,7 +214,12 @@ export function ProfileUI() {
   }, [currentUser]);
 
   useEffect(() => {
-    if(currentUser) {
+    if (currentUser) {
+      // When currentUser changes (login/logout), reset pagination and fetch the first page
+      setSavedCharacters([]); // Clear existing characters
+      setLastCharacterDocument(null); // Reset last document
+      setHasMoreCharacters(true); // Assume there are characters to load
+
       fetchSavedCharacters();
       fetchDefaultCharacterPreference();
     }
@@ -594,7 +655,7 @@ export function ProfileUI() {
           <>
             <Separator />
             <div>
-              <h3 className="text-lg font-semibold mb-3 text-primary flex items-center">
+              <h3 className=\"text-lg font-semibold mb-3 text-primary flex items-center\">
                 <ListChecks className="mr-2 h-5 w-5" /> Manage Saved Characters
               </h3>
               {(isLoadingSavedChars || isProcessing || isLoadingDefaultCharId) ? (
@@ -603,7 +664,7 @@ export function ProfileUI() {
                     <Skeleton className="h-20 w-full" />
                  </div>
               ) : savedCharacters.length > 0 ? (
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                <div className=\"space-y-3 max-h-96 overflow-y-auto pr-2\">
                   {savedCharacters.map(char => {
                     const baseTemplate = charactersData.find(t => t.id === (char.templateId || char.id));
                     let finalDisplayName: string;
@@ -671,6 +732,16 @@ export function ProfileUI() {
                       </Card>
                     );
                   })}
+                  {hasMoreCharacters && (
+                    <div className="text-center pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => fetchSavedCharactersPaginated(lastCharacterDocument)}
+                        disabled={isLoadingSavedChars || isProcessing}
+                      >
+                        {isLoadingSavedChars ? "Loading More..." : "Load More Characters"}
+                      </Button>
+                    </div>
                 </div>
               ) : (
                 <Alert variant="default" className="border-dashed">

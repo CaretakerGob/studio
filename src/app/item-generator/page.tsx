@@ -3,8 +3,8 @@ import { ItemGeneratorUI } from "@/components/item-generator/item-generator-ui";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'AI Item Generator - Beast Companion',
-  description: 'Use AI to generate unique items for your Beast game sessions.',
+  title: 'Item Generator - RotB Companion',
+  description: 'Generate unique items for your RotB game sessions.',
 };
 
 export default function ItemGeneratorPage() {

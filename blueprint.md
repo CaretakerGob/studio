@@ -139,6 +139,4 @@ A comprehensive digital companion application for the "Riddle of the Beast" (Rot
 - Implement advanced filtering and sorting for tables (Events, Investigations, Item List).
 - Expand character progression options (e.g., experience, leveling).
 - Add a bestiary or monster manual section.
-- Implement game rule references or a digital rulebook.
-- Caching strategies for Google Sheet data to improve performance.
-```
+- Implement game
