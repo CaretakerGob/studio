@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { ShopItem } from '@/types/shop';
-import { Store, ShoppingCart, Coins } from 'lucide-react';
+import { Store, ShoppingCart, Coins } from 'lucide-react'; // Added Coins
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
@@ -133,3 +133,4 @@ export function ShopUI() {
     </div>
   );
 }
+
