@@ -1,5 +1,5 @@
 
-# Blueprint: Riddl of the Beast App Companion
+# Blueprint: Riddle of the Beast App Companion
 
 ## 1. App Name
 Riddl of the Beast App Companion
