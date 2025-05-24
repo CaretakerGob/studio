@@ -2,10 +2,10 @@
 # Blueprint: Riddle of the Beast App Companion
 
 ## 1. App Name
-Riddl of the Beast App Companion
+Riddle of the Beast App Companion
 
 ## 2. Overview
-A comprehensive digital companion application for the "Riddl of the Beast" (RotB) board game. This app aims to enhance the gameplay experience by providing players with essential tools, character management, and random event generation, all wrapped in a dark, horror-themed interface.
+A comprehensive digital companion application for the "Riddle of the Beast" (RotB) board game. This app aims to enhance the gameplay experience by providing players with essential tools, character management, and random event generation, all wrapped in a dark, horror-themed interface.
 
 ## 3. Core Features & Key Pages
 

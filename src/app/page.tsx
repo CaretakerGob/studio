@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon } from "lucide-react";
+import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon, WandSparkles } from "lucide-react";
 
 export default function HomePage() {
   const features = [
@@ -12,6 +12,7 @@ export default function HomePage() {
     { name: "Item List", href: "/events", icon: List, description: "View a list of items from the game." },
     { name: "Events", href: "/item-list", icon: CalendarDays, description: "Generate random events from game data." },
     { name: "Investigations", href: "/investigations", icon: ClipboardList, description: "Manage and track your investigations." },
+    { name: "Item Generator (AI)", href: "/item-generator", icon: WandSparkles, description: "Generate unique game items using AI." },
     { name: "Shared Space", href: "/shared-space", icon: Share2, description: "Join or create a shared session." },
     { name: "User Profile", href: "/profile", icon: User, description: "Manage your profile and saved data." },
   ];
@@ -41,7 +42,6 @@ export default function HomePage() {
           </p>
         </header>
 
-        {/* Updated container for feature cards */}
         <div className="flex-grow overflow-y-auto flex flex-col space-y-6 md:space-y-0 py-2 md:py-0 
                         md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 
                         md:flex-grow-0 md:overflow-visible">

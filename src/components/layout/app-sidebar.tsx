@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Dices, Layers, UserCircle, Home, Settings, PanelLeft, List, CalendarDays, ClipboardList, User, Share2 } from 'lucide-react'; // Added Share2
+import { Dices, Layers, UserCircle, Home, PanelLeft, List, CalendarDays, ClipboardList, User, Share2, WandSparkles } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -23,6 +23,7 @@ const navItems = [
   { href: '/events', label: 'Item List', icon: List },
   { href: '/item-list', label: 'Events', icon: CalendarDays },
   { href: '/investigations', label: 'Investigations', icon: ClipboardList },
+  { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles },
   { href: '/shared-space', label: 'Shared Space', icon: Share2 },
   { href: '/profile', label: 'User Profile', icon: User },
 ];
@@ -34,7 +35,6 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-lg">
       <SidebarHeader className="p-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-          {/* You can add an SVG icon here if desired */}
           <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
         </Link>
         <SidebarTrigger asChild className="md:hidden">
@@ -59,14 +59,6 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      {/* Optional Footer
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <SidebarMenuButton tooltip="Settings" className="justify-start">
-          <Settings className="h-5 w-5" />
-          <span>Settings</span>
-        </SidebarMenuButton>
-      </SidebarFooter>
-      */}
     </Sidebar>
   );
 }
