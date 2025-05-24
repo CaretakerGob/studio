@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const ItemGeneratorInputSchema = z.object({
+const ItemGeneratorInputSchema = z.object({
   itemType: z.enum(['weapon', 'armor', 'trinket', 'potion', 'scroll'])
     .describe('The general type of item to generate (e.g., weapon, armor, trinket).'),
   theme: z.string().optional()
@@ -19,7 +19,7 @@ export const ItemGeneratorInputSchema = z.object({
 });
 export type ItemGeneratorInput = z.infer<typeof ItemGeneratorInputSchema>;
 
-export const ItemGeneratorOutputSchema = z.object({
+const ItemGeneratorOutputSchema = z.object({
   itemName: z.string().describe('The unique and evocative name of the generated item.'),
   itemTypeGenerated: z.string().describe('The specific type of item that was generated (e.g., Sword, Shield, Ring). This should align with the requested itemType.'),
   description: z.string().describe('A detailed and thematic description of the item, including its appearance and lore.'),
@@ -72,3 +72,4 @@ const itemGeneratorFlow = ai.defineFlow(
     return output;
   }
 );
+
