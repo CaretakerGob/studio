@@ -12,6 +12,7 @@ import { WandSparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ItemGeneratorInput, ItemGeneratorOutput } from '@/ai/flows/item-generator-flow';
 import { generateGameItem } from '@/ai/flows/item-generator-flow';
+import { Badge } from '@/components/ui/badge'; // Added import for Badge
 
 const itemTypes: ItemGeneratorInput['itemType'][] = ["Gear", "Melee Weapon", "Ranged Weapon", "Augment", "Utility", "Consumable"];
 const rarities: NonNullable<ItemGeneratorInput['rarity']>[] = ["Common", "Uncommon", "Rare", "Artifact"];
@@ -193,4 +194,3 @@ export function ItemGeneratorUI() {
     </div>
   );
 }
-
