@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { ItemGeneratorInput, ItemGeneratorOutput } from '@/ai/flows/item-generator-flow';
 import { generateGameItem } from '@/ai/flows/item-generator-flow'; // Import the flow directly
 
-const itemTypes: ItemGeneratorInput['itemType'][] = ["weapon", "armor", "trinket", "potion", "scroll"];
+const itemTypes: ItemGeneratorInput['itemType'][] = ["Gear", "Melee Weapon", "Ranged Weapon", "Augment", "Utility", "Consumable"];
 
 export function ItemGeneratorUI() {
   const [itemType, setItemType] = useState<ItemGeneratorInput['itemType'] | undefined>(undefined);
@@ -66,20 +66,20 @@ export function ItemGeneratorUI() {
             <CardTitle className="text-2xl">Item Generator</CardTitle>
           </div>
           <CardDescription>
-            Select an item type and optionally provide a theme to generate a unique game item using AI.
+            Select an item category and optionally provide a theme to generate a unique game item using AI.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="itemTypeSelect">Item Type (Required)</Label>
+            <Label htmlFor="itemTypeSelect">Item Category (Required)</Label>
             <Select value={itemType} onValueChange={(value) => setItemType(value as ItemGeneratorInput['itemType'])}>
               <SelectTrigger id="itemTypeSelect" className="w-full">
-                <SelectValue placeholder="Select an item type..." />
+                <SelectValue placeholder="Select an item category..." />
               </SelectTrigger>
               <SelectContent>
                 {itemTypes.map((type) => (
                   <SelectItem key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                    {type}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -130,15 +130,15 @@ export function ItemGeneratorUI() {
         <Card className="shadow-xl animate-in fade-in duration-500">
           <CardHeader>
             <CardTitle className="text-xl text-primary">{generatedItem.itemName}</CardTitle>
-            <CardDescription>Type: {generatedItem.itemTypeGenerated}</CardDescription>
+            <CardDescription>Category: {generatedItem.itemTypeGenerated}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <h4 className="font-semibold text-muted-foreground">Description:</h4>
+              <h4 className="font-semibold text-muted-foreground">Lore Description:</h4>
               <p className="whitespace-pre-line">{generatedItem.description}</p>
             </div>
             <div>
-              <h4 className="font-semibold text-muted-foreground">Game Effect:</h4>
+              <h4 className="font-semibold text-muted-foreground">Stats/Effects:</h4>
               <p className="whitespace-pre-line">{generatedItem.gameEffect}</p>
             </div>
           </CardContent>
@@ -147,3 +147,4 @@ export function ItemGeneratorUI() {
     </div>
   );
 }
+
