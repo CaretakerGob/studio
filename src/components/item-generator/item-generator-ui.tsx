@@ -63,7 +63,7 @@ export function ItemGeneratorUI() {
         <CardHeader>
           <div className="flex items-center">
             <WandSparkles className="mr-3 h-8 w-8 text-primary" />
-            <CardTitle className="text-2xl">AI Item Generator</CardTitle>
+            <CardTitle className="text-2xl">Item Generator</CardTitle>
           </div>
           <CardDescription>
             Select an item type and optionally provide a theme to generate a unique game item using AI.
