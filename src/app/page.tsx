@@ -32,19 +32,19 @@ export default function HomePage() {
       style={{
         backgroundImage: `url(${backgroundImageUrl})`,
       }}
-      className="min-h-screen bg-cover bg-center bg-no-repeat"
+      className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed" // Added bg-fixed
       data-ai-hint="dark fantasy background"
     >
       <div className="container mx-auto px-4 flex flex-col h-screen overflow-hidden md:min-h-screen md:py-12 md:overflow-visible relative z-10 bg-transparent py-4 md:py-6">
-        <header className="text-center mb-4 md:mb-12 bg-black/70 backdrop-blur-md p-4 md:p-6 rounded-lg shadow-xl flex-shrink-0">
-          <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2 md:mb-4">Riddle of the Beast Companion</h1>
-          <p className="text-lg md:text-xl text-white max-w-2xl mx-auto">
+        <header className="text-center mb-4 md:mb-6 bg-black/70 backdrop-blur-md p-3 md:p-6 rounded-lg shadow-xl flex-shrink-0">
+          <h1 className="text-3xl md:text-5xl font-bold text-primary mb-2 md:mb-4">Riddle of the Beast Companion</h1>
+          <p className="text-md md:text-xl text-white max-w-2xl mx-auto">
             Your essential toolkit for navigating the horrors and challenges of the RotB board game. Dive in and enhance your gameplay experience!
           </p>
         </header>
 
-        <div className="flex-grow overflow-y-auto flex flex-col space-y-6 md:space-y-0 py-2 md:py-0 
-                        md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 
+        <div className="flex-grow overflow-y-auto flex flex-col space-y-4 py-2 md:py-0 
+                        md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 
                         md:flex-grow-0 md:overflow-visible">
           {features.map((feature) => (
             <Card
@@ -53,8 +53,8 @@ export default function HomePage() {
             >
               <CardHeader className="flex-grow p-4 md:p-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <feature.icon className="h-7 w-7 md:h-8 md:w-8 text-primary" />
-                  <CardTitle className="text-xl md:text-2xl">{feature.name}</CardTitle>
+                  <feature.icon className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                  <CardTitle className="text-lg md:text-2xl">{feature.name}</CardTitle>
                 </div>
                 <CardDescription className="text-card-foreground/80 text-sm md:text-base">{feature.description}</CardDescription>
               </CardHeader>
@@ -69,9 +69,9 @@ export default function HomePage() {
           ))}
         </div>
 
-        <footer className="w-full py-4 md:py-8 mt-4 md:mt-16 border-t border-border/30 text-center bg-black/70 backdrop-blur-md rounded-t-lg flex-shrink-0">
+        <footer className="w-full py-4 md:py-6 mt-4 md:mt-8 border-t border-border/30 text-center bg-black/70 backdrop-blur-md rounded-t-lg flex-shrink-0">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 md:mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               {footerLinks.map((link) => (
                 <Link key={link.name} href={link.href} className="text-muted-foreground hover:text-primary transition-colors duration-200 flex items-center justify-center sm:justify-start text-sm md:text-base">
                   <link.icon className="h-4 w-4 md:h-5 md:w-5 mr-2 shrink-0" />
