@@ -49,32 +49,35 @@ async function getSheetData(): Promise<EventsSheetData[]> { // Renamed function 
     }
 
     const headers = rows[0] as string[];
-    // Simplified sanitization if headers are expected to be simple like "Insert", "Color"
-    const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase());
+    // Simplified sanitization for direct mapping if headers are "Color", "Type", "Description", "Insert", "Count"
+    const sanitizedHeaders = headers.map(h => String(h || '').trim());
     
-    const insertIndex = sanitizedHeaders.indexOf('insert');
-    const countIndex = sanitizedHeaders.indexOf('count');
-    const colorIndex = sanitizedHeaders.indexOf('color');
-    const typeIndex = sanitizedHeaders.indexOf('type');
-    const descriptionIndex = sanitizedHeaders.indexOf('description');
+    // Find indices based on exact (case-insensitive) header names
+    const getIndex = (name: string) => sanitizedHeaders.findIndex(h => h.toLowerCase() === name.toLowerCase());
 
-    // Make Insert and Count optional in terms of sheet presence, but ensure Color, Type, Description are there.
-    const requiredHeaders = ['color', 'type', 'description'];
-    const missingRequiredHeaders = requiredHeaders.filter(expectedHeader => !sanitizedHeaders.includes(expectedHeader));
+    const insertIndex = getIndex('Insert');
+    const countIndex = getIndex('Count');
+    const colorIndex = getIndex('Color');
+    const typeIndex = getIndex('Type');
+    const descriptionIndex = getIndex('Description');
+
+    // Check for essential headers
+    const requiredHeaderNames = ['Color', 'Type', 'Description'];
+    const missingRequiredHeaders = requiredHeaderNames.filter(expectedHeader => getIndex(expectedHeader) === -1);
 
     if (missingRequiredHeaders.length > 0) {
-        const errorMessage = `Required headers (${requiredHeaders.join(', ')}) not found or mismatch in Google Sheet. Missing or mismatched: ${missingRequiredHeaders.join(', ')}. Please check sheet headers and range. Headers found: [${sanitizedHeaders.join(', ')}]`;
+        const errorMessage = `Required headers (${requiredHeaderNames.join(', ')}) not found or mismatch in Google Sheet. Missing or mismatched: ${missingRequiredHeaders.join(', ')}. Please check sheet headers and range. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMessage);
         return [{ Insert: '', Count: '', Color: 'Error', Type: 'System', Description: errorMessage }];
     }
 
 
-    return rows.slice(1).map((row: any[]): EventsSheetData => ({ // Updated return type
-      Insert: insertIndex !== -1 ? (row[insertIndex] || '') : '', // Handle if Insert col doesn't exist
-      Count: countIndex !== -1 ? (row[countIndex] || '') : '', // Handle if Count col doesn't exist
-      Color: row[colorIndex] || '',
-      Type: row[typeIndex] || '',
-      Description: row[descriptionIndex] || '',
+    return rows.slice(1).map((row: any[]): EventsSheetData => ({
+      Insert: insertIndex !== -1 ? (row[insertIndex] || '') : '',
+      Count: countIndex !== -1 ? (row[countIndex] || '') : '',
+      Color: colorIndex !== -1 ? (row[colorIndex] || '') : '', // Should always exist due to check above
+      Type: typeIndex !== -1 ? (row[typeIndex] || '') : '', // Should always exist
+      Description: descriptionIndex !== -1 ? (row[descriptionIndex] || '') : '', // Should always exist
     }));
 
   } catch (error) {

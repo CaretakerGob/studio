@@ -54,7 +54,7 @@ async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> 
     }
 
     const headers = rows[0] as string[];
-    const sanitizedHeaders = headers.map(h => h.trim()); 
+    const sanitizedHeaders = headers.map(h => String(h || '').trim()); 
 
     return rows.slice(1).map((row: any[]): InvestigationData => {
       const investigationEntry: any = {};
