@@ -42,13 +42,13 @@ export default function HomePage() {
         </header>
 
         {/* Updated container for feature cards */}
-        <div className="flex-grow overflow-y-auto flex flex-col space-y-4 md:space-y-0 py-2 md:py-0 
+        <div className="flex-grow overflow-y-auto flex flex-col space-y-6 md:space-y-0 py-2 md:py-0 
                         md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 
                         md:flex-grow-0 md:overflow-visible">
           {features.map((feature) => (
             <Card
               key={feature.name}
-              className="w-full shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col bg-card/80 backdrop-blur-sm border-primary/30"
+              className="w-full shadow-xl hover:shadow-primary/50 transition-shadow duration-300 flex flex-col bg-card/90 backdrop-blur-sm border-primary/30"
             >
               <CardHeader className="flex-grow p-4 md:p-6">
                 <div className="flex items-center gap-3 mb-2">
