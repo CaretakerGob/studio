@@ -1,5 +1,5 @@
 
-
+import React from 'react'; // Import React for Suspense
 import { CharacterSheetUI } from "@/components/character-sheet/character-sheet-ui";
 import type { Metadata } from 'next';
 import { google } from 'googleapis';
@@ -26,7 +26,6 @@ function parseEffectStatChange(statString: string | undefined): ParsedStatModifi
     'melee attack': 'meleeAttackMod', 'meleeattackmod': 'meleeAttackMod', // This maps to arsenal card global mods
     'ranged attack': 'rangedAttackMod', 'rangedattackmod': 'rangedAttackMod',
     'ranged range': 'rangedRangeMod', 'rangedrangemod': 'rangedRangeMod',
-    // Note: 'meleeAttack' for CharacterStats is handled by parsePetStatsString if it's for a pet
   };
 
   for (const change of changes) {
@@ -146,6 +145,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     const headers = rows[0] as string[];
     const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
+    // console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders); // Keep this for debugging if needed
     
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -159,7 +159,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     if (arsenalNameIndex === -1) {
         const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet. Headers found: [${sanitizedHeaders.join(', ')}]`;
         console.error(errorMsg);
-        console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders);
+        // console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders);
         return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item', abilityName: `[${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
     }
     
@@ -231,10 +231,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         arsenalsMap.set(arsenalId, card as ArsenalCard);
       }
 
-      const item: Partial<ArsenalItem> = {};
+      const item: Partial<ArsenalItem> = { isPet: false }; // Initialize isPet to false
       item.id = `${arsenalId}_item_${rowIndex}`; 
-      item.isPet = false; 
-
+      
       const categoryIndex = getColumnIndex(['category']);
       if (categoryIndex !== -1) item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
       
@@ -311,10 +310,8 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
             if (itemAbilityNameValue && !itemAbilityNameValue.startsWith('Item ') && itemAbilityNameValue !== `Item ${rowIndex}`) {
                 item.petName = itemAbilityNameValue;
-                // console.log(`[Pet Name Parsing] Pet '${item.petName}' used 'Ability Name': "${itemAbilityNameValue}"`);
             } else {
                 item.petName = 'Companion';
-                // console.log(`[Pet Name Parsing] Pet defaulted to 'Companion' because 'Ability Name' was placeholder or missing.`);
             }
 
 
@@ -400,8 +397,9 @@ export default async function CharacterSheetPage() {
   const arsenalCards = await getArsenalCardsFromGoogleSheet();
   return (
     <div className="w-full">
-      <CharacterSheetUI arsenalCards={arsenalCards} />
+      <React.Suspense fallback={<div>Loading character sheet...</div>}>
+        <CharacterSheetUI arsenalCards={arsenalCards} />
+      </React.Suspense>
     </div>
   );
 }
-
