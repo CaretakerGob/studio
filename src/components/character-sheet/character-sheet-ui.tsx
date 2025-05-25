@@ -6,7 +6,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardTitle, CardDescription, CardFooter, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Save, Swords, Library, PawPrint,
@@ -1458,154 +1457,152 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             onResetStats={resetStats}
         />
         <CardContent className="space-y-6">
-          <Tabs defaultValue="stats" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 p-1 h-auto">
-              <TabsTrigger value="stats" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Stats &amp; Equipment</TabsTrigger>
-              <TabsTrigger value="abilities" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Abilities</TabsTrigger>
-              <TabsTrigger value="arsenal" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Arsenal</TabsTrigger>
-              <TabsTrigger value="skills" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Skills</TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="stats" className="mt-6 space-y-6">
-              <CoreStatsSection
-                editableCharacterData={editableCharacterData}
-                effectiveBaseStats={effectiveBaseStats}
-                highlightedStat={highlightedStat}
-                handleStatChange={handleStatChange}
-                incrementStat={incrementStat}
-                decrementStat={decrementStat}
-                handleBuyStatPoint={handleBuyStatPoint}
-                handleSellStatPoint={handleSellStatPoint}
-                customStatPointBuyConfig={customStatPointBuyConfig}
-              />
-              <Separator/>
-              <div>
-                  <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <WeaponDisplay weapon={currentMeleeWeapon} type="melee" equippedArsenalCard={equippedArsenalCard} baseMeleeWeaponName={editableCharacterData.meleeWeapon?.name} />
-                      <WeaponDisplay weapon={currentRangedWeapon} type="ranged" equippedArsenalCard={equippedArsenalCard} baseRangedWeaponName={editableCharacterData.rangedWeapon?.name} />
-                  </div>
-              </div>
-              {currentCompanion && (
-                <>
-                  <Separator />
-                  <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
-                    <h3 className="text-xl font-semibold mb-3 flex items-center">
-                      <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
-                    </h3>
-                     {currentCompanion.petStats && !currentCompanion.parsedPetCoreStats && (
-                        <p className="text-sm text-muted-foreground mb-2">Raw Stats (Failed to parse for trackers): {currentCompanion.petStats}</p>
-                    )}
-                    {currentCompanion.petStats && currentCompanion.parsedPetCoreStats && Object.keys(currentCompanion.parsedPetCoreStats).length === 0 && (
-                        <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats} (Could not parse for trackers)</p>
-                    )}
+          {/* Stats & Equipment Section */}
+          <div id="stats-section" className="space-y-6">
+            <h2 className="text-2xl font-bold border-b pb-2 flex items-center"><UserCog className="mr-2" /> Stats & Equipment</h2>
+            <CoreStatsSection
+              editableCharacterData={editableCharacterData}
+              effectiveBaseStats={effectiveBaseStats}
+              highlightedStat={highlightedStat}
+              handleStatChange={handleStatChange}
+              incrementStat={incrementStat}
+              decrementStat={decrementStat}
+              handleBuyStatPoint={handleBuyStatPoint}
+              handleSellStatPoint={handleSellStatPoint}
+              customStatPointBuyConfig={customStatPointBuyConfig}
+            />
+            <Separator/>
+            <div>
+                <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <WeaponDisplay weapon={currentMeleeWeapon} type="melee" equippedArsenalCard={equippedArsenalCard} baseMeleeWeaponName={editableCharacterData.meleeWeapon?.name} />
+                    <WeaponDisplay weapon={currentRangedWeapon} type="ranged" equippedArsenalCard={equippedArsenalCard} baseRangedWeaponName={editableCharacterData.rangedWeapon?.name} />
+                </div>
+            </div>
+            {currentCompanion && (
+              <>
+                <Separator />
+                <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+                  <h3 className="text-xl font-semibold mb-3 flex items-center">
+                    <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
+                  </h3>
+                   {currentCompanion.petStats && !currentCompanion.parsedPetCoreStats && (
+                      <p className="text-sm text-muted-foreground mb-2">Raw Stats (Failed to parse for trackers): {currentCompanion.petStats}</p>
+                  )}
+                  {currentCompanion.petStats && currentCompanion.parsedPetCoreStats && Object.keys(currentCompanion.parsedPetCoreStats).length === 0 && (
+                      <p className="text-sm text-muted-foreground mb-2">Raw Stats: {currentCompanion.petStats} (Could not parse for trackers)</p>
+                  )}
 
-                    {currentCompanion.parsedPetCoreStats && (currentCompanion.parsedPetCoreStats.maxHp || currentCompanion.parsedPetCoreStats.maxSanity || currentCompanion.parsedPetCoreStats.mv || currentCompanion.parsedPetCoreStats.def || currentCompanion.parsedPetCoreStats.meleeAttack ) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-3">
-                        {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <Label className="flex items-center text-sm font-medium">
-                                <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
-                              </Label>
-                              <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'decrement')} className="h-6 w-6">
-                                  <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Minus */}
-                                </Button>
-                                <Input type="number" value={currentPetHp} readOnly className="w-12 h-6 text-center text-sm font-bold p-1"/>
-                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'increment')} className="h-6 w-6">
-                                  <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Plus */}
-                                </Button>
-                              </div>
+                  {currentCompanion.parsedPetCoreStats && (currentCompanion.parsedPetCoreStats.maxHp || currentCompanion.parsedPetCoreStats.maxSanity || currentCompanion.parsedPetCoreStats.mv || currentCompanion.parsedPetCoreStats.def || currentCompanion.parsedPetCoreStats.meleeAttack ) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-3">
+                      {currentCompanion.parsedPetCoreStats.maxHp !== undefined && currentPetHp !== null && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <Label className="flex items-center text-sm font-medium">
+                              <Heart className="mr-2 h-4 w-4 text-red-500" /> HP
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'decrement')} className="h-6 w-6">
+                                <Minus className="h-3 w-3" /> 
+                              </Button>
+                              <Input type="number" value={currentPetHp} readOnly className="w-12 h-6 text-center text-sm font-bold p-1"/>
+                              <Button variant="outline" size="icon" onClick={() => handlePetStatChange('hp', 'increment')} className="h-6 w-6">
+                                <Plus className="h-3 w-3" /> 
+                              </Button>
                             </div>
-                            <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={cn("h-1.5", getPetHpBarColorClass())} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
                           </div>
-                        )}
-                        {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <Label className="flex items-center text-sm font-medium">
-                                <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
-                              </Label>
-                              <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'decrement')} className="h-6 w-6">
-                                   <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Minus */}
-                                </Button>
-                                <Input type="number" value={currentPetSanity} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
-                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'increment')} className="h-6 w-6">
-                                  <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Plus */}
-                                </Button>
-                              </div>
+                          <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={cn("h-1.5", getPetHpBarColorClass())} />
+                          <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
+                        </div>
+                      )}
+                      {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <Label className="flex items-center text-sm font-medium">
+                              <Brain className="mr-2 h-4 w-4 text-blue-400" /> Sanity
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'decrement')} className="h-6 w-6">
+                                 <Minus className="h-3 w-3" /> 
+                              </Button>
+                              <Input type="number" value={currentPetSanity} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                              <Button variant="outline" size="icon" onClick={() => handlePetStatChange('sanity', 'increment')} className="h-6 w-6">
+                                <Plus className="h-3 w-3" /> 
+                              </Button>
                             </div>
-                            <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className={cn("h-1.5", getPetSanityBarColorClass())} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
                           </div>
-                        )}
-                        {currentCompanion.parsedPetCoreStats.mv !== undefined && currentPetMv !== null && (
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <Label className="flex items-center text-sm font-medium">
-                                <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
-                              </Label>
-                              <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'decrement')} className="h-6 w-6">
-                                  <UserCog className="h-3 w-3" /> {/* Placeholder */}
-                                </Button>
-                                <Input type="number" value={currentPetMv} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
-                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'increment')} className="h-6 w-6">
-                                   <UserCog className="h-3 w-3" /> {/* Placeholder */}
-                                </Button>
-                              </div>
+                          <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className={cn("h-1.5", getPetSanityBarColorClass())} />
+                          <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
+                        </div>
+                      )}
+                      {currentCompanion.parsedPetCoreStats.mv !== undefined && currentPetMv !== null && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <Label className="flex items-center text-sm font-medium">
+                              <Footprints className="mr-2 h-4 w-4 text-green-500" /> MV
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'decrement')} className="h-6 w-6">
+                                <Minus className="h-3 w-3" /> 
+                              </Button>
+                              <Input type="number" value={currentPetMv} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                              <Button variant="outline" size="icon" onClick={() => handlePetStatChange('mv', 'increment')} className="h-6 w-6">
+                                 <Plus className="h-3 w-3" /> 
+                              </Button>
                             </div>
-                            <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className={cn("h-1.5", getPetMvBarColorClass())} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetMv} / {currentCompanion.parsedPetCoreStats.mv}</p>
                           </div>
-                        )}
-                        {currentCompanion.parsedPetCoreStats.def !== undefined && currentPetDef !== null && (
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <Label className="flex items-center text-sm font-medium">
-                                <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
-                              </Label>
-                              <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'decrement')} className="h-6 w-6">
-                                  <UserCog className="h-3 w-3" /> {/* Placeholder */}
-                                </Button>
-                                <Input type="number" value={currentPetDef} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
-                                <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'increment')} className="h-6 w-6">
-                                  <UserCog className="h-3 w-3" /> {/* Placeholder */}
-                                </Button>
-                              </div>
+                          <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className={cn("h-1.5", getPetMvBarColorClass())} />
+                          <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetMv} / {currentCompanion.parsedPetCoreStats.mv}</p>
+                        </div>
+                      )}
+                      {currentCompanion.parsedPetCoreStats.def !== undefined && currentPetDef !== null && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <Label className="flex items-center text-sm font-medium">
+                              <Shield className="mr-2 h-4 w-4 text-gray-400" /> DEF
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'decrement')} className="h-6 w-6">
+                                <Minus className="h-3 w-3" /> 
+                              </Button>
+                              <Input type="number" value={currentPetDef} readOnly className="w-12 h-6 text-center text-sm font-bold p-1" />
+                              <Button variant="outline" size="icon" onClick={() => handlePetStatChange('def', 'increment')} className="h-6 w-6">
+                                <Plus className="h-3 w-3" /> 
+                              </Button>
                             </div>
-                            <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className={cn("h-1.5", getPetDefBarColorClass())} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetDef} / {currentCompanion.parsedPetCoreStats.def}</p>
                           </div>
-                        )}
-                        {petMeleeWeaponForDisplay && (
-                          <div className="md:col-span-2">
-                            <WeaponDisplay weapon={petMeleeWeaponForDisplay} type="melee" />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {currentCompanion.petAbilities && (
-                      <p className="text-xs text-muted-foreground mt-3 pt-2 border-t border-muted-foreground/20">
-                        <strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}
-                      </p>
-                    )}
-                    {currentCompanion.petStats && currentCompanion.parsedPetCoreStats === undefined && (
-                      <p className="text-xs text-destructive-foreground bg-destructive p-2 rounded-md mt-2">
-                        Note: The 'Pet Stats' string "{currentCompanion.petStats}" could not be fully parsed for interactive trackers. Ensure it follows a format like "HP:10 MV:5 DEF:2 SAN:3 ATK:1".
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="abilities" className="mt-6">
-              <AbilitiesSection
+                          <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className={cn("h-1.5", getPetDefBarColorClass())} />
+                          <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetDef} / {currentCompanion.parsedPetCoreStats.def}</p>
+                        </div>
+                      )}
+                      {petMeleeWeaponForDisplay && (
+                        <div className="md:col-span-2">
+                          <WeaponDisplay weapon={petMeleeWeaponForDisplay} type="melee" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {currentCompanion.petAbilities && (
+                    <p className="text-xs text-muted-foreground mt-3 pt-2 border-t border-muted-foreground/20">
+                      <strong className="text-foreground">Abilities:</strong> {currentCompanion.petAbilities}
+                    </p>
+                  )}
+                  {currentCompanion.petStats && currentCompanion.parsedPetCoreStats === undefined && (
+                    <p className="text-xs text-destructive-foreground bg-destructive p-2 rounded-md mt-2">
+                      Note: The 'Pet Stats' string "{currentCompanion.petStats}" could not be fully parsed for interactive trackers. Ensure it follows a format like "HP:10 MV:5 DEF:2 SAN:3 ATK:1".
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Abilities Section */}
+          <Separator />
+          <div id="abilities-section" className="space-y-6">
+            <h2 className="text-2xl font-bold border-b pb-2 flex items-center"><Sparkles className="mr-2" /> Abilities</h2>
+            <AbilitiesSection
                 editableCharacterData={editableCharacterData}
                 allUniqueAbilities={allUniqueAbilities}
                 categorizedAbilities={categorizedAbilities}
@@ -1621,24 +1618,30 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                 handleIncrementQuantity={handleIncrementQuantity}
                 handleDecrementQuantity={handleDecrementQuantity}
               />
-            </TabsContent>
-            
-            <TabsContent value="arsenal" className="mt-6 space-y-6">
-                <ArsenalTabContent
-                    editableCharacterData={editableCharacterData}
-                    arsenalCards={arsenalCards}
-                    handleArsenalCardChange={handleArsenalCardChange}
-                    currentCompanion={currentCompanion}
-                    currentPetHp={currentPetHp} 
-                    currentPetSanity={currentPetSanity} 
-                    handleIncrementPetStat={(statType) => handlePetStatChange(statType as 'hp' | 'sanity' | 'mv' | 'def', 'increment')}
-                    handleDecrementPetStat={(statType) => handlePetStatChange(statType as 'hp' | 'sanity' | 'mv' | 'def', 'decrement')}
-                    criticalArsenalError={criticalArsenalError}
-                />
-            </TabsContent>
+          </div>
 
-            <TabsContent value="skills" className="mt-6 space-y-6">
-              <SkillsSection
+          {/* Arsenal Section */}
+          <Separator />
+          <div id="arsenal-section" className="space-y-6">
+             <h2 className="text-2xl font-bold border-b pb-2 flex items-center"><Shirt className="mr-2" /> Arsenal</h2>
+            <ArsenalTabContent
+                editableCharacterData={editableCharacterData}
+                arsenalCards={arsenalCards}
+                handleArsenalCardChange={handleArsenalCardChange}
+                currentCompanion={currentCompanion}
+                currentPetHp={currentPetHp}
+                currentPetSanity={currentPetSanity}
+                handleIncrementPetStat={(statType) => handlePetStatChange(statType as 'hp' | 'sanity' | 'mv' | 'def', 'increment')}
+                handleDecrementPetStat={(statType) => handlePetStatChange(statType as 'hp' | 'sanity' | 'mv' | 'def', 'decrement')}
+                criticalArsenalError={criticalArsenalError}
+            />
+          </div>
+
+          {/* Skills Section */}
+          <Separator />
+          <div id="skills-section" className="space-y-6">
+             <h2 className="text-2xl font-bold border-b pb-2 flex items-center"><Library className="mr-2" /> Skills</h2>
+             <SkillsSection
                 editableCharacterData={editableCharacterData}
                 characterSkills={characterSkills}
                 skillDefinitions={skillDefinitions}
@@ -1649,9 +1652,8 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                 handleDecreaseSkillLevel={handleDecreaseSkillLevel}
                 handleRemoveSkill={handleRemoveSkill}
                 purchasedSkills={purchasedSkills}
-              />
-            </TabsContent>
-          </Tabs>
+             />
+          </div>
 
         </CardContent>
         <CardFooter className="flex justify-end pt-6">
