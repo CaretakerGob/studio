@@ -6,6 +6,7 @@ import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, Use
 
 export default function HomePage() {
   const features = [
+    { name: "Test", href: "/test", icon: FileText, description: "A page for testing new features." },
     { name: "Character Sheet", href: "/character-sheet", icon: UserCircle, description: "Track your hero's stats and progress." },
     { name: "Dice Roller", href: "/dice-roller", icon: Dices, description: "Roll various dice for your game actions." },
     { name: "Card Generator", href: "/card-generator", icon: Layers, description: "Draw random cards from selected decks." },
