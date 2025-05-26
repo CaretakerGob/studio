@@ -8,6 +8,7 @@ import { Swords, Crosshair } from 'lucide-react';
 interface WeaponDisplayProps {
   weapon?: Weapon | RangedWeapon;
   type: 'melee' | 'ranged';
+  isArsenalWeapon: boolean;
   equippedArsenalCard?: ArsenalCard | null;
   baseMeleeWeaponName?: string | null; // To help decide if default "Fists" should be hidden
   baseRangedWeaponName?: string | null; // To help decide if default "None" should be hidden
@@ -15,7 +16,7 @@ interface WeaponDisplayProps {
 
 export function WeaponDisplay({ weapon, type, equippedArsenalCard, baseMeleeWeaponName, baseRangedWeaponName }: WeaponDisplayProps) {
   if (!weapon) return null;
-
+  
   // Hide default "Fists" if no character melee weapon and no arsenal melee weapon/mod
   if (type === 'melee' && weapon.name === "Fists" && weapon.attack === 1 && !baseMeleeWeaponName && !equippedArsenalCard?.meleeAttackMod && !equippedArsenalCard?.items.some(i => (i.isFlaggedAsWeapon || i.category?.toUpperCase() === 'LOAD OUT') && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0))) {
     return null;

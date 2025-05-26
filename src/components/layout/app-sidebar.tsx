@@ -10,10 +10,10 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarTrigger,
+  // SidebarTrigger, // No longer needed here for mobile
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Dices, Layers, UserCircle, Home, PanelLeft, List, CalendarDays, ClipboardList, User, Share2, WandSparkles, Store } from 'lucide-react';
+// import { Button } from '@/components/ui/button'; // No longer needed here for mobile trigger
+import { Dices, Layers, UserCircle, Home, /* PanelLeft, */ List, CalendarDays, ClipboardList, User, Share2, WandSparkles, Store, HelpCircle, FileText, ShieldCheckIcon } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -27,6 +27,7 @@ const navItems = [
   { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles },
   { href: '/shared-space', label: 'Shared Space', icon: Share2 },
   { href: '/profile', label: 'User Profile', icon: User },
+  { href: '/faq', label: 'FAQ', icon: HelpCircle },
 ];
 
 export function AppSidebar() {
@@ -39,9 +40,7 @@ export function AppSidebar() {
           {/* Removed icon here */}
           <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
         </Link>
-        <SidebarTrigger asChild className="md:hidden">
-           <Button variant="ghost" size="icon"><PanelLeft /></Button>
-        </SidebarTrigger>
+        {/* The mobile trigger is now in RootLayout.tsx */}
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>

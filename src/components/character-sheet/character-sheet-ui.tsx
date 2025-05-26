@@ -2,6 +2,7 @@
 "use client";
 
 import type { ChangeEvent } from 'react';
+import React from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardTitle, CardDescription, CardFooter, CardHeader, CardContent } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Save, Swords, Library, PawPrint,
-  Heart, Shield, Footprints, Brain, Laptop, Star, VenetianMask, Sparkles,
+  Heart, Shield, Footprints, Brain, Laptop, Star, VenetianMask,
   HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding,
   Shirt, UserCog, Eye, Copy, Trash2, Edit3, Star as StarIcon
 } from "lucide-react";
@@ -458,6 +459,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       setAbilityToAddId(undefined);
       setSkillToPurchase(undefined);
       setIsLoadingCharacter(false);
+        // No need to reset pet stats here, the effect will handle it based on the new character/arsenal
     };
 
     if (initialIdProcessed) { 
@@ -1169,6 +1171,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             setSelectedCharacterId('custom'); 
         }
         showToastHelper({ title: "Character Loaded", description: `Loaded your saved custom character: ${savedData.name}.` });
+         // Pet stats state will update based on the new character data/arsenal card via useEffect
       } else {
         showToastHelper({ title: "Not Found", description: "No saved custom character found. Loaded default template.", variant: "destructive" });
         // Load the default 'custom' template if no saved version exists
@@ -1190,6 +1193,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             if (selectedCharacterId !== 'custom') { // Ensure dropdown reflects 'custom'
                 setSelectedCharacterId('custom');
             }
+             // Pet stats state will update based on the new character data/arsenal card via useEffect
         }
       }
     } catch (err) {
@@ -1198,6 +1202,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     } finally {
       setIsLoadingCharacter(false);
     }
+
   };
 
 
@@ -1267,65 +1272,77 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       return editableCharacterData?.skills || initialSkills;
   }, [editableCharacterData]);
 
- const currentMeleeWeapon = useMemo(() => {
+ const characterDefaultMeleeWeapon = useMemo(() => {
     if (!editableCharacterData) return undefined;
-    let weaponToDisplay: Weapon | undefined = editableCharacterData.meleeWeapon
+    const defaultWeapon = editableCharacterData.meleeWeapon
         ? { ...editableCharacterData.meleeWeapon }
         : { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" };
 
-    if (equippedArsenalCard?.items) {
-        const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-            !item.isPet && // Exclude pet items
-            (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
-            item.parsedWeaponStats?.attack !== undefined &&
-            !(item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
-        );
-
-        if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
-            weaponToDisplay = {
-                name: arsenalMeleeItem.abilityName || 'Arsenal Melee',
-                attack: arsenalMeleeItem.parsedWeaponStats.attack,
-                flavorText: arsenalMeleeItem.itemDescription || arsenalMeleeItem.parsedWeaponStats.rawDetails,
-            };
-        }
-    }
-    if (equippedArsenalCard?.meleeAttackMod && weaponToDisplay) {
-        weaponToDisplay.attack = (weaponToDisplay.attack || 0) + equippedArsenalCard.meleeAttackMod;
-    }
-
     // Logic to hide default "Fists" if no meaningful weapon is provided
-    if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === 1 && 
-        !editableCharacterData.meleeWeapon?.name && 
-        !equippedArsenalCard?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && !(i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 0)) && 
-        !equippedArsenalCard?.meleeAttackMod 
+    if (defaultWeapon?.name === "Fists" && defaultWeapon.attack === 1 && 
+        !editableCharacterData.meleeWeapon?.name
     ) {
         return undefined; 
     }
 
-    return weaponToDisplay;
+    return defaultWeapon;
   }, [editableCharacterData, equippedArsenalCard]);
+
+ const characterDefaultRangedWeapon = useMemo(() => {
+    if (!editableCharacterData) return undefined;
+      const defaultWeapon = editableCharacterData.rangedWeapon
+          ? { ...editableCharacterData.rangedWeapon }
+          : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" };
+
+    // Logic to hide default "None" if no meaningful weapon is provided
+    if (defaultWeapon?.name === "None" && defaultWeapon.attack === 0 && defaultWeapon.range === 0 && 
+        !editableCharacterData.rangedWeapon?.name
+    ) {
+      return undefined; 
+    }
+
+      return defaultWeapon;
+  }, [editableCharacterData, equippedArsenalCard]);
+
+  const arsenalWeapons = useMemo(() => {
+    if (!equippedArsenalCard?.items) return [];
+    return equippedArsenalCard.items.filter(item => 
+        !item.isPet && (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) && item.parsedWeaponStats?.attack !== undefined
+ ).map(item => ({
+ ...item.parsedWeaponStats!,
+ name: item.abilityName || 'Arsenal Weapon',
+ flavorText: item.itemDescription || item.parsedWeaponStats?.rawDetails,
+ attack: Number(item.parsedWeaponStats?.attack ?? 0), // Ensure attack is a number
+ range: Number(item.parsedWeaponStats?.range ?? 0), // Ensure range is a number
+ }));
+  }, [equippedArsenalCard]);
 
   const currentRangedWeapon = useMemo(() => {
     if (!editableCharacterData) return undefined;
       let weaponToDisplay: RangedWeapon | undefined = editableCharacterData.rangedWeapon
-          ? { ...editableCharacterData.rangedWeapon }
-          : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" };
+          ? { ...editableCharacterData.rangedWeapon } as RangedWeapon
+          : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" } as RangedWeapon;
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
              !item.isPet && // Exclude pet items
              (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
              item.parsedWeaponStats?.attack !== undefined &&
-             (item.parsedWeaponStats?.range && item.parsedWeaponStats.range > 0) 
+             item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 0
           );
 
           if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
+              // Explicitly cast to RangedWeapon as we've confirmed attack and range are defined
               weaponToDisplay = {
                   name: arsenalRangedItem.abilityName || 'Arsenal Ranged',
                   attack: arsenalRangedItem.parsedWeaponStats.attack,
                   range: arsenalRangedItem.parsedWeaponStats.range,
                   flavorText: arsenalRangedItem.itemDescription || arsenalRangedItem.parsedWeaponStats.rawDetails,
               };
+          } else {
+              // If arsenal item is a weapon but doesn't have a defined range, it's not a RangedWeapon
+              weaponToDisplay = undefined; // Or handle as a melee weapon if appropriate, but the current logic filters for ranged
+
           }
       }
       if (equippedArsenalCard && weaponToDisplay) {
@@ -1345,12 +1362,14 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       return weaponToDisplay;
   }, [editableCharacterData, equippedArsenalCard]);
 
+// ... all other hooks and functions before the conditional return ...
+
   const currentCompanion = useMemo(() => {
-    if (!equippedArsenalCard || !equippedArsenalCard.items) return null;
+    if (!equippedArsenalCard?.items) return null;
     return equippedArsenalCard.items.find(item => item.isPet === true) || null;
   }, [equippedArsenalCard]);
 
- useEffect(() => {
+ useEffect(() => { // This useEffect sets the pet states
     if (currentCompanion && currentCompanion.parsedPetCoreStats) {
         setCurrentPetHp(currentCompanion.parsedPetCoreStats.maxHp ?? currentCompanion.parsedPetCoreStats.hp ?? null);
         setCurrentPetSanity(currentCompanion.parsedPetCoreStats.maxSanity ?? currentCompanion.parsedPetCoreStats.sanity ?? null);
@@ -1364,47 +1383,58 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     }
 }, [currentCompanion]);
 
- const getPetHpBarColorClass = () => {
-    if (currentPetHp === null || !currentCompanion?.parsedPetCoreStats?.maxHp || currentCompanion.parsedPetCoreStats.maxHp === 0) {
-      return '[&>div]:bg-gray-400';
+  const getPetHpBarColorClass = useMemo(() => {
+    const hp = currentPetHp;
+    const maxHp = currentCompanion?.parsedPetCoreStats?.maxHp;
+    if (hp === null || maxHp === undefined || maxHp <= 0) return "";
+    const percentage = (hp / maxHp) * 100;
+    if (percentage > 50) return "bg-green-500";
+    if (percentage > 20) return "bg-yellow-500";
+    return "bg-red-500";
+  }, [currentPetSanity, currentCompanion?.parsedPetCoreStats?.maxSanity]);
+  // Helper function for MV bar color
+ const getPetSanityBarColorClass = useMemo(() => {
+    const sanity = currentPetSanity;
+    const maxSanity = currentCompanion?.parsedPetCoreStats?.maxSanity;
+    if (sanity === null || maxSanity === undefined || maxSanity <= 0) return "";
+    const percentage = (sanity / maxSanity) * 100;
+    if (percentage > 50) return "bg-green-500";
+    if (percentage > 20) return "bg-yellow-500";
+    return "bg-red-500";
+  }, [currentPetSanity, currentCompanion?.parsedPetCoreStats?.maxSanity]);
+
+  const getPetMvBarColorClass = useMemo(() => {
+    const mv = currentPetMv;
+    const baseMv = currentCompanion?.parsedPetCoreStats?.mv;
+    if (mv === null || baseMv === undefined || baseMv <= 0) return "";
+    const percentage = (mv / baseMv) * 100;
+    if (percentage >= 100) return "bg-green-500";
+    if (percentage > 50) return "bg-yellow-500";
+    return "bg-red-500";
+  }, [currentPetMv, currentCompanion?.parsedPetCoreStats?.mv]);
+  
+  const petMeleeWeaponForDisplay: Weapon | undefined = useMemo(() => {
+    if (currentCompanion?.parsedPetCoreStats?.meleeAttack !== undefined && currentCompanion.parsedPetCoreStats.meleeAttack > 0) {
+      return {
+        name: currentCompanion.petName ? `${currentCompanion.petName}'s Attack` : "Natural Attack",
+        attack: currentCompanion.parsedPetCoreStats.meleeAttack,
+        flavorText: currentCompanion.petAbilities || "The companion's natural attack."
+      };
     }
-    const percentage = (currentPetHp / currentCompanion.parsedPetCoreStats.maxHp) * 100;
-    if (percentage <= 33) return '[&>div]:bg-red-500';
-    if (percentage <= 66) return '[&>div]:bg-yellow-500';
-    return '[&>div]:bg-green-500';
-  };
+  }, [currentCompanion]);
 
-  const getPetSanityBarColorClass = () => {
-    if (currentPetSanity === null || !currentCompanion?.parsedPetCoreStats?.maxSanity || currentCompanion.parsedPetCoreStats.maxSanity === 0) {
-      return '[&>div]:bg-gray-400';
-    }
-    const percentage = (currentPetSanity / currentCompanion.parsedPetCoreStats.maxSanity) * 100;
-    if (percentage <= 33) return '[&>div]:bg-red-500';
-    if (percentage <= 66) return '[&>div]:bg-yellow-500';
-    return '[&>div]:bg-blue-400';
-  };
-
-  const getPetMvBarColorClass = () => {
-    if (currentPetMv === null || !currentCompanion?.parsedPetCoreStats?.mv || currentCompanion.parsedPetCoreStats.mv === 0) {
-      return '[&>div]:bg-gray-400';
-    }
-    const percentage = (currentPetMv / currentCompanion.parsedPetCoreStats.mv) * 100;
-    if (percentage <= 33) return '[&>div]:bg-red-500';
-    if (percentage <= 66) return '[&>div]:bg-yellow-500';
-    return '[&>div]:bg-green-500';
-  };
-
-  const getPetDefBarColorClass = () => {
-     if (currentPetDef === null || !currentCompanion?.parsedPetCoreStats?.def || currentCompanion.parsedPetCoreStats.def === 0) {
-      return '[&>div]:bg-gray-400';
-    }
-    const percentage = (currentPetDef / currentCompanion.parsedPetCoreStats.def) * 100;
-    if (percentage <= 33) return '[&>div]:bg-red-500';
-    if (percentage <= 66) return '[&>div]:bg-yellow-500';
-    return '[&>div]:bg-gray-400'; 
-  };
+  const getPetDefBarColorClass = useMemo(() => {
+    const def = currentPetDef;
+    const baseDef = currentCompanion?.parsedPetCoreStats?.def;
+    if (def === null || baseDef === undefined || baseDef <= 0) return "";
+    const percentage = (def / baseDef) * 100;
+    if (percentage >= 100) return "bg-gray-500";
+    if (percentage > 50) return "bg-green-500";
+    return "bg-red-500";
+  }, [currentPetDef, currentCompanion?.parsedPetCoreStats?.def]);
 
 
+  // Conditional return here
   if (authLoading || isLoadingCharacter || !editableCharacterData) {
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-xl p-10 text-center">
@@ -1413,17 +1443,8 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         </Card>
     );
   }
-
-  let petMeleeWeaponForDisplay: Weapon | undefined = undefined;
-  if (currentCompanion?.parsedPetCoreStats?.meleeAttack !== undefined && currentCompanion.parsedPetCoreStats.meleeAttack > 0) {
-    petMeleeWeaponForDisplay = {
-      name: currentCompanion.petName ? `${currentCompanion.petName}'s Attack` : "Natural Attack",
-      attack: currentCompanion.parsedPetCoreStats.meleeAttack,
-      flavorText: currentCompanion.petAbilities || "The companion's natural attack."
-    };
-  }
-
-  return (
+  // ... rest of the component logic ...
+ return (
     <Card className="w-full max-w-4xl mx-auto shadow-xl relative overflow-hidden p-4 sm:p-6 lg:p-8">
       {editableCharacterData.imageUrl && (
         <Image
@@ -1450,6 +1471,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             selectedCharacterId={selectedCharacterId}
             editableCharacterData={editableCharacterData}
             characterDropdownOptions={characterDropdownOptions}
+            arsenalCards={arsenalCards} // Pass arsenalCards here
             currentUser={currentUser}
             isLoadingCharacter={isLoadingCharacter}
             onCharacterDropdownChange={handleCharacterDropdownChange}
@@ -1460,7 +1482,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         <CardContent className="space-y-6">
           <Tabs defaultValue="stats" className="w-full">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 p-1 h-auto">
-              <TabsTrigger value="stats" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Stats &amp; Equipment</TabsTrigger>
+              <TabsTrigger value="stats" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Stats, Gear &amp; Companion</TabsTrigger>
               <TabsTrigger value="abilities" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Abilities</TabsTrigger>
               <TabsTrigger value="arsenal" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Arsenal</TabsTrigger>
               <TabsTrigger value="skills" className="px-2 py-2 text-xs sm:text-sm md:px-3 md:py-1.5 whitespace-normal text-center h-auto">Skills</TabsTrigger>
@@ -1479,20 +1501,74 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                 customStatPointBuyConfig={customStatPointBuyConfig}
               />
               <Separator/>
+              <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+                  <h3 className="text-xl font-semibold mb-3 flex items-center"><Shirt className="mr-2 h-6 w-6 text-primary" /> Equipped Gear</h3>
+                  {criticalArsenalError && (
+                      <div className="text-destructive-foreground bg-destructive p-3 rounded-md text-sm mb-4">
+                          <p className="font-semibold mb-1">Error Loading Arsenal:</p>
+                          <p>{criticalArsenalError.name}: {criticalArsenalError.description}</p>
+
+                           <p className="mt-2">Please update your arsenal cards or contact support.</p>
+                      </div>
+                  )}
+                  {equippedArsenalCard ? (
+                      <Card className="w-full shadow-sm">
+                        <CardHeader className="p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 relative">
+                          <div className="flex flex-row items-center">
+                             {(equippedArsenalCard.imageUrlFront || equippedArsenalCard.imageUrlBack) && (
+                                <div className="flex flex-row items-center mr-0 sm:mr-4">
+                                  {equippedArsenalCard.imageUrlFront && (
+                                    <Image
+                                      src={equippedArsenalCard.imageUrlFront}
+                                      alt={`${equippedArsenalCard.name} image front`}
+                                      width={equippedArsenalCard.imageUrlBack ? 60 : 80}
+                                      height={equippedArsenalCard.imageUrlBack ? 90 : 120}
+                                      className="rounded-md mr-1"
+                                    />
+                                 )}
+                                  {equippedArsenalCard.imageUrlBack && (
+                                    <Image
+                                      src={equippedArsenalCard.imageUrlBack}
+                                      alt={`${equippedArsenalCard.name} image back`}
+                                      width={equippedArsenalCard.imageUrlFront ? 60 : 80}
+                                      height={equippedArsenalCard.imageUrlFront ? 90 : 120}
+                                      className="rounded-md mr-4"
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            <CardTitle className="text-lg">{equippedArsenalCard.name}</CardTitle>
+                          </div>
+                           {equippedArsenalCard.items && equippedArsenalCard.items.length > 0 && <Badge variant="secondary">{equippedArsenalCard.items.length} Item{equippedArsenalCard.items.length > 1 ? 's' : ''}</Badge>}
+                        </CardHeader>
+                          <CardContent className="p-3 pt-0 text-sm text-muted-foreground">{equippedArsenalCard.description}</CardContent>
+                      </Card>
+                  ) : (<p className="text-sm text-muted-foreground">No arsenal card equipped.</p>)}
+              </div>
               <div>
                   <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <WeaponDisplay weapon={currentMeleeWeapon} type="melee" equippedArsenalCard={equippedArsenalCard} baseMeleeWeaponName={editableCharacterData.meleeWeapon?.name} />
-                      <WeaponDisplay weapon={currentRangedWeapon} type="ranged" equippedArsenalCard={equippedArsenalCard} baseRangedWeaponName={editableCharacterData.rangedWeapon?.name} />
+                      {characterDefaultMeleeWeapon && <WeaponDisplay weapon={characterDefaultMeleeWeapon} type="melee" equippedArsenalCard={null} baseMeleeWeaponName={editableCharacterData.meleeWeapon?.name} isArsenalWeapon={false} />}
+                      {characterDefaultRangedWeapon && <WeaponDisplay weapon={characterDefaultRangedWeapon} type="ranged" equippedArsenalCard={null} baseRangedWeaponName={editableCharacterData.rangedWeapon?.name} isArsenalWeapon={false} />}
+                      {/* Display arsenal weapons in their own cards */}
                   </div>
               </div>
+              {arsenalWeapons && arsenalWeapons.length > 0 && (
+                  <div>
+                      <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Arsenal (Ranged or Melee) Weapon</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {arsenalWeapons.map((weapon, index) => <WeaponDisplay key={`arsenal-weapon-${index}`} weapon={weapon} type={weapon.range && weapon.range > 0 ? 'ranged' : 'melee'} isArsenalWeapon={true} equippedArsenalCard={equippedArsenalCard} />)}
+                      </div>
+                  </div>
+              )}
+              <div>
               {currentCompanion && (
                 <>
                   <Separator />
                   <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
                     <h3 className="text-xl font-semibold mb-3 flex items-center">
                       <PawPrint className="mr-2 h-6 w-6 text-primary" /> Equipped Companion: {currentCompanion.petName || 'Unnamed Companion'}
-                    </h3>
+                    </h3> {/* Companion Section starts here */}
                      {currentCompanion.petStats && !currentCompanion.parsedPetCoreStats && (
                         <p className="text-sm text-muted-foreground mb-2">Raw Stats (Failed to parse for trackers): {currentCompanion.petStats}</p>
                     )}
@@ -1517,11 +1593,12 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                                   <UserCog className="h-3 w-3" /> {/* Placeholder, replace with Plus */}
                                 </Button>
                               </div>
-                            </div>
-                            <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={cn("h-1.5", getPetHpBarColorClass())} />
+                           </div>
+                            <Progress value={(currentPetHp / (currentCompanion.parsedPetCoreStats.maxHp || 1)) * 100} className={cn("h-1.5", getPetHpBarColorClass)} />
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetHp} / {currentCompanion.parsedPetCoreStats.maxHp}</p>
                           </div>
                         )}
+
                         {currentCompanion.parsedPetCoreStats.maxSanity !== undefined && currentPetSanity !== null && (
                           <div>
                             <div className="flex items-center justify-between mb-1">
@@ -1538,7 +1615,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                                 </Button>
                               </div>
                             </div>
-                            <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className={cn("h-1.5", getPetSanityBarColorClass())} />
+                            <Progress value={(currentPetSanity / (currentCompanion.parsedPetCoreStats.maxSanity || 1)) * 100} className={cn("h-1.5", getPetSanityBarColorClass)} />
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetSanity} / {currentCompanion.parsedPetCoreStats.maxSanity}</p>
                           </div>
                         )}
@@ -1558,10 +1635,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                                 </Button>
                               </div>
                             </div>
-                            <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className={cn("h-1.5", getPetMvBarColorClass())} />
+                            <Progress value={(currentPetMv / (currentCompanion.parsedPetCoreStats.mv || 1)) * 100} className={cn("h-1.5", getPetMvBarColorClass)} />
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetMv} / {currentCompanion.parsedPetCoreStats.mv}</p>
                           </div>
                         )}
+
                         {currentCompanion.parsedPetCoreStats.def !== undefined && currentPetDef !== null && (
                           <div>
                             <div className="flex items-center justify-between mb-1">
@@ -1578,13 +1656,13 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                                 </Button>
                               </div>
                             </div>
-                            <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className={cn("h-1.5", getPetDefBarColorClass())} />
+                            <Progress value={(currentPetDef / (currentCompanion.parsedPetCoreStats.def || 1)) * 100} className={cn("h-1.5", getPetDefBarColorClass)} />
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentPetDef} / {currentCompanion.parsedPetCoreStats.def}</p>
                           </div>
                         )}
                         {petMeleeWeaponForDisplay && (
                           <div className="md:col-span-2">
-                            <WeaponDisplay weapon={petMeleeWeaponForDisplay} type="melee" />
+                            <WeaponDisplay weapon={petMeleeWeaponForDisplay} type="melee" equippedArsenalCard={equippedArsenalCard} isArsenalWeapon={false} />
                           </div>
                         )}
                       </div>
@@ -1599,10 +1677,13 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                         Note: The 'Pet Stats' string "{currentCompanion.petStats}" could not be fully parsed for interactive trackers. Ensure it follows a format like "HP:10 MV:5 DEF:2 SAN:3 ATK:1".
                       </p>
                     )}
-                  </div>
+                  </div> {/* Companion Section ends here */}
                 </>
               )}
-            </TabsContent>
+            
+            </div>
+            
+ </TabsContent>
             
             <TabsContent value="abilities" className="mt-6">
               <AbilitiesSection
@@ -1626,11 +1707,12 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             <TabsContent value="arsenal" className="mt-6 space-y-6">
                 <ArsenalTabContent
                     editableCharacterData={editableCharacterData}
-                    arsenalCards={arsenalCards}
+                    arsenalCards={arsenalCards} // Pass the filtered arsenal cards
+                    equippedArsenalCard={equippedArsenalCard} // Pass the equipped card
+                    currentPetHp={currentPetHp}
+                    currentPetSanity={currentPetSanity}
                     handleArsenalCardChange={handleArsenalCardChange}
                     currentCompanion={currentCompanion}
-                    currentPetHp={currentPetHp} 
-                    currentPetSanity={currentPetSanity} 
                     handleIncrementPetStat={(statType) => handlePetStatChange(statType as 'hp' | 'sanity' | 'mv' | 'def', 'increment')}
                     handleDecrementPetStat={(statType) => handlePetStatChange(statType as 'hp' | 'sanity' | 'mv' | 'def', 'decrement')}
                     criticalArsenalError={criticalArsenalError}
@@ -1640,7 +1722,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             <TabsContent value="skills" className="mt-6 space-y-6">
               <SkillsSection
                 editableCharacterData={editableCharacterData}
-                characterSkills={characterSkills}
+                characterSkills={characterSkills} // Pass characterSkills here
                 skillDefinitions={skillDefinitions}
                 skillToPurchase={skillToPurchase}
                 setSkillToPurchase={setSkillToPurchase}
@@ -1651,12 +1733,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                 purchasedSkills={purchasedSkills}
               />
             </TabsContent>
-          </Tabs>
-
-        </CardContent>
-        <CardFooter className="flex justify-end pt-6">
+          </Tabs> {/* Close the Tabs component */}
+        </CardContent> {/* Close the CardContent */}
+        <CardFooter className="flex justify-end pt-6 z-10">
           <Button
-            size="lg"
+ size="lg"
             className="bg-primary hover:bg-primary/90"
             onClick={handleSaveCharacter}
             disabled={!currentUser || !editableCharacterData || authLoading || isSaving}
@@ -1665,7 +1746,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             {isSaving ? "Saving..." : "Save Character"}
           </Button>
         </CardFooter>
-      </div>
-    </Card>
-  );
-}
+        </div> 
+      </Card>
+  )};

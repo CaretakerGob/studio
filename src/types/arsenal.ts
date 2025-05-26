@@ -51,9 +51,9 @@ export interface ArsenalCard {
   id: string;
   name: string;
   description?: string;
-  imageUrlFront?: string;
-  imageUrlBack?: string;
   items: ArsenalItem[];
+  imageUrlFront: string;
+  imageUrlBack: string;
 
   hpMod?: number;
   maxHpMod?: number;

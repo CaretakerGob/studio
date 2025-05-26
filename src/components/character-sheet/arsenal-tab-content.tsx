@@ -18,6 +18,7 @@ import { Package, AlertCircle, PawPrint, UserCircle, UserMinus, UserPlus } from 
 interface ArsenalTabContentProps {
   editableCharacterData: Character;
   arsenalCards: ArsenalCard[];
+  equippedArsenalCard: ArsenalCard | null;
   handleArsenalCardChange: (arsenalCardId: string | undefined) => void;
   currentCompanion: ArsenalItem | null;
   currentPetHp: number | null;
@@ -31,6 +32,7 @@ export function ArsenalTabContent({
   editableCharacterData,
   arsenalCards,
   handleArsenalCardChange,
+  equippedArsenalCard,
   currentCompanion,
   currentPetHp,
   currentPetSanity,
@@ -38,8 +40,6 @@ export function ArsenalTabContent({
   handleDecrementPetStat,
   criticalArsenalError,
 }: ArsenalTabContentProps) {
-
-  const equippedArsenalCard = arsenalCards.find(card => card.id === editableCharacterData.selectedArsenalCardId) || null;
 
   // Helper function to render items by a specific category
   const renderArsenalItemsByCategory = (category: ArsenalItemCategory, allArsenalItems: ArsenalItem[]) => {

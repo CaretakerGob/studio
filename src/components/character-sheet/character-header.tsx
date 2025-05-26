@@ -10,6 +10,7 @@ import { CardHeader, CardDescription, CardTitle, CardContent } from "@/component
 import { UserCircle, RotateCcw, Edit2, UserCog, Award } from "lucide-react";
 import type { User } from 'firebase/auth';
 import type { Character } from '@/types/character';
+import type { ArsenalCard as ActualArsenalCard } from '@/types/arsenal'; // Import the ArsenalCard type
 import { Separator } from '@/components/ui/separator';
 import { charactersData } from './character-sheet-ui'; // Import charactersData
 
@@ -23,6 +24,7 @@ interface CharacterHeaderProps {
   onCustomCharacterNameChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onLoadSavedCustomCharacter: () => void;
   onResetStats: () => void;
+  arsenalCards: ActualArsenalCard[]; // Add arsenalCards prop
 }
 
 export function CharacterHeader({
