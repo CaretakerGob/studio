@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Dices,
   Layers3,
   Users2,
@@ -19,16 +27,27 @@ import {
   LogOut,
   PlusCircle,
   Dot,
-  ChevronsRight
+  ChevronsRight,
+  Trash2,
+  Copy,
+  Edit3,
+  Eye,
+  Star,
+  RefreshCw,
+  BookOpen
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace, combatDieFaceImages } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { charactersData, type Character } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
+import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui'; // Import sampleDecks and GameCard
+import { useToast } from "@/hooks/use-toast";
+
 
 // Placeholder data - this would eventually come from a game session state
-const partyMembers = [
-  { id: "1", name: "Joshua", characterSelected: "No character selected", isOnline: true, avatarSeed: "joshua" },
-];
+// const partyMembers = [
+//   { id: "1", name: "Joshua", characterSelected: "No character selected", isOnline: true, avatarSeed: "joshua" },
+// ];
 
 interface NexusRollResult {
   type: 'numbered' | 'combat';
@@ -40,6 +59,7 @@ interface NexusRollResult {
 const combatDieFaces: CombatDieFace[] = ['swordandshield', 'swordandshield', 'swordandshield', 'double-sword', 'blank', 'blank'];
 
 export function HuntersNexusUI() {
+  const { toast } = useToast();
   // State for embedded dice roller
   const [nexusNumDice, setNexusNumDice] = useState(1);
   const [nexusDiceSides, setNexusDiceSides] = useState(6);
@@ -47,10 +67,28 @@ export function HuntersNexusUI() {
   const [nexusLatestRoll, setNexusLatestRoll] = useState<NexusRollResult | null>(null);
   const [nexusRollKey, setNexusRollKey] = useState(0);
 
+  // State for character selection
+  const [selectedNexusCharacter, setSelectedNexusCharacter] = useState<Character | null>(null);
+  const [isCharacterSelectionDialogOpen, setIsCharacterSelectionDialogOpen] = useState(false);
+  const [partyMembers, setPartyMembers] = useState<Character[]>([]); // For future multi-player
+
+  // State for Card Decks
+  const [nexusSelectedDeckName, setNexusSelectedDeckName] = useState<string | undefined>(undefined);
+  const [nexusLatestDrawnCard, setNexusLatestDrawnCard] = useState<GameCard | null>(null);
+  const [nexusCardKey, setNexusCardKey] = useState(0);
+
+
+  const handleSelectCharacterForNexus = (character: Character) => {
+    setSelectedNexusCharacter(character);
+    setPartyMembers([character]); // For now, party is just the selected character
+    setIsCharacterSelectionDialogOpen(false);
+    toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
+  };
+
 
   const handleNexusNumberedRoll = () => {
     if (nexusNumDice < 1 || nexusDiceSides < 2) {
-      alert("Number of dice must be at least 1 and sides at least 2.");
+      toast({ title: "Invalid Input", description: "Number of dice must be at least 1 and sides at least 2.", variant: "destructive" });
       return;
     }
     const rolls: number[] = [];
@@ -71,7 +109,7 @@ export function HuntersNexusUI() {
 
   const handleNexusCombatRoll = () => {
     if (nexusNumCombatDice < 1 || nexusNumCombatDice > 12) {
-      alert("Number of combat dice must be between 1 and 12.");
+      toast({ title: "Invalid Input", description: "Number of combat dice must be between 1 and 12.", variant: "destructive" });
       return;
     }
     const rolls: CombatDieFace[] = [];
@@ -91,6 +129,23 @@ export function HuntersNexusUI() {
       total: summary,
     });
     setNexusRollKey(prev => prev + 1);
+  };
+
+  const handleNexusDrawCard = () => {
+    if (!nexusSelectedDeckName) {
+      toast({ title: "No Deck Selected", description: "Please select a deck to draw from.", variant: "destructive" });
+      return;
+    }
+    const deck = sampleDecks.find(d => d.name === nexusSelectedDeckName);
+    if (!deck || deck.cards.length === 0) {
+      toast({ title: "Deck Issue", description: `Could not find or draw from deck: ${nexusSelectedDeckName}.`, variant: "destructive" });
+      return;
+    }
+    const randomIndex = Math.floor(Math.random() * deck.cards.length);
+    const drawnCard = deck.cards[randomIndex];
+    setNexusLatestDrawnCard(drawnCard);
+    setNexusCardKey(prev => prev + 1);
+    toast({ title: "Card Drawn!", description: `Drew ${drawnCard.name} from ${deck.name}.` });
   };
 
   return (
@@ -119,6 +174,7 @@ export function HuntersNexusUI() {
         {/* Left/Main Panel */}
         <main className="flex-1 p-4 md:p-6 flex flex-col bg-card/30">
           <div className="flex items-center gap-2 mb-4">
+            {/* These buttons are placeholders for now, will link to sections in right sidebar or modals */}
             <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
               <Dices className="mr-2 h-4 w-4" /> Roll Dice
             </Button>
@@ -129,12 +185,56 @@ export function HuntersNexusUI() {
               <UserCircle2 className="mr-2 h-4 w-4" /> Characters
             </Button>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center bg-card rounded-lg p-8 shadow-inner">
-            <UserCircle2 className="h-24 w-24 text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold text-muted-foreground">No Character Selected</h2>
-            <p className="text-sm text-muted-foreground mb-6">Choose a character to start playing</p>
-            <Button variant="default">Select Character</Button>
-          </div>
+
+          <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
+            <div className="flex-1 flex flex-col items-center justify-center bg-card rounded-lg p-8 shadow-inner">
+              {selectedNexusCharacter ? (
+                <>
+                  <Avatar className="h-24 w-24 mb-4 border-4 border-primary">
+                    <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0,1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar" />
+                    <AvatarFallback>{selectedNexusCharacter.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <h2 className="text-xl font-semibold text-primary mb-4">{selectedNexusCharacter.name}</h2>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Change Character</Button>
+                  </DialogTrigger>
+                </>
+              ) : (
+                <>
+                  <UserCircle2 className="h-24 w-24 text-muted-foreground mb-4" />
+                  <h2 className="text-xl font-semibold text-muted-foreground">No Character Active</h2>
+                  <p className="text-sm text-muted-foreground mb-6">Choose a character to manage for this session.</p>
+                  <DialogTrigger asChild>
+                    <Button variant="default">Select Character</Button>
+                  </DialogTrigger>
+                </>
+              )}
+            </div>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Select Character for Nexus</DialogTitle>
+                <DialogDescription>Choose a character template to use in this session.</DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="h-[300px] mt-4">
+                <div className="space-y-2">
+                  {charactersData.map((char) => (
+                    <Button
+                      key={char.id}
+                      variant="ghost"
+                      className="w-full justify-start p-2 h-auto"
+                      onClick={() => handleSelectCharacterForNexus(char)}
+                    >
+                      <Avatar className="h-10 w-10 mr-3">
+                         <AvatarImage src={char.imageUrl || `https://placehold.co/40x40.png?text=${char.name.substring(0,1)}`} alt={char.name} data-ai-hint="character avatar" />
+                        <AvatarFallback>{char.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {char.name}
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
         </main>
 
         {/* Right Sidebar */}
@@ -174,11 +274,11 @@ export function HuntersNexusUI() {
                     <div className="flex items-end gap-2">
                       <div className="flex-1">
                         <Label htmlFor="nexusNumCombatDice" className="text-xs">Qty (1-12)</Label>
-                        <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice} 
+                        <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice}
                           onChange={(e) => {
                             const val = parseInt(e.target.value) || 1;
                             setNexusNumCombatDice(Math.max(1, Math.min(12, val)));
-                          }} 
+                          }}
                           className="h-8"/>
                       </div>
                       <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2">
@@ -224,7 +324,7 @@ export function HuntersNexusUI() {
                 </CardContent>
               </Card>
 
-              {/* Card Decks Section (Placeholder) */}
+              {/* Card Decks Section */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center">
@@ -233,18 +333,38 @@ export function HuntersNexusUI() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Select>
-                    <SelectTrigger><SelectValue placeholder="Select deck..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="event">Event Deck</SelectItem>
-                      <SelectItem value="item">Item Deck</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Draw Card</Button>
-                  <div className="p-3 border rounded-md bg-muted/20">
-                    <p className="font-semibold text-primary">Placeholder Card</p>
-                    <p className="text-xs text-muted-foreground">Card description here.</p>
+                  <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                    <Label htmlFor="nexusDeckSelect" className="text-sm">Select Deck</Label>
+                    <Select value={nexusSelectedDeckName} onValueChange={setNexusSelectedDeckName}>
+                      <SelectTrigger id="nexusDeckSelect" className="h-8">
+                        <SelectValue placeholder="Choose a deck..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sampleDecks.map(deck => (
+                          <SelectItem key={deck.name} value={deck.name}>
+                            {deck.name} ({deck.cards.length} cards)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                     <Button onClick={handleNexusDrawCard} size="sm" className="w-full h-8 mt-2" disabled={!nexusSelectedDeckName}>
+                        <BookOpen className="mr-2 h-4 w-4"/> Draw Card
+                    </Button>
                   </div>
+                  {nexusLatestDrawnCard && (
+                    <Card key={nexusCardKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
+                      <CardHeader className="p-2">
+                        <CardTitle className="text-sm flex items-center justify-between">
+                          <span>Latest Card Drawn:</span>
+                           <Badge variant="secondary" className="text-xs">{nexusLatestDrawnCard.deck}</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-2 text-left">
+                        <p className="font-semibold text-primary">{nexusLatestDrawnCard.name} <span className="text-xs text-muted-foreground">({nexusLatestDrawnCard.type})</span></p>
+                        <p className="text-xs text-muted-foreground mt-1">{nexusLatestDrawnCard.description}</p>
+                      </CardContent>
+                    </Card>
+                  )}
                 </CardContent>
               </Card>
 
@@ -257,24 +377,29 @@ export function HuntersNexusUI() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {partyMembers.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={`https://placehold.co/40x40.png?text=${member.name.substring(0,1)}`} data-ai-hint="user avatar" />
-                          <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.characterSelected}</p>
+                  {partyMembers.length === 0 && !selectedNexusCharacter ? (
+                     <p className="text-sm text-muted-foreground">No character active in Nexus.</p>
+                  ) : (
+                    (selectedNexusCharacter ? [selectedNexusCharacter] : partyMembers).map((member) => ( // Simplified for single player focus for now
+                      <div key={member.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={member.imageUrl || `https://placehold.co/40x40.png?text=${member.name.substring(0,1)}`} data-ai-hint="party member avatar" />
+                            <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{member.name}</p>
+                            {/* <p className="text-xs text-muted-foreground">{member.characterSelected}</p> */}
+                          </div>
                         </div>
+                        {/* Online status can be added later if real-time presence is implemented */}
+                        {/* <span className={cn("text-xs px-2 py-0.5 rounded-full", member.isOnline ? 'bg-green-500/20 text-green-400' : 'bg-slate-500/20 text-slate-400')}>
+                          {member.isOnline ? 'Online' : 'Offline'}
+                        </span> */}
                       </div>
-                      <span className={cn("text-xs px-2 py-0.5 rounded-full", member.isOnline ? 'bg-green-500/20 text-green-400' : 'bg-slate-500/20 text-slate-400')}>
-                        {member.isOnline ? 'Online' : 'Offline'}
-                      </span>
-                    </div>
-                  ))}
-                  <Button variant="outline" className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Invite Player</Button>
+                    ))
+                  )}
+                  {/* <Button variant="outline" className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Invite Player</Button> */}
                 </CardContent>
               </Card>
             </div>
