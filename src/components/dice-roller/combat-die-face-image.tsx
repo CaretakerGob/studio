@@ -47,7 +47,7 @@ export const CombatDieFaceImage: React.FC<CombatDieFaceImageProps> = ({ face, cl
       width={size}
       height={size}
       data-ai-hint={faceDetails.dataAiHint}
-      className={cn("inline-block", className)}
+      className={cn("inline-block align-middle", className)} // Ensure vertical alignment if used with text
     />
   );
 };

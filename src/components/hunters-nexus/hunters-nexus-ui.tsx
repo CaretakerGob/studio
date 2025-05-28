@@ -1,14 +1,15 @@
 
 "use client";
 
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dices,
   Layers3,
@@ -17,33 +18,86 @@ import {
   Settings,
   LogOut,
   PlusCircle,
-  Dot
+  Dot,
+  ChevronsRight
 } from "lucide-react";
+import { CombatDieFaceImage, type CombatDieFace, combatDieFaceImages } from '@/components/dice-roller/combat-die-face-image';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // Placeholder data - this would eventually come from a game session state
 const partyMembers = [
   { id: "1", name: "Joshua", characterSelected: "No character selected", isOnline: true, avatarSeed: "joshua" },
-  // { id: "2", name: "Maria", characterSelected: "Cassandra - The Oracle", isOnline: true, avatarSeed: "maria" },
-  // { id: "3", name: "David", characterSelected: "Gob - The Tactician", isOnline: false, avatarSeed: "david" },
 ];
 
-const recentRolls = [
-  { id: "r1", roll: "d6", result: 4, user: "Joshua" },
-  { id: "r2", roll: "d6", result: 2, user: "Joshua" },
-];
+interface NexusRollResult {
+  type: 'numbered' | 'combat';
+  notation: string;
+  rolls: (number | CombatDieFace)[];
+  total?: number | string; // Number for numbered, string summary for combat
+}
 
-const recentCards = [
-  { id: "c1", name: "Blessed Shrine", type: "encounter", user: "Joshua" },
-  { id: "c2", name: "Enchanted Bow", type: "loot", user: "Joshua" },
-];
+const combatDieFaces: CombatDieFace[] = ['swordandshield', 'swordandshield', 'swordandshield', 'double-sword', 'blank', 'blank'];
 
 export function HuntersNexusUI() {
+  // State for embedded dice roller
+  const [nexusNumDice, setNexusNumDice] = useState(1);
+  const [nexusDiceSides, setNexusDiceSides] = useState(6);
+  const [nexusNumCombatDice, setNexusNumCombatDice] = useState(1);
+  const [nexusLatestRoll, setNexusLatestRoll] = useState<NexusRollResult | null>(null);
+  const [nexusRollKey, setNexusRollKey] = useState(0);
+
+
+  const handleNexusNumberedRoll = () => {
+    if (nexusNumDice < 1 || nexusDiceSides < 2) {
+      alert("Number of dice must be at least 1 and sides at least 2.");
+      return;
+    }
+    const rolls: number[] = [];
+    let total = 0;
+    for (let i = 0; i < nexusNumDice; i++) {
+      const roll = Math.floor(Math.random() * nexusDiceSides) + 1;
+      rolls.push(roll);
+      total += roll;
+    }
+    setNexusLatestRoll({
+      type: 'numbered',
+      notation: `${nexusNumDice}d${nexusDiceSides}`,
+      rolls,
+      total,
+    });
+    setNexusRollKey(prev => prev + 1);
+  };
+
+  const handleNexusCombatRoll = () => {
+    if (nexusNumCombatDice < 1 || nexusNumCombatDice > 12) {
+      alert("Number of combat dice must be between 1 and 12.");
+      return;
+    }
+    const rolls: CombatDieFace[] = [];
+    const faceCounts: Record<CombatDieFace, number> = { swordandshield: 0, 'double-sword': 0, blank: 0 };
+
+    for (let i = 0; i < nexusNumCombatDice; i++) {
+      const rollIndex = Math.floor(Math.random() * 6);
+      const face = combatDieFaces[rollIndex];
+      rolls.push(face);
+      faceCounts[face]++;
+    }
+    const summary = `S&S: ${faceCounts.swordandshield}, DS: ${faceCounts['double-sword']}, Blk: ${faceCounts.blank}`;
+    setNexusLatestRoll({
+      type: 'combat',
+      notation: `${nexusNumCombatDice}x Combat Dice`,
+      rolls,
+      total: summary,
+    });
+    setNexusRollKey(prev => prev + 1);
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
       {/* Top Bar */}
       <header className="flex items-center justify-between p-3 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
-          {/* <img src="/path-to-your-logo.svg" alt="RotB Companion" className="h-6 w-6" /> */}
           <Dot className="h-6 w-6 text-primary animate-pulse" />
           <span className="font-semibold">Riddle of the Beast Companion</span>
           <Separator orientation="vertical" className="h-6 mx-2" />
@@ -89,40 +143,88 @@ export function HuntersNexusUI() {
             <div className="space-y-6">
               {/* Dice Roller Section */}
               <Card>
-                <CardHeader>
+                <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
                     <Dices className="mr-2 h-5 w-5 text-primary" />
                     Dice Roller
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    {['d4', 'd6', 'd8', 'd10', 'd12', 'd20'].map((dice) => (
-                      <div key={dice} className="flex items-center space-x-2">
-                        <Checkbox id={`dice-${dice}`} />
-                        <Label htmlFor={`dice-${dice}`} className="text-sm font-normal">{dice.toUpperCase()}</Label>
+                  {/* Numbered Dice */}
+                  <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                    <Label className="text-sm">Numbered Dice</Label>
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
+                        <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(Math.max(1, parseInt(e.target.value) || 1))} className="h-8"/>
                       </div>
-                    ))}
+                      <span className="pb-2">d</span>
+                      <div className="flex-1">
+                         <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
+                        <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(Math.max(2, parseInt(e.target.value) || 2))} className="h-8"/>
+                      </div>
+                      <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2">
+                        <ChevronsRight className="h-4 w-4"/>
+                      </Button>
+                    </div>
                   </div>
-                  <div className="text-center my-2">
-                    <span className="text-5xl font-bold text-primary">2</span>
-                    <p className="text-xs text-muted-foreground">d6</p>
+                  {/* Combat Dice */}
+                  <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                    <Label className="text-sm">Combat Dice</Label>
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <Label htmlFor="nexusNumCombatDice" className="text-xs">Qty (1-12)</Label>
+                        <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice} 
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 1;
+                            setNexusNumCombatDice(Math.max(1, Math.min(12, val)));
+                          }} 
+                          className="h-8"/>
+                      </div>
+                      <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2">
+                        <ChevronsRight className="h-4 w-4"/>
+                      </Button>
+                    </div>
                   </div>
-                  <Button className="w-full">Roll Dice</Button>
-                  <div>
-                    <h4 className="text-xs font-medium text-muted-foreground mb-1">Recent Rolls</h4>
-                    <ScrollArea className="h-20 border rounded-md p-2">
-                      {recentRolls.map(roll => (
-                        <div key={roll.id} className="text-xs py-0.5">
-                          <span className="font-semibold">{roll.roll.toUpperCase()}: {roll.result}</span> by <span className="text-primary/80">{roll.user}</span>
-                        </div>
-                      ))}
-                    </ScrollArea>
-                  </div>
+                  {/* Latest Roll Display within Nexus */}
+                  {nexusLatestRoll && (
+                    <Card key={nexusRollKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
+                      <CardHeader className="p-2">
+                        <CardTitle className="text-sm flex items-center justify-between">
+                          <span>Latest Roll:</span>
+                          <Badge variant="secondary" className="text-xs">{nexusLatestRoll.notation}</Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-2 text-center">
+                        {nexusLatestRoll.type === 'numbered' && (
+                          <>
+                            <div className="flex flex-wrap gap-1 justify-center mb-1">
+                              {nexusLatestRoll.rolls.map((roll, idx) => (
+                                <Badge key={idx} variant="default" className="text-md bg-primary/20 text-primary-foreground border border-primary">
+                                  {roll as number}
+                                </Badge>
+                              ))}
+                            </div>
+                            <p className="font-semibold text-primary">Total: {nexusLatestRoll.total}</p>
+                          </>
+                        )}
+                        {nexusLatestRoll.type === 'combat' && (
+                          <>
+                            <div className="flex flex-wrap gap-0.5 justify-center mb-1">
+                              {nexusLatestRoll.rolls.map((roll, idx) => (
+                                <CombatDieFaceImage key={idx} face={roll as CombatDieFace} size={24} />
+                              ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">{nexusLatestRoll.total as string}</p>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Card Decks Section */}
+              {/* Card Decks Section (Placeholder) */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center">
@@ -131,27 +233,17 @@ export function HuntersNexusUI() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">Loot Cards <span className="text-xs text-muted-foreground ml-1">- Weapons, armor, etc.</span></Button>
-                  <Button variant="outline" className="w-full justify-start">Encounter Cards <span className="text-xs text-muted-foreground ml-1">- Events, enemies.</span></Button>
-                  <div className="p-3 border rounded-md bg-muted/20">
-                    <p className="font-semibold text-primary">Blessed Shrine</p>
-                    <p className="text-xs text-muted-foreground">Restore all HP and remove one condition.</p>
-                    <div className="flex justify-between items-center mt-1">
-                        <p className="text-xs text-muted-foreground">Drawn by Joshua</p>
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-accent text-accent-foreground">encounter</span>
-                    </div>
-                  </div>
+                  <Select>
+                    <SelectTrigger><SelectValue placeholder="Select deck..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="event">Event Deck</SelectItem>
+                      <SelectItem value="item">Item Deck</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Button className="w-full"><PlusCircle className="mr-2 h-4 w-4" /> Draw Card</Button>
-                  <div>
-                    <h4 className="text-xs font-medium text-muted-foreground mb-1">Recent Cards</h4>
-                    <ScrollArea className="h-20 border rounded-md p-2">
-                      {recentCards.map(card => (
-                        <div key={card.id} className="text-xs py-0.5 flex justify-between">
-                          <div><span className="font-semibold">{card.name}</span> by <span className="text-primary/80">{card.user}</span></div>
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-accent/70 text-accent-foreground">{card.type}</span>
-                        </div>
-                      ))}
-                    </ScrollArea>
+                  <div className="p-3 border rounded-md bg-muted/20">
+                    <p className="font-semibold text-primary">Placeholder Card</p>
+                    <p className="text-xs text-muted-foreground">Card description here.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -177,7 +269,7 @@ export function HuntersNexusUI() {
                           <p className="text-xs text-muted-foreground">{member.characterSelected}</p>
                         </div>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${member.isOnline ? 'bg-green-500/20 text-green-400' : 'bg-slate-500/20 text-slate-400'}`}>
+                      <span className={cn("text-xs px-2 py-0.5 rounded-full", member.isOnline ? 'bg-green-500/20 text-green-400' : 'bg-slate-500/20 text-slate-400')}>
                         {member.isOnline ? 'Online' : 'Offline'}
                       </span>
                     </div>
@@ -192,3 +284,4 @@ export function HuntersNexusUI() {
     </div>
   );
 }
+
