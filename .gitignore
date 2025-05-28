@@ -48,6 +48,9 @@ firestore-debug.log
 # .gitignore
 # ... other entries ...
 
+# prototyper
+/context/context_backup
+
 # Local environment variables
 .env.local
 .env.*.local
