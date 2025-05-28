@@ -11,7 +11,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-// Removed SheetTitle import as it's no longer used here
+import { SheetTitle } from '@/components/ui/sheet'; // Ensure SheetTitle is imported
+import { useSidebar } from '@/components/ui/sidebar'; // Import useSidebar
 import {
   Home,
   UserCircle,
@@ -24,7 +25,8 @@ import {
   WandSparkles,
   Share2,
   User,
-  HelpCircle
+  HelpCircle,
+  ShieldHalf // Example icon for Hunter's Nexus
 } from 'lucide-react';
 
 const navItems = [
@@ -32,11 +34,12 @@ const navItems = [
   { href: '/character-sheet', label: 'Character Sheet', icon: UserCircle },
   { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
   { href: '/card-generator', label: 'Card Generator', icon: Layers },
-  { href: '/item-list', label: 'Events', icon: CalendarDays }, // This is Google Sheet data
+  { href: '/item-list', label: 'Events', icon: CalendarDays },
   { href: '/investigations', label: 'Investigations', icon: ClipboardList },
   { href: '/shop', label: 'Whispers & Wares', icon: Store },
-  { href: '/events', label: 'Item List', icon: List }, // This is empty placeholder
+  { href: '/events', label: 'Item List', icon: List },
   { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles },
+  { href: '/hunters-nexus', label: 'Hunter\'s Nexus', icon: ShieldHalf },
   { href: '/shared-space', label: 'Shared Space', icon: Share2 },
   { href: '/profile', label: 'User Profile', icon: User },
   { href: '/faq', label: 'FAQ', icon: HelpCircle },
@@ -44,13 +47,20 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { isMobile } = useSidebar(); // Get mobile status
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-lg">
       <SidebarHeader className="p-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-          {/* SheetTitle removed to prevent context errors */}
-          <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
+          {/* Conditional SheetTitle for mobile view only */}
+          {isMobile ? (
+            <SheetTitle asChild>
+              <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
+            </SheetTitle>
+          ) : (
+            <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
+          )}
         </Link>
       </SidebarHeader>
       <SidebarContent>
