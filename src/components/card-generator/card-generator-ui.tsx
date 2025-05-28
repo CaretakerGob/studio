@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Layers, Hand } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +10,8 @@ import { DeckSelectionControls } from './deck-selection-controls';
 import { MainGeneratedCard } from './main-generated-card';
 import { HeldCardsSection } from './held-cards-section';
 import { DrawnHistoryDisplay } from './drawn-history-display';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 
 export interface GameCard {
   id: string;
@@ -58,7 +59,7 @@ const clashCardImageUrls = [
 
 const generateClashCards = (): GameCard[] => {
   const holdableClashCardIds = new Set([
-    'cl3', 'cl4', 'cl7', 'cl8', 'cl13', 'cl16', 'cl17', 'cl19', 
+    'cl3', 'cl4', 'cl7', 'cl8', 'cl13', 'cl16', 'cl17', 'cl19',
     'cl20', 'cl21', 'cl22', 'cl23', 'cl24', 'cl25', 'cl26', 'cl27'
   ]);
 
@@ -141,7 +142,7 @@ export function CardGeneratorUI() {
   const { toast } = useToast();
 
   const latestCard = drawnCardsHistory.length > 0 ? drawnCardsHistory[0] : null;
-  const previousCards = drawnCardsHistory.slice(1); 
+  const previousCards = drawnCardsHistory.slice(1);
 
   const handleDeckSelection = (deckName: string | undefined) => {
     setSelectedDeck(deckName);
@@ -170,7 +171,6 @@ export function CardGeneratorUI() {
       const randomIndex = Math.floor(Math.random() * availableCards.length);
       const newCard = availableCards[randomIndex];
 
-      // Always show the new card in the main display and add to history
       setDrawnCardsHistory(prevHistory => [newCard, ...prevHistory].slice(0, 3));
       setCardKey(prev => prev + 1);
 
@@ -180,7 +180,7 @@ export function CardGeneratorUI() {
       } else {
         toast({ title: "Card Drawn", description: `${newCard.name} has been drawn.` });
       }
-      
+
       setIsLoading(false);
     }, 500);
   };
@@ -202,7 +202,6 @@ export function CardGeneratorUI() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-      {/* Main Generated Card - Top on mobile */}
       <Card className="md:col-start-2 md:col-span-2 shadow-xl min-h-[500px] flex flex-col justify-start items-center">
         <CardHeader className="w-full text-center">
            <CardTitle className="text-2xl">Generated Card</CardTitle>
@@ -212,7 +211,6 @@ export function CardGeneratorUI() {
         </CardContent>
       </Card>
 
-      {/* Controls & Held Cards - Below on mobile, first column on desktop */}
       <Card className="md:col-start-1 md:col-span-1 md:row-start-1 shadow-xl">
         <CardHeader>
           <div className="flex items-center">
@@ -232,7 +230,7 @@ export function CardGeneratorUI() {
             isGenerateDisabled={!selectedDeck}
           />
         </CardContent>
-        
+
         <Separator className="my-4 mx-6" />
 
         <CardHeader className="pt-0 px-6">
@@ -247,11 +245,9 @@ export function CardGeneratorUI() {
         </CardContent>
       </Card>
 
-      {/* Previously Drawn - Below generated card on desktop, last on mobile */}
        <DrawnHistoryDisplay previousCards={previousCards} />
     </div>
   );
 }
-
 
     
