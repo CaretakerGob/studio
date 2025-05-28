@@ -15,11 +15,10 @@ import {
   HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding,
   Package, WandSparkles, UserCog, Eye, Copy, Trash2, Edit3, CircleDot, Users, AlertCircle,
   Sword as MeleeIcon,
-  PanelLeft, // Added for consistency, though not directly used in recent changes
-  Star, // Added for consistency
+  Star,
 } from "lucide-react";
 import type { CharacterStats, StatName, Character, Ability, AbilityType, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from '@/types/character';
-import type { ArsenalCard, ArsenalItem, ArsenalItemCategory } from '@/types/arsenal';
+import type { ArsenalCard as ActualArsenalCard, ArsenalItem, ArsenalItemCategory } from '@/types/arsenal'; // Renamed to avoid conflict
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +29,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from "@/context/auth-context";
-import { auth, db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase"; // Assuming auth is correctly exported from firebase.ts
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, updateDoc } from "firebase/firestore";
 
 import { CharacterHeader } from './character-header';
@@ -40,6 +39,7 @@ import { SkillsSection } from './skills-section';
 import { AbilityCard } from './ability-card';
 import { AbilitiesSection } from './abilities-section';
 import { ArsenalTabContent } from './arsenal-tab-content';
+
 
 const initialCustomCharacterStats: CharacterStats = {
   hp: 1, maxHp: 1,
@@ -56,7 +56,7 @@ const initialSkills: Skills = {
 export const skillDefinitions: SkillDefinition[] = [
   { id: 'ath', label: "Athletics (ATH)", description: "Prowess at swimming, running, tumbling, and parkour.", icon: PersonStanding },
   { id: 'cpu', label: "Computer Use (CPU)", description: "Adept at hacking, online research, and navigating networks.", icon: Laptop },
-  { id: 'dare', label: "Dare Devil (DARE)", description: "Fearless and skilled driver/pilot, performs spectacular stunts.", icon: StarIconLucide }, // StarIconLucide is an alias for Star
+  { id: 'dare', label: "Dare Devil (DARE)", description: "Fearless and skilled driver/pilot, performs spectacular stunts.", icon: StarIconLucide },
   { id: 'dec', label: "Deception (DEC)", description: "Skill in lying, manipulation, sleight of hand, and stealth.", icon: VenetianMask },
   { id: 'emp', label: "Empathy (EMP)", description: "Ability to triage, tutor, handle animals, and sense motives.", icon: HeartHandshake },
   { id: 'eng', label: "Engineer (ENG)", description: "Proficiency in crafting, repairing, using machinery, and disabling devices.", icon: Wrench },
@@ -82,8 +82,6 @@ export const charactersData: Character[] = [
     rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
     characterPoints: 375,
     selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
   {
     id: 'gob',
@@ -102,9 +100,6 @@ export const charactersData: Character[] = [
       { id: 'gob_flare_x3', name: 'Flare x3', type: 'Interrupt', description: 'Place a Flare tile on the map. Enemies within 2 spaces cannot STEALTH. Treat as Light Source.', details: 'R6', maxQuantity: 3, cost: 50 },
     ],
     characterPoints: 375,
-    selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
   {
     id: 'cassandra',
@@ -123,9 +118,6 @@ export const charactersData: Character[] = [
       { id: 'cass_healing_light_x4', name: 'Healing Light x4', type: 'Interrupt', description: 'Target regains 1 HP per HIT.', details: 'A3/R4', maxQuantity: 4, cost: 50 },
     ],
     characterPoints: 375,
-    selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
   {
     id: 'fei',
@@ -146,9 +138,6 @@ export const charactersData: Character[] = [
         { id: 'fei_fanny_pack', name: 'Fanny Pack', type: 'Passive', description: 'Fei can equip 2 Relics or Utility Items without taking up a Gear slot.', cost: 50 },
       ],
     characterPoints: 375,
-    selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
   {
     id: 'michael',
@@ -168,9 +157,6 @@ export const charactersData: Character[] = [
       { id: 'michael_nimble_fingers', name: 'Nimble Fingers', type: 'Passive', description: 'Michael can use 2 Interrupt Actions per round.', cost: 50 },
     ],
     characterPoints: 375,
-    selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
   {
     id: 'tamara',
@@ -189,9 +175,6 @@ export const charactersData: Character[] = [
       { id: 'tamara_bloody_knuckles', name: 'Bloody Knuckles', type: 'Passive', description: "Using a Melee Attack lowers all of Tammy's cooldowns by 1 round. Tammy is immune to Attacks of Opportunity.", cost: 50 },
     ],
     characterPoints: 375,
-    selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
   {
     id: 'trish',
@@ -210,9 +193,6 @@ export const charactersData: Character[] = [
       { id: 'trish_iron_will', name: 'Iron Will', type: 'Passive', description: 'Everytime Trish inflicts damage she can restore the use of 1 of her Interrupts by 1. This cannot exceed initial count.', cost: 50},
     ],
     characterPoints: 375,
-    selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
   {
     id: 'blake',
@@ -232,9 +212,6 @@ export const charactersData: Character[] = [
       { id: 'blake_multi_attack', name: 'Multi-Attack', type: 'Passive', description: 'Re-roll 1 missed Attack dice. Max once per round.', cost: 50},
     ],
     characterPoints: 375,
-    selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
   {
     id: 'walter',
@@ -254,9 +231,6 @@ export const charactersData: Character[] = [
       { id: 'walter_load_out', name: 'Load Out', type: 'Passive', description: 'Walter can store 1 backup Arsenal that must be picked at the start of the Investigation.', cost: 50},
     ],
     characterPoints: 375,
-    selectedArsenalCardId: null,
-    savedCooldowns: {},
-    savedQuantities: {},
   },
 ];
 
@@ -280,10 +254,10 @@ const SKILL_COST_LEVEL_2 = 5;
 const SKILL_COST_LEVEL_3 = 10;
 
 interface CharacterSheetUIProps {
-  arsenalCards: ArsenalCard[];
+  rawArsenalCards: ActualArsenalCard[]; // Changed prop name to avoid confusion
 }
 
-export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterSheetUIProps) {
+export function CharacterSheetUI({ rawArsenalCards }: CharacterSheetUIProps) {
   const { currentUser, loading: authLoading, error: authError, setError: setAuthError } = useAuth();
   console.log("CharacterSheetUI: Render start. Auth Loading:", authLoading);
 
@@ -294,13 +268,14 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
   const [skillToPurchase, setSkillToPurchase] = useState<SkillName | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true);
+  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true); // Initialize to true
   const [initialIdProcessed, setInitialIdProcessed] = useState(false);
 
   const [currentPetHp, setCurrentPetHp] = useState<number | null>(null);
   const [currentPetSanity, setCurrentPetSanity] = useState<number | null>(null);
   const [currentPetMv, setCurrentPetMv] = useState<number | null>(null);
   const [currentPetDef, setCurrentPetDef] = useState<number | null>(null);
+
 
   const { toast } = useToast();
   const router = useRouter();
@@ -319,11 +294,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     return match ? parseInt(match[0], 10) : undefined;
   }, []);
 
-  const arsenalCards = useMemo(() => {
-    if (!rawArsenalCards) return [];
-    return rawArsenalCards.filter(card => !(card.id.startsWith('error-') || card.id.startsWith('warning-')));
-  }, [rawArsenalCards]);
-
   // Effect for determining initial selectedCharacterId (from URL or default)
   useEffect(() => {
     console.log("CharacterSheetUI: ID selection effect. Auth Loading:", authLoading, "Initial ID Processed:", initialIdProcessed, "Current selectedCharacterId:", selectedCharacterId, "Search Params:", searchParams.toString());
@@ -337,16 +307,18 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
     if (loadParam) {
       console.log("CharacterSheetUI: ID selection - Processing loadParam:", loadParam);
-      if (loadParam !== selectedCharacterId) {
+      if (loadParam !== selectedCharacterId) { // Only set if different to avoid loop with loadCharacterData
         setSelectedCharacterId(loadParam);
       }
-      if (!initialIdProcessed) setInitialIdProcessed(true);
+      if (!initialIdProcessed) setInitialIdProcessed(true); // Mark as processed once we've seen a loadParam or set a default
+
+      // Clean the URL
       const newUrl = typeof window !== "undefined" ? new URL(window.location.href) : null;
       if (newUrl) {
         newUrl.searchParams.delete('load');
         router.replace(newUrl.pathname + newUrl.search, { scroll: false });
       }
-    } else if (!initialIdProcessed && !selectedCharacterId) { // Only run default selection logic if no loadParam AND no selectedId already set
+    } else if (!initialIdProcessed && !selectedCharacterId) { // Only run default selection logic if no loadParam AND no selectedId already set AND not yet processed
       console.log("CharacterSheetUI: ID selection - No loadParam, no current selectedId, processing default/user preference.");
       let newSelectedId = charactersData[0].id; // Default to first character in list
       if (currentUser) {
@@ -357,7 +329,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             const userDefaultId = docSnap.data()?.defaultCharacterId;
             const isValidDefault = userDefaultId &&
                                    (charactersData.some(c => c.id === userDefaultId) ||
-                                    userSavedCharacters.some(c => c.id === userDefaultId));
+                                    userSavedCharacters.some(c => c.id === userDefaultId)); // Check against current list
             if (isValidDefault) {
               console.log("CharacterSheetUI: ID selection - Found user default character ID:", userDefaultId);
               newSelectedId = userDefaultId;
@@ -379,19 +351,15 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         setSelectedCharacterId(newSelectedId);
         setInitialIdProcessed(true);
       }
-    } else if (initialIdProcessed && selectedCharacterId) {
-        // Already initialized and has a character selected, do nothing further in this specific effect.
     } else if (!initialIdProcessed && selectedCharacterId) {
-        // This case handles if selectedCharacterId was somehow set before initialIdProcessed
-        setInitialIdProcessed(true);
+      // This case handles if selectedCharacterId was somehow set (e.g. by loadParam) before this effect could run to set initialIdProcessed
+      setInitialIdProcessed(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, currentUser, authLoading, router, initialIdProcessed, userSavedCharacters]); // Added userSavedCharacters
+  }, [searchParams, currentUser, authLoading, router, userSavedCharacters]); // Removed selectedCharacterId to prevent loop, added userSavedCharacters
 
   // Effect for loading character data when selectedCharacterId or currentUser changes
   useEffect(() => {
-    console.log("CharacterSheetUI: Load character data effect. Selected ID:", selectedCharacterId, "Initial ID Processed:", initialIdProcessed, "Auth Loading:", authLoading, "User:", currentUser?.uid);
-
     const loadCharacterData = async () => {
       console.log("CharacterSheetUI: loadCharacterData - Start. Selected ID:", selectedCharacterId);
       if (!selectedCharacterId) {
@@ -407,30 +375,35 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       let characterToLoad: Character | undefined | null = undefined;
       const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
 
-      if (selectedCharacterId === 'custom') {
+      // Special handling for "custom" ID: always load default template initially
+      if (selectedCharacterId === 'custom' && !searchParams.get('load')) { // Only load default if not explicitly loading a saved custom
         console.log("CharacterSheetUI: loadCharacterData - 'custom' selected. Loading default Custom Character template.");
         characterToLoad = charactersData.find(c => c.id === 'custom');
         if (characterToLoad) {
           characterToLoad = JSON.parse(JSON.stringify(characterToLoad)); // Deep copy
-          characterToLoad.templateId = 'custom'; // Ensure templateId is correctly set
+          characterToLoad.templateId = 'custom'; // Ensure templateId
         }
       } else if (currentUser && auth.currentUser) {
         console.log("CharacterSheetUI: loadCharacterData - User logged in, trying to load saved character:", selectedCharacterId);
-        const firestoreDocIdToLoad = selectedCharacterId;
+        const firestoreDocIdToLoad = selectedCharacterId; // This can be 'custom' or a specific ID
         const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", firestoreDocIdToLoad);
         try {
             const docSnap = await getDoc(characterRef);
             if (docSnap.exists()) {
                 characterToLoad = { id: docSnap.id, ...docSnap.data() } as Character;
-                if (!characterToLoad.templateId) {
-                    characterToLoad.templateId = charactersData.some(c => c.id === docSnap.id) ? docSnap.id : 'custom';
+                if (!characterToLoad.templateId) { // Ensure templateId exists
+                  // If it's 'custom' or a custom-generated ID, templateId should be 'custom'
+                  // Otherwise, it's the ID of a base template.
+                  characterToLoad.templateId = (docSnap.id === 'custom' || docSnap.id.startsWith('custom_'))
+                                                ? 'custom'
+                                                : charactersData.some(c => c.id === docSnap.id) ? docSnap.id : 'custom';
                 }
                 console.log("CharacterSheetUI: loadCharacterData - Loaded saved character:", characterToLoad.name);
                 showToastHelper({ title: "Saved Character Loaded", description: `Loaded your saved version of ${characterToLoad.name || characterToLoad.id}.` });
             } else {
                 console.log("CharacterSheetUI: loadCharacterData - No saved version found for", selectedCharacterId, ". Loading default template.");
                 characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
-                if (characterToLoad) characterToLoad.templateId = selectedCharacterId;
+                if (characterToLoad) characterToLoad.templateId = selectedCharacterId; // Set templateId to the selected one
                  if (defaultTemplate) {
                     showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name || selectedCharacterId}. No saved version found.` });
                 }
@@ -442,13 +415,14 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             showToastHelper({ title: "Load Failed", description: "Could not load saved data. Loading default.", variant: "destructive" });
         }
       } else {
-        console.log("CharacterSheetUI: loadCharacterData - No user or not custom, loading default template for:", selectedCharacterId);
+        console.log("CharacterSheetUI: loadCharacterData - No user or not custom (and not loading saved), loading default template for:", selectedCharacterId);
         characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
         if (characterToLoad) characterToLoad.templateId = selectedCharacterId;
       }
 
       if (characterToLoad) {
         console.log("CharacterSheetUI: loadCharacterData - Preparing to set editableCharacterData for:", characterToLoad.name);
+        // Ensure all fields are present, defaulting if necessary
         const baseTemplateForStats = charactersData.find(c => c.id === (characterToLoad?.templateId || characterToLoad?.id));
         characterToLoad.baseStats = { ...(baseTemplateForStats?.baseStats || initialCustomCharacterStats) , ...characterToLoad.baseStats };
         characterToLoad.skills = { ...(baseTemplateForStats?.skills || initialSkills) , ...characterToLoad.skills };
@@ -472,7 +446,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       setSkillToPurchase(undefined);
     };
 
-    if (selectedCharacterId && initialIdProcessed) {
+    if (selectedCharacterId && initialIdProcessed) { // Only load if an ID is selected AND initial processing is done
       console.log("CharacterSheetUI: Load character data effect - Conditions met, calling loadCharacterData().");
       loadCharacterData().finally(() => {
         console.log("CharacterSheetUI: loadCharacterData - Finished. Setting isLoadingCharacter to false.");
@@ -486,25 +460,38 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         console.log("CharacterSheetUI: Load character data effect - Conditions NOT met (selectedId:", selectedCharacterId, "initialIdProcessed:", initialIdProcessed, ").");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCharacterId, currentUser, initialIdProcessed, setAuthError, showToastHelper]);
+  }, [selectedCharacterId, currentUser, initialIdProcessed, setAuthError, showToastHelper, parseCooldownRounds]); // Removed searchParams from here, as it's handled by the ID selection effect
 
-  const abilitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.abilities), [editableCharacterData?.abilities]);
+
   const savedCooldownsJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.savedCooldowns), [editableCharacterData?.savedCooldowns]);
   const savedQuantitiesJSONKey = useMemo(() => JSON.stringify(editableCharacterData?.savedQuantities), [editableCharacterData?.savedQuantities]);
+
 
   const [currentAbilityCooldowns, setCurrentAbilityCooldowns] = useState<Record<string, number>>({});
   const [maxAbilityCooldowns, setMaxAbilityCooldowns] = useState<Record<string, number>>({});
   const [currentAbilityQuantities, setCurrentAbilityQuantities] = useState<Record<string, number>>({});
   const [maxAbilityQuantities, setMaxAbilityQuantities] = useState<Record<string, number>>({});
 
+
   const equippedArsenalCard = useMemo(() => {
-    if (!editableCharacterData?.selectedArsenalCardId || !arsenalCards) {
+    console.log("CharacterSheetUI: Computing equippedArsenalCard. Selected ID:", editableCharacterData?.selectedArsenalCardId, "rawArsenalCards count:", rawArsenalCards?.length);
+    if (!editableCharacterData?.selectedArsenalCardId || !rawArsenalCards) {
+      console.log("CharacterSheetUI: No selected ID or no rawArsenalCards, returning null for equippedArsenalCard.");
       return null;
     }
-    const card = arsenalCards.find(card => card.id === editableCharacterData.selectedArsenalCardId) || null;
-    if (card?.id?.startsWith('error-') || card?.id?.startsWith('warning-')) return null;
+    const card = rawArsenalCards.find(card => card.id === editableCharacterData.selectedArsenalCardId);
+    console.log("CharacterSheetUI: Found card in rawArsenalCards:", card);
+    if (!card) {
+        console.log("CharacterSheetUI: Card not found in rawArsenalCards for ID:", editableCharacterData.selectedArsenalCardId);
+        return null;
+    }
+    if (card.id.startsWith('error-') || card.id.startsWith('warning-')) {
+        console.log("CharacterSheetUI: Card is an error/warning card, returning null for equippedArsenalCard.");
+        return null;
+    }
+    console.log("CharacterSheetUI: Returning card for equippedArsenalCard:", card.name, card.imageUrlFront, card.imageUrlBack);
     return card;
-  }, [editableCharacterData?.selectedArsenalCardId, arsenalCards]);
+  }, [editableCharacterData?.selectedArsenalCardId, rawArsenalCards]);
 
   const effectiveAbilities = useMemo(() => {
     let baseAbilities = editableCharacterData?.abilities ? [...editableCharacterData.abilities] : [];
@@ -519,8 +506,8 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                 description: item.itemDescription || item.effect || `Granted by ${item.abilityName || 'equipped arsenal'}.`,
                 cooldown: item.cd,
                 maxQuantity: item.qty,
-                details: item.class || item.type,
-                cost: 0,
+                details: item.class || item.type, // Use item.class or item.type for details
+                cost: 0, // Arsenal abilities don't have a CP cost for the character
             });
 
             if (item.isAction) arsenalGrantedAbilities.push(createAbility('Action', 'isAction'));
@@ -531,6 +518,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     }
     return [...baseAbilities, ...arsenalGrantedAbilities];
   }, [editableCharacterData?.abilities, equippedArsenalCard]);
+
 
   useEffect(() => {
     console.log("CharacterSheetUI: Cooldown/Quantity effect. Abilities count:", effectiveAbilities.length, "editableCharacterData ID:", editableCharacterData?.id);
@@ -548,19 +536,21 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           const maxRounds = parseCooldownRounds(String(ability.cooldown));
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
+            // Only use saved state for base character abilities, not arsenal-granted ones
             if (editableCharacterData.abilities.find(ba => ba.id === ability.id) && savedCDs[ability.id] !== undefined) {
               newInitialCurrentCDs[ability.id] = savedCDs[ability.id];
             } else {
-              newInitialCurrentCDs[ability.id] = 0;
+              newInitialCurrentCDs[ability.id] = 0; // Arsenal abilities start at 0 CD
             }
           }
         }
         if (ability.maxQuantity !== undefined && (ability.type === 'Action' || ability.type === 'Interrupt' || ability.type === 'FREE Action')) {
           newMaxQTs[ability.id] = ability.maxQuantity;
+           // Only use saved state for base character abilities
            if (editableCharacterData.abilities.find(ba => ba.id === ability.id) && savedQTs[ability.id] !== undefined) {
              newInitialCurrentQTs[ability.id] = savedQTs[ability.id];
            } else {
-             newInitialCurrentQTs[ability.id] = ability.maxQuantity;
+             newInitialCurrentQTs[ability.id] = ability.maxQuantity; // Arsenal abilities start at max quantity
            }
         }
       });
@@ -577,11 +567,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     }
   }, [
       editableCharacterData?.id,
-      JSON.stringify(effectiveAbilities),
+      JSON.stringify(effectiveAbilities), // Main trigger for re-evaluation
       savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
       parseCooldownRounds,
-      JSON.stringify(editableCharacterData?.abilities)
+      JSON.stringify(editableCharacterData?.abilities) // Also consider direct changes to base abilities
     ]);
 
   useEffect(() => {
@@ -593,10 +583,21 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           const querySnapshot = await getDocs(charactersCollectionRef);
           const savedChars = querySnapshot.docs.map(docSnap => {
             const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string };
+            // Ensure templateId is correctly assigned, especially for 'custom' and custom-ID'd characters
+            let templateId = data.templateId;
+            if (!templateId) {
+                if (docSnap.id === 'custom' || docSnap.id.startsWith('custom_')) {
+                    templateId = 'custom';
+                } else if (charactersData.some(c => c.id === docSnap.id)) {
+                    templateId = docSnap.id;
+                } else {
+                    templateId = 'custom'; // Fallback for older saved data that might lack templateId
+                }
+            }
             return {
               ...data,
               id: docSnap.id,
-              templateId: data.templateId || (charactersData.some(c => c.id === docSnap.id) ? docSnap.id : 'custom'),
+              templateId: templateId,
             };
           });
           setUserSavedCharacters(savedChars);
@@ -611,61 +612,66 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
          console.log("CharacterSheetUI: No current user, userSavedCharacters set to empty.");
       }
     };
-    if (!authLoading) {
+    if (!authLoading) { // Only fetch if auth is not loading
         fetchUserSavedCharacters();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, isSaving, authLoading]);
+  }, [currentUser, isSaving, authLoading]); // isSaving dependency to refresh list after a save
 
   const characterDropdownOptions = useMemo(() => {
+    console.log("CharacterSheetUI: Recomputing characterDropdownOptions. editableCharacterData Name:", editableCharacterData?.name);
     const optionsMap = new Map<string, { id: string; name: string; displayNameInDropdown: string; isSaved: boolean }>();
-    const defaultCustomName = charactersData.find(c => c.id === 'custom')?.name || "Custom Character";
+    const defaultCustomTemplate = charactersData.find(c => c.id === 'custom');
+    const defaultCustomName = defaultCustomTemplate?.name || "Custom Character";
 
+    // Add default templates first
     charactersData.forEach(templateChar => {
       optionsMap.set(templateChar.id, {
         id: templateChar.id,
         name: templateChar.name,
         displayNameInDropdown: templateChar.name,
-        isSaved: false,
+        isSaved: false, // Initially, assume not saved unless found in userSavedCharacters
       });
     });
 
+    // Augment with user's saved characters
     userSavedCharacters.forEach(savedChar => {
-      const templateIdForSavedChar = savedChar.templateId || (charactersData.some(c => c.id === savedChar.id) ? savedChar.id : 'custom');
-      const baseTemplate = charactersData.find(c => c.id === templateIdForSavedChar);
-      let optionName = savedChar.name || baseTemplate?.name || savedChar.id;
+      const baseTemplateForSaved = charactersData.find(c => c.id === (savedChar.templateId || savedChar.id));
+      let optionName = savedChar.name;
       let displayNameInDropdown;
 
-      if (templateIdForSavedChar === 'custom') {
+      if (savedChar.templateId === 'custom') {
         if (savedChar.name && savedChar.name !== defaultCustomName) {
           displayNameInDropdown = `${savedChar.name} (Custom Character)`;
         } else {
           displayNameInDropdown = `${defaultCustomName} (Saved)`;
         }
         optionName = savedChar.name || defaultCustomName;
-      } else if (baseTemplate) {
-        if (savedChar.name && savedChar.name !== baseTemplate.name) {
-          displayNameInDropdown = `${savedChar.name} (${baseTemplate.name})`;
+      } else if (baseTemplateForSaved) {
+        if (savedChar.name && savedChar.name !== baseTemplateForSaved.name) {
+          displayNameInDropdown = `${savedChar.name} (${baseTemplateForSaved.name})`;
         } else {
-          displayNameInDropdown = `${baseTemplate.name} (Saved)`;
+          displayNameInDropdown = `${baseTemplateForSaved.name} (Saved)`;
         }
-        optionName = savedChar.name || baseTemplate.name;
-      } else {
-        displayNameInDropdown = `${savedChar.name || savedChar.id} (Saved Document)`;
+        optionName = savedChar.name || baseTemplateForSaved.name;
+      } else { // Should not happen if templateId is always set correctly
+        displayNameInDropdown = `${savedChar.name || savedChar.id} (Saved)`;
         optionName = savedChar.name || savedChar.id;
       }
+
       optionsMap.set(savedChar.id, {
         id: savedChar.id,
-        name: optionName,
+        name: optionName || savedChar.id, // Ensure name is always a string
         displayNameInDropdown: displayNameInDropdown,
         isSaved: true,
       });
     });
-
-   if (editableCharacterData && editableCharacterData.id && optionsMap.has(editableCharacterData.id)) {
+    
+    // If editableCharacterData is loaded and its name differs from the map's default for that ID, update display name
+    if (editableCharacterData && optionsMap.has(editableCharacterData.id)) {
         const currentOptionToUpdate = optionsMap.get(editableCharacterData.id)!;
         const baseTemplateForCurrent = charactersData.find(c => c.id === (editableCharacterData.templateId || editableCharacterData.id));
-
+        
         if (editableCharacterData.templateId === 'custom') {
             if (editableCharacterData.name === defaultCustomName && !currentOptionToUpdate.isSaved) {
                  currentOptionToUpdate.displayNameInDropdown = defaultCustomName;
@@ -675,10 +681,10 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             else if (editableCharacterData.name && editableCharacterData.name !== defaultCustomName) {
                  currentOptionToUpdate.displayNameInDropdown = `${editableCharacterData.name} (Custom Character)`;
             }
-            else {
-                 currentOptionToUpdate.displayNameInDropdown = editableCharacterData.name || defaultCustomName;
+            else { // Covers case where editableCharacterData.name is "" after reset, should show "Custom Character"
+                 currentOptionToUpdate.displayNameInDropdown = defaultCustomTemplate?.name || "Custom Character";
             }
-        } else if (baseTemplateForCurrent) {
+        } else if (baseTemplateForCurrent) { // For non-custom characters
             if (editableCharacterData.name === baseTemplateForCurrent.name && !currentOptionToUpdate.isSaved) {
                 currentOptionToUpdate.displayNameInDropdown = baseTemplateForCurrent.name;
             }
@@ -688,13 +694,15 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             else if (editableCharacterData.name && editableCharacterData.name !== baseTemplateForCurrent.name) {
                 currentOptionToUpdate.displayNameInDropdown = `${editableCharacterData.name} (${baseTemplateForCurrent.name})`;
             }
-            else {
-                 currentOptionToUpdate.displayNameInDropdown = editableCharacterData.name || baseTemplateForCurrent.name;
+            else { // Covers case where editableCharacterData.name is "" or matches template after reset
+                 currentOptionToUpdate.displayNameInDropdown = baseTemplateForCurrent.name;
             }
         }
-        currentOptionToUpdate.name = editableCharacterData.name; // Update name from editableCharacterData
+        currentOptionToUpdate.name = editableCharacterData.name; // Update underlying name for consistency
         optionsMap.set(editableCharacterData.id, currentOptionToUpdate);
     }
+
+
     return Array.from(optionsMap.values()).sort((a, b) => a.displayNameInDropdown.localeCompare(b.displayNameInDropdown));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userSavedCharacters, editableCharacterData?.id, editableCharacterData?.name, editableCharacterData?.templateId]);
@@ -718,7 +726,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       if (!prevData) return null;
       return { ...prevData, selectedArsenalCardId: arsenalCardId === "none" ? null : arsenalCardId };
     });
-     const card = arsenalCards.find(c => c.id === arsenalCardId);
+     const card = rawArsenalCards.find(c => c.id === arsenalCardId);
      if (card) {
         showToastHelper({title: "Arsenal Equipped", description: `${card.name} equipped.`});
      } else if (arsenalCardId === "none") {
@@ -727,7 +735,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
-     if (!editableCharacterData || editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) return;
+     if (!editableCharacterData || editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) return; // Only allow for non-custom or non-custom-derived for direct input
     const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (isNaN(numericValue)) return;
 
@@ -770,7 +778,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValue: number | undefined = undefined;
-    let baseValue: number | undefined = undefined; // For MV/DEF/MeleeAttack, max is their base
+    let baseValue: number | undefined = undefined;
 
     switch (statType) {
         case 'hp':
@@ -790,8 +798,8 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
     if (setter && currentValue !== null) {
         let newValue = currentValue + delta;
-        newValue = Math.max(0, newValue);
-        if (maxValue !== undefined) {
+        newValue = Math.max(0, newValue); // Min value is 0 for all stats
+        if (maxValue !== undefined) { // For HP, Sanity, and also for MV/DEF where max is their base
           newValue = Math.min(newValue, maxValue);
         }
         setter(newValue);
@@ -833,7 +841,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) ) return;
 
     const currentVal = editableCharacterData.baseStats[statKey] || 0;
-     if (currentVal <= 1) {
+     if (currentVal <= 1) { // Prevent going below 1 as per new rule
       showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
       return;
     }
@@ -845,11 +853,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       const costToRefund = customStatPointBuyConfig[statKey].cost;
       newStats[statKey] = currentVal - 1;
       if (statKey === 'hp') {
-        newStats.maxHp = Math.max(1, (newStats.maxHp || 1) -1);
+        newStats.maxHp = Math.max(1, (newStats.maxHp || 1) -1); // MaxHP should not go below 1
         if (newStats.hp > newStats.maxHp) newStats.hp = newStats.maxHp;
       }
       if (statKey === 'sanity') {
-        newStats.maxSanity = Math.max(1, (newStats.maxSanity || 1) -1);
+        newStats.maxSanity = Math.max(1, (newStats.maxSanity || 1) -1); // MaxSanity should not go below 1
          if (newStats.sanity > newStats.maxSanity) newStats.sanity = newStats.maxSanity;
       }
 
@@ -889,43 +897,48 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     }));
   };
 
-  const resetStats = () => {
+ const resetStats = () => {
     if (!editableCharacterData) return;
     console.log("CharacterSheetUI: Resetting template for ID:", editableCharacterData.id, "based on Template ID:", editableCharacterData.templateId);
 
-    const templateIdToResetTo = editableCharacterData.templateId || selectedCharacterId || 'custom';
-    const originalCharacterTemplate = charactersData.find(c => c.id === templateIdToResetTo);
+    // Determine the true base template ID
+    const baseTemplateId = editableCharacterData.templateId || selectedCharacterId || 'custom';
+    const originalCharacterTemplate = charactersData.find(c => c.id === baseTemplateId);
 
     if (!originalCharacterTemplate) {
-        showToastHelper({ title: "Error", description: `Could not find base template data for ID: ${templateIdToResetTo}`, variant: "destructive" });
+        showToastHelper({ title: "Error", description: `Could not find base template data for ID: ${baseTemplateId}`, variant: "destructive" });
         return;
     }
 
     let characterToSet: Character = JSON.parse(JSON.stringify(originalCharacterTemplate));
 
-    if (templateIdToResetTo === 'custom') {
-        const customDefault = charactersData.find(c => c.id === 'custom')!;
-        characterToSet.name = customDefault.name;
+    // If the character being reset is 'custom' or was derived from 'custom' (e.g., a duplicated custom character)
+    if (baseTemplateId === 'custom' || characterToSet.id.startsWith('custom_')) {
+        const customDefault = charactersData.find(c => c.id === 'custom')!; // Assume 'custom' always exists
+        characterToSet.name = customDefault.name; // Reset to "Custom Character"
         characterToSet.baseStats = { ...initialCustomCharacterStats };
         characterToSet.skills = { ...initialSkills };
         characterToSet.abilities = [];
         characterToSet.characterPoints = customDefault.characterPoints ?? 375;
         characterToSet.imageUrl = customDefault.imageUrl;
+        characterToSet.templateId = 'custom'; // Ensure templateId is 'custom'
     } else {
         // For non-custom templates, ensure the name is reset to the template's name
         characterToSet.name = originalCharacterTemplate.name;
+        characterToSet.templateId = baseTemplateId; // Ensure templateId is the original template's ID
     }
 
-    characterToSet.id = editableCharacterData.id;
-    characterToSet.templateId = templateIdToResetTo;
-    characterToSet.selectedArsenalCardId = null;
-    characterToSet.savedCooldowns = {};
+    // Regardless of custom or template, always use the current ID for the working copy
+    characterToSet.id = editableCharacterData.id; 
+    characterToSet.selectedArsenalCardId = null; // Always reset selected arsenal
+    characterToSet.savedCooldowns = {}; // Clear saved cooldowns/quantities for the working copy
     characterToSet.savedQuantities = {};
 
     setEditableCharacterData(characterToSet);
     console.log("CharacterSheetUI: Template reset. EditableCharacterData set to:", characterToSet.name);
     showToastHelper({ title: "Template Reset", description: `${characterToSet.name}'s sheet has been reset to its default template values.` });
 };
+
 
   const handleAddAbilityToCustomCharacter = () => {
     if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) || !abilityToAddId) return;
@@ -952,7 +965,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
     setEditableCharacterData(prevData => {
         if (!prevData) return null;
-        const { cost, ...abilityToAddWithoutCostField } = abilityInfo;
+        const { cost, ...abilityToAddWithoutCostField } = abilityInfo; // Ensure cost is not added to the ability object itself
         const newAbilities = [...prevData.abilities, abilityToAddWithoutCostField as Ability];
         const newCharacterPoints = currentCP - abilityCost;
         
@@ -970,7 +983,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     const currentSkills = editableCharacterData.skills || { ...initialSkills };
     const currentSkillLevel = currentSkills[skillToPurchase] || 0;
 
-    if (currentSkillLevel > 0) {
+    if (currentSkillLevel > 0) { // Should not happen if dropdown filters correctly, but good check
       showToastHelper({ title: "Skill Already Added", description: "This skill is already part of your character. Use +/- to adjust its level.", variant: "destructive" });
       return;
     }
@@ -1004,7 +1017,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     }
 
     let cost = 0;
-    if (currentLevel === 0) cost = SKILL_COST_LEVEL_1;
+    if (currentLevel === 0) cost = SKILL_COST_LEVEL_1; // Should be handled by purchase, but for safety
     else if (currentLevel === 1) cost = SKILL_COST_LEVEL_2;
     else if (currentLevel === 2) cost = SKILL_COST_LEVEL_3;
 
@@ -1029,7 +1042,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
     const currentSkills = editableCharacterData.skills || { ...initialSkills };
     const currentLevel = currentSkills[skillId] || 0;
-    if (currentLevel <= 1) {
+    if (currentLevel <= 1) { // If at level 1, "decrease" means remove
         handleRemoveSkill(skillId);
         return;
     }
@@ -1053,7 +1066,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
     const currentSkills = editableCharacterData.skills || { ...initialSkills };
     const currentLevel = currentSkills[skillId] || 0;
-    if (currentLevel === 0) return;
+    if (currentLevel === 0) return; // Nothing to remove
 
     let totalRefund = 0;
     if (currentLevel === 1) totalRefund = SKILL_COST_LEVEL_1;
@@ -1097,8 +1110,8 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
       const characterToSave: Character = {
         ...editableCharacterData,
-        id: docIdForFirestore,
-        templateId: effectiveTemplateId,
+        id: docIdForFirestore, // Use the current editableCharacterData.id for the doc
+        templateId: effectiveTemplateId, // This stores the base template info
         savedCooldowns: currentAbilityCooldowns,
         savedQuantities: currentAbilityQuantities,
         selectedArsenalCardId: editableCharacterData.selectedArsenalCardId || null,
@@ -1125,15 +1138,16 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     }
     console.log("CharacterSheetUI: handleLoadSavedCustomCharacter triggered for ID 'custom'.");
     setIsLoadingCharacter(true);
-    const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", "custom");
+    const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", "custom"); // Always load the 'custom' ID doc
     try {
       const docSnap = await getDoc(characterRef);
       if (docSnap.exists()) {
         let loadedChar = { id: docSnap.id, ...docSnap.data() } as Character;
-        loadedChar.templateId = 'custom';
+        loadedChar.templateId = 'custom'; // Ensure templateId is 'custom'
         setEditableCharacterData(loadedChar);
         showToastHelper({ title: "Saved Custom Loaded", description: `Loaded your saved Custom Character.` });
       } else {
+        // If no saved 'custom' character, load the default 'custom' template
         const defaultCustomTemplate = charactersData.find(c => c.id === 'custom');
         if (defaultCustomTemplate) {
           let charToSet: Character = JSON.parse(JSON.stringify(defaultCustomTemplate));
@@ -1155,6 +1169,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     const interrupts: AbilityWithCost[] = [];
     const passives: AbilityWithCost[] = [];
     const freeActions: AbilityWithCost[] = [];
+
 
     allUniqueAbilities.forEach(ability => {
       if (ability.type === 'Action') actions.push(ability);
@@ -1179,6 +1194,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     if (!editableCharacterData) return { ...initialCustomCharacterStats };
     let base = { ...editableCharacterData.baseStats };
 
+    // Apply global mods from the arsenal card itself
     if (equippedArsenalCard) {
         base.hp = Math.max(0, (base.hp || 0) + (equippedArsenalCard.hpMod || 0));
         base.maxHp = Math.max(1, (base.maxHp || 0) + (equippedArsenalCard.maxHpMod || 0));
@@ -1186,8 +1202,10 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         base.def = Math.max(0, (base.def || 0) + (equippedArsenalCard.defMod || 0));
         base.sanity = Math.max(0, (base.sanity || 0) + (equippedArsenalCard.sanityMod || 0));
         base.maxSanity = Math.max(1, (base.maxSanity || 0) + (equippedArsenalCard.maxSanityMod || 0));
+        // MeleeAttackMod is applied to the weapon itself later
     }
 
+    // Apply mods from GEAR items in the arsenal
     if (equippedArsenalCard && equippedArsenalCard.items) {
       equippedArsenalCard.items.forEach(item => {
         if (!item.isPet && item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
@@ -1195,7 +1213,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             const statKey = mod.targetStat as keyof CharacterStats;
             if (statKey in base && typeof (base[statKey]) === 'number') {
               (base[statKey] as number) = Math.max(
-                (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0,
+                (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0, // Ensure maxHP/maxSanity don't drop below 1
                 (base[statKey] as number) + mod.value
               );
             }
@@ -1204,6 +1222,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       });
     }
 
+    // Ensure current HP/Sanity don't exceed new max values
     if (base.hp > base.maxHp) base.hp = base.maxHp;
     if (base.sanity > base.maxSanity) base.sanity = base.maxSanity;
 
@@ -1218,14 +1237,15 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     if (!editableCharacterData) return undefined;
     const template = charactersData.find(c => c.id === (editableCharacterData.templateId || editableCharacterData.id));
     const defaultWeapon = template?.meleeWeapon
-        ? { ...template.meleeWeapon }
+        ? { ...template.meleeWeapon } // Create a copy to avoid direct mutation
         : { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" };
 
+    // Condition to hide default "Fists" if no specific template weapon
     if (defaultWeapon?.name === "Fists" && defaultWeapon.attack === 1 &&
-        !template?.meleeWeapon?.name &&
-        editableCharacterData.templateId !== 'custom'
+        !template?.meleeWeapon?.name && // Ensure template itself doesn't define "Fists" as its specific weapon
+        editableCharacterData.templateId !== 'custom' // Don't hide for custom char unless overridden
     ) {
-        return undefined;
+        return undefined; // Will be hidden
     }
     return defaultWeapon;
   }, [editableCharacterData]);
@@ -1234,17 +1254,19 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     if (!editableCharacterData) return undefined;
     const template = charactersData.find(c => c.id === (editableCharacterData.templateId || editableCharacterData.id));
     const defaultWeapon = template?.rangedWeapon
-          ? { ...template.rangedWeapon } as RangedWeapon
+          ? { ...template.rangedWeapon } as RangedWeapon // Create a copy
           : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" } as RangedWeapon;
 
+    // Condition to hide default "None" if no specific template weapon
     if (defaultWeapon?.name === "None" && defaultWeapon.attack === 0 && defaultWeapon.range === 0 &&
-        !template?.rangedWeapon?.name &&
-        editableCharacterData.templateId !== 'custom'
+        !template?.rangedWeapon?.name && // Ensure template itself doesn't define "None" as its specific weapon
+        editableCharacterData.templateId !== 'custom' // Don't hide for custom char unless overridden
     ) {
-      return undefined;
+      return undefined; // Will be hidden
     }
       return defaultWeapon;
   }, [editableCharacterData]);
+
 
   const currentMeleeWeapon = useMemo(() => {
     if (!editableCharacterData) return undefined;
@@ -1252,10 +1274,10 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
     if (equippedArsenalCard?.items) {
         const arsenalMeleeItem = equippedArsenalCard.items.find(item =>
-           !item.isPet &&
+           !item.isPet && // Exclude pet attacks
            (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
            item.parsedWeaponStats?.attack !== undefined &&
-           (item.parsedWeaponStats?.range === undefined || item.parsedWeaponStats.range <= 1 || item.parsedWeaponStats.range === 0)
+           (item.parsedWeaponStats?.range === undefined || item.parsedWeaponStats.range <= 1 || item.parsedWeaponStats.range === 0) // Melee if no range or range <=1
         );
 
         if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
@@ -1266,6 +1288,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             };
         }
     }
+    // Apply global arsenal mod if a weapon is displayed
     if (equippedArsenalCard && weaponToDisplay) {
         weaponToDisplay = {
             ...weaponToDisplay,
@@ -1273,6 +1296,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         };
     }
     
+    // Logic to hide default "Fists" if no meaningful weapon is equipped
     const template = charactersData.find(c => c.id === (editableCharacterData.templateId || editableCharacterData.id));
     if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === 1 &&
         !template?.meleeWeapon?.name && 
@@ -1285,16 +1309,17 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     return weaponToDisplay;
   }, [editableCharacterData, equippedArsenalCard, characterDefaultMeleeWeapon]);
 
+
   const currentRangedWeapon = useMemo(() => {
     if (!editableCharacterData) return undefined;
       let weaponToDisplay: RangedWeapon | undefined = characterDefaultRangedWeapon;
 
       if (equippedArsenalCard?.items) {
           const arsenalRangedItem = equippedArsenalCard.items.find(item =>
-             !item.isPet &&
+             !item.isPet && // Exclude pet attacks
              (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
              item.parsedWeaponStats?.attack !== undefined &&
-             item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 1
+             item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 1 // Ranged if range > 1
           );
 
           if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
@@ -1306,6 +1331,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
               };
           }
       }
+      // Apply global arsenal mods if a weapon is displayed
       if (equippedArsenalCard && weaponToDisplay) {
           weaponToDisplay = {
               ...weaponToDisplay,
@@ -1314,6 +1340,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           };
       }
 
+    // Logic to hide default "None" if no meaningful weapon is equipped
     const template = charactersData.find(c => c.id === (editableCharacterData.templateId || editableCharacterData.id));
     if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 &&
         !template?.rangedWeapon?.name &&
@@ -1358,9 +1385,9 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const getPetSanityBarColorClass = () => {
     if (currentPetSanity === null || !currentCompanion?.parsedPetCoreStats?.maxSanity || currentCompanion.parsedPetCoreStats.maxSanity <= 0) return "[&>div]:bg-gray-400";
     const percentage = (currentPetSanity / currentCompanion.parsedPetCoreStats.maxSanity) * 100;
-    if (percentage > 66) return "[&>div]:bg-blue-500";
-    if (percentage > 33) return "[&>div]:bg-blue-400";
-    return "[&>div]:bg-red-500";
+    if (percentage > 66) return "[&>div]:bg-blue-500"; // Using blue for sanity
+    if (percentage > 33) return "[&>div]:bg-blue-400"; // Lighter blue for medium
+    return "[&>div]:bg-red-500"; // Red for low sanity
   };
   const getPetMvBarColorClass = () => {
     if (currentPetMv === null || !currentCompanion?.parsedPetCoreStats?.mv || currentCompanion.parsedPetCoreStats.mv <= 0) return "[&>div]:bg-gray-400";
@@ -1372,9 +1399,9 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const getPetDefBarColorClass = () => {
     if (currentPetDef === null || !currentCompanion?.parsedPetCoreStats?.def || currentCompanion.parsedPetCoreStats.def <= 0) return "[&>div]:bg-gray-400";
     const percentage = (currentPetDef / currentCompanion.parsedPetCoreStats.def) * 100;
-    if (percentage >= 75) return "[&>div]:bg-gray-500";
+    if (percentage >= 75) return "[&>div]:bg-gray-500"; // Higher DEF uses gray scale
     if (percentage >= 40) return "[&>div]:bg-gray-400";
-    return "[&>div]:bg-red-500";
+    return "[&>div]:bg-red-500"; // Low DEF is red
   };
 
   const petMeleeWeaponForDisplay: Weapon | undefined = useMemo(() => {
@@ -1388,8 +1415,10 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     return undefined;
   }, [currentCompanion]);
 
+
+  console.log("CharacterSheetUI: Pre-render check. AuthLoading:", authLoading, "IsLoadingCharacter:", isLoadingCharacter, "EditableData Null:", !editableCharacterData);
+  console.log("CharacterSheetUI: selectedCharacterId:", selectedCharacterId, "initialIdProcessed:", initialIdProcessed);
   if (authLoading || isLoadingCharacter || !editableCharacterData) {
-    console.log("CharacterSheetUI: Displaying loading screen. AuthLoading:", authLoading, "IsLoadingCharacter:", isLoadingCharacter, "EditableData Null:", !editableCharacterData);
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-xl p-10 text-center">
             <CardTitle className="text-3xl">Loading Character Data...</CardTitle>
@@ -1398,6 +1427,8 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     );
   }
   console.log("CharacterSheetUI: Rendering main content. EditableCharacterData:", editableCharacterData?.name);
+  console.log("CharacterSheetUI: Before rendering equipped arsenal block. equippedArsenalCard Name:", equippedArsenalCard?.name);
+
 
  return (
     <Card className="w-full max-w-4xl mx-auto shadow-xl relative overflow-hidden p-4 sm:p-6 lg:p-8">
@@ -1426,7 +1457,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             selectedCharacterId={selectedCharacterId}
             editableCharacterData={editableCharacterData}
             characterDropdownOptions={characterDropdownOptions}
-            arsenalCards={arsenalCards}
+            rawArsenalCards={rawArsenalCards} // Pass rawArsenalCards
             currentUser={currentUser}
             isLoadingCharacter={isLoadingCharacter}
             onCharacterDropdownChange={handleCharacterDropdownChange}
@@ -1464,30 +1495,36 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                   </div>
               </div>
               
-              {equippedArsenalCard && (equippedArsenalCard.imageUrlFront || equippedArsenalCard.imageUrlBack) && (
-                <>
-                <Separator />
+            {/* Display Equipped Arsenal Name and Images on Stats Tab */}
+            {equippedArsenalCard && (
+              <>
+                <Separator className="my-6" />
                 <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
                   <h3 className="text-lg font-semibold mb-1 flex items-center">
                     <Package className="mr-2 h-5 w-5 text-accent" /> Equipped Arsenal: {equippedArsenalCard.name}
                   </h3>
                   {equippedArsenalCard.description && <p className="text-xs text-muted-foreground mb-2">{equippedArsenalCard.description}</p>}
-                  <div className="my-3 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
-                    {equippedArsenalCard.imageUrlFront && (
+                  {/* Arsenal Card Images Display */}
+                  {(equippedArsenalCard.imageUrlFront || equippedArsenalCard.imageUrlBack) && (
+                    <div className="my-3 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
+                      {equippedArsenalCard.imageUrlFront && (
                         <div className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30">
-                        <Image src={equippedArsenalCard.imageUrlFront} alt={`${equippedArsenalCard.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front"/>
+                          <Image src={equippedArsenalCard.imageUrlFront} alt={`${equippedArsenalCard.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
                         </div>
-                    )}
-                    {equippedArsenalCard.imageUrlBack && (
+                      )}
+                      {equippedArsenalCard.imageUrlBack && (
                         <div className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30">
-                        <Image src={equippedArsenalCard.imageUrlBack} alt={`${equippedArsenalCard.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back"/>
+                          <Image src={equippedArsenalCard.imageUrlBack} alt={`${equippedArsenalCard.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
                         </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                </>
-              )}
+              </>
+            )}
 
+
+              {/* Equipped Companion section */}
               {currentCompanion && (
                 <>
                   <Separator />
@@ -1619,7 +1656,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             <TabsContent value="arsenal" className="mt-6 space-y-6">
                 <ArsenalTabContent
                     editableCharacterData={editableCharacterData}
-                    arsenalCards={arsenalCards}
+                    arsenalCards={rawArsenalCards}
                     equippedArsenalCard={equippedArsenalCard}
                     handleArsenalCardChange={handleArsenalCardChange}
                     currentCompanion={currentCompanion}
@@ -1658,4 +1695,3 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       </Card>
   );
 }
-
