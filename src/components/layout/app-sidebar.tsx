@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
+// Removed SheetTitle import as it's no longer used here
 import {
   Home,
   UserCircle,
@@ -26,16 +27,15 @@ import {
   HelpCircle
 } from 'lucide-react';
 
-// New proposed order:
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/character-sheet', label: 'Character Sheet', icon: UserCircle },
   { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
   { href: '/card-generator', label: 'Card Generator', icon: Layers },
-  { href: '/item-list', label: 'Events', icon: CalendarDays }, // Google Sheet Event Generator
+  { href: '/item-list', label: 'Events', icon: CalendarDays }, // This is Google Sheet data
   { href: '/investigations', label: 'Investigations', icon: ClipboardList },
   { href: '/shop', label: 'Whispers & Wares', icon: Store },
-  { href: '/events', label: 'Item List', icon: List }, // Empty Item List page
+  { href: '/events', label: 'Item List', icon: List }, // This is empty placeholder
   { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles },
   { href: '/shared-space', label: 'Shared Space', icon: Share2 },
   { href: '/profile', label: 'User Profile', icon: User },
@@ -49,13 +49,14 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-lg">
       <SidebarHeader className="p-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+          {/* SheetTitle removed to prevent context errors */}
           <span className="text-xl font-semibold text-sidebar-foreground">RotB Companion</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
-            <SidebarMenuItem key={item.label + item.href}> {/* Added item.href to key for more uniqueness */}
+            <SidebarMenuItem key={item.href + item.label}>
               <Link href={item.href}>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
