@@ -478,6 +478,9 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     return card;
   }, [editableCharacterData?.selectedArsenalCardId, arsenalCards]);
 
+  console.log("Equipped Arsenal Card after useMemo:", equippedArsenalCard); // <--- Add this line
+
+
 
   const effectiveAbilities = useMemo(() => {
     let baseAbilities = editableCharacterData?.abilities ? [...editableCharacterData.abilities] : [];
@@ -1516,12 +1519,14 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                         <CardHeader className="p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 relative">
                           <div className="flex flex-row items-center">
                              {(equippedArsenalCard.imageUrlFront || equippedArsenalCard.imageUrlBack) && (
+                               console.log("Image URL Front:", equippedArsenalCard.imageUrlFront),
+                               console.log("Image URL Back:", equippedArsenalCard.imageUrlBack),
                                 <div className="flex flex-row items-center mr-0 sm:mr-4">
                                   {equippedArsenalCard.imageUrlFront && (
                                     <Image
                                       src={equippedArsenalCard.imageUrlFront}
-                                      alt={`${equippedArsenalCard.name} image front`}
-                                      width={equippedArsenalCard.imageUrlBack ? 60 : 80}
+                                      alt={`${equippedArsenalCard.name} front`}
+                                      width={equippedArsenalCard.imageUrlBack ? 80 : 120}
                                       height={equippedArsenalCard.imageUrlBack ? 90 : 120}
                                       className="rounded-md mr-1"
                                     />
@@ -1529,7 +1534,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                                   {equippedArsenalCard.imageUrlBack && (
                                     <Image
                                       src={equippedArsenalCard.imageUrlBack}
-                                      alt={`${equippedArsenalCard.name} image back`}
+                                      alt={`${equippedArsenalCard.name} back`}
                                       width={equippedArsenalCard.imageUrlFront ? 60 : 80}
                                       height={equippedArsenalCard.imageUrlFront ? 90 : 120}
                                       className="rounded-md mr-4"
@@ -1541,13 +1546,43 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                           </div>
                            {equippedArsenalCard.items && equippedArsenalCard.items.length > 0 && <Badge variant="secondary">{equippedArsenalCard.items.length} Item{equippedArsenalCard.items.length > 1 ? 's' : ''}</Badge>}
                         </CardHeader>
-                          <CardContent className="p-3 pt-0 text-sm text-muted-foreground">{equippedArsenalCard.description}</CardContent>
+                          <CardContent className="p-3 pt-0 text-sm text-muted-foreground">
+                             <div className="flex flex-row items-start">
+                               {(equippedArsenalCard.imageUrlFront || equippedArsenalCard.imageUrlBack) && (
+                                  console.log("Image URL Front:", equippedArsenalCard.imageUrlFront),
+                                  console.log("Image URL Back:", equippedArsenalCard.imageUrlBack),
+                                    <div className="flex flex-row items-center mr-4 flex-shrink-0">
+                                     {equippedArsenalCard.imageUrlFront && (
+                                       <Image
+                                         src={equippedArsenalCard.imageUrlFront}
+                                         alt={`${equippedArsenalCard.name} front`}
+                                         width={equippedArsenalCard.imageUrlBack ? 120 : 150}
+                                         height={equippedArsenalCard.imageUrlBack ? 150 : 180}
+                                         className="rounded-md mr-1"
+                                       />
+                                     )}
+                                     {equippedArsenalCard.imageUrlBack && (
+                                       <Image
+                                         src={equippedArsenalCard.imageUrlBack}
+                                         alt={`${equippedArsenalCard.name} back`}
+                                         width={equippedArsenalCard.imageUrlFront ? 100 : 120}
+                                         height={equippedArsenalCard.imageUrlFront ? 150 : 180}
+                                         className="rounded-md mr-4"
+                                       />
+                                     )}
+                                    </div>
+                               )}
+                               <div className="flex-grow">
+                                   {equippedArsenalCard.description}
+                               </div>
+                             </div>
+                          </CardContent>
                       </Card>
                   ) : (<p className="text-sm text-muted-foreground">No arsenal card equipped.</p>)}
               </div>
               <div>
                   <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {characterDefaultMeleeWeapon && <WeaponDisplay weapon={characterDefaultMeleeWeapon} type="melee" equippedArsenalCard={null} baseMeleeWeaponName={editableCharacterData.meleeWeapon?.name} isArsenalWeapon={false} />}
                       {characterDefaultRangedWeapon && <WeaponDisplay weapon={characterDefaultRangedWeapon} type="ranged" equippedArsenalCard={null} baseRangedWeaponName={editableCharacterData.rangedWeapon?.name} isArsenalWeapon={false} />}
                       {/* Display arsenal weapons in their own cards */}
