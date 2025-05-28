@@ -1,0 +1,92 @@
+
+DONE:
+- Initial app setup (Next.js, TypeScript, ShadCN UI, Tailwind CSS, Firebase, Genkit)
+- Homepage: Layout, feature navigation cards, footer with links.
+- Character Sheet:
+    - Base stat tracking (HP, Sanity, MV, DEF) with interactive controls.
+    - Skill display and point-buy system for Custom Characters.
+    - Abilities display (Actions, Interrupts, Passives, FREE Actions) with cooldown/quantity trackers.
+    - Custom Character ability purchase system.
+    - Weapon display (melee & ranged).
+    - Arsenal Card selection and display (including images).
+    - Application of global stat modifiers from Arsenal Cards.
+    - Display of Arsenal item components (Load Out, Bonus, Elite).
+    - Dynamic equipping of weapons from Arsenal Card items.
+    - Dynamic granting of abilities from Arsenal Card items.
+    - Companion (Pet) display with interactive stats (HP, Sanity, MV, DEF) and melee attack, derived from Arsenal Card items.
+    - Firebase Firestore integration for saving/loading character configurations for logged-in users.
+- Dice Roller:
+    - Numbered dice rolling (multiple groups, custom sides).
+    - Combat dice rolling (image-based faces).
+    - Roll history.
+- Card Generator:
+    - Deck selection (Event, Item, Madness, Clash, Combat).
+    - Random card drawing and display.
+    - Card history.
+    - "Held Cards" functionality for holdable cards.
+- Events Page (Random Event Generator):
+    - Data fetched from Google Sheets.
+    - Random event generation based on selected color or random type (Any, Chaos, Order).
+    - Display of drawn event with thematic background image.
+    - History of previously drawn events.
+- Investigations Page:
+    - Data fetched from Google Sheets.
+    - Random encounter generation based on selected "Location Color" and 1d6 roll.
+- Item List Page:
+    - Placeholder UI, currently empty.
+- Whispers & Wares (Shop):
+    - UI with tabbed categories (Defense, Melee Weapon, Ranged Weapon, Augment, Utility, Consumable, Relic).
+    - Utility sub-categories.
+    - Display of item details (cost, description, stats, charges, etc.).
+    - Simulated "Crypto" currency tracker and purchasing logic.
+    - Populated with a sample of items from the rulebook.
+- AI Item Generator:
+    - Genkit flow for generating game items (name, type, lore, game effect, rarity).
+    - UI for user input (item type, theme, rarity, stat focus).
+    - Display of generated item.
+- User Profile Page:
+    - Firebase Authentication (Email/Password Sign Up, Log In, Log Out).
+    - Edit display name.
+    - Upload and change profile picture (Firebase Storage).
+    - "Change Password" (sends reset email).
+    - Manage Saved Characters: List, Load, Rename, Duplicate, Delete saved characters.
+    - Set/Unset Default Character preference (saved to Firestore).
+    - Simulated friends list.
+- Shared Space Page:
+    - Simulated access code UI for joining a session.
+- FAQ Page:
+    - Content for App Questions and Board Game Concepts using accordion.
+- Sidebar Navigation:
+    - Links to all major features.
+    - Mobile-responsive (Sheet-based).
+    - Intuitively organized.
+- Mobile Optimizations:
+    - Homepage feature card layout (vertical scrollable window).
+    - Character Sheet tabs and header.
+- Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
+- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments).
+
+WORKING:
+- Ongoing review and minor clean-up of existing codebase.
+- Refinement of Character Sheet mobile optimization for inner tab content.
+
+NEXT:
+- Implement full "Gear and Equipment" system based on rulebook:
+    - Character inventory system.
+    - Equipment slots on Character Sheet UI.
+    - Logic for equipping/unequipping individual items (Gear, Utility, Augments, Consumables).
+    - Dynamic stat/ability updates based on equipped items.
+- Integrate combat rules into a basic combat UI/tracker.
+- Persist "Crypto" currency for logged-in users (Firebase Firestore).
+- Develop "Shared Space" with real-time collaboration features (Firebase).
+- Populate "Item List" page with actual game items (from rulebook or new data source).
+- Expand Genkit AI integrations:
+    - Dynamic NPC dialogue generation.
+    - AI-assisted event or investigation detail generation.
+- Add a bestiary/monster manual section.
+- Implement game rule references or a digital rulebook section.
+- Further mobile optimization for all pages (Dice Roller, Card Generator, Events, Investigations, Shop, Profile, etc.).
+- Caching strategies for Google Sheet data to improve performance in production.
+- Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
+- Refine UI/UX across all pages based on testing.
+      
