@@ -87,7 +87,7 @@ const generateClashCards = (): GameCard[] => {
   return [...existingCards, ...newCards];
 };
 
-const sampleDecks: { name: string; cards: GameCard[] }[] = [
+export const sampleDecks: { name: string; cards: GameCard[] }[] = [
   {
     name: "Event Deck",
     cards: [
@@ -170,6 +170,7 @@ export function CardGeneratorUI() {
       const randomIndex = Math.floor(Math.random() * availableCards.length);
       const newCard = availableCards[randomIndex];
 
+      // Always show the new card in the main display and add to history
       setDrawnCardsHistory(prevHistory => [newCard, ...prevHistory].slice(0, 3));
       setCardKey(prev => prev + 1);
 
@@ -251,3 +252,6 @@ export function CardGeneratorUI() {
     </div>
   );
 }
+
+
+    
