@@ -10,8 +10,10 @@ export const metadata: Metadata = {
   description: 'Session-based, multiplayer game management hub for Riddle of the Beast.',
 };
 
-// Helper functions duplicated from character-sheet/page.tsx for now.
+// Helper functions duplicated from character-sheet/page.tsx.
 // Consider refactoring these into a shared service if used in more places.
+
+// Refined parser specifically for item-level "Effect Stat Change"
 function parseEffectStatChange(statString: string | undefined): ParsedStatModifier[] {
   if (!statString || typeof statString !== 'string' || statString.trim() === '') {
     return [];
@@ -19,35 +21,37 @@ function parseEffectStatChange(statString: string | undefined): ParsedStatModifi
   const modifiers: ParsedStatModifier[] = [];
   const changes = statString.split(/[,;]/).map(s => s.trim()).filter(Boolean);
 
-  const statMap: Record<string, StatName | 'meleeAttackMod' | 'rangedAttackMod' | 'rangedRangeMod'> = {
+  // This map should strictly map to StatName keys for item effects
+  const statNameMap: Record<string, StatName> = {
     'max hp': 'maxHp', 'maxhp': 'maxHp', 'hp': 'hp',
     'mv': 'mv', 'movement': 'mv',
     'def': 'def', 'defense': 'def',
     'sanity': 'sanity', 'max sanity': 'maxSanity', 'maxsanity': 'maxSanity',
-    'melee attack': 'meleeAttackMod',
-    'ranged attack': 'rangedAttackMod',
-    'ranged range': 'rangedRangeMod',
+    'melee attack': 'meleeAttack',
   };
 
   for (const change of changes) {
     const match = change.toLowerCase().match(/([a-zA-Z\s]+)\s*([+-])\s*(\d+)/);
     if (match) {
-      const rawStatName = match[1].trim();
+      const rawStatName = match[1].trim().toLowerCase(); // Ensure lookup key is lowercase
       const operator = match[2];
       const value = parseInt(match[3], 10);
       
-      const targetStat = statMap[rawStatName] || rawStatName.replace(/\s+/g, ''); 
+      const targetStatKey = statNameMap[rawStatName];
 
-      if (targetStat) {
+      if (targetStatKey) { 
         modifiers.push({
-          targetStat: targetStat as string, 
+          targetStat: targetStatKey,
           value: operator === '+' ? value : -value,
         });
+      } else {
+        // console.warn(`[Nexus ItemStatParse] Skipped unrecognized stat: '${rawStatName}' in '${change}'`);
       }
     }
   }
   return modifiers;
 }
+
 
 function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range?: number; rawDetails: string } | undefined {
   if (!detailsStr || typeof detailsStr !== 'string' || detailsStr.trim() === '') return undefined;
@@ -159,13 +163,14 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     if (arsenalNameIndex === -1) {
         const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet.`;
         console.error(errorMsg + ` Headers found: [${sanitizedHeaders.join(', ')}]`);
+        // console.log('[DEBUG] Sanitized Headers from Google Sheet (Nexus):', sanitizedHeaders);
         return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{id: 'error-item-header', abilityName: `Headers found: [${sanitizedHeaders.join(', ')}]` } as ArsenalItem], imageUrlFront: '', imageUrlBack: '' }];
     }
     
     const petFlagVariations = ['pet', 'is pet', 'companion'];
     const petFlagHeaderIndex = getColumnIndex(petFlagVariations);
     if (petFlagHeaderIndex === -1) {
-        console.warn(`[DATA WARNING] No column found for Pet flag. Expected one of: ${petFlagVariations.join('/')}. Pets might not be identified correctly.`);
+        // console.warn(`[Nexus DATA WARNING] No column for Pet flag. Expected one of: ${petFlagVariations.join('/')}. Pets may not be identified correctly.`);
     }
 
 
@@ -199,8 +204,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         const imageUrlBackIndex = getColumnIndex(['imageurlback', 'backimage', 'imageback', 'imageurl back']);
         if (imageUrlBackIndex !== -1) card.imageUrlBack = String(row[imageUrlBackIndex] || '');
         
-        const numModFields = ['hpMod', 'maxHpMod', 'mvMod', 'defMod', 'sanityMod', 'maxSanityMod', 'meleeAttackMod', 'rangedAttackMod', 'rangedRangeMod'];
-        const headerToFieldMap: Record<string, keyof ArsenalCard> = {
+        const globalModFields: Record<string, keyof ArsenalCard> = {
             'hpmod': 'hpMod', 'hp mod': 'hpMod',
             'maxhpmod': 'maxHpMod', 'max hp mod': 'maxHpMod',
             'mvmod': 'mvMod', 'mv mod': 'mvMod',
@@ -212,22 +216,15 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             'rangedrangemod': 'rangedRangeMod', 'ranged range mod': 'rangedRangeMod',
         };
 
-        numModFields.forEach(field => {
-          let colIndex = -1;
-          colIndex = sanitizedHeaders.indexOf(field.toLowerCase() as string);
-          if (colIndex === -1) { 
-              const possibleHeaders = Object.keys(headerToFieldMap).filter(h => headerToFieldMap[h] === field);
-              for (const headerVariation of possibleHeaders) {
-                  colIndex = getColumnIndex([headerVariation]); 
-                  if (colIndex !== -1) break;
-              }
-          }
-          if (colIndex !== -1 && row[colIndex] !== undefined && String(row[colIndex]).trim() !== '') {
-            const val = parseFloat(String(row[colIndex]));
-            if (!isNaN(val)) {
-              (card as any)[field] = val;
+        Object.keys(globalModFields).forEach(headerKey => {
+            const fieldKey = globalModFields[headerKey];
+            const colIndex = getColumnIndex([headerKey]);
+            if (colIndex !== -1 && row[colIndex] !== undefined && String(row[colIndex]).trim() !== '') {
+                const val = parseFloat(String(row[colIndex]));
+                if (!isNaN(val)) {
+                    (card as any)[fieldKey] = val;
+                }
             }
-          }
         });
         arsenalsMap.set(arsenalId, card as ArsenalCard);
       }
@@ -236,7 +233,10 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       item.id = `${arsenalId}_item_${rowIndex}`; 
       
       const categoryIndex = getColumnIndex(['category']);
-      if (categoryIndex !== -1) item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
+      if (categoryIndex !== -1) {
+        item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
+        // console.log(`[Nexus Parsing] Item: ${row[abilityNameIndex]}, Category Found: ${item.category}`);
+      }
       
       const levelIndex = getColumnIndex(['level']);
       if (levelIndex !== -1 && row[levelIndex] && String(row[levelIndex]).trim() !== '') {
@@ -255,7 +255,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
       const abilityNameIndex = getColumnIndex(['ability name', 'abilityname', 'item name', 'itemname']);
       const abilityNameForPetFallback = abilityNameIndex !== -1 ? String(row[abilityNameIndex] || '').trim() : '';
-      item.abilityName = abilityNameForPetFallback || `Item ${rowIndex}`;
+      item.abilityName = abilityNameForPetFallback || `Item ${rowIndex + 2}`;
       
       const itemTypeIndex = getColumnIndex(['type']); 
       if (itemTypeIndex !== -1) item.type = String(row[itemTypeIndex] || '');
@@ -263,9 +263,9 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const classIndex = getColumnIndex(['class']); 
       if (classIndex !== -1) item.class = String(row[classIndex] || '');
       
-      const itemDescIndex = getColumnIndex(['item description', 'ability description', 'effect description']); 
-      if (itemDescIndex !== -1 && String(row[itemDescIndex] || '').trim() !== '') {
-        item.itemDescription = String(row[itemDescIndex] || '');
+      const itemDescSpecificIndex = getColumnIndex(['item description', 'ability description']);
+      if (itemDescSpecificIndex !== -1 && String(row[itemDescSpecificIndex] || '').trim() !== '') {
+        item.itemDescription = String(row[itemDescSpecificIndex] || '');
       } else {
          const genericDescIndex = getColumnIndex(['description']); 
          if (genericDescIndex !== -1 && String(row[genericDescIndex] || '').trim() !== '' && String(row[genericDescIndex] || '') !== arsenalsMap.get(arsenalId)?.description) {
@@ -284,8 +284,13 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       
       const effectStatChangeIndex = getColumnIndex(['effect stat change', 'effectstatchange']);
       if (effectStatChangeIndex !== -1 && row[effectStatChangeIndex]) {
-        item.effectStatChangeString = String(row[effectStatChangeIndex] || '');
-        item.parsedStatModifiers = parseEffectStatChange(item.effectStatChangeString);
+        const effectStatChangeString = String(row[effectStatChangeIndex] || '').trim();
+        if (effectStatChangeString) {
+            item.effectStatChangeString = effectStatChangeString;
+            // console.log(`[Nexus Parsing] effectStatChangeString for ${item.abilityName}: '${effectStatChangeString}'`);
+            item.parsedStatModifiers = parseEffectStatChange(item.effectStatChangeString);
+            // console.log(`[Nexus Parsing] parsedStatModifiers for ${item.abilityName}:`, JSON.stringify(item.parsedStatModifiers));
+        }
       }
       
       const weaponFlagColumnIndex = getColumnIndex(['weapon']);
@@ -302,46 +307,39 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         }
       }
       
-      item.isPet = false;
       if (petFlagHeaderIndex !== -1 && row[petFlagHeaderIndex] !== undefined && String(row[petFlagHeaderIndex]).trim() !== '') {
         const petFlagValue = String(row[petFlagHeaderIndex]).trim().toLowerCase();
         if (['true', 'yes', '1', 'y'].includes(petFlagValue)) {
             item.isPet = true;
-            const petNameFromCol = String(row[getColumnIndex(['pet name', 'companion name'])] || '').trim();
-            if (petNameFromCol) {
-                item.petName = petNameFromCol;
-            } else if (abilityNameForPetFallback && !abilityNameForPetFallback.startsWith('Item ')) {
+            if (abilityNameForPetFallback && !abilityNameForPetFallback.startsWith('Item ')) {
                 item.petName = abilityNameForPetFallback;
             } else {
                 item.petName = 'Companion'; 
             }
-            console.log(`[Pet Parsing] Item "${item.abilityName}" (Row ${rowIndex+2}) identified as Pet. Resolved Name: "${item.petName}". Looking for stats...`);
-
+            // console.log(`[Nexus Parsing] Item "${item.abilityName}" (Row ${rowIndex+2}) identified as Pet. Resolved Name: "${item.petName}". Looking for stats...`);
 
             const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '').trim();
             if (petStatsRawString) { 
               item.petStats = petStatsRawString;
               item.parsedPetCoreStats = parsePetStatsString(item.petStats);
               if (!item.parsedPetCoreStats || Object.keys(item.parsedPetCoreStats).length === 0 ) {
-                 console.warn(`[Pet Stats Parsing] Pet '${item.petName}' has a 'Pet Stats' column ("${item.petStats}"), but parsing failed or yielded no stats. Parsed object: ${JSON.stringify(item.parsedPetCoreStats || {})}. Trackers may not display.`);
-                 item.parsedPetCoreStats = undefined;
+                 // console.warn(`[Nexus Pet Stats Parsing] Pet '${item.petName}' has 'Pet Stats' column ("${item.petStats}"), but parsing failed. Parsed: ${JSON.stringify(item.parsedPetCoreStats || {})}.`);
+                 item.parsedPetCoreStats = undefined; // Ensure it's undefined if parsing fails to yield core stats
               } else {
-                 console.log(`[Pet Stats Parsing] Pet '${item.petName}' parsed stats:`, item.parsedPetCoreStats);
+                 // console.log(`[Nexus Pet Stats Parsing] Pet '${item.petName}' parsed stats:`, item.parsedPetCoreStats);
               }
             } else {
                 const effectStatChangeForPet = String(row[getColumnIndex(['effect stat change', 'effectstatchange'])] || '').trim();
-                if (effectStatChangeForPet && (!item.parsedStatModifiers || item.parsedStatModifiers.length === 0)) {
-                    console.warn(`[Pet Stats Parsing] Pet '${item.petName}' has no 'Pet Stats' column. Attempting to use 'Effect Stat Change': "${effectStatChangeForPet}" for stats.`);
+                if (item.isPet && effectStatChangeForPet && (!item.parsedStatModifiers || item.parsedStatModifiers.length === 0)) {
+                    // console.warn(`[Nexus Pet Stats Parsing] Pet '${item.petName}' using 'Effect Stat Change': "${effectStatChangeForPet}" for stats.`);
                     item.parsedPetCoreStats = parsePetStatsString(effectStatChangeForPet);
                     if (item.parsedPetCoreStats && Object.keys(item.parsedPetCoreStats).length > 0) {
-                        item.petStats = effectStatChangeForPet; // Store the string that was parsed
-                        console.log(`[Pet Stats Parsing] Pet '${item.petName}' used 'Effect Stat Change' for stats. Parsed:`, item.parsedPetCoreStats);
+                        item.petStats = effectStatChangeForPet;
                     } else {
-                        console.warn(`[Pet Stats Parsing] Pet '${item.petName}' had 'Effect Stat Change' ("${effectStatChangeForPet}"), but parsing failed or yielded no stats. Parsed object: ${JSON.stringify(item.parsedPetCoreStats || {})}. Trackers may not display.`);
                         item.parsedPetCoreStats = undefined;
                     }
-                } else {
-                    console.warn(`[Pet Stats Parsing] Pet '${item.petName}' has no 'Pet Stats' column and no suitable 'Effect Stat Change' to parse. Trackers may not display.`);
+                } else if (item.isPet) {
+                    // console.warn(`[Nexus Pet Stats Parsing] Pet '${item.petName}' has no 'Pet Stats' & no suitable 'Effect Stat Change'.`);
                     item.parsedPetCoreStats = undefined;
                 }
             }
@@ -369,7 +367,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       
       const arsenal = arsenalsMap.get(arsenalId);
       if (arsenal) {
-        const isPlaceholderName = item.abilityName === `Item ${rowIndex}`;
+        const isPlaceholderName = item.abilityName === `Item ${rowIndex + 2}`;
         const isMeaningfulItem = !isPlaceholderName ||
                                  item.isPet ||
                                  item.isFlaggedAsWeapon ||
@@ -386,7 +384,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     return Array.from(arsenalsMap.values());
 
   } catch (error) {
-    console.error("Error fetching Arsenal Card data from Google Sheets API:", error);
+    console.error("Error fetching Arsenal Card data from Google Sheets API (Nexus):", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return [{ id: 'error-arsenal-fetch', name: 'System Error', description: `Could not load Arsenal Card data. Error: ${errorMessage}`, items: [], imageUrlFront: '', imageUrlBack: '' } as ArsenalCard];
   }

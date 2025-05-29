@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description: 'Manage your character stats for Beast.',
 };
 
+// Refined parser specifically for item-level "Effect Stat Change"
 function parseEffectStatChange(statString: string | undefined): ParsedStatModifier[] {
   if (!statString || typeof statString !== 'string' || statString.trim() === '') {
     return [];
@@ -18,35 +19,37 @@ function parseEffectStatChange(statString: string | undefined): ParsedStatModifi
   const modifiers: ParsedStatModifier[] = [];
   const changes = statString.split(/[,;]/).map(s => s.trim()).filter(Boolean);
 
-  const statMap: Record<string, StatName | 'meleeAttackMod' | 'rangedAttackMod' | 'rangedRangeMod'> = {
+  // This map should strictly map to StatName keys for item effects
+  const statNameMap: Record<string, StatName> = {
     'max hp': 'maxHp', 'maxhp': 'maxHp', 'hp': 'hp',
     'mv': 'mv', 'movement': 'mv',
     'def': 'def', 'defense': 'def',
     'sanity': 'sanity', 'max sanity': 'maxSanity', 'maxsanity': 'maxSanity',
-    'melee attack': 'meleeAttackMod', 'meleeattackmod': 'meleeAttackMod', // This maps to arsenal card global mods
-    'ranged attack': 'rangedAttackMod', 'rangedattackmod': 'rangedAttackMod',
-    'ranged range': 'rangedRangeMod', 'rangedrangemod': 'rangedRangeMod',
+    'melee attack': 'meleeAttack',
   };
 
   for (const change of changes) {
     const match = change.toLowerCase().match(/([a-zA-Z\s]+)\s*([+-])\s*(\d+)/);
     if (match) {
-      const rawStatName = match[1].trim();
+      const rawStatName = match[1].trim().toLowerCase(); // Ensure lookup key is lowercase
       const operator = match[2];
       const value = parseInt(match[3], 10);
       
-      const targetStat = statMap[rawStatName] || rawStatName.replace(/\s+/g, ''); 
+      const targetStatKey = statNameMap[rawStatName];
 
-      if (targetStat) {
+      if (targetStatKey) { 
         modifiers.push({
-          targetStat: targetStat as string, 
+          targetStat: targetStatKey,
           value: operator === '+' ? value : -value,
         });
+      } else {
+        // console.warn(`[CharacterSheet ItemStatParse] Skipped unrecognized stat: '${rawStatName}' in '${change}'`);
       }
     }
   }
   return modifiers;
 }
+
 
 function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range?: number; rawDetails: string } | undefined {
   if (!detailsStr || typeof detailsStr !== 'string' || detailsStr.trim() === '') return undefined;
@@ -118,7 +121,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
   if (missingVars.length > 0) {
     const detailedErrorMessage = `Arsenal Cards Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables are correctly set in your .env.local file.`;
     console.error(detailedErrorMessage);
-    return [{ id: 'error-arsenal', name: 'System Error', description: detailedErrorMessage, items:[{id: 'error-item-env', abilityName: detailedErrorMessage} as ArsenalItem] } as ArsenalCard];
+    return [{ id: 'error-arsenal', name: 'System Error', description: detailedErrorMessage, items:[{id: 'error-item-env', abilityName: detailedErrorMessage} as ArsenalItem], imageUrlFront: '', imageUrlBack: '' } as ArsenalCard];
   }
 
   try {
@@ -140,7 +143,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     if (!rows || rows.length === 0) {
       console.warn(`No data found in Arsenal Cards Google Sheet ID: ${ARSENAL_CARDS_GOOGLE_SHEET_ID} at range: ${ARSENAL_CARDS_GOOGLE_SHEET_RANGE}.`);
-      return [{ id: 'warning-arsenal', name: 'System Warning', description: 'No arsenal card data found.', items: [] } as ArsenalCard];
+      return [{ id: 'warning-arsenal', name: 'System Warning', description: 'No arsenal card data found.', items: [], imageUrlFront: '', imageUrlBack: '' } as ArsenalCard];
     }
 
     const headers = rows[0] as string[];
@@ -156,16 +159,16 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
     
     const arsenalNameIndex = getColumnIndex(['arsenal name', 'arsenalname', 'name', 'title']);
     if (arsenalNameIndex === -1) {
-        const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet. Headers found: [${sanitizedHeaders.join(', ')}]`;
-        console.error(errorMsg);
-        // console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders);
-        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item-header', abilityName: `Headers found: [${sanitizedHeaders.join(', ')}]` } as ArsenalItem] }];
+        const errorMsg = `Critical Error: 'Arsenal Name' (or 'Name', 'Title') column not found in Google Sheet.`;
+        console.error(errorMsg + ` Headers found: [${sanitizedHeaders.join(', ')}]`);
+        // console.log('[DEBUG] Sanitized Headers from Google Sheet:', sanitizedHeaders); // Keep for debugging if needed
+        return [{ id: 'error-critical-arsenal', name: 'Sheet Error', description: errorMsg, items: [{ id: 'error-item-header', abilityName: `Headers found: [${sanitizedHeaders.join(', ')}]` } as ArsenalItem], imageUrlFront: '', imageUrlBack: '' }];
     }
     
-    const petFlagColumnVariations = ['pet', 'is pet', 'companion'];
-    const petFlagHeaderIndex = getColumnIndex(petFlagColumnVariations);
+    const petFlagVariations = ['pet', 'is pet', 'companion'];
+    const petFlagHeaderIndex = getColumnIndex(petFlagVariations);
     if (petFlagHeaderIndex === -1) {
-        console.warn(`[DATA WARNING] No column found for Pet flag. Expected one of: ${petFlagColumnVariations.join('/')}. Pets might not be identified correctly.`);
+        console.warn(`[DATA WARNING] No column for Pet flag. Expected one of: ${petFlagVariations.join('/')}. Pets may not be identified correctly.`);
     }
 
 
@@ -182,6 +185,8 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             id: arsenalId,
             name: currentArsenalName,
             items: [],
+            imageUrlFront: '', // Initialize
+            imageUrlBack: '',  // Initialize
         };
         
         const arsenalDescIndex = getColumnIndex(['arsenal description']); 
@@ -191,41 +196,34 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             if (genericDescIndex !== -1) card.description = String(row[genericDescIndex] || '');
         }
 
-        const imageUrlFrontIndex = getColumnIndex(['imageurlfront', 'frontimage', 'imagefront']);
+        const imageUrlFrontIndex = getColumnIndex(['imageurlfront', 'frontimage', 'imagefront', 'imageurl front']);
         if (imageUrlFrontIndex !== -1) card.imageUrlFront = String(row[imageUrlFrontIndex] || '');
         
-        const imageUrlBackIndex = getColumnIndex(['imageurlback', 'backimage', 'imageback']);
+        const imageUrlBackIndex = getColumnIndex(['imageurlback', 'backimage', 'imageback', 'imageurl back']);
         if (imageUrlBackIndex !== -1) card.imageUrlBack = String(row[imageUrlBackIndex] || '');
         
-        const numModFields = ['hpMod', 'maxHpMod', 'mvMod', 'defMod', 'sanityMod', 'maxSanityMod', 'meleeAttackMod', 'rangedAttackMod', 'rangedRangeMod'];
-        const headerToFieldMap: Record<string, keyof ArsenalCard> = {
+        // Global stat modifiers for the Arsenal Card itself
+        const globalModFields: Record<string, keyof ArsenalCard> = {
             'hpmod': 'hpMod', 'hp mod': 'hpMod',
             'maxhpmod': 'maxHpMod', 'max hp mod': 'maxHpMod',
             'mvmod': 'mvMod', 'mv mod': 'mvMod',
             'defmod': 'defMod', 'def mod': 'defMod',
             'sanitymod': 'sanityMod', 'sanity mod': 'sanityMod',
             'maxsanitymod': 'maxSanityMod', 'max sanity mod': 'maxSanityMod',
-            'meleeattackmod': 'meleeAttackMod', 'melee attack mod': 'meleeAttackMod',
+            'meleeattackmod': 'meleeAttackMod', 'melee attack mod': 'meleeAttackMod', // Global mod for overall arsenal
             'rangedattackmod': 'rangedAttackMod', 'ranged attack mod': 'rangedAttackMod',
             'rangedrangemod': 'rangedRangeMod', 'ranged range mod': 'rangedRangeMod',
         };
 
-        numModFields.forEach(field => {
-          let colIndex = -1;
-          colIndex = sanitizedHeaders.indexOf(field.toLowerCase() as string);
-          if (colIndex === -1) { 
-              const possibleHeaders = Object.keys(headerToFieldMap).filter(h => headerToFieldMap[h] === field);
-              for (const headerVariation of possibleHeaders) {
-                  colIndex = getColumnIndex([headerVariation]); 
-                  if (colIndex !== -1) break;
-              }
-          }
-          if (colIndex !== -1 && row[colIndex] !== undefined && String(row[colIndex]).trim() !== '') {
-            const val = parseFloat(String(row[colIndex]));
-            if (!isNaN(val)) {
-              (card as any)[field] = val;
+        Object.keys(globalModFields).forEach(headerKey => {
+            const fieldKey = globalModFields[headerKey];
+            const colIndex = getColumnIndex([headerKey]);
+            if (colIndex !== -1 && row[colIndex] !== undefined && String(row[colIndex]).trim() !== '') {
+                const val = parseFloat(String(row[colIndex]));
+                if (!isNaN(val)) {
+                    (card as any)[fieldKey] = val;
+                }
             }
-          }
         });
         arsenalsMap.set(arsenalId, card as ArsenalCard);
       }
@@ -252,7 +250,8 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       if (cdIndex !== -1) item.cd = String(row[cdIndex] || '');
 
       const abilityNameIndex = getColumnIndex(['ability name', 'abilityname', 'item name', 'itemname']);
-      item.abilityName = abilityNameIndex !== -1 ? String(row[abilityNameIndex] || '').trim() : `Item ${rowIndex}`;
+      const abilityNameForPetFallback = abilityNameIndex !== -1 ? String(row[abilityNameIndex] || '').trim() : '';
+      item.abilityName = abilityNameForPetFallback || `Item ${rowIndex + 2}`; // +2 because of header row and 0-indexing
       
       const itemTypeIndex = getColumnIndex(['type']); 
       if (itemTypeIndex !== -1) item.type = String(row[itemTypeIndex] || '');
@@ -260,9 +259,10 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const classIndex = getColumnIndex(['class']); 
       if (classIndex !== -1) item.class = String(row[classIndex] || '');
       
-      const itemDescIndex = getColumnIndex(['item description', 'ability description', 'effect description']); 
-      if (itemDescIndex !== -1 && String(row[itemDescIndex] || '').trim() !== '') {
-        item.itemDescription = String(row[itemDescIndex] || '');
+      // Prefer 'Item Description' over general 'Description' if Arsenal also has a 'Description'
+      const itemDescSpecificIndex = getColumnIndex(['item description', 'ability description']);
+      if (itemDescSpecificIndex !== -1 && String(row[itemDescSpecificIndex] || '').trim() !== '') {
+        item.itemDescription = String(row[itemDescSpecificIndex] || '');
       } else {
          const genericDescIndex = getColumnIndex(['description']); 
          if (genericDescIndex !== -1 && String(row[genericDescIndex] || '').trim() !== '' && String(row[genericDescIndex] || '') !== arsenalsMap.get(arsenalId)?.description) {
@@ -281,8 +281,11 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       
       const effectStatChangeIndex = getColumnIndex(['effect stat change', 'effectstatchange']);
       if (effectStatChangeIndex !== -1 && row[effectStatChangeIndex]) {
-        item.effectStatChangeString = String(row[effectStatChangeIndex] || '');
-        item.parsedStatModifiers = parseEffectStatChange(item.effectStatChangeString);
+        const effectStatChangeString = String(row[effectStatChangeIndex] || '').trim();
+        if (effectStatChangeString) {
+            item.effectStatChangeString = effectStatChangeString;
+            item.parsedStatModifiers = parseEffectStatChange(item.effectStatChangeString);
+        }
       }
       
       const weaponFlagColumnIndex = getColumnIndex(['weapon']);
@@ -299,44 +302,44 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         }
       }
       
-      const currentPetFlagColumnIndex = petFlagHeaderIndex; 
-      if (currentPetFlagColumnIndex !== -1 && row[currentPetFlagColumnIndex] !== undefined && String(row[currentPetFlagColumnIndex]).trim() !== '') {
-        const petFlagValue = String(row[currentPetFlagColumnIndex]).trim().toLowerCase();
+      item.isPet = false; // Default to false
+      if (petFlagHeaderIndex !== -1 && row[petFlagHeaderIndex] !== undefined && String(row[petFlagHeaderIndex]).trim() !== '') {
+        const petFlagValue = String(row[petFlagHeaderIndex]).trim().toLowerCase();
         if (['true', 'yes', '1', 'y'].includes(petFlagValue)) {
             item.isPet = true;
-            const itemAbilityNameValue = String(item.abilityName || '').trim(); 
-            if (itemAbilityNameValue && !itemAbilityNameValue.startsWith('Item ') && itemAbilityNameValue !== `Item ${rowIndex}`) {
-                item.petName = itemAbilityNameValue;
+            // Simplified pet name logic: "Ability Name" is the primary source if "Pet Name" isn't found
+            if (abilityNameForPetFallback && !abilityNameForPetFallback.startsWith('Item ')) {
+                item.petName = abilityNameForPetFallback;
             } else {
-                item.petName = 'Companion'; // Default if ability name is placeholder
+                item.petName = 'Companion'; // Default if ability name is placeholder or missing
             }
+            console.log(`[CharacterSheet Parsing] Item "${item.abilityName}" (Row ${rowIndex+2}) identified as Pet. Resolved Name: "${item.petName}". Looking for stats...`);
 
             const petStatsRawString = String(row[getColumnIndex(['pet stats', 'companion stats'])] || '').trim();
             if (petStatsRawString) { 
               item.petStats = petStatsRawString;
-              const parsed = parsePetStatsString(item.petStats);
-              item.parsedPetCoreStats = parsed;
-              if (!parsed || Object.keys(parsed).length === 0) {
-                console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has a 'Pet Stats' column ("${item.petStats}"), but parsing failed or yielded no stats. Parsed object: ${JSON.stringify(parsed)}. Trackers may not display.`);
-                item.parsedPetCoreStats = undefined; 
+              item.parsedPetCoreStats = parsePetStatsString(item.petStats);
+              if (!item.parsedPetCoreStats || Object.keys(item.parsedPetCoreStats).length === 0 ) {
+                 console.warn(`[CharacterSheet Parsing] Pet '${item.petName}' has a 'Pet Stats' column ("${item.petStats}"), but parsing failed or yielded no stats. Parsed object: ${JSON.stringify(item.parsedPetCoreStats || {})}. Trackers may not display.`);
+                 item.parsedPetCoreStats = undefined;
+              } else {
+                 // console.log(`[CharacterSheet Parsing] Pet '${item.petName}' parsed stats:`, item.parsedPetCoreStats);
               }
             } else {
-                // Fallback to "Effect Stat Change" if "Pet Stats" is empty
+                // Fallback to "Effect Stat Change" if "Pet Stats" is empty AND Effect Stat Change hasn't already been parsed for general item modifiers
                 const effectStatChangeForPet = String(row[getColumnIndex(['effect stat change', 'effectstatchange'])] || '').trim();
-                if (effectStatChangeForPet && !item.parsedStatModifiers?.length) { 
-                    const parsedFromEffect = parsePetStatsString(effectStatChangeForPet);
-                    item.parsedPetCoreStats = parsedFromEffect;
-                    if (parsedFromEffect && Object.keys(parsedFromEffect).length > 0) {
+                if (effectStatChangeForPet && (!item.parsedStatModifiers || item.parsedStatModifiers.length === 0)) {
+                    // console.warn(`[CharacterSheet Parsing] Pet '${item.petName}' has no 'Pet Stats' column. Attempting to use 'Effect Stat Change': "${effectStatChangeForPet}" for stats.`);
+                    item.parsedPetCoreStats = parsePetStatsString(effectStatChangeForPet);
+                    if (item.parsedPetCoreStats && Object.keys(item.parsedPetCoreStats).length > 0) {
                         item.petStats = effectStatChangeForPet; // Store the string that was parsed
-                        console.warn(`[Pet Stats Parsing] Pet '${item.petName || item.abilityName}' has no 'Pet Stats' column. Used 'Effect Stat Change': "${effectStatChangeForPet}" for stats. Parsed: ${JSON.stringify(parsedFromEffect)}`);
+                        // console.log(`[CharacterSheet Parsing] Pet '${item.petName}' used 'Effect Stat Change' for stats. Parsed:`, item.parsedPetCoreStats);
                     } else {
-                        // No warning here if effectStatChangeForPet was empty or unparseable, as it's a fallback.
-                        // This indicates a pet that might be defined by abilities only.
+                        // console.warn(`[CharacterSheet Parsing] Pet '${item.petName}' had 'Effect Stat Change' ("${effectStatChangeForPet}"), but parsing failed or yielded no stats. Parsed object: ${JSON.stringify(item.parsedPetCoreStats || {})}. Trackers may not display.`);
                         item.parsedPetCoreStats = undefined;
                     }
-                } else {
-                    // This case is for a pet with no "Pet Stats" column and no suitable "Effect Stat Change" fallback.
-                    // It's a valid scenario if the pet is defined by abilities alone. No warning needed here.
+                } else if (item.isPet) { // Only warn if it's a pet and both dedicated and fallback stat sources are missing/empty
+                    // console.warn(`[CharacterSheet Parsing] Pet '${item.petName}' has no 'Pet Stats' column and no suitable 'Effect Stat Change' to parse. Trackers may not display.`);
                     item.parsedPetCoreStats = undefined;
                 }
             }
@@ -364,7 +367,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       
       const arsenal = arsenalsMap.get(arsenalId);
       if (arsenal) {
-        const isPlaceholderName = item.abilityName === `Item ${rowIndex}`;
+        const isPlaceholderName = item.abilityName === `Item ${rowIndex + 2}`;
         const isMeaningfulItem = !isPlaceholderName ||
                                  item.isPet ||
                                  item.isFlaggedAsWeapon ||
@@ -373,9 +376,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
                                  (item.effect && item.effect.trim() !== '');
         
         if (isMeaningfulItem) {
-          if (item.isPet && isPlaceholderName && !item.petName) {
-            item.petName = 'Companion'; 
-          }
           arsenal.items.push(item as ArsenalItem);
         }
       }
@@ -386,7 +386,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
   } catch (error) {
     console.error("Error fetching Arsenal Card data from Google Sheets API:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return [{ id: 'error-arsenal-fetch', name: 'System Error', description: `Could not load Arsenal Card data. Error: ${errorMessage}`, items: [] } as ArsenalCard];
+    return [{ id: 'error-arsenal-fetch', name: 'System Error', description: `Could not load Arsenal Card data. Error: ${errorMessage}`, items: [], imageUrlFront: '', imageUrlBack: '' } as ArsenalCard];
   }
 }
 
@@ -394,9 +394,10 @@ export default async function CharacterSheetPage() {
   const arsenalCards = await getArsenalCardsFromGoogleSheet();
   return (
     <div className="w-full">
-      <React.Suspense fallback={<div>Loading character sheet...</div>}>
+      <React.Suspense fallback={<div className="p-10 text-center text-xl">Loading character sheet...</div>}>
         <CharacterSheetUI arsenalCards={arsenalCards} />
       </React.Suspense>
     </div>
   );
 }
+
