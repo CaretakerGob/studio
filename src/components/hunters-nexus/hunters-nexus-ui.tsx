@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress"; // Added for stat bars
 import {
   Dialog,
   DialogContent,
@@ -40,13 +41,16 @@ import {
   Brain,
   Footprints,
   Shield,
+  UserMinus, // For stat decrement
+  UserPlus,  // For stat increment
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace, combatDieFaceImages } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
-import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui'; // Import sampleDecks and GameCard
+import { charactersData, type Character } from '@/components/character-sheet/character-sheet-ui';
+import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 interface NexusRollResult {
@@ -74,14 +78,26 @@ export function HuntersNexusUI() {
   const [nexusLatestDrawnCard, setNexusLatestDrawnCard] = useState<GameCard | null>(null);
   const [nexusCardKey, setNexusCardKey] = useState(0);
 
+  // State for selected character's current stats in Nexus
+  const [currentNexusHp, setCurrentNexusHp] = useState<number | null>(null);
+  const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (selectedNexusCharacter) {
+      setCurrentNexusHp(selectedNexusCharacter.baseStats.maxHp);
+      setCurrentNexusSanity(selectedNexusCharacter.baseStats.maxSanity);
+    } else {
+      setCurrentNexusHp(null);
+      setCurrentNexusSanity(null);
+    }
+  }, [selectedNexusCharacter]);
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
-    setPartyMembers([character]); 
-    setIsCharacterSelectionDialogOpen(false); 
+    setPartyMembers([character]);
+    setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
-
 
   const handleNexusNumberedRoll = () => {
     if (nexusNumDice < 1 || nexusDiceSides < 2) {
@@ -145,6 +161,36 @@ export function HuntersNexusUI() {
     toast({ title: "Card Drawn!", description: `Drew ${drawnCard.name} from ${deck.name}.` });
   };
 
+  const handleNexusStatChange = (stat: 'hp' | 'sanity', operation: 'increment' | 'decrement') => {
+    if (!selectedNexusCharacter) return;
+    const delta = operation === 'increment' ? 1 : -1;
+
+    if (stat === 'hp') {
+      setCurrentNexusHp(prevHp => {
+        if (prevHp === null) return selectedNexusCharacter.baseStats.maxHp;
+        const newValue = Math.max(0, Math.min(prevHp + delta, selectedNexusCharacter.baseStats.maxHp));
+        return newValue;
+      });
+    } else if (stat === 'sanity') {
+      setCurrentNexusSanity(prevSanity => {
+        if (prevSanity === null) return selectedNexusCharacter.baseStats.maxSanity;
+        const newValue = Math.max(0, Math.min(prevSanity + delta, selectedNexusCharacter.baseStats.maxSanity));
+        return newValue;
+      });
+    }
+  };
+  
+  const getStatProgressColorClass = (current: number | null, max: number | undefined): string => {
+    if (current === null || max === undefined || max === 0) {
+      return '[&>div]:bg-gray-400';
+    }
+    const percentage = (current / max) * 100;
+    if (percentage <= 33) return '[&>div]:bg-red-500';
+    if (percentage <= 66) return '[&>div]:bg-yellow-500';
+    return '[&>div]:bg-green-500';
+  };
+
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
       <header className="flex items-center justify-between p-3 border-b border-border flex-shrink-0">
@@ -153,7 +199,7 @@ export function HuntersNexusUI() {
           <span className="font-semibold">Riddle of the Beast Companion</span>
           <Separator orientation="vertical" className="h-6 mx-2" />
           <span className="text-sm text-muted-foreground">Room:</span>
-          <span className="text-sm font-mono text-primary">BEAST_NEXUS</span> {/* Example Room Code */}
+          <span className="text-sm font-mono text-primary">BEAST_NEXUS</span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" aria-label="Settings">
@@ -166,49 +212,67 @@ export function HuntersNexusUI() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Content Panel (Left) */}
-        <main className="flex-1 p-4 md:p-6 flex flex-col">
-          <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
+        <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
+          <main className="flex-1 p-4 md:p-6 flex flex-col">
             <div
               className={cn(
                 "flex-1 flex flex-col bg-card rounded-lg p-4 md:p-8 shadow-inner",
                 selectedNexusCharacter
-                  ? "items-start justify-start" 
-                  : "items-center justify-center" 
+                  ? "items-start justify-start"
+                  : "items-center justify-center"
               )}
             >
               {selectedNexusCharacter ? (
-                <div className="w-full"> {/* Wrapper for selected character info */}
-                  <div className="flex flex-col items-start mb-4"> {/* Character details block */}
+                <div className="w-full space-y-4">
+                  <div className="flex flex-col items-start">
                     <Avatar className="h-20 w-20 md:h-24 md:w-24 mb-3 md:mb-4 border-4 border-primary">
                       <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0,1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar" />
                       <AvatarFallback>{selectedNexusCharacter.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <h2 className="text-xl md:text-2xl font-semibold text-primary mb-1 md:mb-2">{selectedNexusCharacter.name}</h2>
-                    
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3 my-2 text-xs md:text-sm w-full max-w-lg"> {/* Adjusted max-width */}
-                      <div className="flex items-center justify-start p-1.5 bg-muted/30 rounded">
-                        <Heart className="h-4 w-4 mr-1.5 text-red-500"/> HP: {selectedNexusCharacter.baseStats.hp}/{selectedNexusCharacter.baseStats.maxHp}
-                      </div>
-                      <div className="flex items-center justify-start p-1.5 bg-muted/30 rounded">
-                        <Brain className="h-4 w-4 mr-1.5 text-blue-400"/> Sanity: {selectedNexusCharacter.baseStats.sanity}/{selectedNexusCharacter.baseStats.maxSanity}
-                      </div>
-                      <div className="flex items-center justify-start p-1.5 bg-muted/30 rounded">
-                        <Footprints className="h-4 w-4 mr-1.5 text-green-500"/> MV: {selectedNexusCharacter.baseStats.mv}
-                      </div>
-                      <div className="flex items-center justify-start p-1.5 bg-muted/30 rounded">
-                        <Shield className="h-4 w-4 mr-1.5 text-gray-400"/> DEF: {selectedNexusCharacter.baseStats.def}
-                      </div>
-                    </div>
                   </div>
 
-                  <div className="mt-4 self-start"> {/* Change character button */}
+                  {/* Character Stats Display with Trackers */}
+                  <div className="w-full max-w-md space-y-3">
+                    {currentNexusHp !== null && (
+                      <div>
+                        <div className="flex items-center justify-between mb-0.5">
+                           <Label className="flex items-center text-sm font-medium"><Heart className="mr-1.5 h-4 w-4 text-red-500" />HP</Label>
+                           <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={currentNexusHp === 0}><UserMinus className="h-3 w-3"/></Button>
+                                <Input type="number" readOnly value={currentNexusHp} className="w-12 h-6 text-center p-0 text-xs font-semibold"/>
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={currentNexusHp === selectedNexusCharacter.baseStats.maxHp}><UserPlus className="h-3 w-3"/></Button>
+                           </div>
+                        </div>
+                        <Progress value={(currentNexusHp / (selectedNexusCharacter.baseStats.maxHp || 1)) * 100} className={cn("h-1.5", getStatProgressColorClass(currentNexusHp, selectedNexusCharacter.baseStats.maxHp))} />
+                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {selectedNexusCharacter.baseStats.maxHp}</p>
+                      </div>
+                    )}
+                     {currentNexusSanity !== null && (
+                      <div>
+                        <div className="flex items-center justify-between mb-0.5">
+                           <Label className="flex items-center text-sm font-medium"><Brain className="mr-1.5 h-4 w-4 text-blue-400" />Sanity</Label>
+                            <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={currentNexusSanity === 0}><UserMinus className="h-3 w-3"/></Button>
+                                <Input type="number" readOnly value={currentNexusSanity} className="w-12 h-6 text-center p-0 text-xs font-semibold"/>
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={currentNexusSanity === selectedNexusCharacter.baseStats.maxSanity}><UserPlus className="h-3 w-3"/></Button>
+                           </div>
+                        </div>
+                        <Progress value={(currentNexusSanity / (selectedNexusCharacter.baseStats.maxSanity || 1)) * 100} className={cn("h-1.5", getStatProgressColorClass(currentNexusSanity, selectedNexusCharacter.baseStats.maxSanity))} />
+                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {selectedNexusCharacter.baseStats.maxSanity}</p>
+                      </div>
+                    )}
+                    <div className="flex items-center text-sm"><Footprints className="h-4 w-4 mr-1.5 text-green-500"/> MV: {selectedNexusCharacter.baseStats.mv}</div>
+                    <div className="flex items-center text-sm"><Shield className="h-4 w-4 mr-1.5 text-gray-400"/> DEF: {selectedNexusCharacter.baseStats.def}</div>
+                  </div>
+
+
+                  <div className="mt-4">
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm">Change Character</Button>
                     </DialogTrigger>
                   </div>
 
-                  {/* Action buttons - appear below character info */}
                   <div className="flex items-center gap-2 mt-6 flex-shrink-0">
                     <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
                       <Dices className="mr-2 h-4 w-4" /> Roll Dice
@@ -221,12 +285,11 @@ export function HuntersNexusUI() {
               ) : (
                 <>
                   <UserCircle2 className="h-20 w-20 md:h-24 md:w-24 text-muted-foreground mb-3 md:mb-4" />
-                  <h2 className="text-lg md:text-xl font-semibold text-muted-foreground">No Character Active in Nexus</h2>
+                  <h2 className="text-lg md:text-xl font-semibold text-muted-foreground">No Character Active</h2>
                   <p className="text-xs md:text-sm text-muted-foreground mb-4 md:mb-6">Choose a character to manage for this session.</p>
                   <DialogTrigger asChild>
                      <Button variant="default">Select Character</Button>
                   </DialogTrigger>
-                   {/* Action buttons - disabled or placeholder if no character */}
                   <div className="flex items-center gap-2 mt-6 flex-shrink-0">
                     <Button variant="outline" className="border-primary text-primary hover:bg-primary/10" disabled>
                       <Dices className="mr-2 h-4 w-4" /> Roll Dice
@@ -238,34 +301,34 @@ export function HuntersNexusUI() {
                 </>
               )}
             </div>
+          </main>
 
-            <DialogContent className="sm:max-w-[425px] bg-card border-border">
-              <DialogHeader>
-                  <DialogTitle>Select Character for Nexus</DialogTitle>
-                  <DialogDescription>Choose a character template to use in this session.</DialogDescription>
-              </DialogHeader>
-              <ScrollArea className="h-[300px] mt-4">
-                  <div className="space-y-2">
-                  {charactersData.map((char) => (
-                    <DialogClose asChild key={char.id}>
-                        <Button
-                        variant="ghost"
-                        className="w-full justify-start p-2 h-auto"
-                        onClick={() => handleSelectCharacterForNexus(char)}
-                        >
-                        <Avatar className="h-10 w-10 mr-3">
-                            <AvatarImage src={char.imageUrl || `https://placehold.co/40x40.png?text=${char.name.substring(0,1)}`} alt={char.name} data-ai-hint="character avatar" />
-                            <AvatarFallback>{char.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        {char.name}
-                        </Button>
-                    </DialogClose>
-                  ))}
-                  </div>
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
-        </main>
+          <DialogContent className="sm:max-w-[425px] bg-card border-border">
+            <DialogHeader>
+              <DialogTitle>Select Character for Nexus</DialogTitle>
+              <DialogDescription>Choose a character template to use in this session.</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-[300px] mt-4">
+              <div className="space-y-2">
+                {charactersData.map((char) => (
+                  <DialogClose asChild key={char.id}>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start p-2 h-auto"
+                      onClick={() => handleSelectCharacterForNexus(char)}
+                    >
+                      <Avatar className="h-10 w-10 mr-3">
+                        <AvatarImage src={char.imageUrl || `https://placehold.co/40x40.png?text=${char.name.substring(0,1)}`} alt={char.name} data-ai-hint="character avatar" />
+                        <AvatarFallback>{char.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {char.name}
+                    </Button>
+                  </DialogClose>
+                ))}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
 
         {/* Right Sidebar */}
         <aside className="w-full md:w-80 lg:w-96 border-l border-border p-4 flex-shrink-0 overflow-y-auto bg-card/50">
@@ -416,10 +479,8 @@ export function HuntersNexusUI() {
                           </Avatar>
                           <div>
                             <p className="text-sm font-medium">{member.name}</p>
-                            {/* Add more member details if needed */}
                           </div>
                         </div>
-                        {/* Add actions like 'View Sheet' or status indicators if needed */}
                       </div>
                     ))
                   )}
@@ -432,3 +493,5 @@ export function HuntersNexusUI() {
     </div>
   );
 }
+
+    
