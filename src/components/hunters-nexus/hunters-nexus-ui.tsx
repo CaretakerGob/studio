@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress"; // Added for stat bars
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -27,22 +27,15 @@ import {
   UserCircle2,
   Settings,
   LogOut,
-  PlusCircle,
   Dot,
   ChevronsRight,
-  Trash2,
-  Copy,
-  Edit3,
-  Eye,
-  Star,
-  RefreshCw,
-  BookOpen,
   Heart,
   Brain,
   Footprints,
   Shield,
-  UserMinus, // For stat decrement
-  UserPlus,  // For stat increment
+  UserMinus,
+  UserPlus,
+  BookOpen,
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace, combatDieFaceImages } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +44,6 @@ import { charactersData, type Character } from '@/components/character-sheet/cha
 import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
 
 interface NexusRollResult {
   type: 'numbered' | 'combat';
@@ -78,7 +70,6 @@ export function HuntersNexusUI() {
   const [nexusLatestDrawnCard, setNexusLatestDrawnCard] = useState<GameCard | null>(null);
   const [nexusCardKey, setNexusCardKey] = useState(0);
 
-  // State for selected character's current stats in Nexus
   const [currentNexusHp, setCurrentNexusHp] = useState<number | null>(null);
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
 
@@ -94,7 +85,7 @@ export function HuntersNexusUI() {
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
-    setPartyMembers([character]);
+    setPartyMembers([character]); // For now, party is just the selected character
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -190,7 +181,6 @@ export function HuntersNexusUI() {
     return '[&>div]:bg-green-500';
   };
 
-
   return (
     <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
       <header className="flex items-center justify-between p-3 border-b border-border flex-shrink-0">
@@ -217,9 +207,7 @@ export function HuntersNexusUI() {
             <div
               className={cn(
                 "flex-1 flex flex-col bg-card rounded-lg p-4 md:p-8 shadow-inner",
-                selectedNexusCharacter
-                  ? "items-start justify-start"
-                  : "items-center justify-center"
+                selectedNexusCharacter ? "items-start justify-start" : "items-center justify-center"
               )}
             >
               {selectedNexusCharacter ? (
@@ -232,7 +220,6 @@ export function HuntersNexusUI() {
                     <h2 className="text-xl md:text-2xl font-semibold text-primary mb-1 md:mb-2">{selectedNexusCharacter.name}</h2>
                   </div>
 
-                  {/* Character Stats Display with Trackers */}
                   <div className="w-full max-w-md space-y-3">
                     {currentNexusHp !== null && (
                       <div>
@@ -266,21 +253,12 @@ export function HuntersNexusUI() {
                     <div className="flex items-center text-sm"><Shield className="h-4 w-4 mr-1.5 text-gray-400"/> DEF: {selectedNexusCharacter.baseStats.def}</div>
                   </div>
 
-
                   <div className="mt-4">
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm">Change Character</Button>
                     </DialogTrigger>
                   </div>
-
-                  <div className="flex items-center gap-2 mt-6 flex-shrink-0">
-                    <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                      <Dices className="mr-2 h-4 w-4" /> Roll Dice
-                    </Button>
-                    <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                      <Layers3 className="mr-2 h-4 w-4" /> Draw Card
-                    </Button>
-                  </div>
+                  {/* Action buttons removed from here */}
                 </div>
               ) : (
                 <>
@@ -290,14 +268,7 @@ export function HuntersNexusUI() {
                   <DialogTrigger asChild>
                      <Button variant="default">Select Character</Button>
                   </DialogTrigger>
-                  <div className="flex items-center gap-2 mt-6 flex-shrink-0">
-                    <Button variant="outline" className="border-primary text-primary hover:bg-primary/10" disabled>
-                      <Dices className="mr-2 h-4 w-4" /> Roll Dice
-                    </Button>
-                    <Button variant="outline" className="border-primary text-primary hover:bg-primary/10" disabled>
-                      <Layers3 className="mr-2 h-4 w-4" /> Draw Card
-                    </Button>
-                  </div>
+                   {/* Action buttons removed from here */}
                 </>
               )}
             </div>
@@ -330,11 +301,9 @@ export function HuntersNexusUI() {
           </DialogContent>
         </Dialog>
 
-        {/* Right Sidebar */}
         <aside className="w-full md:w-80 lg:w-96 border-l border-border p-4 flex-shrink-0 overflow-y-auto bg-card/50">
           <ScrollArea className="h-full">
             <div className="space-y-6">
-              {/* Dice Roller Card */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
@@ -414,7 +383,6 @@ export function HuntersNexusUI() {
                 </CardContent>
               </Card>
 
-              {/* Card Decks Card */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
@@ -458,7 +426,6 @@ export function HuntersNexusUI() {
                 </CardContent>
               </Card>
 
-              {/* Party Members Card */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center">
@@ -493,5 +460,3 @@ export function HuntersNexusUI() {
     </div>
   );
 }
-
-    
