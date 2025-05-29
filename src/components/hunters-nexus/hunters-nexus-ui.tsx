@@ -36,14 +36,17 @@ import {
   UserMinus,
   UserPlus,
   BookOpen,
+  Package // Added for Arsenal section
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace, combatDieFaceImages } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character } from '@/components/character-sheet/character-sheet-ui';
+import { charactersData, type Character } from '@/components/character-sheet/character-sheet-ui'; 
 import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { ArsenalCard as ActualArsenalCard } from '@/types/arsenal'; // For ArsenalCard type
+
 
 interface NexusRollResult {
   type: 'numbered' | 'combat';
@@ -54,7 +57,11 @@ interface NexusRollResult {
 
 const combatDieFaces: CombatDieFace[] = ['swordandshield', 'swordandshield', 'swordandshield', 'double-sword', 'blank', 'blank'];
 
-export function HuntersNexusUI() {
+interface HuntersNexusUIProps {
+  arsenalCards: ActualArsenalCard[];
+}
+
+export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const { toast } = useToast();
   const [nexusNumDice, setNexusNumDice] = useState(1);
   const [nexusDiceSides, setNexusDiceSides] = useState(6);
@@ -73,19 +80,24 @@ export function HuntersNexusUI() {
   const [currentNexusHp, setCurrentNexusHp] = useState<number | null>(null);
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
 
+  const [selectedCharacterArsenalId, setSelectedCharacterArsenalId] = useState<string | null>(null);
+
   useEffect(() => {
     if (selectedNexusCharacter) {
       setCurrentNexusHp(selectedNexusCharacter.baseStats.maxHp);
       setCurrentNexusSanity(selectedNexusCharacter.baseStats.maxSanity);
+      // Reset arsenal when character changes
+      setSelectedCharacterArsenalId(null); 
     } else {
       setCurrentNexusHp(null);
       setCurrentNexusSanity(null);
+      setSelectedCharacterArsenalId(null);
     }
   }, [selectedNexusCharacter]);
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
-    setPartyMembers([character]); // For now, party is just the selected character
+    setPartyMembers([character]); 
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -181,6 +193,9 @@ export function HuntersNexusUI() {
     return '[&>div]:bg-green-500';
   };
 
+  const currentEquippedArsenal = arsenalCards.find(ac => ac.id === selectedCharacterArsenalId);
+  const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
+
   return (
     <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
       <header className="flex items-center justify-between p-3 border-b border-border flex-shrink-0">
@@ -253,12 +268,48 @@ export function HuntersNexusUI() {
                     <div className="flex items-center text-sm"><Shield className="h-4 w-4 mr-1.5 text-gray-400"/> DEF: {selectedNexusCharacter.baseStats.def}</div>
                   </div>
 
+                  {/* Arsenal Selector Section */}
+                  <div className="mt-4 pt-4 border-t border-border">
+                      <Label htmlFor="nexus-arsenal-select" className="text-sm font-medium flex items-center">
+                          <Package className="mr-2 h-4 w-4 text-accent" /> Equipped Arsenal
+                      </Label>
+                      {criticalArsenalError ? (
+                           <Alert variant="destructive" className="mt-1">
+                                <AlertTitle>Arsenal Data Error</AlertTitle>
+                                <AlertDescription>{criticalArsenalError.description}</AlertDescription>
+                           </Alert>
+                      ) : (
+                        <Select
+                            value={selectedCharacterArsenalId || "none"}
+                            onValueChange={(value) => setSelectedCharacterArsenalId(value === "none" ? null : value)}
+                            disabled={!arsenalCards || arsenalCards.length === 0 || (arsenalCards.length > 0 && (arsenalCards[0].id.startsWith('error-') || arsenalCards[0].id.startsWith('warning-')))}
+                        >
+                            <SelectTrigger id="nexus-arsenal-select" className="mt-1">
+                                <SelectValue placeholder="Select Arsenal..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">None</SelectItem>
+                                {arsenalCards.filter(card => !card.id.startsWith('error-') && !card.id.startsWith('warning-')).map(card => (
+                                    <SelectItem key={card.id} value={card.id}>
+                                        {card.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      )}
+                      {currentEquippedArsenal && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                              Active Arsenal: {currentEquippedArsenal.name}
+                          </p>
+                      )}
+                  </div>
+
+
                   <div className="mt-4">
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm">Change Character</Button>
                     </DialogTrigger>
                   </div>
-                  {/* Action buttons removed from here */}
                 </div>
               ) : (
                 <>
@@ -268,7 +319,6 @@ export function HuntersNexusUI() {
                   <DialogTrigger asChild>
                      <Button variant="default">Select Character</Button>
                   </DialogTrigger>
-                   {/* Action buttons removed from here */}
                 </>
               )}
             </div>
@@ -460,3 +510,4 @@ export function HuntersNexusUI() {
     </div>
   );
 }
+
