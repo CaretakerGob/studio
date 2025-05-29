@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import Image from 'next/image'; // Import next/image
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,18 +37,17 @@ import {
   UserMinus,
   UserPlus,
   BookOpen,
-  Package, // Keep for potential future use, but not used now
+  Package, 
   AlertCircle,
   Sword as MeleeIcon,
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character, type CharacterStats, type StatName } from '@/components/character-sheet/character-sheet-ui';
-import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
+import { charactersData, type Character, type CharacterStats, type StatName } from '@/components/character-sheet/character-sheet-ui'; 
+import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui'; 
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-// ArsenalCard type might still be useful if other Nexus features use it, but not for selected arsenal display
 import type { ArsenalCard as ActualArsenalCard } from '@/types/arsenal';
 
 
@@ -61,10 +61,10 @@ interface NexusRollResult {
 const combatDieFaces: CombatDieFace[] = ['swordandshield', 'swordandshield', 'swordandshield', 'double-sword', 'blank', 'blank'];
 
 interface HuntersNexusUIProps {
-  // arsenalCards: ActualArsenalCard[]; // Removed as per request
+  arsenalCards: ActualArsenalCard[];
 }
 
-export function HuntersNexusUI({ }: HuntersNexusUIProps) { // Removed arsenalCards from props
+export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const { toast } = useToast();
   const [nexusNumDice, setNexusNumDice] = useState(1);
   const [nexusDiceSides, setNexusDiceSides] = useState(6);
@@ -83,21 +83,70 @@ export function HuntersNexusUI({ }: HuntersNexusUIProps) { // Removed arsenalCar
   const [currentNexusHp, setCurrentNexusHp] = useState<number | null>(null);
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
 
-  // Simplified effectiveNexusCharacterStats, no longer considers arsenals
+  const [selectedNexusArsenalId, setSelectedNexusArsenalId] = useState<string | null>(null);
+
+  const currentNexusArsenal = useMemo(() => {
+    if (!selectedNexusArsenalId || !arsenalCards || arsenalCards.length === 0) {
+      return null;
+    }
+    return arsenalCards.find(card => card.id === selectedNexusArsenalId) || null;
+  }, [selectedNexusArsenalId, arsenalCards]);
+
   const effectiveNexusCharacterStats = useMemo(() => {
+    console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentNexusArsenal?.name);
     if (!selectedNexusCharacter) {
       console.log("[Nexus UI] Memo: No selectedNexusCharacter for effectiveNexusCharacterStats.");
       return null;
     }
-    console.log("[Nexus UI] Memo: Calculating effectiveNexusCharacterStats. Base Character:", selectedNexusCharacter?.name);
-    const baseStats = { ...(selectedNexusCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }) };
-    console.log("[Nexus UI] Final effectiveNexusCharacterStats (base only):", baseStats);
-    return baseStats;
-  }, [selectedNexusCharacter]);
+    
+    let calculatedStats: CharacterStats = { 
+      ...(selectedNexusCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }) 
+    };
+
+    if (currentNexusArsenal) {
+      console.log("[Nexus UI] Applying GLOBAL arsenal modifiers from:", currentNexusArsenal.name, currentNexusArsenal);
+      calculatedStats.hp = (calculatedStats.hp || 0) + (currentNexusArsenal.hpMod || 0);
+      calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentNexusArsenal.maxHpMod || 0);
+      calculatedStats.mv = (calculatedStats.mv || 0) + (currentNexusArsenal.mvMod || 0);
+      calculatedStats.def = (calculatedStats.def || 0) + (currentNexusArsenal.defMod || 0);
+      calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentNexusArsenal.sanityMod || 0);
+      calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentNexusArsenal.maxSanityMod || 0);
+      // Melee/Ranged attack mods on ArsenalCard itself are applied to weapon stats, not directly here for now.
+    
+      if (currentNexusArsenal.items) {
+        currentNexusArsenal.items.forEach(item => {
+          if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
+            console.log(`[Nexus UI] Item '${item.abilityName}' is GEAR. Parsed Modifiers:`, JSON.stringify(item.parsedStatModifiers));
+            item.parsedStatModifiers.forEach(mod => {
+              const statKey = mod.targetStat as keyof CharacterStats;
+              if (statKey in calculatedStats && typeof (calculatedStats[statKey]) === 'number') {
+                console.log(`[Nexus UI] APPLYING GEAR MODS for ${item.abilityName}: ${statKey} by ${mod.value}`);
+                (calculatedStats[statKey] as number) = (calculatedStats[statKey] as number) + mod.value;
+              }
+            });
+          }
+        });
+      }
+    }
+
+    // Ensure stats don't go below 0 (or 1 for max values)
+    calculatedStats.hp = Math.max(0, calculatedStats.hp);
+    calculatedStats.maxHp = Math.max(1, calculatedStats.maxHp);
+    calculatedStats.mv = Math.max(0, calculatedStats.mv);
+    calculatedStats.def = Math.max(0, calculatedStats.def);
+    calculatedStats.sanity = Math.max(0, calculatedStats.sanity);
+    calculatedStats.maxSanity = Math.max(1, calculatedStats.maxSanity);
+
+    if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
+    if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
+
+    console.log("[Nexus UI] Final effectiveNexusCharacterStats:", calculatedStats);
+    return calculatedStats;
+  }, [selectedNexusCharacter, currentNexusArsenal]);
 
 
   useEffect(() => {
-    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name);
+    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats);
     if (effectiveNexusCharacterStats) {
       console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
       setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
@@ -107,14 +156,14 @@ export function HuntersNexusUI({ }: HuntersNexusUIProps) { // Removed arsenalCar
       setCurrentNexusHp(null);
       setCurrentNexusSanity(null);
     }
-  }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
+  }, [selectedNexusCharacter, effectiveNexusCharacterStats]); // Added selectedNexusCharacter
 
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
-    setPartyMembers([character]);
+    setPartyMembers([character]); // For now, party is just the selected character
     setIsCharacterSelectionDialogOpen(false);
-    // No need to reset selectedCharacterArsenalId as it's removed
+    setSelectedNexusArsenalId(null); // Reset arsenal when character changes
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
 
@@ -191,7 +240,7 @@ export function HuntersNexusUI({ }: HuntersNexusUIProps) { // Removed arsenalCar
     const setter = stat === 'hp' ? setCurrentNexusHp : setCurrentNexusSanity;
 
     setter(prevStatVal => {
-      if (prevStatVal === null) return maxVal;
+      if (prevStatVal === null) return maxVal; // Should not happen if effectiveStats are present
       const newValue = Math.max(0, Math.min(prevStatVal + delta, maxVal));
       return newValue;
     });
@@ -207,6 +256,7 @@ export function HuntersNexusUI({ }: HuntersNexusUIProps) { // Removed arsenalCar
     return '[&>div]:bg-green-500';
   };
 
+  const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
 
   return (
     <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
@@ -284,7 +334,59 @@ export function HuntersNexusUI({ }: HuntersNexusUIProps) { // Removed arsenalCar
                     <div className="flex items-center text-xs"><Footprints className="h-3 w-3 mr-1.5 text-green-500" /> MV: {effectiveNexusCharacterStats.mv}</div>
                     <div className="flex items-center text-xs"><Shield className="h-3 w-3 mr-1.5 text-gray-400" /> DEF: {effectiveNexusCharacterStats.def}</div>
                   </div>
-                  {/* Arsenal Selector Removed */}
+                  
+                  {/* Arsenal Selector and Image Display */}
+                  <div className="mt-4 pt-3 border-t border-muted-foreground/20">
+                    <Label htmlFor="nexusArsenalSelect" className="text-md font-medium text-accent flex items-center mb-1">
+                        <Package className="mr-2 h-5 w-5" /> Selected Arsenal
+                    </Label>
+                    {criticalArsenalError ? (
+                         <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>{criticalArsenalError.name}</AlertTitle>
+                            <AlertDescription>{criticalArsenalError.description} {criticalArsenalError.items?.[0]?.abilityName}</AlertDescription>
+                        </Alert>
+                    ) : (
+                        <Select
+                            value={selectedNexusArsenalId || "none"}
+                            onValueChange={(value) => setSelectedNexusArsenalId(value === "none" ? null : value)}
+                            disabled={!arsenalCards || arsenalCards.length === 0 || (arsenalCards.length === 1 && arsenalCards[0].id.startsWith('error-'))}
+                        >
+                            <SelectTrigger id="nexusArsenalSelect">
+                                <SelectValue placeholder="No Arsenal Equipped..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">None</SelectItem>
+                                {arsenalCards.filter(card => !card.id.startsWith('error-')).map(card => (
+                                <SelectItem key={card.id} value={card.id}>
+                                    {card.name}
+                                </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                    {currentNexusArsenal && (
+                        <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
+                             <h4 className="text-sm font-semibold text-accent">{currentNexusArsenal.name}</h4>
+                            {currentNexusArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentNexusArsenal.description}</p>}
+                            {(currentNexusArsenal.imageUrlFront || currentNexusArsenal.imageUrlBack) && (
+                                <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
+                                    {currentNexusArsenal.imageUrlFront && (
+                                    <div className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30">
+                                        <Image src={currentNexusArsenal.imageUrlFront} alt={`${currentNexusArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
+                                    </div>
+                                    )}
+                                    {currentNexusArsenal.imageUrlBack && (
+                                    <div className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30">
+                                        <Image src={currentNexusArsenal.imageUrlBack} alt={`${currentNexusArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
+                                    </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                  </div>
+
                 </div>
               ) : (
                 <>
@@ -292,7 +394,7 @@ export function HuntersNexusUI({ }: HuntersNexusUIProps) { // Removed arsenalCar
                   <h2 className="text-lg md:text-xl font-semibold text-muted-foreground">No Character Active</h2>
                   <p className="text-xs md:text-sm text-muted-foreground mb-4 md:mb-6">Choose a character to manage for this session.</p>
                   <DialogTrigger asChild>
-                    <Button variant="default">Select Character</Button>
+                     <Button variant="default">Select Character</Button>
                   </DialogTrigger>
                 </>
               )}
@@ -485,3 +587,4 @@ export function HuntersNexusUI({ }: HuntersNexusUIProps) { // Removed arsenalCar
     </div>
   );
 }
+
