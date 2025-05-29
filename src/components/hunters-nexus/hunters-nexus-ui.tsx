@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -76,8 +76,8 @@ export function HuntersNexusUI() {
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
-    setPartyMembers([character]);
-    setIsCharacterSelectionDialogOpen(false);
+    setPartyMembers([character]); // For now, party is just the selected character
+    setIsCharacterSelectionDialogOpen(false); // Close the dialog after selection
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
 
@@ -174,35 +174,9 @@ export function HuntersNexusUI() {
             <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
               <Layers3 className="mr-2 h-4 w-4" /> Draw Card
             </Button>
-             <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
-                 {/* Trigger is part of conditional rendering below */}
-                <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Select Character for Nexus</DialogTitle>
-                    <DialogDescription>Choose a character template to use in this session.</DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="h-[300px] mt-4">
-                    <div className="space-y-2">
-                    {charactersData.map((char) => (
-                        <Button
-                        key={char.id}
-                        variant="ghost"
-                        className="w-full justify-start p-2 h-auto"
-                        onClick={() => handleSelectCharacterForNexus(char)}
-                        >
-                        <Avatar className="h-10 w-10 mr-3">
-                            <AvatarImage src={char.imageUrl || `https://placehold.co/40x40.png?text=${char.name.substring(0,1)}`} alt={char.name} data-ai-hint="character avatar" />
-                            <AvatarFallback>{char.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        {char.name}
-                        </Button>
-                    ))}
-                    </div>
-                </ScrollArea>
-                </DialogContent>
-            </Dialog>
           </div>
-
+          
+          <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
             <div className="flex-1 flex flex-col items-center justify-center bg-card rounded-lg p-4 md:p-8 shadow-inner">
               {selectedNexusCharacter ? (
                 <>
@@ -242,6 +216,32 @@ export function HuntersNexusUI() {
                 </>
               )}
             </div>
+            
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                  <DialogTitle>Select Character for Nexus</DialogTitle>
+                  <DialogDescription>Choose a character template to use in this session.</DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="h-[300px] mt-4">
+                  <div className="space-y-2">
+                  {charactersData.map((char) => (
+                      <Button
+                      key={char.id}
+                      variant="ghost"
+                      className="w-full justify-start p-2 h-auto"
+                      onClick={() => handleSelectCharacterForNexus(char)}
+                      >
+                      <Avatar className="h-10 w-10 mr-3">
+                          <AvatarImage src={char.imageUrl || `https://placehold.co/40x40.png?text=${char.name.substring(0,1)}`} alt={char.name} data-ai-hint="character avatar" />
+                          <AvatarFallback>{char.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {char.name}
+                      </Button>
+                  ))}
+                  </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
         </main>
 
         <aside className="w-full md:w-80 lg:w-96 border-l border-border p-4 flex-shrink-0 overflow-y-auto bg-card/50">
@@ -404,3 +404,4 @@ export function HuntersNexusUI() {
   );
 }
 
+    
