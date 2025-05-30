@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { Character, CharacterStatDefinition, CharacterStats, StatName } from '@/types/character';
-import { Heart, Footprints, Shield, Brain, UserCircle, UserMinus as Minus, UserPlus as Plus } from "lucide-react"; 
+import { Heart, Footprints, Shield, Brain, UserCircle, UserMinus as Minus, UserPlus as Plus, Settings } from "lucide-react";
 
 export const statDefinitions: CharacterStatDefinition[] = [
   { id: 'hp', label: "Health Points (HP)", icon: Heart, description: "Your character's vitality. Reaching 0 HP usually means defeat." },
@@ -36,6 +36,9 @@ interface CoreStatsSectionProps {
   handleBuyStatPoint: (statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>) => void;
   handleSellStatPoint: (statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>) => void;
   customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>, { cost: number; max: number; base: number }>;
+  sessionMaxHpModifier: number;
+  sessionMaxSanityModifier: number;
+  handleSessionMaxStatModifierChange: (statType: 'hp' | 'sanity', delta: number) => void;
 }
 
 export function CoreStatsSection({
@@ -47,7 +50,10 @@ export function CoreStatsSection({
   decrementStat,
   handleBuyStatPoint,
   handleSellStatPoint,
-  customStatPointBuyConfig: propCustomStatPointBuyConfig, 
+  customStatPointBuyConfig: propCustomStatPointBuyConfig,
+  sessionMaxHpModifier,
+  sessionMaxSanityModifier,
+  handleSessionMaxStatModifierChange,
 }: CoreStatsSectionProps) {
 
   if (!editableCharacterData) return null;
@@ -65,8 +71,22 @@ export function CoreStatsSection({
   const StatInputComponent: React.FC<{ def: CharacterStatDefinition }> = ({ def }) => {
     const isProgressStat = def.id === 'hp' || def.id === 'sanity';
     const currentValue = effectiveBaseStats[def.id] || 0;
-    const maxValue = def.id === 'hp' ? effectiveBaseStats.maxHp : (def.id === 'sanity' ? effectiveBaseStats.maxSanity : undefined);
-    const progressColorClass = isProgressStat ? getStatProgressColorClass(currentValue, maxValue) : '[&>div]:bg-primary';
+    
+    let effectiveMax = 0;
+    let sessionModifier = 0;
+
+    if (def.id === 'hp') {
+      sessionModifier = sessionMaxHpModifier;
+      effectiveMax = (effectiveBaseStats.maxHp || 0) + sessionModifier;
+    } else if (def.id === 'sanity') {
+      sessionModifier = sessionMaxSanityModifier;
+      effectiveMax = (effectiveBaseStats.maxSanity || 0) + sessionModifier;
+    } else {
+       effectiveMax = currentValue; // For MV, DEF, max is their current effective value
+    }
+    effectiveMax = Math.max(1, effectiveMax); // Ensure max is at least 1
+
+    const progressColorClass = isProgressStat ? getStatProgressColorClass(currentValue, effectiveMax) : '[&>div]:bg-primary';
 
 
     return (
@@ -93,23 +113,30 @@ export function CoreStatsSection({
             </Button>
           </div>
         </div>
-        {isProgressStat && maxValue !== undefined && (
+        {isProgressStat && (
           <div className="mt-2">
-            <Progress value={(currentValue / maxValue) * 100 || 0} className={cn("h-3", progressColorClass)} />
-            <p className="text-xs text-muted-foreground text-right mt-1">{currentValue} / {maxValue}</p>
-            { (def.id === 'hp' || def.id === 'sanity') &&
-                <div className="flex items-center gap-2 mt-2">
-                    <Label htmlFor={`max${def.id.charAt(0).toUpperCase() + def.id.slice(1)}`} className="text-sm text-muted-foreground whitespace-nowrap">Max {def.label.split(" ")[0]}:</Label>
-                    <Input
-                        id={`max${def.id.charAt(0).toUpperCase() + def.id.slice(1)}`}
-                        type="number"
-                        value={maxValue}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => handleStatChange(def.id === 'hp' ? 'maxHp' : 'maxSanity', e.target.value)}
-                        className="w-20 h-8 text-center"
-                        min="1"
-                    />
-                </div>
-            }
+            <Progress value={(currentValue / effectiveMax) * 100 || 0} className={cn("h-3", progressColorClass)} />
+            <p className="text-xs text-muted-foreground text-right mt-1">{currentValue} / {effectiveMax}</p>
+            
+            {/* Max Stat Modifier Section */}
+            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-muted-foreground/20">
+                <Label htmlFor={`maxMod-${def.id}`} className="text-sm text-muted-foreground whitespace-nowrap flex items-center">
+                  <Settings className="mr-1 h-3 w-3"/> Max Mod:
+                </Label>
+                 <Button variant="outline" size="icon" onClick={() => handleSessionMaxStatModifierChange(def.id as 'hp' | 'sanity', -1)} className="h-6 w-6">
+                    <Minus className="h-3 w-3" />
+                </Button>
+                <Input
+                    id={`maxMod-${def.id}`}
+                    type="number"
+                    value={sessionModifier}
+                    readOnly 
+                    className="w-12 h-6 text-center text-sm font-bold p-0"
+                />
+                <Button variant="outline" size="icon" onClick={() => handleSessionMaxStatModifierChange(def.id as 'hp' | 'sanity', 1)} className="h-6 w-6">
+                    <Plus className="h-3 w-3" />
+                </Button>
+            </div>
           </div>
         )}
         {def.description && <p className="text-xs text-muted-foreground mt-1">{def.description}</p>}
@@ -124,19 +151,27 @@ export function CoreStatsSection({
    }> = ({ statKey, label, Icon }) => {
     if (!editableCharacterData || editableCharacterData.id !== 'custom') return null;
 
-    const config = propCustomStatPointBuyConfig[statKey]; 
-    const baseValueFromTemplate = editableCharacterData.baseStats[statKey];
+    const config = propCustomStatPointBuyConfig[statKey];
+    const baseValueFromTemplate = editableCharacterData.baseStats[statKey]; // This is points invested
     const currentCP = editableCharacterData.characterPoints || 0;
 
-    
-    let displayedValue = effectiveBaseStats[statKey] || 0;
-    let displayedMaxValue = (statKey === 'hp' ? effectiveBaseStats.maxHp : (statKey === 'sanity' ? effectiveBaseStats.maxSanity : undefined )) || 0;
-    
-     if (baseValueFromTemplate >= 1) {
-        displayedValue = Math.max(1, displayedValue);
-        if (statKey === 'hp') displayedMaxValue = Math.max(1, effectiveBaseStats.maxHp || 0);
-        if (statKey === 'sanity') displayedMaxValue = Math.max(1, effectiveBaseStats.maxSanity || 0);
+
+    let displayedValue = baseValueFromTemplate || 0; // For custom, effectiveBaseStats reflects the bought points
+    let displayedMaxValue = 0;
+    let sessionModifierValue = 0;
+
+
+    if (statKey === 'hp') {
+      sessionModifierValue = sessionMaxHpModifier;
+      displayedMaxValue = (editableCharacterData.baseStats.maxHp || 0) + sessionModifierValue;
+    } else if (statKey === 'sanity') {
+      sessionModifierValue = sessionMaxSanityModifier;
+      displayedMaxValue = (editableCharacterData.baseStats.maxSanity || 0) + sessionModifierValue;
+    } else {
+        displayedMaxValue = displayedValue; // For MV/DEF, max is current for custom buy
     }
+    displayedMaxValue = Math.max(1, displayedMaxValue);
+
 
     const progressColorClass = (statKey === 'hp' || statKey === 'sanity') ? getStatProgressColorClass(displayedValue, displayedMaxValue) : '[&>div]:bg-primary';
 
@@ -158,11 +193,30 @@ export function CoreStatsSection({
             </Button>
           </div>
         </div>
-         <p className="text-xs text-muted-foreground">Base Points Invested: {baseValueFromTemplate} / {config.max} | Cost: {config.cost} CP per point</p>
+         <p className="text-xs text-muted-foreground">Invested: {baseValueFromTemplate} / {config.max} | Cost: {config.cost} CP per point</p>
         {(statKey === 'hp' || statKey === 'sanity') && (
           <div className="mt-2">
             <Progress value={(displayedValue / displayedMaxValue) * 100 || 0} className={cn("h-3", progressColorClass)} />
             <p className="text-xs text-muted-foreground text-right mt-1">{displayedValue} / {displayedMaxValue}</p>
+            {/* Max Stat Modifier Section for Custom Character HP/Sanity */}
+            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-muted-foreground/20">
+                <Label htmlFor={`customMaxMod-${statKey}`} className="text-sm text-muted-foreground whitespace-nowrap flex items-center">
+                  <Settings className="mr-1 h-3 w-3"/> Max Mod:
+                </Label>
+                 <Button variant="outline" size="icon" onClick={() => handleSessionMaxStatModifierChange(statKey as 'hp' | 'sanity', -1)} className="h-6 w-6">
+                    <Minus className="h-3 w-3" />
+                </Button>
+                <Input
+                    id={`customMaxMod-${statKey}`}
+                    type="number"
+                    value={sessionModifierValue}
+                    readOnly
+                    className="w-12 h-6 text-center text-sm font-bold p-0"
+                />
+                <Button variant="outline" size="icon" onClick={() => handleSessionMaxStatModifierChange(statKey as 'hp' | 'sanity', 1)} className="h-6 w-6">
+                    <Plus className="h-3 w-3" />
+                </Button>
+            </div>
           </div>
         )}
       </div>
@@ -197,4 +251,5 @@ export function CoreStatsSection({
     </div>
   );
 }
+
 
