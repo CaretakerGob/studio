@@ -124,6 +124,8 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
   const [currentNexusMv, setCurrentNexusMv] = useState<number | null>(null);
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
+  const [nexusSessionMaxHpModifier, setNexusSessionMaxHpModifier] = useState(0);
+  const [nexusSessionMaxSanityModifier, setNexusSessionMaxSanityModifier] = useState(0);
   
   // Card Deck State
   const [nexusDrawnCardsHistory, setNexusDrawnCardsHistory] = useState<GameCard[]>([]);
@@ -156,29 +158,23 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
 
   const currentNexusArsenal = useMemo(() => {
     if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) {
-      console.log("[Nexus UI] currentNexusArsenal returning null due to no selection or no cards");
       return null;
     }
     const card = arsenalCards.find(c => c.id === selectedCharacterArsenalId);
     if (!card || card.id.startsWith('error-')) {
-      console.log("[Nexus UI] currentNexusArsenal returning null because card not found or is error card", card);
       return null;
     }
-    console.log("[Nexus UI] currentNexusArsenal updated:", card.name);
     return card;
   }, [selectedCharacterArsenalId, arsenalCards]);
 
 
   const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
-    console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentNexusArsenal?.name);
     if (!selectedNexusCharacter) {
-      console.log("[Nexus UI] Memo: No selectedNexusCharacter for effectiveNexusCharacterStats.");
       return null;
     }
     let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(selectedNexusCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
 
     if (currentNexusArsenal) {
-      console.log("[Nexus UI] Applying GLOBAL arsenal modifiers from:", currentNexusArsenal.name, currentNexusArsenal);
       calculatedStats.hp = (calculatedStats.hp || 0) + (currentNexusArsenal.hpMod || 0);
       calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentNexusArsenal.maxHpMod || 0);
       calculatedStats.mv = (calculatedStats.mv || 0) + (currentNexusArsenal.mvMod || 0);
@@ -190,7 +186,6 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
       if (currentNexusArsenal.items) {
         currentNexusArsenal.items.forEach(item => {
           if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
-             console.log(`[Nexus UI] Item '${item.abilityName}' is GEAR. Parsed Modifiers:`, JSON.stringify(item.parsedStatModifiers));
             item.parsedStatModifiers.forEach(mod => {
               const statKey = mod.targetStat as keyof CharacterStats;
               if (statKey in calculatedStats && typeof (calculatedStats[statKey]) === 'number') {
@@ -198,9 +193,6 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                     (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0, 
                     (calculatedStats[statKey] as number) + mod.value
                 );
-                 console.log(`[Nexus UI] APPLYING GEAR MODS for ${item.abilityName}: Applied mod ${mod.targetStat} ${mod.value}. New value: ${calculatedStats[statKey]}`);
-              } else {
-                 console.warn(`[Nexus UI] StatKey '${statKey}' from item '${item.abilityName}' not found in CharacterStats or not a number.`);
               }
             });
           }
@@ -220,24 +212,24 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
     
-    console.log("[Nexus UI] Final effectiveNexusCharacterStats:", calculatedStats);
     return calculatedStats;
   }, [selectedNexusCharacter, currentNexusArsenal]);
 
   useEffect(() => {
-    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats);
     if (selectedNexusCharacter && effectiveNexusCharacterStats) {
-      console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
       setCurrentNexusHp(effectiveNexusCharacterStats.hp);
       setCurrentNexusSanity(effectiveNexusCharacterStats.sanity);
       setCurrentNexusMv(effectiveNexusCharacterStats.mv);
       setCurrentNexusDef(effectiveNexusCharacterStats.def);
+      setNexusSessionMaxHpModifier(0); // Reset session modifiers when character changes
+      setNexusSessionMaxSanityModifier(0);
     } else {
-      console.log("[Nexus UI] No character selected or no effective stats, resetting HP/Sanity/MV/DEF to null.");
       setCurrentNexusHp(null);
       setCurrentNexusSanity(null);
       setCurrentNexusMv(null);
       setCurrentNexusDef(null);
+      setNexusSessionMaxHpModifier(0);
+      setNexusSessionMaxSanityModifier(0);
     }
   }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
 
@@ -259,12 +251,12 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
           const maxRounds = parseCooldownRounds(String(ability.cooldown));
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
-            newCurrentCDs[ability.id] = maxRounds; // Initialize current to max
+            newCurrentCDs[ability.id] = maxRounds; 
           }
         }
         if (ability.maxQuantity !== undefined) {
           newMaxQTs[ability.id] = ability.maxQuantity;
-          newCurrentQTs[ability.id] = ability.maxQuantity; // Initialize current to max
+          newCurrentQTs[ability.id] = ability.maxQuantity; 
         }
       });
 
@@ -362,10 +354,12 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
         newValue = Math.max(0, newValue); 
         
         if (stat === 'hp' && effectiveNexusCharacterStats.maxHp !== undefined) {
-          newValue = Math.min(newValue, effectiveNexusCharacterStats.maxHp);
+          const effectiveMaxHp = (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier;
+          newValue = Math.min(newValue, effectiveMaxHp);
         } else if (stat === 'sanity' && effectiveNexusCharacterStats.maxSanity !== undefined) {
-          newValue = Math.min(newValue, effectiveNexusCharacterStats.maxSanity);
-        } else if (stat === 'mv' && effectiveNexusCharacterStats.mv !== undefined) { // MV and DEF are capped by their base effective value
+          const effectiveMaxSanity = (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier;
+          newValue = Math.min(newValue, effectiveMaxSanity);
+        } else if (stat === 'mv' && effectiveNexusCharacterStats.mv !== undefined) { 
             newValue = Math.min(newValue, effectiveNexusCharacterStats.mv);
         } else if (stat === 'def' && effectiveNexusCharacterStats.def !== undefined) {
             newValue = Math.min(newValue, effectiveNexusCharacterStats.def);
@@ -373,6 +367,47 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
         setter(newValue); 
     }
   };
+
+  const handleNexusSessionMaxStatModifierChange = (statType: 'hp' | 'sanity', delta: number) => {
+    if (!effectiveNexusCharacterStats) return;
+
+    if (statType === 'hp') {
+      setNexusSessionMaxHpModifier(prevMod => {
+        const newMod = prevMod + delta;
+        const baseMaxHp = effectiveNexusCharacterStats.maxHp || 1;
+        const newEffectiveMax = Math.max(1, baseMaxHp + newMod);
+        
+        // Adjust modifier if newEffectiveMax would be less than 1
+        const finalNewMod = newEffectiveMax < 1 ? 1 - baseMaxHp : newMod;
+
+        // Cap current HP
+        if (currentNexusHp !== null) {
+          const finalEffectiveMaxForCapping = Math.max(1, baseMaxHp + finalNewMod);
+          if (currentNexusHp > finalEffectiveMaxForCapping) {
+            setCurrentNexusHp(finalEffectiveMaxForCapping);
+          }
+        }
+        return finalNewMod;
+      });
+    } else if (statType === 'sanity') {
+      setNexusSessionMaxSanityModifier(prevMod => {
+        const newMod = prevMod + delta;
+        const baseMaxSanity = effectiveNexusCharacterStats.maxSanity || 1;
+        const newEffectiveMax = Math.max(1, baseMaxSanity + newMod);
+
+        const finalNewMod = newEffectiveMax < 1 ? 1 - baseMaxSanity : newMod;
+
+        if (currentNexusSanity !== null) {
+          const finalEffectiveMaxForCapping = Math.max(1, baseMaxSanity + finalNewMod);
+          if (currentNexusSanity > finalEffectiveMaxForCapping) {
+            setCurrentNexusSanity(finalEffectiveMaxForCapping);
+          }
+        }
+        return finalNewMod;
+      });
+    }
+  };
+
 
   const handleIncrementNexusCooldown = (abilityId: string) => { setNexusCurrentAbilityCooldowns(prev => ({ ...prev, [abilityId]: Math.min((prev[abilityId] || 0) + 1, nexusMaxAbilityCooldowns[abilityId] || Infinity) })); };
   const handleDecrementNexusCooldown = (abilityId: string) => { setNexusCurrentAbilityCooldowns(prev => ({ ...prev, [abilityId]: Math.max((prev[abilityId] || 0) - 1, 0) })); };
@@ -505,11 +540,11 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                                 <div className="flex items-center gap-1">
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={currentNexusHp === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
                                 <Input type="number" readOnly value={currentNexusHp} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={currentNexusHp === effectiveNexusCharacterStats.maxHp}><UserPlus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={currentNexusHp >= ((effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)}><UserPlus className="h-2.5 w-2.5" /></Button>
                                 </div>
                             </div>
-                            <Progress value={(currentNexusHp / (effectiveNexusCharacterStats.maxHp || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, effectiveNexusCharacterStats.maxHp, 'hp'))} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {effectiveNexusCharacterStats.maxHp}</p>
+                            <Progress value={(currentNexusHp / Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier, 'hp'))} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {(effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier}</p>
                             </div>
                         )}
                         {/* Sanity Tracker */}
@@ -520,11 +555,11 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                                 <div className="flex items-center gap-1">
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={currentNexusSanity === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
                                 <Input type="number" readOnly value={currentNexusSanity} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={currentNexusSanity === effectiveNexusCharacterStats.maxSanity}><UserPlus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={currentNexusSanity >= ((effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)}><UserPlus className="h-2.5 w-2.5" /></Button>
                                 </div>
                             </div>
-                            <Progress value={(currentNexusSanity / (effectiveNexusCharacterStats.maxSanity || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {effectiveNexusCharacterStats.maxSanity}</p>
+                            <Progress value={(currentNexusSanity / Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier, 'sanity'))} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {(effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier}</p>
                             </div>
                         )}
                         {/* MV Display */}
@@ -707,33 +742,45 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                     {/* HP Tracker */}
                     {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
-                      <div>
-                        <div className="flex items-center justify-between mb-0.5">
-                          <Label className="flex items-center text-xs font-medium"><Heart className="mr-1.5 h-3 w-3 text-red-500" />HP</Label>
-                          <div className="flex items-center gap-1">
-                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={currentNexusHp === 0}><Minus className="h-2.5 w-2.5" /></Button>
-                            <Input type="number" readOnly value={currentNexusHp} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={currentNexusHp === effectiveNexusCharacterStats.maxHp}><Plus className="h-2.5 w-2.5" /></Button>
-                          </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                                <Label className="flex items-center text-xs font-medium"><Heart className="mr-1.5 h-3 w-3 text-red-500" />HP</Label>
+                                <div className="flex items-center gap-1">
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={currentNexusHp === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                    <Input type="number" readOnly value={currentNexusHp} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={currentNexusHp >= Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)}><Plus className="h-2.5 w-2.5" /></Button>
+                                </div>
+                            </div>
+                            <Progress value={(currentNexusHp / Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier), 'hp'))} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)}</p>
+                            <div className="flex items-center gap-1 mt-1">
+                                <Label htmlFor="nexusMaxMod-hp" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('hp', -1)}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Input id="nexusMaxMod-hp" type="number" value={nexusSessionMaxHpModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('hp', 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                            </div>
                         </div>
-                        <Progress value={(currentNexusHp / (effectiveNexusCharacterStats.maxHp || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, effectiveNexusCharacterStats.maxHp, 'hp'))} />
-                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {effectiveNexusCharacterStats.maxHp}</p>
-                      </div>
                     )}
                     {/* Sanity Tracker */}
                     {currentNexusSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (
-                      <div>
-                        <div className="flex items-center justify-between mb-0.5">
-                          <Label className="flex items-center text-xs font-medium"><Brain className="mr-1.5 h-3 w-3 text-blue-400" />Sanity</Label>
-                          <div className="flex items-center gap-1">
-                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={currentNexusSanity === 0}><Minus className="h-2.5 w-2.5" /></Button>
-                            <Input type="number" readOnly value={currentNexusSanity} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={currentNexusSanity === effectiveNexusCharacterStats.maxSanity}><Plus className="h-2.5 w-2.5" /></Button>
-                          </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                                <Label className="flex items-center text-xs font-medium"><Brain className="mr-1.5 h-3 w-3 text-blue-400" />Sanity</Label>
+                                <div className="flex items-center gap-1">
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={currentNexusSanity === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                    <Input type="number" readOnly value={currentNexusSanity} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={currentNexusSanity >= Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)}><Plus className="h-2.5 w-2.5" /></Button>
+                                </div>
+                            </div>
+                            <Progress value={(currentNexusSanity / Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier), 'sanity'))} />
+                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)}</p>
+                             <div className="flex items-center gap-1 mt-1">
+                                <Label htmlFor="nexusMaxMod-sanity" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('sanity', -1)}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Input id="nexusMaxMod-sanity" type="number" value={nexusSessionMaxSanityModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('sanity', 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                            </div>
                         </div>
-                        <Progress value={(currentNexusSanity / (effectiveNexusCharacterStats.maxSanity || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} />
-                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {effectiveNexusCharacterStats.maxSanity}</p>
-                      </div>
                     )}
                     {/* MV Tracker */}
                     {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (
@@ -802,9 +849,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                 </div>
               </ScrollArea>
               <DialogFooter className="mt-4">
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Close</Button>
-                </DialogClose>
+                <DialogClose asChild><Button type="button" variant="outline">Close</Button></DialogClose>
               </DialogFooter>
             </>
           )}
