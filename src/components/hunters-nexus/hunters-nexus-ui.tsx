@@ -45,6 +45,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { charactersData, type Character, type CharacterStats, type StatName } from '@/components/character-sheet/character-sheet-ui';
 import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
+import { GameCardDisplay } from '@/components/card-generator/game-card-display';
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ArsenalCard as ActualArsenalCard, ArsenalItem } from '@/types/arsenal';
@@ -82,10 +83,10 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const [isCharacterSelectionDialogOpen, setIsCharacterSelectionDialogOpen] = useState(false);
   const [partyMembers, setPartyMembers] = useState<Character[]>([]);
 
+  const [nexusDrawnCardsHistory, setNexusDrawnCardsHistory] = useState<GameCard[]>([]);
   const [nexusSelectedDeckName, setNexusSelectedDeckName] = useState<string | undefined>(undefined);
-  const [nexusLatestDrawnCard, setNexusLatestDrawnCard] = useState<GameCard | null>(null);
   const [nexusCardKey, setNexusCardKey] = useState(0);
-
+  
   const [currentNexusHp, setCurrentNexusHp] = useState<number | null>(null);
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
   const [currentNexusMv, setCurrentNexusMv] = useState<number | null>(null);
@@ -174,7 +175,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       setCurrentNexusMv(null);
       setCurrentNexusDef(null);
     }
-  }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
+  }, [selectedNexusCharacter, effectiveNexusCharacterStats, currentNexusArsenal]);
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
@@ -241,7 +242,9 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     }
     const randomIndex = Math.floor(Math.random() * deck.cards.length);
     const drawnCard = deck.cards[randomIndex];
-    setNexusLatestDrawnCard(drawnCard);
+    
+    const newHistory = [drawnCard, ...nexusDrawnCardsHistory].slice(0, 5);
+    setNexusDrawnCardsHistory(newHistory);
     setNexusCardKey(prev => prev + 1);
     toast({ title: "Card Drawn!", description: `Drew ${drawnCard.name} from ${deck.name}.` });
   };
@@ -621,35 +624,48 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                     <BookOpen className="mr-2 h-4 w-4" /> Draw Card
                 </Button>
                 </div>
-                {nexusLatestDrawnCard && (
-                    <Card key={nexusCardKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
+                {nexusDrawnCardsHistory.length > 0 ? (
+                    <Card key={`${nexusDrawnCardsHistory[0].id}-${nexusCardKey}`} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
                         <CardHeader className="p-2">
                             <CardTitle className="text-sm flex items-center justify-between">
                                 <span>Latest Card Drawn:</span>
-                                <Badge variant="secondary" className="text-xs">{nexusLatestDrawnCard.deck}</Badge>
+                                <Badge variant="secondary" className="text-xs">{nexusDrawnCardsHistory[0].deck}</Badge>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-2 text-left space-y-2">
-                            {nexusLatestDrawnCard.imageUrl && (
-                                <button
-                                    type="button"
-                                    onClick={() => openImageModal(nexusLatestDrawnCard.imageUrl!)}
-                                    className="relative w-full max-w-[200px] mx-auto aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                                    aria-label={`View ${nexusLatestDrawnCard.name} card`}
-                                >
-                                    <Image 
-                                        src={nexusLatestDrawnCard.imageUrl} 
-                                        alt={nexusLatestDrawnCard.name} 
-                                        fill 
-                                        style={{ objectFit: 'contain' }}
-                                        data-ai-hint={nexusLatestDrawnCard.dataAiHint || nexusLatestDrawnCard.name.toLowerCase()}
-                                    />
-                                </button>
-                            )}
-                            <p className="font-semibold text-primary text-xs">{nexusLatestDrawnCard.name} <span className="text-xs text-muted-foreground">({nexusLatestDrawnCard.type})</span></p>
-                            <p className="text-xs text-muted-foreground mt-1">{nexusLatestDrawnCard.description}</p>
+                            <GameCardDisplay
+                                card={nexusDrawnCardsHistory[0]}
+                                size="medium" 
+                                onClick={() => nexusDrawnCardsHistory[0].imageUrl && openImageModal(nexusDrawnCardsHistory[0].imageUrl)}
+                                isButton={!!nexusDrawnCardsHistory[0].imageUrl}
+                                className="mx-auto"
+                             />
                         </CardContent>
                     </Card>
+                ) : (
+                     <p className="text-xs text-muted-foreground text-center pt-2">No card drawn yet.</p>
+                )}
+
+                {nexusDrawnCardsHistory.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Previously Drawn</h4>
+                    {nexusDrawnCardsHistory.slice(1).length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {nexusDrawnCardsHistory.slice(1, 5).map((card, idx) => (
+                          <GameCardDisplay
+                            key={`${card.id}-hist-${idx}`}
+                            card={card}
+                            size="small"
+                            onClick={() => card.imageUrl && openImageModal(card.imageUrl)}
+                            isButton={!!card.imageUrl}
+                            className="w-full"
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center">Draw more cards to see history.</p>
+                    )}
+                  </div>
                 )}
             </CardContent>
             </Card>
@@ -722,7 +738,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              onClick={() => !touchEndX && !touchEndY && setEnlargedImageUrl(null)} // Closes on simple tap (if not a swipe)
+              onClick={() => !touchEndX && !touchEndY && setEnlargedImageUrl(null)} 
             >
               <Image
                 src={enlargedImageUrl}
@@ -737,3 +753,4 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     </Dialog>
   );
 }
+
