@@ -44,7 +44,7 @@ import {
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character, type CharacterStats, type StatName } from '@/components/character-sheet/character-sheet-ui'; 
+import { charactersData, type Character, type CharacterStats, type StatName } from '@/components/character-sheet/character-sheet-ui';
 import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
 import { GameCardDisplay } from '@/components/card-generator/game-card-display';
 import { useToast } from "@/hooks/use-toast";
@@ -71,9 +71,9 @@ interface HuntersNexusUIProps {
 
 export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const { toast } = useToast();
-  const [nexusNumDice, setNexusNumDice] = useState(1);
-  const [nexusDiceSides, setNexusDiceSides] = useState(6);
-  const [nexusNumCombatDice, setNexusNumCombatDice] = useState(1);
+  const [nexusNumDice, setNexusNumDice] = useState('1');
+  const [nexusDiceSides, setNexusDiceSides] = useState('6');
+  const [nexusNumCombatDice, setNexusNumCombatDice] = useState('1');
   const [nexusLatestRoll, setNexusLatestRoll] = useState<NexusRollResult | null>(null);
   const [nexusRollKey, setNexusRollKey] = useState(0);
 
@@ -101,7 +101,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const [imageZoomLevel, setImageZoomLevel] = useState(1);
 
 
-  const currentNexusArsenal = useMemo(() => {
+  const currentEquippedArsenal = useMemo(() => {
     if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) return null;
     const card = arsenalCards.find(card => card.id === selectedCharacterArsenalId);
     if (!card || card.id.startsWith('error-')) return null;
@@ -109,7 +109,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   }, [selectedCharacterArsenalId, arsenalCards]);
 
   const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
-    console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentNexusArsenal?.name);
+    console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentEquippedArsenal?.name);
     if (!selectedNexusCharacter) {
       console.log("[Nexus UI] Memo: No selectedNexusCharacter for effectiveNexusCharacterStats.");
       return null;
@@ -117,18 +117,17 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
     let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(selectedNexusCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
 
-    if (currentNexusArsenal) {
-      console.log(`[Nexus UI] Applying GLOBAL arsenal modifiers from: ${currentNexusArsenal.name}`, currentNexusArsenal);
-      calculatedStats.hp = (calculatedStats.hp || 0) + (currentNexusArsenal.hpMod || 0);
-      calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentNexusArsenal.maxHpMod || 0);
-      calculatedStats.mv = (calculatedStats.mv || 0) + (currentNexusArsenal.mvMod || 0);
-      calculatedStats.def = (calculatedStats.def || 0) + (currentNexusArsenal.defMod || 0);
-      calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentNexusArsenal.sanityMod || 0);
-      calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentNexusArsenal.maxSanityMod || 0);
-      // meleeAttack mod is not listed on ArsenalCard itself, but on items within
+    if (currentEquippedArsenal) {
+      console.log(`[Nexus UI] Applying GLOBAL arsenal modifiers from: ${currentEquippedArsenal.name}`, currentEquippedArsenal);
+      calculatedStats.hp = (calculatedStats.hp || 0) + (currentEquippedArsenal.hpMod || 0);
+      calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentEquippedArsenal.maxHpMod || 0);
+      calculatedStats.mv = (calculatedStats.mv || 0) + (currentEquippedArsenal.mvMod || 0);
+      calculatedStats.def = (calculatedStats.def || 0) + (currentEquippedArsenal.defMod || 0);
+      calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentEquippedArsenal.sanityMod || 0);
+      calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentEquippedArsenal.maxSanityMod || 0);
       
-      if (currentNexusArsenal.items) {
-        currentNexusArsenal.items.forEach(item => {
+      if (currentEquippedArsenal.items) {
+        currentEquippedArsenal.items.forEach(item => {
           if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
              console.log(`[Nexus UI] Item '${item.abilityName}' is GEAR. Parsed Modifiers:`, JSON.stringify(item.parsedStatModifiers));
             item.parsedStatModifiers.forEach(mod => {
@@ -158,10 +157,10 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
     console.log("[Nexus UI] Final effectiveNexusCharacterStats:", calculatedStats);
     return calculatedStats;
-  }, [selectedNexusCharacter, currentNexusArsenal]);
+  }, [selectedNexusCharacter, currentEquippedArsenal]);
 
  useEffect(() => {
-    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentNexusArsenal?.name, "Effective Stats:", effectiveNexusCharacterStats);
+    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentEquippedArsenal?.name, "Effective Stats:", effectiveNexusCharacterStats);
     if (effectiveNexusCharacterStats) {
         console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
         setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
@@ -175,8 +174,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         setCurrentNexusMv(null);
         setCurrentNexusDef(null);
     }
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [selectedNexusCharacter, effectiveNexusCharacterStats]);
+}, [selectedNexusCharacter, effectiveNexusCharacterStats, currentEquippedArsenal]);
 
 
   useEffect(() => {
@@ -203,26 +201,34 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(null); // Reset arsenal when character changes
+    setSelectedCharacterArsenalId(null);
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
 
   const handleNexusNumberedRoll = () => {
-    if (nexusNumDice < 1 || nexusDiceSides < 2) {
-      toast({ title: "Invalid Input", description: "Number of dice must be at least 1 and sides at least 2.", variant: "destructive" });
+    const numDice = parseInt(nexusNumDice, 10);
+    const diceSides = parseInt(nexusDiceSides, 10);
+
+    if (isNaN(numDice) || numDice < 1) {
+      toast({ title: "Invalid Input", description: "Number of dice must be at least 1.", variant: "destructive" });
       return;
     }
+    if (isNaN(diceSides) || diceSides < 2) {
+      toast({ title: "Invalid Input", description: "Number of sides must be at least 2.", variant: "destructive" });
+      return;
+    }
+
     const rolls: number[] = [];
     let total = 0;
-    for (let i = 0; i < nexusNumDice; i++) {
-      const roll = Math.floor(Math.random() * nexusDiceSides) + 1;
+    for (let i = 0; i < numDice; i++) {
+      const roll = Math.floor(Math.random() * diceSides) + 1;
       rolls.push(roll);
       total += roll;
     }
     setNexusLatestRoll({
       type: 'numbered',
-      notation: `${nexusNumDice}d${nexusDiceSides}`,
+      notation: `${numDice}d${diceSides}`,
       rolls,
       total,
     });
@@ -230,14 +236,15 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   };
 
   const handleNexusCombatRoll = () => {
-    if (nexusNumCombatDice < 1 || nexusNumCombatDice > 12) {
+    const numCombat = parseInt(nexusNumCombatDice, 10);
+    if (isNaN(numCombat) || numCombat < 1 || numCombat > 12) {
       toast({ title: "Invalid Input", description: "Number of combat dice must be between 1 and 12.", variant: "destructive" });
       return;
     }
     const rolls: CombatDieFace[] = [];
     const faceCounts: Record<CombatDieFace, number> = { swordandshield: 0, 'double-sword': 0, blank: 0 };
 
-    for (let i = 0; i < nexusNumCombatDice; i++) {
+    for (let i = 0; i < numCombat; i++) {
       const rollIndex = Math.floor(Math.random() * 6);
       const face = combatDieFaces[rollIndex];
       rolls.push(face);
@@ -246,7 +253,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     const summary = `Sword & Shield: ${faceCounts.swordandshield}, Double Sword: ${faceCounts['double-sword']}, Blank: ${faceCounts.blank}`;
     setNexusLatestRoll({
       type: 'combat',
-      notation: `${nexusNumCombatDice}x Combat Dice`,
+      notation: `${numCombat}x Combat Dice`,
       rolls,
       total: summary,
     });
@@ -279,7 +286,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
-    let baseValueForStat: number | undefined = undefined; // For MV/DEF, max is their base
+    let baseValueForStat: number | undefined = undefined;
 
     switch (stat) {
         case 'hp':
@@ -322,7 +329,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       if (percentage >= 40) return "[&>div]:bg-yellow-500";
       return "[&>div]:bg-red-500";
     }
-    // Default for HP and others
     if (percentage <= 33) return '[&>div]:bg-red-500';
     if (percentage <= 66) return '[&>div]:bg-yellow-500';
     return '[&>div]:bg-green-500';
@@ -330,7 +336,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
   const openImageModal = (imageUrl: string) => {
     setEnlargedImageUrl(imageUrl);
-    setImageZoomLevel(1); // Reset zoom level when a new image is opened
+    setImageZoomLevel(1);
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -365,9 +371,9 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     } 
     else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) {
         if (imageZoomLevel > 1) {
-            setImageZoomLevel(1); // Tap on zoomed image unzooms
+            setImageZoomLevel(1);
         } else {
-            setEnlargedImageUrl(null); // Tap on unzoomed image closes modal
+            setEnlargedImageUrl(null);
         }
     }
     setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
@@ -398,83 +404,82 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                <Dices className="mr-2 h-5 w-5 text-primary" />
-                Dice Roller
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                    <Label className="text-sm">Combat Dice</Label>
-                    <div className="flex items-end gap-2">
-                        <div className="flex-1">
-                        <Label htmlFor="nexusNumCombatDice" className="text-xs">Qty (1-12)</Label>
-                        <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice}
-                            onChange={(e) => {
-                            const val = parseInt(e.target.value) || 1;
-                            setNexusNumCombatDice(Math.max(1, Math.min(12, val)));
-                            }}
-                            className="h-8" />
-                        </div>
-                        <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2">
-                        <ChevronsRight className="h-4 w-4" /> Roll
-                        </Button>
-                    </div>
-                </div>
-                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                    <Label className="text-sm">Numbered Dice</Label>
-                    <div className="flex items-end gap-2">
-                        <div className="flex-1">
-                        <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
-                        <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(Math.max(1, parseInt(e.target.value) || 1))} className="h-8" />
-                        </div>
-                        <span className="pb-2">d</span>
-                        <div className="flex-1">
-                        <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
-                        <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(Math.max(2, parseInt(e.target.value) || 2))} className="h-8" />
-                        </div>
-                        <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2">
-                        <ChevronsRight className="h-4 w-4" /> Roll
-                        </Button>
-                    </div>
-                </div>
-                {nexusLatestRoll && (
-                <Card key={nexusRollKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
-                    <CardHeader className="p-2">
-                    <CardTitle className="text-sm flex items-center justify-between">
-                        <span>Latest Roll:</span>
-                        <Badge variant="secondary" className="text-xs">{nexusLatestRoll.notation}</Badge>
+            <Card>
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center">
+                    <Dices className="mr-2 h-5 w-5 text-primary" />
+                    Dice Roller
                     </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-2 text-center">
-                    {nexusLatestRoll.type === 'numbered' && (
-                        <>
-                        <div className="flex flex-wrap gap-1 justify-center mb-1">
-                            {(nexusLatestRoll.rolls as number[]).map((roll, idx) => (
-                            <Badge key={idx} variant="default" className="text-md bg-primary/20 text-primary-foreground border border-primary">
-                                {roll}
-                            </Badge>
-                            ))}
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                        <Label className="text-sm">Combat Dice</Label>
+                        <div className="flex items-end gap-2">
+                            <div className="flex-1">
+                            <Label htmlFor="nexusNumCombatDice" className="text-xs">Qty</Label>
+                            <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice}
+                                onChange={(e) => setNexusNumCombatDice(e.target.value)}
+                                min="1"
+                                max="12"
+                                className="h-8" />
+                            </div>
+                            <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2">
+                            <ChevronsRight className="h-4 w-4" /> Roll
+                            </Button>
                         </div>
-                        <p className="font-semibold text-primary">Total: {nexusLatestRoll.total}</p>
-                        </>
-                    )}
-                    {nexusLatestRoll.type === 'combat' && (
-                        <>
-                        <div className="flex flex-wrap gap-0.5 justify-center mb-1">
-                            {(nexusLatestRoll.rolls as CombatDieFace[]).map((roll, idx) => (
-                            <CombatDieFaceImage key={idx} face={roll} size={48} />
-                            ))}
+                    </div>
+                    <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                        <Label className="text-sm">Numbered Dice</Label>
+                        <div className="flex items-end gap-2">
+                            <div className="flex-1">
+                            <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
+                            <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(e.target.value)} min="1" className="h-8" />
+                            </div>
+                            <span className="pb-2">d</span>
+                            <div className="flex-1">
+                            <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
+                            <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(e.target.value)} min="2" className="h-8" />
+                            </div>
+                            <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2">
+                            <ChevronsRight className="h-4 w-4" /> Roll
+                            </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">{nexusLatestRoll.total as string}</p>
-                        </>
+                    </div>
+                    {nexusLatestRoll && (
+                    <Card key={nexusRollKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
+                        <CardHeader className="p-2">
+                        <CardTitle className="text-sm flex items-center justify-between">
+                            <span>Latest Roll:</span>
+                            <Badge variant="secondary" className="text-xs">{nexusLatestRoll.notation}</Badge>
+                        </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2 text-center">
+                        {nexusLatestRoll.type === 'numbered' && (
+                            <>
+                            <div className="flex flex-wrap gap-1 justify-center mb-1">
+                                {(nexusLatestRoll.rolls as number[]).map((roll, idx) => (
+                                <Badge key={idx} variant="default" className="text-md bg-primary/20 text-primary-foreground border border-primary">
+                                    {roll}
+                                </Badge>
+                                ))}
+                            </div>
+                            <p className="font-semibold text-primary">Total: {nexusLatestRoll.total}</p>
+                            </>
+                        )}
+                        {nexusLatestRoll.type === 'combat' && (
+                            <>
+                            <div className="flex flex-wrap gap-0.5 justify-center mb-1">
+                                {(nexusLatestRoll.rolls as CombatDieFace[]).map((roll, idx) => (
+                                <CombatDieFaceImage key={idx} face={roll} size={48} />
+                                ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">{nexusLatestRoll.total as string}</p>
+                            </>
+                        )}
+                        </CardContent>
+                    </Card>
                     )}
-                    </CardContent>
-                </Card>
-                )}
-            </CardContent>
+                </CardContent>
             </Card>
           
             <div className={cn(
@@ -798,3 +803,5 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     </Dialog>
   );
 }
+
+    
