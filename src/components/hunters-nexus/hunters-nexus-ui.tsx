@@ -42,7 +42,7 @@ import {
   Footprints,
   Shield,
   Sword as MeleeIcon,
-  Swords, // Added Swords
+  Swords,
   UserMinus,
   UserPlus,
   BookOpen,
@@ -150,8 +150,7 @@ function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range
 }
 
 
-export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNexusUIProps) {
-  const arsenalCards = rawArsenalCardsProp || [];
+export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const { toast } = useToast();
 
   const [nexusNumCombatDice, setNexusNumCombatDice] = useState('1');
@@ -535,10 +534,9 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
     if (statType === 'hp') {
       setNexusSessionMaxHpModifier(prevMod => {
         const newMod = prevMod + delta;
-        const baseMaxHp = effectiveNexusCharacterStats.maxHp || 1;
-        const newEffectiveMax = Math.max(1, baseMaxHp + newMod);
-        
-        const finalNewMod = newEffectiveMax < 1 ? 1 - baseMaxHp : newMod;
+        const baseMaxHp = effectiveNexusCharacterStats.maxHp || 1; // Ensure baseMax is at least 1
+        // Ensure effective max doesn't go below 1
+        const finalNewMod = (baseMaxHp + newMod < 1) ? (1 - baseMaxHp) : newMod;
 
         if (currentNexusHp !== null) {
           const finalEffectiveMaxForCapping = Math.max(1, baseMaxHp + finalNewMod);
@@ -551,11 +549,10 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
     } else if (statType === 'sanity') {
       setNexusSessionMaxSanityModifier(prevMod => {
         const newMod = prevMod + delta;
-        const baseMaxSanity = effectiveNexusCharacterStats.maxSanity || 1;
-        const newEffectiveMax = Math.max(1, baseMaxSanity + newMod);
-
-        const finalNewMod = newEffectiveMax < 1 ? 1 - baseMaxSanity : newMod;
-
+        const baseMaxSanity = effectiveNexusCharacterStats.maxSanity || 1; // Ensure baseMax is at least 1
+        // Ensure effective max doesn't go below 1
+        const finalNewMod = (baseMaxSanity + newMod < 1) ? (1 - baseMaxSanity) : newMod;
+        
         if (currentNexusSanity !== null) {
           const finalEffectiveMaxForCapping = Math.max(1, baseMaxSanity + finalNewMod);
           if (currentNexusSanity > finalEffectiveMaxForCapping) {
@@ -674,29 +671,30 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
             <div className={cn("flex-shrink-0 flex bg-card rounded-lg p-4 shadow-md w-full", selectedNexusCharacter ? "flex-col items-start justify-start" : "flex-col items-center justify-center min-h-[200px]")}>
             {selectedNexusCharacter && effectiveNexusCharacterStats ? (
                 <div className="w-full space-y-3">
-                    <div className="flex items-start gap-3">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                    <button type="button" onClick={() => { setCharacterForModal(selectedNexusCharacter); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${selectedNexusCharacter.name}`}>
-                                        <Avatar className="h-16 w-16 md:h-20 md:w-20 border-4 border-primary hover:ring-2 hover:ring-accent cursor-pointer">
-                                        <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0,1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar"/>
-                                        <AvatarFallback>{selectedNexusCharacter.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                    </button>
-                                </DialogTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">
-                                <p>View Details for {selectedNexusCharacter.name}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                        <div className="flex-grow">
-                            <h2 className="text-xl md:text-2xl font-semibold text-primary">{selectedNexusCharacter.name}</h2>
+                  <div className="flex items-start gap-3">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
                             <DialogTrigger asChild>
-                                <Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary" onClick={() => setIsCharacterSelectionDialogOpen(true)}>Change Character</Button>
+                                <button type="button" onClick={() => { setCharacterForModal(selectedNexusCharacter); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${selectedNexusCharacter.name}`}>
+                                    <Avatar className="h-16 w-16 md:h-20 md:w-20 border-4 border-primary hover:ring-2 hover:ring-accent cursor-pointer">
+                                    <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0,1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar"/>
+                                    <AvatarFallback>{selectedNexusCharacter.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                </button>
                             </DialogTrigger>
-                        </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                            <p>View Details for {selectedNexusCharacter.name}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <div className="flex-grow">
+                        <h2 className="text-xl md:text-2xl font-semibold text-primary">{selectedNexusCharacter.name}</h2>
+                        <DialogTrigger asChild>
+                            <Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary" onClick={() => setIsCharacterSelectionDialogOpen(true)}>Change Character</Button>
+                        </DialogTrigger>
                     </div>
+                  </div>
+
 
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 border p-3 rounded-md bg-background/30">
                         {/* HP Tracker */}
