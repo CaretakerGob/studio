@@ -221,7 +221,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
       setCurrentNexusSanity(effectiveNexusCharacterStats.sanity);
       setCurrentNexusMv(effectiveNexusCharacterStats.mv);
       setCurrentNexusDef(effectiveNexusCharacterStats.def);
-      setNexusSessionMaxHpModifier(0); // Reset session modifiers when character changes
+      setNexusSessionMaxHpModifier(0); 
       setNexusSessionMaxSanityModifier(0);
     } else {
       setCurrentNexusHp(null);
@@ -377,10 +377,8 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
         const baseMaxHp = effectiveNexusCharacterStats.maxHp || 1;
         const newEffectiveMax = Math.max(1, baseMaxHp + newMod);
         
-        // Adjust modifier if newEffectiveMax would be less than 1
         const finalNewMod = newEffectiveMax < 1 ? 1 - baseMaxHp : newMod;
 
-        // Cap current HP
         if (currentNexusHp !== null) {
           const finalEffectiveMaxForCapping = Math.max(1, baseMaxHp + finalNewMod);
           if (currentNexusHp > finalEffectiveMaxForCapping) {
@@ -526,7 +524,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                         <div className="flex-grow">
                             <h2 className="text-xl md:text-2xl font-semibold text-primary">{selectedNexusCharacter.name}</h2>
                             <DialogTrigger asChild>
-                                <Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary">Change Character</Button>
+                                <Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary" onClick={() => setIsCharacterSelectionDialogOpen(true)}>Change Character</Button>
                             </DialogTrigger>
                         </div>
                     </div>
@@ -724,7 +722,15 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
       
 
       {/* Character Details Modal */}
-      <Dialog open={isCharacterCardModalOpen} onOpenChange={setIsCharacterCardModalOpen}>
+      <Dialog 
+        open={isCharacterCardModalOpen} 
+        onOpenChange={(open) => {
+          setIsCharacterCardModalOpen(open);
+          if (!open) {
+            setIsCharacterSelectionDialogOpen(false); // Also close selection dialog
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
           {characterForModal && effectiveNexusCharacterStats && (
             <>
@@ -754,9 +760,9 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                             <Progress value={(currentNexusHp / Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier), 'hp'))} />
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)}</p>
                             <div className="flex items-center gap-1 mt-1">
-                                <Label htmlFor="nexusMaxMod-hp" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
+                                <Label htmlFor="nexusModalMaxMod-hp" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('hp', -1)}><Minus className="h-2.5 w-2.5" /></Button>
-                                <Input id="nexusMaxMod-hp" type="number" value={nexusSessionMaxHpModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                                <Input id="nexusModalMaxMod-hp" type="number" value={nexusSessionMaxHpModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('hp', 1)}><Plus className="h-2.5 w-2.5" /></Button>
                             </div>
                         </div>
@@ -775,9 +781,9 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                             <Progress value={(currentNexusSanity / Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier), 'sanity'))} />
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)}</p>
                              <div className="flex items-center gap-1 mt-1">
-                                <Label htmlFor="nexusMaxMod-sanity" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
+                                <Label htmlFor="nexusModalMaxMod-sanity" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('sanity', -1)}><Minus className="h-2.5 w-2.5" /></Button>
-                                <Input id="nexusMaxMod-sanity" type="number" value={nexusSessionMaxSanityModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                                <Input id="nexusModalMaxMod-sanity" type="number" value={nexusSessionMaxSanityModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('sanity', 1)}><Plus className="h-2.5 w-2.5" /></Button>
                             </div>
                         </div>
@@ -888,3 +894,4 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
     </div>
   );
 }
+
