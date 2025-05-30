@@ -129,7 +129,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     const headers = rows[0] as string[];
     const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
-    // console.log('[Nexus Page DEBUG] Sanitized Headers from Arsenal Sheet:', sanitizedHeaders);
     
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -202,19 +201,27 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const categoryIndex = getColumnIndex(['category']);
       if (categoryIndex !== -1) item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
       
-      const abilityNameIndex = getColumnIndex(['ability name', 'item name', 'abilityname', 'itemname']);
+      const abilityNameIndex = getColumnIndex(['ability name', 'item name', 'abilityname', 'itemname', 'name']);
       item.abilityName = String(row[abilityNameIndex] || '').trim() || `Item ${rowIndex + 2}`;
       
-      const itemDescSpecificIndex = getColumnIndex(['item description', 'ability description']);
-      if (itemDescSpecificIndex !== -1 && String(row[itemDescSpecificIndex] || '').trim() !== '') {
-        item.itemDescription = String(row[itemDescSpecificIndex] || '');
-      } else {
-         const genericDescIndex = getColumnIndex(['description']); 
-         if (genericDescIndex !== -1 && String(row[genericDescIndex] || '').trim() !== '' && String(row[genericDescIndex] || '') !== arsenalsMap.get(arsenalId)?.description) {
-            item.itemDescription = String(row[genericDescIndex] || '');
-         }
+      // Enhanced Item Description Parsing
+      const itemDescColVariations = ['item description', 'ability description', 'description', 'effect text', 'game text', 'details'];
+      const itemDescIndex = getColumnIndex(itemDescColVariations);
+      if (itemDescIndex !== -1 && String(row[itemDescIndex] || '').trim() !== '') {
+          const potentialDesc = String(row[itemDescIndex] || '').trim();
+          // Avoid using the arsenal's main description if it's accidentally picked up by a generic "description" column
+          if (potentialDesc !== arsenalsMap.get(arsenalId)?.description) {
+            item.itemDescription = potentialDesc;
+          }
       }
       
+      // Enhanced Effect Parsing (often used for mechanical text)
+      const effectColVariations = ['effect', 'primary effect', 'main effect', 'ability effect'];
+      const effectIndex = getColumnIndex(effectColVariations);
+      if (effectIndex !== -1 && String(row[effectIndex] || '').trim() !== '') {
+        item.effect = String(row[effectIndex] || '').trim();
+      }
+
       const effectStatChangeIndex = getColumnIndex(['effect stat change', 'effectstatchange']);
       if (effectStatChangeIndex !== -1 && row[effectStatChangeIndex]) {
         const effectStatChangeStringVal = String(row[effectStatChangeIndex] || '').trim();
@@ -224,13 +231,12 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         }
       }
       
-      // Weapon specific parsing
-      const weaponFlagColumnIndex = getColumnIndex(['weapon']);
+      const weaponFlagColumnIndex = getColumnIndex(['weapon', 'isweapon']);
       if (weaponFlagColumnIndex !== -1 && row[weaponFlagColumnIndex]) {
         item.isFlaggedAsWeapon = ['true', 'yes', '1', 'y'].includes(String(row[weaponFlagColumnIndex] || '').toLowerCase());
       }
 
-      const weaponStatsStringColumnIndex = getColumnIndex(['weapon details', 'effect description', 'effect', 'stats']);
+      const weaponStatsStringColumnIndex = getColumnIndex(['weapon details', 'weapon stats', 'attack/range', 'stats']);
       if (weaponStatsStringColumnIndex !== -1 && row[weaponStatsStringColumnIndex]) {
         const statsStr = String(row[weaponStatsStringColumnIndex] || '').trim();
         if (statsStr) {
@@ -238,14 +244,12 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
           item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
         }
       }
-       // Add parsing for item.type and item.class for more robust weapon identification
-      const itemTypeIndex = getColumnIndex(['type']); 
+      const itemTypeIndex = getColumnIndex(['type', 'item type']); 
       if (itemTypeIndex !== -1) item.type = String(row[itemTypeIndex] || '');
       
-      const classIndex = getColumnIndex(['class']); 
+      const classIndex = getColumnIndex(['class', 'weapon class']); 
       if (classIndex !== -1) item.class = String(row[classIndex] || '');
 
-      // Pet specific parsing
       const petFlagVariations = ['pet', 'is pet', 'companion'];
       const petFlagHeaderIndex = getColumnIndex(petFlagVariations);
       if (petFlagHeaderIndex !== -1 && row[petFlagHeaderIndex] !== undefined && String(row[petFlagHeaderIndex]).trim() !== '') {
@@ -273,7 +277,6 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         }
       }
 
-      // Ability flags parsing
       const trueValues = ['true', 'yes', '1', 'y'];
       const isActionIndex = getColumnIndex(['is action', 'isaction']);
       if (isActionIndex !== -1) item.isAction = trueValues.includes(String(row[isActionIndex] || '').toLowerCase());
@@ -287,11 +290,10 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const isFreeActionIndex = getColumnIndex(['is free action', 'isfreeaction']);
       if (isFreeActionIndex !== -1) item.isFreeAction = trueValues.includes(String(row[isFreeActionIndex] || '').toLowerCase());
 
-      // Add cd and qty parsing
       const cdIndex = getColumnIndex(['cd', 'cooldown']);
       if (cdIndex !== -1) item.cd = String(row[cdIndex] || '');
 
-      const qtyIndex = getColumnIndex(['qty', 'quantity']);
+      const qtyIndex = getColumnIndex(['qty', 'quantity', 'charges', 'uses']); // Added 'charges', 'uses'
       if (qtyIndex !== -1 && row[qtyIndex] && String(row[qtyIndex]).trim() !== '') {
         const parsedQty = parseInt(String(row[qtyIndex]), 10);
         if(!isNaN(parsedQty)) item.qty = parsedQty;
@@ -306,7 +308,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
                                  item.category || 
                                  (item.itemDescription && item.itemDescription.trim() !== '') || 
                                  (item.effect && item.effect.trim() !== '') ||
-                                 item.isAction || item.isInterrupt || item.isPassive || item.isFreeAction;
+                                 item.isAction || item.isInterrupt || item.isPassive || item.isFreeAction || item.qty !== undefined;
         if (isMeaningfulItem) {
           arsenal.items.push(item as ArsenalItem);
         }
