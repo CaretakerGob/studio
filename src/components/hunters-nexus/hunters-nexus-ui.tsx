@@ -43,7 +43,7 @@ import {
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character, type CharacterStats, type StatName } from '@/components/character-sheet/character-sheet-ui';
+import { charactersData, type Character, type CharacterStats, type StatName } from '@/components/character-sheet/character-sheet-ui'; 
 import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
 import { GameCardDisplay } from '@/components/card-generator/game-card-display';
 import { useToast } from "@/hooks/use-toast";
@@ -160,27 +160,28 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     return calculatedStats;
   }, [selectedNexusCharacter, currentNexusArsenal]);
 
-  useEffect(() => {
-    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats);
+ useEffect(() => {
+    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentNexusArsenal?.name, "Effective Stats:", effectiveNexusCharacterStats);
     if (effectiveNexusCharacterStats) {
-      console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
-      setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
-      setCurrentNexusSanity(effectiveNexusCharacterStats.maxSanity);
-      setCurrentNexusMv(effectiveNexusCharacterStats.mv);
-      setCurrentNexusDef(effectiveNexusCharacterStats.def);
+        console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
+        setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
+        setCurrentNexusSanity(effectiveNexusCharacterStats.maxSanity);
+        setCurrentNexusMv(effectiveNexusCharacterStats.mv);
+        setCurrentNexusDef(effectiveNexusCharacterStats.def);
     } else {
-      console.log("[Nexus UI] No character selected or no effective stats, resetting HP/Sanity/MV/DEF to null.");
-      setCurrentNexusHp(null);
-      setCurrentNexusSanity(null);
-      setCurrentNexusMv(null);
-      setCurrentNexusDef(null);
+        console.log("[Nexus UI] No character selected or no effective stats, resetting HP/Sanity/MV/DEF to null.");
+        setCurrentNexusHp(null);
+        setCurrentNexusSanity(null);
+        setCurrentNexusMv(null);
+        setCurrentNexusDef(null);
     }
-  }, [selectedNexusCharacter, effectiveNexusCharacterStats, currentNexusArsenal]);
+}, [selectedNexusCharacter, effectiveNexusCharacterStats, currentNexusArsenal]);
+
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
-    setPartyMembers([character]);
-    setSelectedCharacterArsenalId(null); 
+    setPartyMembers([character]); 
+    setSelectedCharacterArsenalId(null);
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -249,13 +250,14 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     toast({ title: "Card Drawn!", description: `Drew ${drawnCard.name} from ${deck.name}.` });
   };
 
-  const handleNexusStatChange = (stat: 'hp' | 'sanity' | 'mv' | 'def', operation: 'increment' | 'decrement') => {
+  const handleNexusStatChange = (stat: StatName, operation: 'increment' | 'decrement') => {
     if (!effectiveNexusCharacterStats) return;
     const delta = operation === 'increment' ? 1 : -1;
     
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
+    let baseValueForStat: number | undefined = undefined;
 
     switch (stat) {
         case 'hp':
@@ -265,10 +267,10 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
             setter = setCurrentNexusSanity; currentValue = currentNexusSanity; maxValueForStat = effectiveNexusCharacterStats.maxSanity;
             break;
         case 'mv':
-            setter = setCurrentNexusMv; currentValue = currentNexusMv; maxValueForStat = effectiveNexusCharacterStats.mv;
+            setter = setCurrentNexusMv; currentValue = currentNexusMv; baseValueForStat = effectiveNexusCharacterStats.mv; maxValueForStat = baseValueForStat;
             break;
         case 'def':
-            setter = setCurrentNexusDef; currentValue = currentNexusDef; maxValueForStat = effectiveNexusCharacterStats.def;
+            setter = setCurrentNexusDef; currentValue = currentNexusDef; baseValueForStat = effectiveNexusCharacterStats.def; maxValueForStat = baseValueForStat;
             break;
         default: return;
     }
@@ -345,6 +347,9 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     setTouchEndY(null);
   };
 
+  const latestDrawnCardForDisplay = nexusDrawnCardsHistory.length > 0 ? nexusDrawnCardsHistory[0] : null;
+  const previousDrawnCardsForDisplay = nexusDrawnCardsHistory.slice(1);
+
   return (
     <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
       <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
@@ -367,7 +372,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
-           <Card>
+          <Card>
             <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
                 <Dices className="mr-2 h-5 w-5 text-primary" />
@@ -624,34 +629,27 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                     <BookOpen className="mr-2 h-4 w-4" /> Draw Card
                 </Button>
                 </div>
-                {nexusDrawnCardsHistory.length > 0 ? (
-                    <Card key={`${nexusDrawnCardsHistory[0].id}-${nexusCardKey}`} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
-                        <CardHeader className="p-2">
-                            <CardTitle className="text-sm flex items-center justify-between">
-                                <span>Latest Card Drawn:</span>
-                                <Badge variant="secondary" className="text-xs">{nexusDrawnCardsHistory[0].deck}</Badge>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-2 text-left space-y-2">
-                            <GameCardDisplay
-                                card={nexusDrawnCardsHistory[0]}
-                                size="medium" 
-                                onClick={() => nexusDrawnCardsHistory[0].imageUrl && openImageModal(nexusDrawnCardsHistory[0].imageUrl)}
-                                isButton={!!nexusDrawnCardsHistory[0].imageUrl}
-                                className="mx-auto"
-                             />
-                        </CardContent>
-                    </Card>
-                ) : (
-                     <p className="text-xs text-muted-foreground text-center pt-2">No card drawn yet.</p>
+
+                {latestDrawnCardForDisplay && (
+                  <div className="mt-2">
+                    <GameCardDisplay
+                      card={latestDrawnCardForDisplay}
+                      key={`${latestDrawnCardForDisplay.id}-${nexusCardKey}`}
+                      size="medium"
+                      onClick={() => latestDrawnCardForDisplay.imageUrl && openImageModal(latestDrawnCardForDisplay.imageUrl)}
+                      isButton={!!latestDrawnCardForDisplay.imageUrl}
+                      className="mx-auto animate-in fade-in duration-300"
+                      imageOnly={true}
+                    />
+                  </div>
                 )}
 
                 {nexusDrawnCardsHistory.length > 0 && (
                   <div className="mt-4">
-                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Previously Drawn</h4>
-                    {nexusDrawnCardsHistory.slice(1).length > 0 ? (
+                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground text-center">Previously Drawn</h4>
+                    {previousDrawnCardsForDisplay.length > 0 ? (
                       <div className="grid grid-cols-2 gap-2">
-                        {nexusDrawnCardsHistory.slice(1, 5).map((card, idx) => (
+                        {previousDrawnCardsForDisplay.map((card, idx) => (
                           <GameCardDisplay
                             key={`${card.id}-hist-${idx}`}
                             card={card}
@@ -659,6 +657,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                             onClick={() => card.imageUrl && openImageModal(card.imageUrl)}
                             isButton={!!card.imageUrl}
                             className="w-full"
+                            imageOnly={true}
                           />
                         ))}
                       </div>
