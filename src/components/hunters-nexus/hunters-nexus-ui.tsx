@@ -19,7 +19,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Dices,
@@ -34,21 +33,22 @@ import {
   Brain,
   Footprints,
   Shield,
+  Sword as MeleeIcon,
   UserMinus,
   UserPlus,
   BookOpen,
   Package,
   AlertCircle,
-  Sword as MeleeIcon,
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character, type CharacterStats } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
-import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui'; // Import sampleDecks and GameCard
+import { charactersData, type Character, type CharacterStats } from '@/components/character-sheet/character-sheet-ui';
+import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { ArsenalCard as ActualArsenalCard } from '@/types/arsenal';
+import type { ArsenalCard as ActualArsenalCard, ArsenalItem } from '@/types/arsenal';
+
 
 interface NexusRollResult {
   type: 'numbered' | 'combat';
@@ -90,7 +90,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
   
   const [selectedCharacterArsenalId, setSelectedCharacterArsenalId] = useState<string | null>(null);
-  const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
+  const criticalArsenalError = useMemo(() => arsenalCards.find(card => card.id === 'error-critical-arsenal'), [arsenalCards]);
 
   const currentEquippedArsenal = useMemo(() => {
     if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) return null;
@@ -117,10 +117,12 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       calculatedStats.def = (calculatedStats.def || 0) + (currentEquippedArsenal.defMod || 0);
       calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentEquippedArsenal.sanityMod || 0);
       calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentEquippedArsenal.maxSanityMod || 0);
-      
+      calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + (currentEquippedArsenal.meleeAttackMod || 0);
+      // Add other global mods if needed (rangedAttackMod, rangedRangeMod)
+
       if (currentEquippedArsenal.items) {
         currentEquippedArsenal.items.forEach(item => {
-          if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers && item.parsedStatModifiers.length > 0) {
+          if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
             console.log(`[Nexus UI] Item '${item.abilityName}' is GEAR. Parsed Modifiers:`, JSON.stringify(item.parsedStatModifiers));
             item.parsedStatModifiers.forEach(mod => {
               const statKey = mod.targetStat as keyof CharacterStats;
@@ -142,6 +144,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     calculatedStats.def = Math.max(0, calculatedStats.def);
     calculatedStats.sanity = Math.max(0, calculatedStats.sanity);
     calculatedStats.maxSanity = Math.max(1, calculatedStats.maxSanity);
+    calculatedStats.meleeAttack = Math.max(0, calculatedStats.meleeAttack || 0);
 
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
@@ -152,7 +155,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
 
   useEffect(() => {
-    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats, "Current Equipped Arsenal:", currentEquippedArsenal?.name);
+    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats);
     if (effectiveNexusCharacterStats) {
       console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
       setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
@@ -166,13 +169,13 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       setCurrentNexusMv(null);
       setCurrentNexusDef(null);
     }
-  }, [selectedNexusCharacter, effectiveNexusCharacterStats, currentEquippedArsenal]); // Added currentEquippedArsenal
+  }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
 
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(null); // Reset arsenal when character changes
+    setSelectedCharacterArsenalId(null);
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -246,7 +249,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
-    let baseValueForStat: number | undefined = undefined; // For stats like MV/DEF
+    let baseValueForStat: number | undefined = undefined; 
 
     switch (stat) {
         case 'hp':
@@ -268,13 +271,11 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         let newValue = currentValue + delta;
         newValue = Math.max(0, newValue); 
         
-        if (maxValueForStat !== undefined) { // For HP and Sanity, cap at max
+        if (maxValueForStat !== undefined) { 
           newValue = Math.min(newValue, maxValueForStat);
-        } else if (baseValueForStat !== undefined && operation === 'increment') { // For MV and DEF, cap increment at base
+        } else if (baseValueForStat !== undefined && operation === 'increment') { 
           newValue = Math.min(newValue, baseValueForStat);
         }
-        // For MV and DEF decrement, no lower cap other than 0.
-        
         setter(newValue);
     }
   };
@@ -294,7 +295,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       if (percentage >= 40) return "[&>div]:bg-yellow-500";
       return "[&>div]:bg-red-500";
     }
-    // Default for HP and others
     if (percentage <= 33) return '[&>div]:bg-red-500';
     if (percentage <= 66) return '[&>div]:bg-yellow-500';
     return '[&>div]:bg-green-500';
@@ -302,26 +302,26 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
 
   return (
-    <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
-      <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
-        <header className="flex-shrink-0 flex items-center justify-between p-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Dot className="h-6 w-6 text-primary animate-pulse" />
-            <span className="font-semibold">Riddle of the Beast Companion</span>
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            <span className="text-sm text-muted-foreground">Room:</span>
-            <span className="text-sm font-mono text-primary">BEAST_NEXUS</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" aria-label="Settings">
-              <Settings className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="Log Out">
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </header>
+    <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
+      <header className="flex-shrink-0 flex items-center justify-between p-3 border-b border-border">
+        <div className="flex items-center gap-2">
+          <Dot className="h-6 w-6 text-primary animate-pulse" />
+          <span className="font-semibold">Riddle of the Beast Companion</span>
+          <Separator orientation="vertical" className="h-6 mx-2" />
+          <span className="text-sm text-muted-foreground">Room:</span>
+          <span className="text-sm font-mono text-primary">BEAST_NEXUS</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" aria-label="Settings">
+            <Settings className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Log Out">
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
+      </header>
 
+      <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
            {/* Dice Roller Card */}
            <Card>
@@ -332,23 +332,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                <Label className="text-sm">Numbered Dice</Label>
-                <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                    <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
-                    <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(Math.max(1, parseInt(e.target.value) || 1))} className="h-8" />
-                    </div>
-                    <span className="pb-2">d</span>
-                    <div className="flex-1">
-                    <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
-                    <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(Math.max(2, parseInt(e.target.value) || 2))} className="h-8" />
-                    </div>
-                    <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2">
-                    <ChevronsRight className="h-4 w-4" />
-                    </Button>
-                </div>
-                </div>
                 <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
                 <Label className="text-sm">Combat Dice</Label>
                 <div className="flex items-end gap-2">
@@ -362,6 +345,23 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                         className="h-8" />
                     </div>
                     <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2">
+                    <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                </div>
+                </div>
+                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                <Label className="text-sm">Numbered Dice</Label>
+                <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                    <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
+                    <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(Math.max(1, parseInt(e.target.value) || 1))} className="h-8" />
+                    </div>
+                    <span className="pb-2">d</span>
+                    <div className="flex-1">
+                    <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
+                    <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(Math.max(2, parseInt(e.target.value) || 2))} className="h-8" />
+                    </div>
+                    <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2">
                     <ChevronsRight className="h-4 w-4" />
                     </Button>
                 </div>
@@ -647,9 +647,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
             </div>
           </ScrollArea>
         </DialogContent>
-      </div>
-    </Dialog>
+      </Dialog>
+    </div>
   );
 }
-
-    
