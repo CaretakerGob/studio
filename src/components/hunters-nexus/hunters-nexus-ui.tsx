@@ -39,6 +39,7 @@ import {
   BookOpen,
   Package,
   AlertCircle,
+  Image as ImageIcon,
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -58,14 +59,11 @@ interface NexusRollResult {
 }
 
 const combatDieFaces: CombatDieFace[] = ['swordandshield', 'swordandshield', 'swordandshield', 'double-sword', 'blank', 'blank'];
-const faceTypeLabels: Record<CombatDieFace, string> = {
-  swordandshield: 'Sword & Shield',
-  'double-sword': 'Double Sword',
-  blank: 'Blank',
-};
 
 const MIN_SWIPE_DISTANCE = 50;
 const MAX_TAP_MOVEMENT = 10;
+const ZOOM_SCALE_FACTOR = 1.75;
+
 
 interface HuntersNexusUIProps {
   arsenalCards: ActualArsenalCard[];
@@ -100,6 +98,8 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchEndY, setTouchEndY] = useState<number | null>(null);
+  const [imageZoomLevel, setImageZoomLevel] = useState(1);
+
 
   const currentNexusArsenal = useMemo(() => {
     if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) return null;
@@ -125,7 +125,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       calculatedStats.def = (calculatedStats.def || 0) + (currentNexusArsenal.defMod || 0);
       calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentNexusArsenal.sanityMod || 0);
       calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentNexusArsenal.maxSanityMod || 0);
-      calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + (currentNexusArsenal.meleeAttackMod || 0);
+      // meleeAttack mod is not listed on ArsenalCard itself, but on items within
       
       if (currentNexusArsenal.items) {
         currentNexusArsenal.items.forEach(item => {
@@ -175,13 +175,35 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         setCurrentNexusMv(null);
         setCurrentNexusDef(null);
     }
-}, [selectedNexusCharacter, effectiveNexusCharacterStats, currentNexusArsenal]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [selectedNexusCharacter, effectiveNexusCharacterStats]);
 
+
+  useEffect(() => {
+    if (!enlargedImageUrl) {
+      setImageZoomLevel(1);
+    }
+  }, [enlargedImageUrl]);
+
+  const handleImageDoubleClick = () => {
+    setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
+  };
+
+  const handleEnlargedImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation(); 
+    if (imageZoomLevel > 1) {
+      setImageZoomLevel(1); 
+    } else {
+      if (!touchEndX && !touchEndY) { 
+          setEnlargedImageUrl(null);
+      }
+    }
+  };
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(null);
+    setSelectedCharacterArsenalId(null); // Reset arsenal when character changes
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -257,7 +279,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
-    let baseValueForStat: number | undefined = undefined;
+    let baseValueForStat: number | undefined = undefined; // For MV/DEF, max is their base
 
     switch (stat) {
         case 'hp':
@@ -295,11 +317,12 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       if (percentage > 33) return "[&>div]:bg-blue-400";
       return "[&>div]:bg-red-500";
     }
-    if (statType === 'def' || statType === 'mv') {
+     if (statType === 'def' || statType === 'mv') {
       if (percentage >= 75) return "[&>div]:bg-green-500"; 
       if (percentage >= 40) return "[&>div]:bg-yellow-500";
       return "[&>div]:bg-red-500";
     }
+    // Default for HP and others
     if (percentage <= 33) return '[&>div]:bg-red-500';
     if (percentage <= 66) return '[&>div]:bg-yellow-500';
     return '[&>div]:bg-green-500';
@@ -307,16 +330,17 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
   const openImageModal = (imageUrl: string) => {
     setEnlargedImageUrl(imageUrl);
+    setImageZoomLevel(1); // Reset zoom level when a new image is opened
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     setTouchEndX(null); 
     setTouchEndY(null); 
     setTouchStartX(e.targetTouches[0].clientX);
     setTouchStartY(e.targetTouches[0].clientY);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     setTouchEndX(e.targetTouches[0].clientX);
     setTouchEndY(e.targetTouches[0].clientY);
   };
@@ -330,21 +354,23 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
 
-    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8 && currentNexusArsenal) { 
+    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8 && currentNexusArsenal && enlargedImageUrl) { 
         if (enlargedImageUrl === currentNexusArsenal.imageUrlFront && currentNexusArsenal.imageUrlBack) {
             setEnlargedImageUrl(currentNexusArsenal.imageUrlBack);
+            setImageZoomLevel(1);
         } else if (enlargedImageUrl === currentNexusArsenal.imageUrlBack && currentNexusArsenal.imageUrlFront) {
             setEnlargedImageUrl(currentNexusArsenal.imageUrlFront);
+            setImageZoomLevel(1);
         }
     } 
     else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) {
-        setEnlargedImageUrl(null); 
+        if (imageZoomLevel > 1) {
+            setImageZoomLevel(1); // Tap on zoomed image unzooms
+        } else {
+            setEnlargedImageUrl(null); // Tap on unzoomed image closes modal
+        }
     }
-
-    setTouchStartX(null);
-    setTouchEndX(null);
-    setTouchStartY(null);
-    setTouchEndY(null);
+    setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
   };
 
   const latestDrawnCardForDisplay = nexusDrawnCardsHistory.length > 0 ? nexusDrawnCardsHistory[0] : null;
@@ -630,41 +656,41 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                 </Button>
                 </div>
 
-                {latestDrawnCardForDisplay && (
-                  <div className="mt-2">
+                {nexusDrawnCardsHistory.length > 0 && latestDrawnCardForDisplay && (
+                <div className="mt-2">
                     <GameCardDisplay
-                      card={latestDrawnCardForDisplay}
-                      key={`${latestDrawnCardForDisplay.id}-${nexusCardKey}`}
-                      size="medium"
-                      onClick={() => latestDrawnCardForDisplay.imageUrl && openImageModal(latestDrawnCardForDisplay.imageUrl)}
-                      isButton={!!latestDrawnCardForDisplay.imageUrl}
-                      className="mx-auto animate-in fade-in duration-300"
-                      imageOnly={true}
+                        card={latestDrawnCardForDisplay}
+                        key={`${latestDrawnCardForDisplay.id}-${nexusCardKey}`}
+                        size="medium"
+                        onClick={() => latestDrawnCardForDisplay.imageUrl && openImageModal(latestDrawnCardForDisplay.imageUrl)}
+                        isButton={!!latestDrawnCardForDisplay.imageUrl}
+                        className="mx-auto animate-in fade-in duration-300"
+                        imageOnly={true}
                     />
-                  </div>
+                </div>
                 )}
 
                 {nexusDrawnCardsHistory.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground text-center">Previously Drawn</h4>
-                    {previousDrawnCardsForDisplay.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {previousDrawnCardsForDisplay.map((card, idx) => (
-                          <GameCardDisplay
-                            key={`${card.id}-hist-${idx}`}
-                            card={card}
-                            size="small"
-                            onClick={() => card.imageUrl && openImageModal(card.imageUrl)}
-                            isButton={!!card.imageUrl}
-                            className="w-full"
-                            imageOnly={true}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground text-center">Draw more cards to see history.</p>
-                    )}
-                  </div>
+                    <div className="mt-4">
+                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground text-center">Previously Drawn</h4>
+                        {previousDrawnCardsForDisplay.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            {previousDrawnCardsForDisplay.map((card, idx) => (
+                            <GameCardDisplay
+                                key={`${card.id}-hist-${idx}`}
+                                card={card}
+                                size="small"
+                                onClick={() => card.imageUrl && openImageModal(card.imageUrl)}
+                                isButton={!!card.imageUrl}
+                                className="w-full"
+                                imageOnly={true}
+                            />
+                            ))}
+                        </div>
+                        ) : (
+                        <p className="text-xs text-muted-foreground text-center">Draw more cards to see history.</p>
+                        )}
+                    </div>
                 )}
             </CardContent>
             </Card>
@@ -725,26 +751,46 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
       <Dialog open={!!enlargedImageUrl} onOpenChange={(isOpen) => { if (!isOpen) setEnlargedImageUrl(null); }}>
         <DialogContent 
-            className="max-w-5xl w-[95vw] h-[95vh] p-2 bg-background border-border shadow-xl flex flex-col"
+            className="max-w-5xl w-[95vw] h-[95vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center"
+            onInteractOutside={(e) => {
+                if (imageZoomLevel > 1) {
+                    setImageZoomLevel(1);
+                    e.preventDefault(); 
+                }
+            }}
         >
-          <DialogHeader className="sr-only">
-            <DialogTitle>Enlarged Card Image</DialogTitle>
-            <DialogDescription>Full view of the selected card image.</DialogDescription>
-          </DialogHeader>
           {enlargedImageUrl && (
-            <div 
-              className="relative flex-1 w-full h-full overflow-hidden rounded-md cursor-pointer"
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              onClick={() => !touchEndX && !touchEndY && setEnlargedImageUrl(null)} 
+            <div
+                className="relative w-full h-full flex items-center justify-center overflow-hidden"
             >
-              <Image
-                src={enlargedImageUrl}
-                alt="Enlarged card"
-                fill
-                style={{ objectFit: 'contain' }}
-              />
+                <div
+                className={cn(
+                    "relative", 
+                    imageZoomLevel > 1 ? "cursor-zoom-out" : "cursor-zoom-in"
+                )}
+                style={{
+                    width: '100%', 
+                    height: '100%',
+                }}
+                onDoubleClick={handleImageDoubleClick}
+                onClick={handleEnlargedImageClick}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                >
+                <Image
+                    src={enlargedImageUrl}
+                    alt="Enlarged card"
+                    fill
+                    style={{
+                    objectFit: 'contain',
+                    transform: `scale(${imageZoomLevel})`,
+                    transition: 'transform 0.2s ease-out',
+                    transformOrigin: 'center',
+                    }}
+                    className="max-w-full max-h-full"
+                />
+                </div>
             </div>
           )}
         </DialogContent>
@@ -752,4 +798,3 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     </Dialog>
   );
 }
-
