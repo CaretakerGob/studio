@@ -201,21 +201,25 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
       const categoryIndex = getColumnIndex(['category']);
       if (categoryIndex !== -1) item.category = String(row[categoryIndex] || '').toUpperCase() as ArsenalItemCategory;
       
-      const abilityNameIndex = getColumnIndex(['ability name', 'item name', 'abilityname', 'itemname', 'name']);
-      item.abilityName = String(row[abilityNameIndex] || '').trim() || `Item ${rowIndex + 2}`;
+      let itemNameIndex = getColumnIndex(['ability name', 'item name', 'abilityname', 'itemname', 'name']);
+      item.abilityName = String(row[itemNameIndex] || '').trim() || `Item ${rowIndex + 2}`;
       
-      // Enhanced Item Description Parsing
+      // Try to parse quantity from name first, e.g., "Rubber Ball x2"
+      const nameQtyMatch = item.abilityName.match(/^(.*?)\s+x(\d+)$/i);
+      if (nameQtyMatch) {
+        item.abilityName = nameQtyMatch[1].trim(); // Cleaned name
+        item.qty = parseInt(nameQtyMatch[2], 10);
+      }
+
       const itemDescColVariations = ['item description', 'ability description', 'description', 'effect text', 'game text', 'details'];
       const itemDescIndex = getColumnIndex(itemDescColVariations);
       if (itemDescIndex !== -1 && String(row[itemDescIndex] || '').trim() !== '') {
           const potentialDesc = String(row[itemDescIndex] || '').trim();
-          // Avoid using the arsenal's main description if it's accidentally picked up by a generic "description" column
           if (potentialDesc !== arsenalsMap.get(arsenalId)?.description) {
             item.itemDescription = potentialDesc;
           }
       }
       
-      // Enhanced Effect Parsing (often used for mechanical text)
       const effectColVariations = ['effect', 'primary effect', 'main effect', 'ability effect'];
       const effectIndex = getColumnIndex(effectColVariations);
       if (effectIndex !== -1 && String(row[effectIndex] || '').trim() !== '') {
@@ -292,11 +296,14 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
       const cdIndex = getColumnIndex(['cd', 'cooldown']);
       if (cdIndex !== -1) item.cd = String(row[cdIndex] || '');
-
-      const qtyIndex = getColumnIndex(['qty', 'quantity', 'charges', 'uses']); // Added 'charges', 'uses'
-      if (qtyIndex !== -1 && row[qtyIndex] && String(row[qtyIndex]).trim() !== '') {
-        const parsedQty = parseInt(String(row[qtyIndex]), 10);
-        if(!isNaN(parsedQty)) item.qty = parsedQty;
+      
+      // Only parse from dedicated Qty column if not already parsed from name
+      if (item.qty === undefined) {
+          const qtyIndex = getColumnIndex(['qty', 'quantity', 'charges', 'uses']);
+          if (qtyIndex !== -1 && row[qtyIndex] && String(row[qtyIndex]).trim() !== '') {
+            const parsedQty = parseInt(String(row[qtyIndex]), 10);
+            if(!isNaN(parsedQty)) item.qty = parsedQty;
+          }
       }
       
       const arsenal = arsenalsMap.get(arsenalId);
