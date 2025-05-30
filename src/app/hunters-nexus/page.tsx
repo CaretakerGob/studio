@@ -129,7 +129,7 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
 
     const headers = rows[0] as string[];
     const sanitizedHeaders = headers.map(h => String(h || '').trim().toLowerCase()); 
-    console.log('[Nexus Page DEBUG] Sanitized Headers from Arsenal Sheet:', sanitizedHeaders);
+    // console.log('[Nexus Page DEBUG] Sanitized Headers from Arsenal Sheet:', sanitizedHeaders);
     
     const getColumnIndex = (headerNameVariations: string[]) => {
       for (const variation of headerNameVariations) {
@@ -170,17 +170,11 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
         const imageUrlFrontIndex = getColumnIndex(['imageurlfront', 'frontimage', 'imagefront', 'imageurl front']);
         if (imageUrlFrontIndex !== -1 && row[imageUrlFrontIndex]) {
           card.imageUrlFront = String(row[imageUrlFrontIndex] || '').trim();
-          console.log(`[Nexus Page DEBUG] Arsenal '${currentArsenalName}', Row ${rowIndex + 2}: Found imageUrlFront: '${card.imageUrlFront}' from column ${headers[imageUrlFrontIndex]}`);
-        } else {
-          console.log(`[Nexus Page DEBUG] Arsenal '${currentArsenalName}', Row ${rowIndex + 2}: No imageUrlFront found (index: ${imageUrlFrontIndex}). Tried headers: imageurlfront, frontimage, imagefront, imageurl front`);
         }
         
         const imageUrlBackIndex = getColumnIndex(['imageurlback', 'backimage', 'imageback', 'imageurl back']);
         if (imageUrlBackIndex !== -1 && row[imageUrlBackIndex]) {
           card.imageUrlBack = String(row[imageUrlBackIndex] || '').trim();
-           console.log(`[Nexus Page DEBUG] Arsenal '${currentArsenalName}', Row ${rowIndex + 2}: Found imageUrlBack: '${card.imageUrlBack}' from column ${headers[imageUrlBackIndex]}`);
-        } else {
-           console.log(`[Nexus Page DEBUG] Arsenal '${currentArsenalName}', Row ${rowIndex + 2}: No imageUrlBack found (index: ${imageUrlBackIndex}). Tried headers: imageurlback, backimage, imageback, imageurl back`);
         }
         
         const globalModFields: Record<string, keyof ArsenalCard> = {
@@ -229,6 +223,12 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             item.parsedStatModifiers = parseEffectStatChange(item.effectStatChangeString);
         }
       }
+      
+      // Weapon specific parsing
+      const weaponFlagColumnIndex = getColumnIndex(['weapon']);
+      if (weaponFlagColumnIndex !== -1 && row[weaponFlagColumnIndex]) {
+        item.isFlaggedAsWeapon = ['true', 'yes', '1', 'y'].includes(String(row[weaponFlagColumnIndex] || '').toLowerCase());
+      }
 
       const weaponStatsStringColumnIndex = getColumnIndex(['weapon details', 'effect description', 'effect', 'stats']);
       if (weaponStatsStringColumnIndex !== -1 && row[weaponStatsStringColumnIndex]) {
@@ -238,7 +238,14 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
           item.parsedWeaponStats = parseWeaponDetailsString(item.weaponDetails);
         }
       }
+       // Add parsing for item.type and item.class for more robust weapon identification
+      const itemTypeIndex = getColumnIndex(['type']); 
+      if (itemTypeIndex !== -1) item.type = String(row[itemTypeIndex] || '');
       
+      const classIndex = getColumnIndex(['class']); 
+      if (classIndex !== -1) item.class = String(row[classIndex] || '');
+
+      // Pet specific parsing
       const petFlagVariations = ['pet', 'is pet', 'companion'];
       const petFlagHeaderIndex = getColumnIndex(petFlagVariations);
       if (petFlagHeaderIndex !== -1 && row[petFlagHeaderIndex] !== undefined && String(row[petFlagHeaderIndex]).trim() !== '') {
@@ -265,11 +272,41 @@ async function getArsenalCardsFromGoogleSheet(): Promise<ArsenalCard[]> {
             }
         }
       }
+
+      // Ability flags parsing
+      const trueValues = ['true', 'yes', '1', 'y'];
+      const isActionIndex = getColumnIndex(['is action', 'isaction']);
+      if (isActionIndex !== -1) item.isAction = trueValues.includes(String(row[isActionIndex] || '').toLowerCase());
+      
+      const isInterruptIndex = getColumnIndex(['is interrupt', 'isinterrupt']);
+      if (isInterruptIndex !== -1) item.isInterrupt = trueValues.includes(String(row[isInterruptIndex] || '').toLowerCase());
+
+      const isPassiveIndex = getColumnIndex(['is passive', 'ispassive']);
+      if (isPassiveIndex !== -1) item.isPassive = trueValues.includes(String(row[isPassiveIndex] || '').toLowerCase());
+
+      const isFreeActionIndex = getColumnIndex(['is free action', 'isfreeaction']);
+      if (isFreeActionIndex !== -1) item.isFreeAction = trueValues.includes(String(row[isFreeActionIndex] || '').toLowerCase());
+
+      // Add cd and qty parsing
+      const cdIndex = getColumnIndex(['cd', 'cooldown']);
+      if (cdIndex !== -1) item.cd = String(row[cdIndex] || '');
+
+      const qtyIndex = getColumnIndex(['qty', 'quantity']);
+      if (qtyIndex !== -1 && row[qtyIndex] && String(row[qtyIndex]).trim() !== '') {
+        const parsedQty = parseInt(String(row[qtyIndex]), 10);
+        if(!isNaN(parsedQty)) item.qty = parsedQty;
+      }
       
       const arsenal = arsenalsMap.get(arsenalId);
       if (arsenal) {
         const isPlaceholderName = item.abilityName === `Item ${rowIndex + 2}`;
-        const isMeaningfulItem = !isPlaceholderName || item.isPet || item.isFlaggedAsWeapon || item.category || (item.itemDescription && item.itemDescription.trim() !== '') || (item.effect && item.effect.trim() !== '');
+        const isMeaningfulItem = !isPlaceholderName || 
+                                 item.isPet || 
+                                 item.isFlaggedAsWeapon || 
+                                 item.category || 
+                                 (item.itemDescription && item.itemDescription.trim() !== '') || 
+                                 (item.effect && item.effect.trim() !== '') ||
+                                 item.isAction || item.isInterrupt || item.isPassive || item.isFreeAction;
         if (isMeaningfulItem) {
           arsenal.items.push(item as ArsenalItem);
         }
