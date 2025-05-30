@@ -10,9 +10,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar, // Import useSidebar
 } from '@/components/ui/sidebar';
 import { SheetTitle } from '@/components/ui/sheet'; // Ensure SheetTitle is imported
-import { useSidebar } from '@/components/ui/sidebar'; // Import useSidebar
 import {
   Home,
   UserCircle,
@@ -26,7 +26,7 @@ import {
   Share2,
   User,
   HelpCircle,
-  ShieldHalf // Example icon for Hunter's Nexus
+  ShieldHalf
 } from 'lucide-react';
 
 const navItems = [
@@ -66,7 +66,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
-            <SidebarMenuItem key={item.href + item.label}>
+            <SidebarMenuItem key={item.href + '_' + item.label}>
               <Link href={item.href}>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
