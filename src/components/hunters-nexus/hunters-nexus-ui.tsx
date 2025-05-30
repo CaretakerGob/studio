@@ -23,6 +23,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"; // Added Tooltip imports
+import {
   Dices,
   Layers3,
   Users2,
@@ -425,6 +431,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
 
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
       <header className="flex-shrink-0 flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-2">
@@ -513,14 +520,21 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
             {selectedNexusCharacter && effectiveNexusCharacterStats ? (
                 <div className="w-full space-y-3">
                     <div className="flex items-start gap-3">
-                        <DialogTrigger asChild>
-                            <button type="button" onClick={() => { setCharacterForModal(selectedNexusCharacter); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${selectedNexusCharacter.name}`}>
-                                <Avatar className="h-16 w-16 md:h-20 md:w-20 border-4 border-primary hover:ring-2 hover:ring-accent cursor-pointer">
-                                <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0,1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar"/>
-                                <AvatarFallback>{selectedNexusCharacter.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                            </button>
-                        </DialogTrigger>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DialogTrigger asChild>
+                                    <button type="button" onClick={() => { setCharacterForModal(selectedNexusCharacter); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${selectedNexusCharacter.name}`}>
+                                        <Avatar className="h-16 w-16 md:h-20 md:w-20 border-4 border-primary hover:ring-2 hover:ring-accent cursor-pointer">
+                                        <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0,1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar"/>
+                                        <AvatarFallback>{selectedNexusCharacter.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                    </button>
+                                </DialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                                <p>View Details for {selectedNexusCharacter.name}</p>
+                            </TooltipContent>
+                        </Tooltip>
                         <div className="flex-grow">
                             <h2 className="text-xl md:text-2xl font-semibold text-primary">{selectedNexusCharacter.name}</h2>
                             <DialogTrigger asChild>
@@ -727,7 +741,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
         onOpenChange={(open) => {
           setIsCharacterCardModalOpen(open);
           if (!open) {
-            setIsCharacterSelectionDialogOpen(false); // Also close selection dialog
+            setIsCharacterSelectionDialogOpen(false); 
           }
         }}
       >
@@ -892,6 +906,6 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
-
