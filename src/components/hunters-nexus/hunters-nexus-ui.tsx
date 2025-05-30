@@ -19,7 +19,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
-  DialogFooter, // Added DialogFooter for explicit close button if needed
 } from "@/components/ui/dialog";
 import {
   Dices,
@@ -161,7 +160,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
 
   useEffect(() => {
-    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Current Equipped Arsenal:", currentEquippedArsenal?.name);
+    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentEquippedArsenal?.name, "Effective Stats:", effectiveNexusCharacterStats);
     if (effectiveNexusCharacterStats) {
       console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
       setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
@@ -175,7 +174,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       setCurrentNexusMv(null);
       setCurrentNexusDef(null);
     }
-  }, [selectedNexusCharacter, currentEquippedArsenal, effectiveNexusCharacterStats]);
+  }, [selectedNexusCharacter, effectiveNexusCharacterStats, currentEquippedArsenal]);
 
 
   const handleSelectCharacterForNexus = (character: Character) => {
@@ -265,10 +264,10 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
             setter = setCurrentNexusSanity; currentValue = currentNexusSanity; maxValueForStat = effectiveNexusCharacterStats.maxSanity;
             break;
         case 'mv':
-            setter = setCurrentNexusMv; currentValue = currentNexusMv; baseValueForStat = effectiveNexusCharacterStats.mv;
+            setter = setCurrentNexusMv; currentValue = currentNexusMv; baseValueForStat = effectiveNexusCharacterStats.mv; maxValueForStat = baseValueForStat;
             break;
         case 'def':
-            setter = setCurrentNexusDef; currentValue = currentNexusDef; baseValueForStat = effectiveNexusCharacterStats.def;
+            setter = setCurrentNexusDef; currentValue = currentNexusDef; baseValueForStat = effectiveNexusCharacterStats.def; maxValueForStat = baseValueForStat;
             break;
         default: return;
     }
@@ -279,8 +278,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         
         if (maxValueForStat !== undefined) { 
           newValue = Math.min(newValue, maxValueForStat);
-        } else if (baseValueForStat !== undefined && operation === 'increment') { 
-          newValue = Math.min(newValue, baseValueForStat);
         }
         setter(newValue);
     }
@@ -330,7 +327,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
-           {/* Dice Roller Card - Moved to top */}
+           {/* Dice Roller Card */}
            <Card>
             <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
@@ -414,8 +411,8 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
           
             {/* Character Info / Selection Block */}
             <div className={cn(
-                "flex-shrink-0 flex flex-col bg-card rounded-lg p-4 shadow-md",
-                selectedNexusCharacter ? "items-start justify-start" : "items-center justify-center min-h-[200px]"
+                "flex-shrink-0 flex bg-card rounded-lg p-4 shadow-md",
+                selectedNexusCharacter ? "flex-col items-start justify-start" : "flex-col items-center justify-center min-h-[200px]"
               )}
             >
             {selectedNexusCharacter && effectiveNexusCharacterStats ? (
@@ -522,30 +519,30 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                             </SelectContent>
                         </Select>
                         )}
-                        {currentEquippedArsenal && (
+                        {currentNexusArsenal && (
                             <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
-                                <h4 className="text-sm font-semibold text-accent">{currentEquippedArsenal.name}</h4>
-                                {currentEquippedArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentEquippedArsenal.description}</p>}
-                                {(currentEquippedArsenal.imageUrlFront || currentEquippedArsenal.imageUrlBack) && (
+                                 <h4 className="text-sm font-semibold text-accent">{currentNexusArsenal.name}</h4>
+                                {currentNexusArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentNexusArsenal.description}</p>}
+                                {(currentNexusArsenal.imageUrlFront || currentNexusArsenal.imageUrlBack) && (
                                     <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
-                                        {currentEquippedArsenal.imageUrlFront && (
+                                        {currentNexusArsenal.imageUrlFront && (
                                         <button
                                             type="button"
-                                            onClick={() => openImageModal(currentEquippedArsenal.imageUrlFront!)}
+                                            onClick={() => openImageModal(currentNexusArsenal.imageUrlFront!)}
                                             className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                                            aria-label={`View front of ${currentEquippedArsenal.name} card`}
+                                            aria-label={`View front of ${currentNexusArsenal.name} card`}
                                         >
-                                            <Image src={currentEquippedArsenal.imageUrlFront} alt={`${currentEquippedArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
+                                            <Image src={currentNexusArsenal.imageUrlFront} alt={`${currentNexusArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
                                         </button>
                                         )}
-                                        {currentEquippedArsenal.imageUrlBack && (
+                                        {currentNexusArsenal.imageUrlBack && (
                                         <button
                                             type="button"
-                                            onClick={() => openImageModal(currentEquippedArsenal.imageUrlBack!)}
+                                            onClick={() => openImageModal(currentNexusArsenal.imageUrlBack!)}
                                             className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                                            aria-label={`View back of ${currentEquippedArsenal.name} card`}
+                                            aria-label={`View back of ${currentNexusArsenal.name} card`}
                                         >
-                                            <Image src={currentEquippedArsenal.imageUrlBack} alt={`${currentEquippedArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
+                                            <Image src={currentNexusArsenal.imageUrlBack} alt={`${currentNexusArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
                                         </button>
                                         )}
                                     </div>
@@ -554,7 +551,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                         )}
                     </div>
                 </div>
-            ) : (
+              ) : (
                 <>
                   <UserCircle2 className="h-20 w-20 md:h-24 md:w-24 text-muted-foreground mb-3 md:mb-4" />
                   <h2 className="text-lg md:text-xl font-semibold text-muted-foreground">No Character Active</h2>
@@ -563,9 +560,8 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                      <Button variant="default">Select Character</Button>
                   </DialogTrigger>
                 </>
-            )}
+              )}
             </div>
-
 
             {/* Card Decks Card */}
             <Card>
@@ -673,7 +669,10 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
             <DialogDescription>Full view of the selected arsenal card image.</DialogDescription>
           </DialogHeader>
           {enlargedImageUrl && (
-            <div className="relative flex-1 w-full h-full overflow-hidden rounded-md">
+            <div 
+              className="relative flex-1 w-full h-full overflow-hidden rounded-md cursor-pointer"
+              onClick={() => setEnlargedImageUrl(null)} // Click to close
+            >
               <Image
                 src={enlargedImageUrl}
                 alt="Enlarged arsenal card"
@@ -687,5 +686,3 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     </Dialog>
   );
 }
-
-    
