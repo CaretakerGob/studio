@@ -27,7 +27,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"; // Added Tooltip imports
+} from "@/components/ui/tooltip";
 import {
   Dices,
   Layers3,
@@ -42,6 +42,7 @@ import {
   Footprints,
   Shield,
   Sword as MeleeIcon,
+  Swords, // Added Swords
   UserMinus,
   UserPlus,
   BookOpen,
@@ -73,12 +74,12 @@ import {
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character, type CharacterStats, type StatName, skillDefinitions, type SkillName, type Ability as CharacterAbility, type AbilityType } from '@/components/character-sheet/character-sheet-ui';
+import { charactersData, type Character, type CharacterStats, type StatName, skillDefinitions, type SkillName, type Ability as CharacterAbility, type AbilityType, type Weapon, type RangedWeapon } from '@/components/character-sheet/character-sheet-ui';
 import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
 import { GameCardDisplay } from '@/components/card-generator/game-card-display';
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { ArsenalCard as ActualArsenalCard, ArsenalItem } from '@/types/arsenal';
+import type { ArsenalCard as ActualArsenalCard, ArsenalItem, ParsedStatModifier, ArsenalItemCategory } from '@/types/arsenal';
 import { AbilityCard } from '@/components/character-sheet/ability-card';
 
 
@@ -106,26 +107,65 @@ const parseCooldownRounds = (cooldownString?: string | number): number | undefin
   return match ? parseInt(match[0], 10) : undefined;
 };
 
+// Helper functions (copied from character-sheet/page.tsx for arsenal parsing in Nexus)
+function parseEffectStatChange(statString: string | undefined): ParsedStatModifier[] {
+  if (!statString || typeof statString !== 'string' || statString.trim() === '') {
+    return [];
+  }
+  const modifiers: ParsedStatModifier[] = [];
+  const changes = statString.split(/[,;]/).map(s => s.trim()).filter(Boolean);
+
+  const statNameMap: Record<string, StatName> = {
+    'max hp': 'maxHp', 'maxhp': 'maxHp', 'hp': 'hp',
+    'mv': 'mv', 'movement': 'mv',
+    'def': 'def', 'defense': 'def',
+    'sanity': 'sanity', 'max sanity': 'maxSanity', 'maxsanity': 'maxSanity',
+    'melee attack': 'meleeAttack',
+  };
+
+  for (const change of changes) {
+    const match = change.toLowerCase().match(/([a-zA-Z\s]+)\s*([+-])\s*(\d+)/);
+    if (match) {
+      const rawStatName = match[1].trim().toLowerCase();
+      const operator = match[2];
+      const value = parseInt(match[3], 10);
+      const targetStatKey = statNameMap[rawStatName];
+      if (targetStatKey) { 
+        modifiers.push({ targetStat: targetStatKey, value: operator === '+' ? value : -value });
+      }
+    }
+  }
+  return modifiers;
+}
+
+function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range?: number; rawDetails: string } | undefined {
+  if (!detailsStr || typeof detailsStr !== 'string' || detailsStr.trim() === '') return undefined;
+  const parsed: { attack?: number; range?: number; rawDetails: string } = { rawDetails: detailsStr };
+  const match = detailsStr.match(/A(\d+)(?:\s*[\/-]?\s*R(\d+))?/i);
+  if (match) {
+    if (match[1]) parsed.attack = parseInt(match[1], 10);
+    if (match[2]) parsed.range = parseInt(match[2], 10);
+  }
+  return parsed.attack !== undefined ? parsed : { rawDetails: detailsStr };
+}
+
+
 export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNexusUIProps) {
   const arsenalCards = rawArsenalCardsProp || [];
   const { toast } = useToast();
 
-  // Dice Roller State
   const [nexusNumCombatDice, setNexusNumCombatDice] = useState('1');
   const [nexusNumDice, setNexusNumDice] = useState('1');
   const [nexusDiceSides, setNexusDiceSides] = useState('6');
   const [nexusLatestRoll, setNexusLatestRoll] = useState<NexusRollResult | null>(null);
   const [nexusRollKey, setNexusRollKey] = useState(0);
 
-  // Character State
   const [selectedNexusCharacter, setSelectedNexusCharacter] = useState<Character | null>(null);
   const [isCharacterSelectionDialogOpen, setIsCharacterSelectionDialogOpen] = useState(false);
   const [partyMembers, setPartyMembers] = useState<Character[]>([]);
 
-  // Arsenal State for selected character
   const [selectedCharacterArsenalId, setSelectedCharacterArsenalId] = useState<string | null>(null);
 
-  // Active character stat tracking
   const [currentNexusHp, setCurrentNexusHp] = useState<number | null>(null);
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
   const [currentNexusMv, setCurrentNexusMv] = useState<number | null>(null);
@@ -133,12 +173,10 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
   const [nexusSessionMaxHpModifier, setNexusSessionMaxHpModifier] = useState(0);
   const [nexusSessionMaxSanityModifier, setNexusSessionMaxSanityModifier] = useState(0);
   
-  // Card Deck State
   const [nexusDrawnCardsHistory, setNexusDrawnCardsHistory] = useState<GameCard[]>([]);
   const [nexusSelectedDeckName, setNexusSelectedDeckName] = useState<string | undefined>(undefined);
   const [nexusCardKey, setNexusCardKey] = useState(0);
 
-  // Image Modal State
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
@@ -146,11 +184,9 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
   const [touchEndY, setTouchEndY] = useState<number | null>(null);
   const [imageZoomLevel, setImageZoomLevel] = useState(1);
 
-  // Character Details Modal State
   const [isCharacterCardModalOpen, setIsCharacterCardModalOpen] = useState(false);
   const [characterForModal, setCharacterForModal] = useState<Character | null>(null);
 
-  // State for Ability Trackers in Nexus Modal
   const [nexusCurrentAbilityCooldowns, setNexusCurrentAbilityCooldowns] = useState<Record<string, number>>({});
   const [nexusMaxAbilityCooldowns, setNexusMaxAbilityCooldowns] = useState<Record<string, number>>({});
   const [nexusCurrentAbilityQuantities, setNexusCurrentAbilityQuantities] = useState<Record<string, number>>({});
@@ -205,7 +241,6 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
         });
       }
     }
-
     calculatedStats.hp = Math.max(0, calculatedStats.hp);
     calculatedStats.maxHp = Math.max(1, calculatedStats.maxHp);
     calculatedStats.mv = Math.max(0, calculatedStats.mv);
@@ -213,13 +248,133 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
     calculatedStats.sanity = Math.max(0, calculatedStats.sanity);
     calculatedStats.maxSanity = Math.max(1, calculatedStats.maxSanity);
     calculatedStats.meleeAttack = Math.max(0, calculatedStats.meleeAttack ?? 0);
-
-
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
-    
     return calculatedStats;
   }, [selectedNexusCharacter, currentNexusArsenal]);
+
+  const effectiveNexusCharacterAbilities = useMemo(() => {
+    if (!characterForModal) return [];
+    let baseAbilities = characterForModal.abilities ? [...characterForModal.abilities] : [];
+    const arsenalGrantedAbilities: CharacterAbility[] = [];
+
+    if (currentNexusArsenal && currentNexusArsenal.items) {
+      currentNexusArsenal.items.forEach(item => {
+        const createAbilityFromFlag = (type: AbilityType, flag: boolean | undefined, flagSource: string) => {
+          if (flag === true) {
+            arsenalGrantedAbilities.push({
+              id: `nexus-arsenal-${currentNexusArsenal.id}-${item.id}-${type.replace(/\s+/g, '')}-${flagSource}`,
+              name: item.abilityName || `Arsenal ${type}`,
+              type: type,
+              description: item.itemDescription || item.effect || `Granted by ${item.abilityName || 'equipped arsenal'}.`,
+              cooldown: item.cd,
+              maxQuantity: item.qty,
+              details: item.class || item.type,
+              cost: 0,
+            });
+          }
+        };
+        createAbilityFromFlag('Action', item.isAction, 'isAction');
+        createAbilityFromFlag('Interrupt', item.isInterrupt, 'isInterrupt');
+        createAbilityFromFlag('Passive', item.isPassive, 'isPassive');
+        createAbilityFromFlag('FREE Action', item.isFreeAction, 'isFreeAction');
+      });
+    }
+    return [...baseAbilities, ...arsenalGrantedAbilities];
+  }, [characterForModal, currentNexusArsenal]);
+
+  const characterDefaultMeleeWeaponForNexus = useMemo(() => {
+      if (!characterForModal) return undefined;
+      const template = charactersData.find(c => c.id === (characterForModal.templateId || characterForModal.id));
+      return template?.meleeWeapon
+          ? { ...template.meleeWeapon }
+          : { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" };
+  }, [characterForModal]);
+
+  const characterDefaultRangedWeaponForNexus = useMemo(() => {
+      if (!characterForModal) return undefined;
+      const template = charactersData.find(c => c.id === (characterForModal.templateId || characterForModal.id));
+      return template?.rangedWeapon
+          ? { ...template.rangedWeapon } as RangedWeapon
+          : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" } as RangedWeapon;
+  }, [characterForModal]);
+
+  const effectiveNexusMeleeWeapon = useMemo(() => {
+      if (!characterForModal) return undefined;
+      let weaponToDisplay: Weapon | undefined = characterDefaultMeleeWeaponForNexus;
+
+      if (currentNexusArsenal?.items) {
+          const arsenalMeleeItem = currentNexusArsenal.items.find(item =>
+             !item.isPet &&
+             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
+             item.parsedWeaponStats?.attack !== undefined &&
+             (!item.parsedWeaponStats?.range || item.parsedWeaponStats.range <= 1 || item.parsedWeaponStats.range === 0)
+          );
+          if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
+              weaponToDisplay = {
+                  name: arsenalMeleeItem.abilityName || 'Arsenal Melee',
+                  attack: arsenalMeleeItem.parsedWeaponStats.attack,
+                  flavorText: arsenalMeleeItem.itemDescription || arsenalMeleeItem.parsedWeaponStats.rawDetails,
+              };
+          }
+      }
+      if (currentNexusArsenal && weaponToDisplay) {
+          weaponToDisplay = {
+              ...weaponToDisplay,
+              attack: (weaponToDisplay.attack || 0) + (currentNexusArsenal.meleeAttackMod || 0),
+          };
+      }
+      const template = charactersData.find(c => c.id === (characterForModal.templateId || characterForModal.id));
+      if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === 1 &&
+          !template?.meleeWeapon?.name &&
+          !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (!i.parsedWeaponStats?.range || i.parsedWeaponStats.range <= 1)) &&
+          !currentNexusArsenal?.meleeAttackMod &&
+          characterForModal.templateId !== 'custom'
+      ) {
+        return undefined;
+      }
+      return weaponToDisplay;
+  }, [characterForModal, currentNexusArsenal, characterDefaultMeleeWeaponForNexus]);
+
+  const effectiveNexusRangedWeapon = useMemo(() => {
+      if (!characterForModal) return undefined;
+      let weaponToDisplay: RangedWeapon | undefined = characterDefaultRangedWeaponForNexus;
+
+      if (currentNexusArsenal?.items) {
+          const arsenalRangedItem = currentNexusArsenal.items.find(item =>
+             !item.isPet &&
+             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
+             item.parsedWeaponStats?.attack !== undefined &&
+             item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 1
+          );
+          if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
+              weaponToDisplay = {
+                  name: arsenalRangedItem.abilityName || 'Arsenal Ranged',
+                  attack: arsenalRangedItem.parsedWeaponStats.attack,
+                  range: arsenalRangedItem.parsedWeaponStats.range,
+                  flavorText: arsenalRangedItem.itemDescription || arsenalRangedItem.parsedWeaponStats.rawDetails,
+              };
+          }
+      }
+      if (currentNexusArsenal && weaponToDisplay) {
+          weaponToDisplay = {
+              ...weaponToDisplay,
+              attack: (weaponToDisplay.attack || 0) + (currentNexusArsenal.rangedAttackMod || 0),
+              range: (weaponToDisplay.range || 0) + (currentNexusArsenal.rangedRangeMod || 0),
+          };
+      }
+      const template = charactersData.find(c => c.id === (characterForModal.templateId || characterForModal.id));
+      if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 &&
+          !template?.rangedWeapon?.name &&
+          !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 1)) &&
+          !currentNexusArsenal?.rangedAttackMod && !currentNexusArsenal?.rangedRangeMod &&
+          characterForModal.templateId !== 'custom'
+      ) {
+        return undefined;
+      }
+      return weaponToDisplay;
+  }, [characterForModal, currentNexusArsenal, characterDefaultRangedWeaponForNexus]);
+
 
   useEffect(() => {
     if (selectedNexusCharacter && effectiveNexusCharacterStats) {
@@ -246,13 +401,13 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
   }, [enlargedImageUrl]);
 
    useEffect(() => {
-    if (characterForModal && characterForModal.abilities) {
+    if (characterForModal && effectiveNexusCharacterAbilities) {
       const newMaxCDs: Record<string, number> = {};
       const newCurrentCDs: Record<string, number> = {};
       const newMaxQTs: Record<string, number> = {};
       const newCurrentQTs: Record<string, number> = {};
 
-      characterForModal.abilities.forEach(ability => {
+      effectiveNexusCharacterAbilities.forEach(ability => {
         if (ability.cooldown) {
           const maxRounds = parseCooldownRounds(String(ability.cooldown));
           if (maxRounds !== undefined) {
@@ -276,7 +431,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
       setNexusMaxAbilityQuantities({});
       setNexusCurrentAbilityQuantities({});
     }
-  }, [characterForModal]);
+  }, [characterForModal, effectiveNexusCharacterAbilities]);
 
 
   const handleImageDoubleClick = () => setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
@@ -832,7 +987,6 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {effectiveNexusCharacterStats.def}</p>
                       </div>
                     )}
-                    {/* Melee Attack - No longer interactive tracker, display only */}
                     {effectiveNexusCharacterStats.meleeAttack !== undefined && (
                         <div className="col-span-2">
                             <Label className="flex items-center text-xs font-medium"><MeleeIcon className="mr-1.5 h-3 w-3 text-orange-400" />Melee ATK</Label>
@@ -846,10 +1000,34 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCardsProp }: HuntersNex
                       <div className="space-y-1 text-sm"> {skillDefinitions.map(skillDef => { const skillValue = characterForModal.skills?.[skillDef.id as SkillName] || 0; if (skillValue > 0) { const IconComponent = getSkillIcon(skillDef.id as SkillName); return ( <div key={skillDef.id} className="flex items-center justify-between p-1 bg-muted/20 rounded-sm"> <span className="flex items-center"><IconComponent className="mr-2 h-4 w-4 text-muted-foreground" /> {skillDef.label}</span> <span>{skillValue}</span> </div> ); } return null; })} </div>
                     </>
                   )}
-                  {characterForModal.abilities && characterForModal.abilities.length > 0 && (
+                  
+                  { (effectiveNexusMeleeWeapon || effectiveNexusRangedWeapon) && (
+                    <>
+                      <Separator />
+                      <h4 className="text-lg font-semibold text-primary flex items-center"><Swords className="mr-2 h-5 w-5" /> Weapons</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        {effectiveNexusMeleeWeapon && (
+                          <div className="p-2 bg-muted/20 rounded-md">
+                            <p className="font-medium text-foreground">{effectiveNexusMeleeWeapon.name} (Melee)</p>
+                            <p>ATK: {effectiveNexusMeleeWeapon.attack}</p>
+                            {effectiveNexusMeleeWeapon.flavorText && <p className="text-xs text-muted-foreground">{effectiveNexusMeleeWeapon.flavorText}</p>}
+                          </div>
+                        )}
+                        {effectiveNexusRangedWeapon && (
+                          <div className="p-2 bg-muted/20 rounded-md">
+                            <p className="font-medium text-foreground">{effectiveNexusRangedWeapon.name} (Ranged)</p>
+                            <p>ATK: {effectiveNexusRangedWeapon.attack} / RNG: {effectiveNexusRangedWeapon.range}</p>
+                            {effectiveNexusRangedWeapon.flavorText && <p className="text-xs text-muted-foreground">{effectiveNexusRangedWeapon.flavorText}</p>}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {effectiveNexusCharacterAbilities && effectiveNexusCharacterAbilities.length > 0 && (
                      <> <Separator /> <h4 className="text-lg font-semibold text-primary flex items-center"><BookMarked className="mr-2 h-5 w-5" /> Abilities</h4>
                       <div className="space-y-2 text-sm"> 
-                        {characterForModal.abilities.map(ability => ( 
+                        {effectiveNexusCharacterAbilities.map(ability => ( 
                             <AbilityCard 
                                 key={`modal-ability-${ability.id}`} 
                                 ability={ability} 
