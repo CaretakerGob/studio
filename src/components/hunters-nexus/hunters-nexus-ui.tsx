@@ -87,8 +87,8 @@ interface HuntersNexusUIProps {
 }
 
 export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUIProps) {
-  const { toast } = useToast();
   const arsenalCards = rawArsenalCards || [];
+  const { toast } = useToast();
 
   // Dice Roller State
   const [nexusNumCombatDice, setNexusNumCombatDice] = useState('1');
@@ -126,7 +126,6 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
   const [isCharacterCardModalOpen, setIsCharacterCardModalOpen] = useState(false);
   const [characterForModal, setCharacterForModal] = useState<Character | null>(null);
 
-
   const criticalArsenalError = useMemo(() => {
     if (!arsenalCards || arsenalCards.length === 0) return null;
     return arsenalCards.find(card => card.id === 'error-critical-arsenal');
@@ -139,7 +138,6 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     console.log("[Nexus UI] currentEquippedArsenal updated:", card.name);
     return card;
   }, [selectedCharacterArsenalId, arsenalCards]);
-
 
   const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
     console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentEquippedArsenal?.name);
@@ -158,6 +156,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
       calculatedStats.def = (calculatedStats.def || 0) + (currentEquippedArsenal.defMod || 0);
       calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentEquippedArsenal.sanityMod || 0);
       calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentEquippedArsenal.maxSanityMod || 0);
+      calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + (currentEquippedArsenal.meleeAttackMod || 0); // Added meleeAttackMod
       
       if (currentEquippedArsenal.items) {
         currentEquippedArsenal.items.forEach(item => {
@@ -200,7 +199,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
         setCurrentNexusMv(effectiveNexusCharacterStats.mv);
         setCurrentNexusDef(effectiveNexusCharacterStats.def);
     } else {
-        console.log("[Nexus UI] No character selected or no effective stats, resetting HP/Sanity to null.");
+        console.log("[Nexus UI] No character selected or no effective stats, resetting HP/Sanity/MV/DEF to null.");
         setCurrentNexusHp(null);
         setCurrentNexusSanity(null);
         setCurrentNexusMv(null);
@@ -215,6 +214,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
   }, [enlargedImageUrl]);
 
   const handleImageDoubleClick = () => setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
+  
   const handleEnlargedImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation(); 
     if (imageZoomLevel > 1) setImageZoomLevel(1); 
@@ -237,13 +237,18 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     }
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
+
     if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8 && currentEquippedArsenal && enlargedImageUrl) { 
         if (enlargedImageUrl === currentEquippedArsenal.imageUrlFront && currentEquippedArsenal.imageUrlBack) setEnlargedImageUrl(currentEquippedArsenal.imageUrlBack);
         else if (enlargedImageUrl === currentEquippedArsenal.imageUrlBack && currentEquippedArsenal.imageUrlFront) setEnlargedImageUrl(currentEquippedArsenal.imageUrlFront);
         setImageZoomLevel(1);
     } else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) {
-        if (imageZoomLevel > 1) setImageZoomLevel(1);
-        else setEnlargedImageUrl(null);
+        // This is a tap
+        if (imageZoomLevel > 1) {
+            setImageZoomLevel(1); // If zoomed, first tap unzooms
+        } else {
+            setEnlargedImageUrl(null); // If not zoomed, tap closes
+        }
     }
     setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
   };
@@ -256,7 +261,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(null); 
+    setSelectedCharacterArsenalId(null); // Reset arsenal when new character is selected
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -350,13 +355,13 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     const percentage = (current / max) * 100;
     if (statType === 'sanity') { if (percentage > 66) return "[&>div]:bg-blue-500"; if (percentage > 33) return "[&>div]:bg-blue-400"; return "[&>div]:bg-red-500"; }
     if (statType === 'def' || statType === 'mv') { if (percentage >= 75) return "[&>div]:bg-green-500"; if (percentage >= 40) return "[&>div]:bg-yellow-500"; return "[&>div]:bg-red-500"; }
+    // Default for HP
     if (percentage <= 33) return '[&>div]:bg-red-500'; if (percentage <= 66) return '[&>div]:bg-yellow-500'; return '[&>div]:bg-green-500';
   };
   
   const latestDrawnCardForDisplay = nexusDrawnCardsHistory.length > 0 ? nexusDrawnCardsHistory[0] : null;
-  const previousDrawnCardsForDisplay = nexusDrawnCardsHistory.slice(1);
 
-  const getSkillIcon = (skillId: SkillName) => {
+  const getSkillIcon = (skillId: SkillName): React.ElementType => {
     const skillDef = skillDefinitions.find(s => s.id === skillId);
     return skillDef?.icon || Library; 
   };
@@ -381,7 +386,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
           </header>
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
-             <Card>
+            <Card>
               <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center"><Dices className="mr-2 h-5 w-5 text-primary" />Dice Roller</CardTitle>
               </CardHeader>
@@ -426,16 +431,16 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
             <div className={cn("flex-shrink-0 flex bg-card rounded-lg p-4 shadow-md w-full", selectedNexusCharacter ? "flex-col items-start justify-start" : "flex-col items-center justify-center min-h-[200px]")}>
               {selectedNexusCharacter && effectiveNexusCharacterStats ? (
                 <div className="w-full space-y-3">
-                  <div className="flex items-center gap-3">
-                      <DialogTrigger asChild>
+                  <div className="flex items-start gap-3">
+                    <DialogTrigger asChild>
                         <button type="button" onClick={() => { setCharacterForModal(selectedNexusCharacter); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${selectedNexusCharacter.name}`}>
                            <Avatar className="h-16 w-16 md:h-20 md:w-20 border-4 border-primary hover:ring-2 hover:ring-accent cursor-pointer">
                             <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0, 1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar" />
                             <AvatarFallback>{selectedNexusCharacter.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                         </button>
-                      </DialogTrigger>
-                    <div>
+                    </DialogTrigger>
+                    <div className="flex-grow">
                       <h2 className="text-xl md:text-2xl font-semibold text-primary">{selectedNexusCharacter.name}</h2>
                       <DialogTrigger asChild><Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary">Change Character</Button></DialogTrigger>
                     </div>
@@ -581,7 +586,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                     {effectiveNexusCharacterStats?.meleeAttack !== undefined && <p><strong className="text-muted-foreground">Melee ATK:</strong> {effectiveNexusCharacterStats.meleeAttack}</p>}
                   </div>
 
-                  {Object.values(characterForModal.skills || {}).some(val => val > 0) && (
+                  {characterForModal.skills && Object.values(characterForModal.skills).some(val => val && val > 0) && (
                     <>
                       <Separator />
                       <h4 className="text-lg font-semibold text-primary flex items-center"><ListChecks className="mr-2 h-5 w-5" /> Skills</h4>
@@ -610,7 +615,9 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                       <div className="space-y-2 text-sm">
                         {characterForModal.abilities.map(ability => (
                           <div key={ability.id} className="p-2 bg-muted/20 rounded-md">
-                            <p className="font-semibold">{ability.name} <Badge variant="outline" className="ml-1 text-xs">{ability.type}</Badge></p>
+                            <div className="font-semibold flex items-center"> {/* Changed p to div and added flex */}
+                              {ability.name} <Badge variant="outline" className="ml-2 text-xs">{ability.type}</Badge> {/* Adjusted margin for badge */}
+                            </div>
                             <p className="text-xs text-muted-foreground">{ability.description}</p>
                             {ability.details && <p className="text-xs text-muted-foreground/80">Details: {ability.details}</p>}
                             {ability.cooldown && <p className="text-xs text-muted-foreground/80">Cooldown: {ability.cooldown}</p>}
