@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Dices,
@@ -40,12 +41,28 @@ import {
   Package,
   AlertCircle,
   ImageIcon,
+  Info,
+  ListChecks,
+  BookMarked,
+  Library,
+  Sparkles,
+  PersonStanding,
+  Laptop,
+  Star as StarIcon,
+  VenetianMask,
+  HeartHandshake,
+  Wrench,
+  Search,
+  Smile,
+  Leaf,
+  ClipboardList,
+  SlidersHorizontal
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character, type CharacterStats, type StatName } from '@/components/character-sheet/character-sheet-ui';
-import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
+import { charactersData, type Character, type CharacterStats, type StatName, skillDefinitions, type SkillName } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData & skillDefinitions
+import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui'; // Import sampleDecks and GameCard
 import { GameCardDisplay } from '@/components/card-generator/game-card-display';
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -65,13 +82,13 @@ const MAX_TAP_MOVEMENT = 10;
 const ZOOM_SCALE_FACTOR = 1.75;
 
 interface HuntersNexusUIProps {
-  arsenalCards: ActualArsenalCard[]; // This prop comes from the page
+  arsenalCards: ActualArsenalCard[];
 }
 
 export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUIProps) {
-  const arsenalCards = rawArsenalCards || []; // Default to empty array if undefined
-
+  const arsenalCards = rawArsenalCards || [];
   const { toast } = useToast();
+
   const [nexusNumDice, setNexusNumDice] = useState('1');
   const [nexusDiceSides, setNexusDiceSides] = useState('6');
   const [nexusNumCombatDice, setNexusNumCombatDice] = useState('1');
@@ -100,44 +117,50 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
   const [touchEndY, setTouchEndY] = useState<number | null>(null);
   const [imageZoomLevel, setImageZoomLevel] = useState(1);
 
+  const [isCharacterCardModalOpen, setIsCharacterCardModalOpen] = useState(false);
+  const [characterForModal, setCharacterForModal] = useState<Character | null>(null);
+
   const criticalArsenalError = useMemo(() => {
     if (!arsenalCards || arsenalCards.length === 0) return null;
     return arsenalCards.find(card => card.id === 'error-critical-arsenal');
   }, [arsenalCards]);
 
   const currentNexusArsenal = useMemo(() => {
-    if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) {
-      return null;
-    }
+    console.log("[Nexus UI] currentNexusArsenal memo. Selected ID:", selectedCharacterArsenalId, "ArsenalCards count:", arsenalCards?.length);
+    if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) return null;
     const card = arsenalCards.find(c => c.id === selectedCharacterArsenalId);
-    if (!card || card.id.startsWith('error-')) {
-      return null;
-    }
+    if (!card || card.id.startsWith('error-')) return null;
+    console.log("[Nexus UI] currentNexusArsenal updated:", card.name);
     return card;
   }, [selectedCharacterArsenalId, arsenalCards]);
 
   const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
+    console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentNexusArsenal?.name);
     if (!selectedNexusCharacter) {
+      console.log("[Nexus UI] Memo: No selectedNexusCharacter for effectiveNexusCharacterStats.");
       return null;
     }
 
     let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(selectedNexusCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
 
     if (currentNexusArsenal) {
+      console.log("[Nexus UI] Applying GLOBAL arsenal modifiers from:", currentNexusArsenal.name, currentNexusArsenal);
       calculatedStats.hp = (calculatedStats.hp || 0) + (currentNexusArsenal.hpMod || 0);
       calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentNexusArsenal.maxHpMod || 0);
       calculatedStats.mv = (calculatedStats.mv || 0) + (currentNexusArsenal.mvMod || 0);
       calculatedStats.def = (calculatedStats.def || 0) + (currentNexusArsenal.defMod || 0);
       calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentNexusArsenal.sanityMod || 0);
       calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentNexusArsenal.maxSanityMod || 0);
+      calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + (currentNexusArsenal.meleeAttackMod || 0);
       
       if (currentNexusArsenal.items) {
         currentNexusArsenal.items.forEach(item => {
           if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
-             console.log(`[Nexus UI] Item '${item.abilityName}' is GEAR. Parsed Modifiers:`, JSON.stringify(item.parsedStatModifiers));
+            console.log(`[Nexus UI] Item '${item.abilityName}' is GEAR. Parsed Modifiers:`, JSON.stringify(item.parsedStatModifiers));
             item.parsedStatModifiers.forEach(mod => {
               const statKey = mod.targetStat as keyof CharacterStats;
               if (statKey in calculatedStats && typeof (calculatedStats[statKey]) === 'number') {
+                 console.log(`[Nexus UI] APPLYING GEAR MODS for ${item.abilityName}: ${statKey} by ${mod.value}`);
                 (calculatedStats[statKey] as number) = (calculatedStats[statKey] as number) + mod.value;
               }
             });
@@ -157,23 +180,26 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
     
+    console.log("[Nexus UI] Final effectiveNexusCharacterStats:", calculatedStats);
     return calculatedStats;
   }, [selectedNexusCharacter, currentNexusArsenal]);
 
- useEffect(() => {
-    if (effectiveNexusCharacterStats) {
+  useEffect(() => {
+    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats);
+    if (selectedNexusCharacter && effectiveNexusCharacterStats) {
+        console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
         setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
         setCurrentNexusSanity(effectiveNexusCharacterStats.maxSanity);
         setCurrentNexusMv(effectiveNexusCharacterStats.mv);
         setCurrentNexusDef(effectiveNexusCharacterStats.def);
     } else {
+        console.log("[Nexus UI] No character selected or no effective stats, resetting HP/Sanity to null.");
         setCurrentNexusHp(null);
         setCurrentNexusSanity(null);
         setCurrentNexusMv(null);
         setCurrentNexusDef(null);
     }
-}, [effectiveNexusCharacterStats]);
-
+  }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
 
   useEffect(() => {
     if (!enlargedImageUrl) {
@@ -181,25 +207,49 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     }
   }, [enlargedImageUrl]);
 
-  const handleImageDoubleClick = () => {
-    setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
-  };
-  
+  const handleImageDoubleClick = () => setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
   const handleEnlargedImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation(); 
-    if (imageZoomLevel > 1) {
-      setImageZoomLevel(1); 
-    } else {
-      if (!touchEndX && !touchEndY) { 
-          setEnlargedImageUrl(null);
-      }
+    if (imageZoomLevel > 1) setImageZoomLevel(1); 
+    else if (!touchEndX && !touchEndY) setEnlargedImageUrl(null);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    setTouchEndX(null); setTouchEndY(null); 
+    setTouchStartX(e.targetTouches[0].clientX);
+    setTouchStartY(e.targetTouches[0].clientY);
+  };
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+    setTouchEndY(e.targetTouches[0].clientY);
+  };
+  const handleTouchEnd = () => {
+    if (!touchStartX || !touchEndX || !touchStartY || !touchEndY) {
+        setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
+        return;
     }
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8 && currentNexusArsenal && enlargedImageUrl) { 
+        if (enlargedImageUrl === currentNexusArsenal.imageUrlFront && currentNexusArsenal.imageUrlBack) setEnlargedImageUrl(currentNexusArsenal.imageUrlBack);
+        else if (enlargedImageUrl === currentNexusArsenal.imageUrlBack && currentNexusArsenal.imageUrlFront) setEnlargedImageUrl(currentNexusArsenal.imageUrlFront);
+        setImageZoomLevel(1);
+    } else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) {
+        if (imageZoomLevel > 1) setImageZoomLevel(1);
+        else setEnlargedImageUrl(null);
+    }
+    setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
+  };
+  
+  const openImageModal = (imageUrl: string) => {
+    setEnlargedImageUrl(imageUrl);
+    setImageZoomLevel(1);
   };
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(null); // Reset arsenal when new character is selected
+    setSelectedCharacterArsenalId(null);
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -207,590 +257,312 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
   const handleNexusNumberedRoll = () => {
     const numDiceVal = parseInt(nexusNumDice, 10);
     const diceSidesVal = parseInt(nexusDiceSides, 10);
-
-    if (isNaN(numDiceVal) || numDiceVal < 1) {
-      toast({ title: "Invalid Input", description: "Number of dice must be at least 1.", variant: "destructive" });
-      return;
-    }
-    if (isNaN(diceSidesVal) || diceSidesVal < 2) {
-      toast({ title: "Invalid Input", description: "Number of sides must be at least 2.", variant: "destructive" });
-      return;
-    }
-
-    const rolls: number[] = [];
-    let total = 0;
-    for (let i = 0; i < numDiceVal; i++) {
-      const roll = Math.floor(Math.random() * diceSidesVal) + 1;
-      rolls.push(roll);
-      total += roll;
-    }
-    setNexusLatestRoll({
-      type: 'numbered',
-      notation: `${numDiceVal}d${diceSidesVal}`,
-      rolls,
-      total,
-    });
+    if (isNaN(numDiceVal) || numDiceVal < 1) { toast({ title: "Invalid Input", description: "Number of dice must be at least 1.", variant: "destructive" }); return; }
+    if (isNaN(diceSidesVal) || diceSidesVal < 2) { toast({ title: "Invalid Input", description: "Number of sides must be at least 2.", variant: "destructive" }); return; }
+    const rolls: number[] = []; let total = 0;
+    for (let i = 0; i < numDiceVal; i++) { const roll = Math.floor(Math.random() * diceSidesVal) + 1; rolls.push(roll); total += roll; }
+    setNexusLatestRoll({ type: 'numbered', notation: `${numDiceVal}d${diceSidesVal}`, rolls, total });
     setNexusRollKey(prev => prev + 1);
   };
 
   const handleNexusCombatRoll = () => {
     const numCombat = parseInt(nexusNumCombatDice, 10);
-    if (isNaN(numCombat) || numCombat < 1 || numCombat > 12) {
-      toast({ title: "Invalid Input", description: "Number of combat dice must be between 1 and 12.", variant: "destructive" });
-      return;
-    }
-    const rolls: CombatDieFace[] = [];
-    const faceCounts: Record<CombatDieFace, number> = { swordandshield: 0, 'double-sword': 0, blank: 0 };
-
-    for (let i = 0; i < numCombat; i++) {
-      const rollIndex = Math.floor(Math.random() * 6);
-      const face = combatDieFaces[rollIndex];
-      rolls.push(face);
-      faceCounts[face]++;
-    }
+    if (isNaN(numCombat) || numCombat < 1 || numCombat > 12) { toast({ title: "Invalid Input", description: "Number of combat dice must be between 1 and 12.", variant: "destructive" }); return; }
+    const rolls: CombatDieFace[] = []; const faceCounts: Record<CombatDieFace, number> = { swordandshield: 0, 'double-sword': 0, blank: 0 };
+    for (let i = 0; i < numCombat; i++) { const rollIndex = Math.floor(Math.random() * 6); const face = combatDieFaces[rollIndex]; rolls.push(face); faceCounts[face]++; }
     const summary = `Sword & Shield: ${faceCounts.swordandshield}, Double Sword: ${faceCounts['double-sword']}, Blank: ${faceCounts.blank}`;
-    setNexusLatestRoll({
-      type: 'combat',
-      notation: `${numCombat}x Combat Dice`,
-      rolls,
-      total: summary,
-    });
+    setNexusLatestRoll({ type: 'combat', notation: `${numCombat}x Combat Dice`, rolls, total: summary });
     setNexusRollKey(prev => prev + 1);
   };
 
   const handleNexusDrawCard = () => {
-    if (!nexusSelectedDeckName) {
-      toast({ title: "No Deck Selected", description: "Please select a deck to draw from.", variant: "destructive" });
-      return;
-    }
+    if (!nexusSelectedDeckName) { toast({ title: "No Deck Selected", description: "Please select a deck to draw from.", variant: "destructive" }); return; }
     const deck = sampleDecks.find(d => d.name === nexusSelectedDeckName);
-    if (!deck || deck.cards.length === 0) {
-      toast({ title: "Deck Issue", description: `Could not find or draw from deck: ${nexusSelectedDeckName}.`, variant: "destructive" });
-      return;
-    }
-    const randomIndex = Math.floor(Math.random() * deck.cards.length);
-    const drawnCard = deck.cards[randomIndex];
-    
-    const newHistory = [drawnCard, ...nexusDrawnCardsHistory].slice(0, 5);
-    setNexusDrawnCardsHistory(newHistory);
+    if (!deck || deck.cards.length === 0) { toast({ title: "Deck Issue", description: `Could not find or draw from deck: ${nexusSelectedDeckName}.`, variant: "destructive" }); return; }
+    const randomIndex = Math.floor(Math.random() * deck.cards.length); const drawnCard = deck.cards[randomIndex];
+    setNexusDrawnCardsHistory(prev => [drawnCard, ...prev].slice(0, 5));
     setNexusCardKey(prev => prev + 1);
     toast({ title: "Card Drawn!", description: `Drew ${drawnCard.name} from ${deck.name}.` });
   };
 
-  const handleNexusStatChange = (stat: StatName, operation: 'increment' | 'decrement') => {
+  const handleNexusStatChange = (stat: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>, operation: 'increment' | 'decrement') => {
     if (!effectiveNexusCharacterStats) return;
     const delta = operation === 'increment' ? 1 : -1;
-    
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
-    let baseValueForStat: number | undefined = undefined; // For MV/DEF if they reset to base
+    let baseValueForStat: number | undefined = undefined;
 
     switch (stat) {
-        case 'hp':
-            setter = setCurrentNexusHp; currentValue = currentNexusHp; maxValueForStat = effectiveNexusCharacterStats.maxHp;
-            break;
-        case 'sanity':
-            setter = setCurrentNexusSanity; currentValue = currentNexusSanity; maxValueForStat = effectiveNexusCharacterStats.maxSanity;
-            break;
-        case 'mv':
-            setter = setCurrentNexusMv; currentValue = currentNexusMv; baseValueForStat = effectiveNexusCharacterStats.mv; maxValueForStat = baseValueForStat;
-            break;
-        case 'def':
-            setter = setCurrentNexusDef; currentValue = currentNexusDef; baseValueForStat = effectiveNexusCharacterStats.def; maxValueForStat = baseValueForStat;
-            break;
+        case 'hp': setter = setCurrentNexusHp; currentValue = currentNexusHp; maxValueForStat = effectiveNexusCharacterStats.maxHp; break;
+        case 'sanity': setter = setCurrentNexusSanity; currentValue = currentNexusSanity; maxValueForStat = effectiveNexusCharacterStats.maxSanity; break;
+        case 'mv': setter = setCurrentNexusMv; currentValue = currentNexusMv; baseValueForStat = effectiveNexusCharacterStats.mv; maxValueForStat = baseValueForStat; break;
+        case 'def': setter = setCurrentNexusDef; currentValue = currentNexusDef; baseValueForStat = effectiveNexusCharacterStats.def; maxValueForStat = baseValueForStat; break;
         default: return;
     }
-
     if (setter && currentValue !== null) {
-        let newValue = currentValue + delta;
-        newValue = Math.max(0, newValue); 
-        if (maxValueForStat !== undefined) { 
-          newValue = Math.min(newValue, maxValueForStat);
-        }
+        let newValue = currentValue + delta; newValue = Math.max(0, newValue); 
+        if (maxValueForStat !== undefined) newValue = Math.min(newValue, maxValueForStat);
         setter(newValue);
     }
   };
 
   const getStatProgressColorClass = (current: number | null, max: number | undefined, statType?: 'hp' | 'sanity' | 'mv' | 'def'): string => {
-    if (current === null || max === undefined || max === 0) {
-      return '[&>div]:bg-gray-400';
-    }
+    if (current === null || max === undefined || max === 0) return '[&>div]:bg-gray-400';
     const percentage = (current / max) * 100;
-    if (statType === 'sanity') {
-      if (percentage > 66) return "[&>div]:bg-blue-500";
-      if (percentage > 33) return "[&>div]:bg-blue-400";
-      return "[&>div]:bg-red-500";
-    }
-     if (statType === 'def' || statType === 'mv') {
-      if (percentage >= 75) return "[&>div]:bg-green-500"; 
-      if (percentage >= 40) return "[&>div]:bg-yellow-500";
-      return "[&>div]:bg-red-500";
-    }
-    if (percentage <= 33) return '[&>div]:bg-red-500';
-    if (percentage <= 66) return '[&>div]:bg-yellow-500';
-    return '[&>div]:bg-green-500';
+    if (statType === 'sanity') { if (percentage > 66) return "[&>div]:bg-blue-500"; if (percentage > 33) return "[&>div]:bg-blue-400"; return "[&>div]:bg-red-500"; }
+    if (statType === 'def' || statType === 'mv') { if (percentage >= 75) return "[&>div]:bg-green-500"; if (percentage >= 40) return "[&>div]:bg-yellow-500"; return "[&>div]:bg-red-500"; }
+    if (percentage <= 33) return '[&>div]:bg-red-500'; if (percentage <= 66) return '[&>div]:bg-yellow-500'; return '[&>div]:bg-green-500';
   };
-
-  const openImageModal = (imageUrl: string) => {
-    setEnlargedImageUrl(imageUrl);
-    setImageZoomLevel(1);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    setTouchEndX(null); 
-    setTouchEndY(null); 
-    setTouchStartX(e.targetTouches[0].clientX);
-    setTouchStartY(e.targetTouches[0].clientY);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    setTouchEndX(e.targetTouches[0].clientX);
-    setTouchEndY(e.targetTouches[0].clientY);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartX || !touchEndX || !touchStartY || !touchEndY) {
-        setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
-        return;
-    }
-
-    const deltaX = touchEndX - touchStartX;
-    const deltaY = touchEndY - touchStartY;
-
-    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8 && currentNexusArsenal && enlargedImageUrl) { 
-        if (enlargedImageUrl === currentNexusArsenal.imageUrlFront && currentNexusArsenal.imageUrlBack) {
-            setEnlargedImageUrl(currentNexusArsenal.imageUrlBack);
-            setImageZoomLevel(1);
-        } else if (enlargedImageUrl === currentNexusArsenal.imageUrlBack && currentNexusArsenal.imageUrlFront) {
-            setEnlargedImageUrl(currentNexusArsenal.imageUrlFront);
-            setImageZoomLevel(1);
-        }
-    } 
-    else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) {
-        if (imageZoomLevel > 1) {
-            setImageZoomLevel(1);
-        } else {
-            setEnlargedImageUrl(null);
-        }
-    }
-    setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
-  };
-
+  
   const latestDrawnCardForDisplay = nexusDrawnCardsHistory.length > 0 ? nexusDrawnCardsHistory[0] : null;
   const previousDrawnCardsForDisplay = nexusDrawnCardsHistory.slice(1);
 
+  // Helper function to get icon for a skill
+  const getSkillIcon = (skillId: SkillName) => {
+    const skillDef = skillDefinitions.find(s => s.id === skillId);
+    return skillDef?.icon || Library; // Default to Library icon
+  };
+
   return (
-    <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
-      <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
-        <header className="flex-shrink-0 flex items-center justify-between p-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Dot className="h-6 w-6 text-primary animate-pulse" />
-            <span className="font-semibold">Riddle of the Beast Companion</span>
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            <span className="text-sm text-muted-foreground">Room:</span>
-            <span className="text-sm font-mono text-primary">BEAST_NEXUS</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" aria-label="Settings">
-              <Settings className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" aria-label="Log Out">
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </header>
+    <>
+      <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
+        <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
+          <header className="flex-shrink-0 flex items-center justify-between p-3 border-b border-border">
+            <div className="flex items-center gap-2">
+              <Dot className="h-6 w-6 text-primary animate-pulse" />
+              <span className="font-semibold">Riddle of the Beast Companion</span>
+              <Separator orientation="vertical" className="h-6 mx-2" />
+              <span className="text-sm text-muted-foreground">Room:</span>
+              <span className="text-sm font-mono text-primary">BEAST_NEXUS</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" aria-label="Settings"><Settings className="h-5 w-5" /></Button>
+              <Button variant="ghost" size="icon" aria-label="Log Out"><LogOut className="h-5 w-5" /></Button>
+            </div>
+          </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
             <Card>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center">
-                    <Dices className="mr-2 h-5 w-5 text-primary" />
-                    Dice Roller
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                        <Label className="text-sm">Combat Dice</Label>
-                        <div className="flex items-end gap-2">
-                            <div className="flex-1">
-                            <Label htmlFor="nexusNumCombatDice" className="text-xs">Qty</Label>
-                            <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice}
-                                onChange={(e) => setNexusNumCombatDice(e.target.value)}
-                                min="1"
-                                max="12"
-                                className="h-8" />
-                            </div>
-                            <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2">
-                            <ChevronsRight className="h-4 w-4" /> Roll
-                            </Button>
-                        </div>
+              <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center"><Dices className="mr-2 h-5 w-5 text-primary" />Dice Roller</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                  <Label className="text-sm">Combat Dice</Label>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Label htmlFor="nexusNumCombatDice" className="text-xs">Qty</Label>
+                      <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice} onChange={(e) => setNexusNumCombatDice(e.target.value)} min="1" max="12" className="h-8" />
                     </div>
-                    <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                        <Label className="text-sm">Numbered Dice</Label>
-                        <div className="flex items-end gap-2">
-                            <div className="flex-1">
-                            <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
-                            <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(e.target.value)} min="1" className="h-8" />
-                            </div>
-                            <span className="pb-2">d</span>
-                            <div className="flex-1">
-                            <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
-                            <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(e.target.value)} min="2" className="h-8" />
-                            </div>
-                            <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2">
-                            <ChevronsRight className="h-4 w-4" /> Roll
-                            </Button>
-                        </div>
+                    <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2"><ChevronsRight className="h-4 w-4" /> Roll</Button>
+                  </div>
+                </div>
+                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                  <Label className="text-sm">Numbered Dice</Label>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
+                      <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(e.target.value)} min="1" className="h-8" />
                     </div>
-                    {nexusLatestRoll && (
-                    <Card key={nexusRollKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
-                        <CardHeader className="p-2">
-                        <CardTitle className="text-sm flex items-center justify-between">
-                            <span>Latest Roll:</span>
-                            <Badge variant="secondary" className="text-xs">{nexusLatestRoll.notation}</Badge>
-                        </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-2 text-center">
-                        {nexusLatestRoll.type === 'numbered' && (
-                            <>
-                            <div className="flex flex-wrap gap-1 justify-center mb-1">
-                                {(nexusLatestRoll.rolls as number[]).map((roll, idx) => (
-                                <Badge key={idx} variant="default" className="text-md bg-primary/20 text-primary-foreground border border-primary">
-                                    {roll}
-                                </Badge>
-                                ))}
-                            </div>
-                            <p className="font-semibold text-primary">Total: {nexusLatestRoll.total}</p>
-                            </>
-                        )}
-                        {nexusLatestRoll.type === 'combat' && (
-                            <>
-                            <div className="flex flex-wrap gap-0.5 justify-center mb-1">
-                                {(nexusLatestRoll.rolls as CombatDieFace[]).map((roll, idx) => (
-                                <CombatDieFaceImage key={idx} face={roll} size={48} />
-                                ))}
-                            </div>
-                            <p className="text-xs text-muted-foreground">{nexusLatestRoll.total as string}</p>
-                            </>
-                        )}
-                        </CardContent>
-                    </Card>
-                    )}
-                </CardContent>
+                    <span className="pb-2">d</span>
+                    <div className="flex-1">
+                      <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
+                      <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(e.target.value)} min="2" className="h-8" />
+                    </div>
+                    <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2"><ChevronsRight className="h-4 w-4" /> Roll</Button>
+                  </div>
+                </div>
+                {nexusLatestRoll && (
+                  <Card key={nexusRollKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
+                    <CardHeader className="p-2"><CardTitle className="text-sm flex items-center justify-between"><span>Latest Roll:</span><Badge variant="secondary" className="text-xs">{nexusLatestRoll.notation}</Badge></CardTitle></CardHeader>
+                    <CardContent className="p-2 text-center">
+                      {nexusLatestRoll.type === 'numbered' && (<><div className="flex flex-wrap gap-1 justify-center mb-1">{(nexusLatestRoll.rolls as number[]).map((roll, idx) => (<Badge key={idx} variant="default" className="text-md bg-primary/20 text-primary-foreground border border-primary">{roll}</Badge>))}</div><p className="font-semibold text-primary">Total: {nexusLatestRoll.total}</p></>)}
+                      {nexusLatestRoll.type === 'combat' && (<><div className="flex flex-wrap gap-0.5 justify-center mb-1">{(nexusLatestRoll.rolls as CombatDieFace[]).map((roll, idx) => (<CombatDieFaceImage key={idx} face={roll} size={48} />))}</div><p className="text-xs text-muted-foreground">{nexusLatestRoll.total as string}</p></>)}
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
             </Card>
-          
-            <div className={cn(
-                "flex-shrink-0 flex bg-card rounded-lg p-4 shadow-md w-full",
-                selectedNexusCharacter ? "flex-col items-start justify-start" : "flex-col items-center justify-center min-h-[200px]"
-              )}
-            >
-            {selectedNexusCharacter && effectiveNexusCharacterStats ? (
+            
+            <div className={cn("flex-shrink-0 flex bg-card rounded-lg p-4 shadow-md w-full", selectedNexusCharacter ? "flex-col items-start justify-start" : "flex-col items-center justify-center min-h-[200px]")}>
+              {selectedNexusCharacter && effectiveNexusCharacterStats ? (
                 <div className="w-full space-y-3">
-                    <div className="flex items-center gap-3">
-                        <Avatar className="h-16 w-16 md:h-20 md:w-20 border-4 border-primary">
-                        <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0, 1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar" />
-                        <AvatarFallback>{selectedNexusCharacter.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <div className="flex items-center gap-3">
+                    <DialogTrigger asChild>
+                      <button type="button" onClick={() => { setCharacterForModal(selectedNexusCharacter); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${selectedNexusCharacter.name}`}>
+                        <Avatar className="h-16 w-16 md:h-20 md:w-20 border-4 border-primary hover:ring-2 hover:ring-accent cursor-pointer">
+                          <AvatarImage src={selectedNexusCharacter.imageUrl || `https://placehold.co/100x100.png?text=${selectedNexusCharacter.name.substring(0, 1)}`} alt={selectedNexusCharacter.name} data-ai-hint="selected character avatar" />
+                          <AvatarFallback>{selectedNexusCharacter.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <div>
-                        <h2 className="text-xl md:text-2xl font-semibold text-primary">{selectedNexusCharacter.name}</h2>
-                         <DialogTrigger asChild>
-                            <Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary">Change Character</Button>
-                         </DialogTrigger>
-                        </div>
+                      </button>
+                    </DialogTrigger>
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-semibold text-primary">{selectedNexusCharacter.name}</h2>
+                      <DialogTrigger asChild><Button variant="link" size="sm" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary">Change Character</Button></DialogTrigger>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 border p-3 rounded-md bg-background/30 max-w-xs">
-                        {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
-                        <div>
-                            <div className="flex items-center justify-between mb-0.5">
-                            <Label className="flex items-center text-xs font-medium"><Heart className="mr-1.5 h-3 w-3 text-red-500" />HP</Label>
-                            <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={currentNexusHp === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
-                                <Input type="number" readOnly value={currentNexusHp} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={currentNexusHp === effectiveNexusCharacterStats.maxHp}><UserPlus className="h-2.5 w-2.5" /></Button>
-                            </div>
-                            </div>
-                            <Progress value={(currentNexusHp / (effectiveNexusCharacterStats.maxHp || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, effectiveNexusCharacterStats.maxHp, 'hp'))} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {effectiveNexusCharacterStats.maxHp}</p>
-                        </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 border p-3 rounded-md bg-background/30">
+                    {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (<div><div className="flex items-center justify-between mb-0.5"><Label className="flex items-center text-xs font-medium"><Heart className="mr-1.5 h-3 w-3 text-red-500" />HP</Label><div className="flex items-center gap-1"><Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={currentNexusHp === 0}><UserMinus className="h-2.5 w-2.5" /></Button><Input type="number" readOnly value={currentNexusHp} className="w-10 h-5 text-center p-0 text-xs font-semibold" /><Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={currentNexusHp === effectiveNexusCharacterStats.maxHp}><UserPlus className="h-2.5 w-2.5" /></Button></div></div><Progress value={(currentNexusHp / (effectiveNexusCharacterStats.maxHp || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, effectiveNexusCharacterStats.maxHp, 'hp'))} /><p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {effectiveNexusCharacterStats.maxHp}</p></div>)}
+                    {currentNexusSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (<div><div className="flex items-center justify-between mb-0.5"><Label className="flex items-center text-xs font-medium"><Brain className="mr-1.5 h-3 w-3 text-blue-400" />Sanity</Label><div className="flex items-center gap-1"><Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={currentNexusSanity === 0}><UserMinus className="h-2.5 w-2.5" /></Button><Input type="number" readOnly value={currentNexusSanity} className="w-10 h-5 text-center p-0 text-xs font-semibold" /><Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={currentNexusSanity === effectiveNexusCharacterStats.maxSanity}><UserPlus className="h-2.5 w-2.5" /></Button></div></div><Progress value={(currentNexusSanity / (effectiveNexusCharacterStats.maxSanity || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} /><p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {effectiveNexusCharacterStats.maxSanity}</p></div>)}
+                    {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (<div><div className="flex items-center justify-between mb-0.5"><Label className="flex items-center text-xs font-medium"><Footprints className="mr-1.5 h-3 w-3 text-green-500" />MV</Label><div className="flex items-center gap-1"><Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'decrement')} disabled={currentNexusMv === 0}><UserMinus className="h-2.5 w-2.5" /></Button><Input type="number" readOnly value={currentNexusMv} className="w-10 h-5 text-center p-0 text-xs font-semibold" /><Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv === effectiveNexusCharacterStats.mv}><UserPlus className="h-2.5 w-2.5" /></Button></div></div><Progress value={(currentNexusMv / (effectiveNexusCharacterStats.mv || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, effectiveNexusCharacterStats.mv, 'mv'))} /><p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {effectiveNexusCharacterStats.mv}</p></div>)}
+                    {currentNexusDef !== null && effectiveNexusCharacterStats.def !== undefined && (<div><div className="flex items-center justify-between mb-0.5"><Label className="flex items-center text-xs font-medium"><Shield className="mr-1.5 h-3 w-3 text-gray-400" />DEF</Label><div className="flex items-center gap-1"><Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'decrement')} disabled={currentNexusDef === 0}><UserMinus className="h-2.5 w-2.5" /></Button><Input type="number" readOnly value={currentNexusDef} className="w-10 h-5 text-center p-0 text-xs font-semibold" /><Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={currentNexusDef === effectiveNexusCharacterStats.def}><UserPlus className="h-2.5 w-2.5" /></Button></div></div><Progress value={(currentNexusDef / (effectiveNexusCharacterStats.def || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusDef, effectiveNexusCharacterStats.def, 'def'))} /><p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {effectiveNexusCharacterStats.def}</p></div>)}
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-muted-foreground/20">
+                    <Label htmlFor="nexusArsenalSelect" className="text-md font-medium text-accent flex items-center mb-1"><Package className="mr-2 h-5 w-5" /> Selected Arsenal</Label>
+                    {criticalArsenalError ? (<Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertTitle>{criticalArsenalError.name}</AlertTitle><AlertDescription>{criticalArsenalError.description} {criticalArsenalError.items?.[0]?.abilityName}</AlertDescription></Alert>) : (
+                      <Select value={selectedCharacterArsenalId || "none"} onValueChange={(value) => setSelectedCharacterArsenalId(value === "none" ? null : value)} disabled={!arsenalCards || arsenalCards.length === 0 || (arsenalCards.length === 1 && arsenalCards[0].id.startsWith('error-'))}>
+                        <SelectTrigger id="nexusArsenalSelect"><SelectValue placeholder="No Arsenal Equipped..." /></SelectTrigger>
+                        <SelectContent><SelectItem value="none">None</SelectItem>{arsenalCards.filter(card => !card.id.startsWith('error-')).map(card => (<SelectItem key={card.id} value={card.id}>{card.name}</SelectItem>))}</SelectContent>
+                      </Select>
+                    )}
+                    {currentNexusArsenal && (
+                      <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
+                        <h4 className="text-sm font-semibold text-accent">{currentNexusArsenal.name}</h4>
+                        {currentNexusArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentNexusArsenal.description}</p>}
+                        {(currentNexusArsenal.imageUrlFront || currentNexusArsenal.imageUrlBack) && (
+                          <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
+                            {currentNexusArsenal.imageUrlFront && (<button type="button" onClick={() => openImageModal(currentNexusArsenal.imageUrlFront!)} className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`View front of ${currentNexusArsenal.name} card`}><Image src={currentNexusArsenal.imageUrlFront} alt={`${currentNexusArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" /></button>)}
+                            {currentNexusArsenal.imageUrlBack && (<button type="button" onClick={() => openImageModal(currentNexusArsenal.imageUrlBack!)} className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`View back of ${currentNexusArsenal.name} card`}><Image src={currentNexusArsenal.imageUrlBack} alt={`${currentNexusArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" /></button>)}
+                          </div>
                         )}
-                         {currentNexusSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (
-                        <div>
-                            <div className="flex items-center justify-between mb-0.5">
-                            <Label className="flex items-center text-xs font-medium"><Brain className="mr-1.5 h-3 w-3 text-blue-400" />Sanity</Label>
-                            <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={currentNexusSanity === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
-                                <Input type="number" readOnly value={currentNexusSanity} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={currentNexusSanity === effectiveNexusCharacterStats.maxSanity}><UserPlus className="h-2.5 w-2.5" /></Button>
-                            </div>
-                            </div>
-                            <Progress value={(currentNexusSanity / (effectiveNexusCharacterStats.maxSanity || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {effectiveNexusCharacterStats.maxSanity}</p>
-                        </div>
-                        )}
-                        {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (
-                        <div>
-                            <div className="flex items-center justify-between mb-0.5">
-                                <Label className="flex items-center text-xs font-medium"><Footprints className="mr-1.5 h-3 w-3 text-green-500" />MV</Label>
-                                <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'decrement')} disabled={currentNexusMv === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
-                                <Input type="number" readOnly value={currentNexusMv} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv === effectiveNexusCharacterStats.mv}><UserPlus className="h-2.5 w-2.5" /></Button>
-                                </div>
-                            </div>
-                             <Progress value={(currentNexusMv / (effectiveNexusCharacterStats.mv || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, effectiveNexusCharacterStats.mv, 'mv'))} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {effectiveNexusCharacterStats.mv}</p>
-                        </div>
-                        )}
-                        {currentNexusDef !== null && effectiveNexusCharacterStats.def !== undefined && (
-                        <div>
-                            <div className="flex items-center justify-between mb-0.5">
-                                <Label className="flex items-center text-xs font-medium"><Shield className="mr-1.5 h-3 w-3 text-gray-400" />DEF</Label>
-                                <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'decrement')} disabled={currentNexusDef === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
-                                <Input type="number" readOnly value={currentNexusDef} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={currentNexusDef === effectiveNexusCharacterStats.def}><UserPlus className="h-2.5 w-2.5" /></Button>
-                                </div>
-                            </div>
-                            <Progress value={(currentNexusDef / (effectiveNexusCharacterStats.def || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusDef, effectiveNexusCharacterStats.def, 'def'))} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {effectiveNexusCharacterStats.def}</p>
-                        </div>
-                        )}
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-muted-foreground/20">
-                        <Label htmlFor="nexusArsenalSelect" className="text-md font-medium text-accent flex items-center mb-1">
-                        <Package className="mr-2 h-5 w-5" /> Selected Arsenal
-                        </Label>
-                        {criticalArsenalError ? (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>{criticalArsenalError.name}</AlertTitle>
-                            <AlertDescription>{criticalArsenalError.description} {criticalArsenalError.items?.[0]?.abilityName}</AlertDescription>
-                        </Alert>
-                        ) : (
-                        <Select
-                            value={selectedCharacterArsenalId || "none"}
-                            onValueChange={(value) => setSelectedCharacterArsenalId(value === "none" ? null : value)}
-                            disabled={!arsenalCards || arsenalCards.length === 0 || (arsenalCards.length === 1 && arsenalCards[0].id.startsWith('error-'))}
-                        >
-                            <SelectTrigger id="nexusArsenalSelect">
-                            <SelectValue placeholder="No Arsenal Equipped..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {arsenalCards.filter(card => !card.id.startsWith('error-')).map(card => (
-                                <SelectItem key={card.id} value={card.id}>
-                                {card.name}
-                                </SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        )}
-                        {currentNexusArsenal && (
-                        <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
-                             <h4 className="text-sm font-semibold text-accent">{currentNexusArsenal.name}</h4>
-                            {currentNexusArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentNexusArsenal.description}</p>}
-                            {(currentNexusArsenal.imageUrlFront || currentNexusArsenal.imageUrlBack) && (
-                                <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
-                                    {currentNexusArsenal.imageUrlFront && (
-                                    <button
-                                        type="button"
-                                        onClick={() => openImageModal(currentNexusArsenal.imageUrlFront!)}
-                                        className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                                        aria-label={`View front of ${currentNexusArsenal.name} card`}
-                                    >
-                                        <Image src={currentNexusArsenal.imageUrlFront} alt={`${currentNexusArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
-                                    </button>
-                                    )}
-                                    {currentNexusArsenal.imageUrlBack && (
-                                    <button
-                                        type="button"
-                                        onClick={() => openImageModal(currentNexusArsenal.imageUrlBack!)}
-                                        className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                                        aria-label={`View back of ${currentNexusArsenal.name} card`}
-                                    >
-                                        <Image src={currentNexusArsenal.imageUrlBack} alt={`${currentNexusArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
-                                    </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                      </div>
                     )}
                   </div>
-
                 </div>
               ) : (
                 <>
                   <UserCircle2 className="h-20 w-20 md:h-24 md:w-24 text-muted-foreground mb-3 md:mb-4" />
                   <h2 className="text-lg md:text-xl font-semibold text-muted-foreground">No Character Active</h2>
                   <p className="text-xs md:text-sm text-muted-foreground mb-4 md:mb-6">Choose a character to manage for this session.</p>
-                  <DialogTrigger asChild>
-                     <Button variant="default">Select Character</Button>
-                  </DialogTrigger>
+                  <DialogTrigger asChild><Button variant="default">Select Character</Button></DialogTrigger>
                 </>
               )}
             </div>
 
             <Card>
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                <Layers3 className="mr-2 h-5 w-5 text-primary" />
-                Card Decks
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+              <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center"><Layers3 className="mr-2 h-5 w-5 text-primary" />Card Decks</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
                 <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                <Label htmlFor="nexusDeckSelect" className="text-sm">Select Deck</Label>
-                <Select value={nexusSelectedDeckName} onValueChange={setNexusSelectedDeckName}>
-                    <SelectTrigger id="nexusDeckSelect" className="h-8">
-                    <SelectValue placeholder="Choose a deck..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {sampleDecks.map(deck => (
-                        <SelectItem key={deck.name} value={deck.name} className="text-xs">
-                        {deck.name} ({deck.cards.length} cards)
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
-                <Button onClick={handleNexusDrawCard} size="sm" className="w-full h-8 mt-2" disabled={!nexusSelectedDeckName}>
-                    <BookOpen className="mr-2 h-4 w-4" /> Draw Card
-                </Button>
+                  <Label htmlFor="nexusDeckSelect" className="text-sm">Select Deck</Label>
+                  <Select value={nexusSelectedDeckName} onValueChange={setNexusSelectedDeckName}><SelectTrigger id="nexusDeckSelect" className="h-8"><SelectValue placeholder="Choose a deck..." /></SelectTrigger><SelectContent>{sampleDecks.map(deck => (<SelectItem key={deck.name} value={deck.name} className="text-xs">{deck.name} ({deck.cards.length} cards)</SelectItem>))}</SelectContent></Select>
+                  <Button onClick={handleNexusDrawCard} size="sm" className="w-full h-8 mt-2" disabled={!nexusSelectedDeckName}><BookOpen className="mr-2 h-4 w-4" /> Draw Card</Button>
                 </div>
-
-                {nexusDrawnCardsHistory.length > 0 && latestDrawnCardForDisplay && (
-                <div className="mt-2">
-                    <GameCardDisplay
-                        card={latestDrawnCardForDisplay}
-                        key={`${latestDrawnCardForDisplay.id}-${nexusCardKey}`}
-                        size="medium"
-                        onClick={() => latestDrawnCardForDisplay.imageUrl && openImageModal(latestDrawnCardForDisplay.imageUrl)}
-                        isButton={!!latestDrawnCardForDisplay.imageUrl}
-                        className="mx-auto animate-in fade-in duration-300"
-                        imageOnly={true}
-                    />
-                </div>
-                )}
-
-                {nexusDrawnCardsHistory.length > 0 && (
-                    <div className="mt-4">
-                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground text-center">Previously Drawn</h4>
-                        {previousDrawnCardsForDisplay.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2">
-                            {previousDrawnCardsForDisplay.map((card, idx) => (
-                            <GameCardDisplay
-                                key={`${card.id}-hist-${idx}`}
-                                card={card}
-                                size="small"
-                                onClick={() => card.imageUrl && openImageModal(card.imageUrl)}
-                                isButton={!!card.imageUrl}
-                                className="w-full"
-                                imageOnly={true}
-                            />
-                            ))}
-                        </div>
-                        ) : (
-                        <p className="text-xs text-muted-foreground text-center">Draw more cards to see history.</p>
-                        )}
-                    </div>
-                )}
-            </CardContent>
+                {nexusDrawnCardsHistory.length > 0 && latestDrawnCardForDisplay && (<div className="mt-2"><GameCardDisplay card={latestDrawnCardForDisplay} key={`${latestDrawnCardForDisplay.id}-${nexusCardKey}`} size="medium" onClick={() => latestDrawnCardForDisplay.imageUrl && openImageModal(latestDrawnCardForDisplay.imageUrl)} isButton={!!latestDrawnCardForDisplay.imageUrl} className="mx-auto animate-in fade-in duration-300" imageOnly={true}/></div>)}
+                {nexusDrawnCardsHistory.length > 1 && (<div className="mt-4"><h4 className="text-sm font-semibold mb-2 text-muted-foreground text-center">Previously Drawn</h4>{previousDrawnCardsForDisplay.length > 0 ? (<div className="grid grid-cols-2 gap-2">{previousDrawnCardsForDisplay.map((card, idx) => (<GameCardDisplay key={`${card.id}-hist-${idx}`} card={card} size="small" onClick={() => card.imageUrl && openImageModal(card.imageUrl)} isButton={!!card.imageUrl} className="w-full" imageOnly={true}/>))}</div>) : (<p className="text-xs text-muted-foreground text-center">Draw more cards to see history.</p>)}</div>)}
+              </CardContent>
             </Card>
 
             <Card>
-            <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                <Users2 className="mr-2 h-5 w-5 text-primary" />
-                Party Members
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-                {partyMembers.length === 0 && !selectedNexusCharacter ? (
-                <p className="text-sm text-muted-foreground">No character active in Nexus.</p>
-                ) : (
-                (selectedNexusCharacter ? [selectedNexusCharacter] : partyMembers).map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/30">
+              <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center"><Users2 className="mr-2 h-5 w-5 text-primary" />Party Members</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {partyMembers.length === 0 && !selectedNexusCharacter ? (<p className="text-sm text-muted-foreground">No character active in Nexus.</p>) : ((selectedNexusCharacter ? [selectedNexusCharacter] : partyMembers).map((member) => (
+                  <div key={member.id} className="flex items-center justify-between p-2 rounded-md border bg-muted/30">
                     <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                        <AvatarImage src={member.imageUrl || `https://placehold.co/40x40.png?text=${member.name.substring(0, 1)}`} alt={member.name} data-ai-hint="party member avatar" />
-                        <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                        <p className="text-sm font-medium">{member.name}</p>
-                        </div>
+                      <Avatar className="h-8 w-8"><AvatarImage src={member.imageUrl || `https://placehold.co/40x40.png?text=${member.name.substring(0, 1)}`} alt={member.name} data-ai-hint="party member avatar" /><AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+                      <div><p className="text-sm font-medium">{member.name}</p></div>
                     </div>
-                    </div>
-                ))
-                )}
-            </CardContent>
+                  </div>
+                )))}
+              </CardContent>
             </Card>
-        </main>
+          </main>
+        </div>
         <DialogContent className="sm:max-w-[425px] bg-card border-border">
-          <DialogHeader>
-            <DialogTitle>Select Character for Nexus</DialogTitle>
-            <DialogDescription>Choose a character template to use in this session.</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-[300px] mt-4">
-            <div className="space-y-2">
-              {charactersData.map((char) => (
-                  <Button
-                    key={char.id}
-                    variant="ghost"
-                    className="w-full justify-start p-2 h-auto"
-                    onClick={() => handleSelectCharacterForNexus(char)}
-                  >
-                    <Avatar className="h-10 w-10 mr-3">
-                      <AvatarImage src={char.imageUrl || `https://placehold.co/40x40.png?text=${char.name.substring(0, 1)}`} alt={char.name} data-ai-hint="character avatar" />
-                      <AvatarFallback>{char.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    {char.name}
-                  </Button>
-              ))}
-            </div>
-          </ScrollArea>
+          <DialogHeader><DialogTitle>Select Character for Nexus</DialogTitle><DialogDescription>Choose a character template to use in this session.</DialogDescription></DialogHeader>
+          <ScrollArea className="h-[300px] mt-4"><div className="space-y-2">{charactersData.map((char) => (<Button key={char.id} variant="ghost" className="w-full justify-start p-2 h-auto" onClick={() => handleSelectCharacterForNexus(char)}><Avatar className="h-10 w-10 mr-3"><AvatarImage src={char.imageUrl || `https://placehold.co/40x40.png?text=${char.name.substring(0, 1)}`} alt={char.name} data-ai-hint="character avatar" /><AvatarFallback>{char.name.substring(0, 2).toUpperCase()}</AvatarFallback></Avatar>{char.name}</Button>))}</div></ScrollArea>
         </DialogContent>
-      </div>
+      </Dialog>
 
+      {/* Character Card Modal */}
+      <Dialog open={isCharacterCardModalOpen} onOpenChange={setIsCharacterCardModalOpen}>
+        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
+          {characterForModal && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl text-primary text-center">{characterForModal.name}</DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[70vh] p-1">
+                <div className="space-y-4 p-2">
+                  <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
+                    <AvatarImage src={characterForModal.imageUrl || `https://placehold.co/128x128.png`} alt={characterForModal.name} data-ai-hint="character avatar large"/>
+                    <AvatarFallback className="text-4xl bg-muted">{characterForModal.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+
+                  <Separator />
+                  <h4 className="text-lg font-semibold text-primary flex items-center"><Info className="mr-2 h-5 w-5" /> Core Stats</h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <p><strong className="text-muted-foreground">HP:</strong> {characterForModal.baseStats.hp} / {characterForModal.baseStats.maxHp}</p>
+                    <p><strong className="text-muted-foreground">Sanity:</strong> {characterForModal.baseStats.sanity} / {characterForModal.baseStats.maxSanity}</p>
+                    <p><strong className="text-muted-foreground">MV:</strong> {characterForModal.baseStats.mv}</p>
+                    <p><strong className="text-muted-foreground">DEF:</strong> {characterForModal.baseStats.def}</p>
+                    {characterForModal.baseStats.meleeAttack !== undefined && <p><strong className="text-muted-foreground">Melee ATK:</strong> {characterForModal.baseStats.meleeAttack}</p>}
+                  </div>
+
+                  {Object.values(characterForModal.skills || {}).some(val => val > 0) && (
+                    <>
+                      <Separator />
+                      <h4 className="text-lg font-semibold text-primary flex items-center"><ListChecks className="mr-2 h-5 w-5" /> Skills</h4>
+                      <div className="space-y-1 text-sm">
+                        {skillDefinitions.map(skillDef => {
+                          const skillValue = characterForModal.skills?.[skillDef.id as SkillName] || 0;
+                          if (skillValue > 0) {
+                            const IconComponent = getSkillIcon(skillDef.id as SkillName);
+                            return (
+                              <div key={skillDef.id} className="flex items-center justify-between p-1 bg-muted/20 rounded-sm">
+                                <span className="flex items-center"><IconComponent className="mr-2 h-4 w-4 text-muted-foreground" /> {skillDef.label}</span>
+                                <span>{skillValue}</span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {characterForModal.abilities && characterForModal.abilities.length > 0 && (
+                     <>
+                      <Separator />
+                      <h4 className="text-lg font-semibold text-primary flex items-center"><BookMarked className="mr-2 h-5 w-5" /> Abilities</h4>
+                      <div className="space-y-2 text-sm">
+                        {characterForModal.abilities.map(ability => (
+                          <div key={ability.id} className="p-2 bg-muted/20 rounded-md">
+                            <p className="font-semibold">{ability.name} <Badge variant="outline" className="ml-1 text-xs">{ability.type}</Badge></p>
+                            <p className="text-xs text-muted-foreground">{ability.description}</p>
+                            {ability.details && <p className="text-xs text-muted-foreground/80">Details: {ability.details}</p>}
+                            {ability.cooldown && <p className="text-xs text-muted-foreground/80">Cooldown: {ability.cooldown}</p>}
+                            {ability.maxQuantity !== undefined && <p className="text-xs text-muted-foreground/80">Uses: {ability.maxQuantity}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </ScrollArea>
+              <DialogFooter className="mt-4">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">Close</Button>
+                </DialogClose>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Image Enlargement Modal */}
       <Dialog open={!!enlargedImageUrl} onOpenChange={(isOpen) => { if (!isOpen) setEnlargedImageUrl(null); }}>
         <DialogContent 
             className="max-w-5xl w-[95vw] h-[95vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center"
-            onInteractOutside={(e) => {
-                if (imageZoomLevel > 1) {
-                    setImageZoomLevel(1);
-                    e.preventDefault(); 
-                }
-            }}
-        >
+            onInteractOutside={(e) => { if (imageZoomLevel > 1) { setImageZoomLevel(1); e.preventDefault(); }}}>
           {enlargedImageUrl && (
-            <div
-                className="relative w-full h-full flex items-center justify-center overflow-hidden"
-                onDoubleClick={handleImageDoubleClick}
-                onClick={handleEnlargedImageClick}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-            >
-                <Image
-                    src={enlargedImageUrl}
-                    alt="Enlarged card"
-                    fill
-                    style={{
-                    objectFit: 'contain',
-                    transform: `scale(${imageZoomLevel})`,
-                    transition: 'transform 0.2s ease-out',
-                    transformOrigin: 'center',
-                    }}
-                    className={cn(
-                        "max-w-full max-h-full",
-                        imageZoomLevel > 1 ? "cursor-zoom-out" : "cursor-zoom-in"
-                    )}
-                />
+            <div className="relative w-full h-full flex items-center justify-center overflow-hidden" onDoubleClick={handleImageDoubleClick} onClick={handleEnlargedImageClick} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+              <Image src={enlargedImageUrl} alt="Enlarged card" fill style={{ objectFit: 'contain', transform: `scale(${imageZoomLevel})`, transition: 'transform 0.2s ease-out', transformOrigin: 'center' }} className={cn("max-w-full max-h-full", imageZoomLevel > 1 ? "cursor-zoom-out" : "cursor-zoom-in")}/>
             </div>
           )}
         </DialogContent>
       </Dialog>
-    </Dialog>
+    </>
   );
 }
