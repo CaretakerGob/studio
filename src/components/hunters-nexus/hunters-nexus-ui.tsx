@@ -39,7 +39,7 @@ import {
   BookOpen,
   Package,
   AlertCircle,
-  Image as ImageIcon,
+  ImageIcon,
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -64,12 +64,13 @@ const MIN_SWIPE_DISTANCE = 50;
 const MAX_TAP_MOVEMENT = 10;
 const ZOOM_SCALE_FACTOR = 1.75;
 
-
 interface HuntersNexusUIProps {
-  arsenalCards: ActualArsenalCard[];
+  arsenalCards: ActualArsenalCard[]; // This prop comes from the page
 }
 
-export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
+export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUIProps) {
+  const arsenalCards = rawArsenalCards || []; // Default to empty array if undefined
+
   const { toast } = useToast();
   const [nexusNumDice, setNexusNumDice] = useState('1');
   const [nexusDiceSides, setNexusDiceSides] = useState('6');
@@ -91,8 +92,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
   
   const [selectedCharacterArsenalId, setSelectedCharacterArsenalId] = useState<string | null>(null);
-  const criticalArsenalError = useMemo(() => arsenalCards.find(card => card.id === 'error-critical-arsenal'), [arsenalCards]);
-
+  
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
@@ -100,43 +100,45 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const [touchEndY, setTouchEndY] = useState<number | null>(null);
   const [imageZoomLevel, setImageZoomLevel] = useState(1);
 
+  const criticalArsenalError = useMemo(() => {
+    if (!arsenalCards || arsenalCards.length === 0) return null;
+    return arsenalCards.find(card => card.id === 'error-critical-arsenal');
+  }, [arsenalCards]);
 
-  const currentEquippedArsenal = useMemo(() => {
-    if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) return null;
-    const card = arsenalCards.find(card => card.id === selectedCharacterArsenalId);
-    if (!card || card.id.startsWith('error-')) return null;
+  const currentNexusArsenal = useMemo(() => {
+    if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) {
+      return null;
+    }
+    const card = arsenalCards.find(c => c.id === selectedCharacterArsenalId);
+    if (!card || card.id.startsWith('error-')) {
+      return null;
+    }
     return card;
   }, [selectedCharacterArsenalId, arsenalCards]);
 
   const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
-    console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentEquippedArsenal?.name);
     if (!selectedNexusCharacter) {
-      console.log("[Nexus UI] Memo: No selectedNexusCharacter for effectiveNexusCharacterStats.");
       return null;
     }
 
     let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(selectedNexusCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
 
-    if (currentEquippedArsenal) {
-      console.log(`[Nexus UI] Applying GLOBAL arsenal modifiers from: ${currentEquippedArsenal.name}`, currentEquippedArsenal);
-      calculatedStats.hp = (calculatedStats.hp || 0) + (currentEquippedArsenal.hpMod || 0);
-      calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentEquippedArsenal.maxHpMod || 0);
-      calculatedStats.mv = (calculatedStats.mv || 0) + (currentEquippedArsenal.mvMod || 0);
-      calculatedStats.def = (calculatedStats.def || 0) + (currentEquippedArsenal.defMod || 0);
-      calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentEquippedArsenal.sanityMod || 0);
-      calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentEquippedArsenal.maxSanityMod || 0);
+    if (currentNexusArsenal) {
+      calculatedStats.hp = (calculatedStats.hp || 0) + (currentNexusArsenal.hpMod || 0);
+      calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentNexusArsenal.maxHpMod || 0);
+      calculatedStats.mv = (calculatedStats.mv || 0) + (currentNexusArsenal.mvMod || 0);
+      calculatedStats.def = (calculatedStats.def || 0) + (currentNexusArsenal.defMod || 0);
+      calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentNexusArsenal.sanityMod || 0);
+      calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentNexusArsenal.maxSanityMod || 0);
       
-      if (currentEquippedArsenal.items) {
-        currentEquippedArsenal.items.forEach(item => {
+      if (currentNexusArsenal.items) {
+        currentNexusArsenal.items.forEach(item => {
           if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
              console.log(`[Nexus UI] Item '${item.abilityName}' is GEAR. Parsed Modifiers:`, JSON.stringify(item.parsedStatModifiers));
             item.parsedStatModifiers.forEach(mod => {
               const statKey = mod.targetStat as keyof CharacterStats;
               if (statKey in calculatedStats && typeof (calculatedStats[statKey]) === 'number') {
-                 console.log(`[Nexus UI] APPLYING GEAR MODS for ${item.abilityName}: ${statKey} by ${mod.value}`);
                 (calculatedStats[statKey] as number) = (calculatedStats[statKey] as number) + mod.value;
-              } else {
-                console.warn(`[Nexus UI] GEAR item ${item.abilityName} tried to modify unknown stat '${statKey}' or stat was not a number.`);
               }
             });
           }
@@ -154,27 +156,23 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
-
-    console.log("[Nexus UI] Final effectiveNexusCharacterStats:", calculatedStats);
+    
     return calculatedStats;
-  }, [selectedNexusCharacter, currentEquippedArsenal]);
+  }, [selectedNexusCharacter, currentNexusArsenal]);
 
  useEffect(() => {
-    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentEquippedArsenal?.name, "Effective Stats:", effectiveNexusCharacterStats);
     if (effectiveNexusCharacterStats) {
-        console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
         setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
         setCurrentNexusSanity(effectiveNexusCharacterStats.maxSanity);
         setCurrentNexusMv(effectiveNexusCharacterStats.mv);
         setCurrentNexusDef(effectiveNexusCharacterStats.def);
     } else {
-        console.log("[Nexus UI] No character selected or no effective stats, resetting HP/Sanity/MV/DEF to null.");
         setCurrentNexusHp(null);
         setCurrentNexusSanity(null);
         setCurrentNexusMv(null);
         setCurrentNexusDef(null);
     }
-}, [selectedNexusCharacter, effectiveNexusCharacterStats, currentEquippedArsenal]);
+}, [effectiveNexusCharacterStats]);
 
 
   useEffect(() => {
@@ -186,7 +184,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const handleImageDoubleClick = () => {
     setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
   };
-
+  
   const handleEnlargedImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation(); 
     if (imageZoomLevel > 1) {
@@ -201,34 +199,34 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(null);
+    setSelectedCharacterArsenalId(null); // Reset arsenal when new character is selected
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
 
   const handleNexusNumberedRoll = () => {
-    const numDice = parseInt(nexusNumDice, 10);
-    const diceSides = parseInt(nexusDiceSides, 10);
+    const numDiceVal = parseInt(nexusNumDice, 10);
+    const diceSidesVal = parseInt(nexusDiceSides, 10);
 
-    if (isNaN(numDice) || numDice < 1) {
+    if (isNaN(numDiceVal) || numDiceVal < 1) {
       toast({ title: "Invalid Input", description: "Number of dice must be at least 1.", variant: "destructive" });
       return;
     }
-    if (isNaN(diceSides) || diceSides < 2) {
+    if (isNaN(diceSidesVal) || diceSidesVal < 2) {
       toast({ title: "Invalid Input", description: "Number of sides must be at least 2.", variant: "destructive" });
       return;
     }
 
     const rolls: number[] = [];
     let total = 0;
-    for (let i = 0; i < numDice; i++) {
-      const roll = Math.floor(Math.random() * diceSides) + 1;
+    for (let i = 0; i < numDiceVal; i++) {
+      const roll = Math.floor(Math.random() * diceSidesVal) + 1;
       rolls.push(roll);
       total += roll;
     }
     setNexusLatestRoll({
       type: 'numbered',
-      notation: `${numDice}d${diceSides}`,
+      notation: `${numDiceVal}d${diceSidesVal}`,
       rolls,
       total,
     });
@@ -286,7 +284,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
-    let baseValueForStat: number | undefined = undefined;
+    let baseValueForStat: number | undefined = undefined; // For MV/DEF if they reset to base
 
     switch (stat) {
         case 'hp':
@@ -531,7 +529,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {effectiveNexusCharacterStats.maxSanity}</p>
                         </div>
                         )}
-                        {currentNexusMv !== null && (
+                        {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (
                         <div>
                             <div className="flex items-center justify-between mb-0.5">
                                 <Label className="flex items-center text-xs font-medium"><Footprints className="mr-1.5 h-3 w-3 text-green-500" />MV</Label>
@@ -545,7 +543,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {effectiveNexusCharacterStats.mv}</p>
                         </div>
                         )}
-                        {currentNexusDef !== null && (
+                        {currentNexusDef !== null && effectiveNexusCharacterStats.def !== undefined && (
                         <div>
                             <div className="flex items-center justify-between mb-0.5">
                                 <Label className="flex items-center text-xs font-medium"><Shield className="mr-1.5 h-3 w-3 text-gray-400" />DEF</Label>
@@ -591,36 +589,37 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                         </Select>
                         )}
                         {currentNexusArsenal && (
-                            <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
-                                 <h4 className="text-sm font-semibold text-accent">{currentNexusArsenal.name}</h4>
-                                {currentNexusArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentNexusArsenal.description}</p>}
-                                {(currentNexusArsenal.imageUrlFront || currentNexusArsenal.imageUrlBack) && (
-                                    <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
-                                        {currentNexusArsenal.imageUrlFront && (
-                                        <button
-                                            type="button"
-                                            onClick={() => openImageModal(currentNexusArsenal.imageUrlFront!)}
-                                            className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                                            aria-label={`View front of ${currentNexusArsenal.name} card`}
-                                        >
-                                            <Image src={currentNexusArsenal.imageUrlFront} alt={`${currentNexusArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
-                                        </button>
-                                        )}
-                                        {currentNexusArsenal.imageUrlBack && (
-                                        <button
-                                            type="button"
-                                            onClick={() => openImageModal(currentNexusArsenal.imageUrlBack!)}
-                                            className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                                            aria-label={`View back of ${currentNexusArsenal.name} card`}
-                                        >
-                                            <Image src={currentNexusArsenal.imageUrlBack} alt={`${currentNexusArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
-                                        </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                        <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
+                             <h4 className="text-sm font-semibold text-accent">{currentNexusArsenal.name}</h4>
+                            {currentNexusArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentNexusArsenal.description}</p>}
+                            {(currentNexusArsenal.imageUrlFront || currentNexusArsenal.imageUrlBack) && (
+                                <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
+                                    {currentNexusArsenal.imageUrlFront && (
+                                    <button
+                                        type="button"
+                                        onClick={() => openImageModal(currentNexusArsenal.imageUrlFront!)}
+                                        className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                                        aria-label={`View front of ${currentNexusArsenal.name} card`}
+                                    >
+                                        <Image src={currentNexusArsenal.imageUrlFront} alt={`${currentNexusArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
+                                    </button>
+                                    )}
+                                    {currentNexusArsenal.imageUrlBack && (
+                                    <button
+                                        type="button"
+                                        onClick={() => openImageModal(currentNexusArsenal.imageUrlBack!)}
+                                        className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                                        aria-label={`View back of ${currentNexusArsenal.name} card`}
+                                    >
+                                        <Image src={currentNexusArsenal.imageUrlBack} alt={`${currentNexusArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
+                                    </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                  </div>
+
                 </div>
               ) : (
                 <>
@@ -767,22 +766,12 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
           {enlargedImageUrl && (
             <div
                 className="relative w-full h-full flex items-center justify-center overflow-hidden"
-            >
-                <div
-                className={cn(
-                    "relative", 
-                    imageZoomLevel > 1 ? "cursor-zoom-out" : "cursor-zoom-in"
-                )}
-                style={{
-                    width: '100%', 
-                    height: '100%',
-                }}
                 onDoubleClick={handleImageDoubleClick}
                 onClick={handleEnlargedImageClick}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-                >
+            >
                 <Image
                     src={enlargedImageUrl}
                     alt="Enlarged card"
@@ -793,9 +782,11 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                     transition: 'transform 0.2s ease-out',
                     transformOrigin: 'center',
                     }}
-                    className="max-w-full max-h-full"
+                    className={cn(
+                        "max-w-full max-h-full",
+                        imageZoomLevel > 1 ? "cursor-zoom-out" : "cursor-zoom-in"
+                    )}
                 />
-                </div>
             </div>
           )}
         </DialogContent>
@@ -803,5 +794,3 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     </Dialog>
   );
 }
-
-    
