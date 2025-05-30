@@ -44,8 +44,8 @@ import {
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { charactersData, type Character, type CharacterStats } from '@/components/character-sheet/character-sheet-ui';
-import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui';
+import { charactersData, type Character, type CharacterStats } from '@/components/character-sheet/character-sheet-ui'; // Import charactersData
+import { sampleDecks, type GameCard } from '@/components/card-generator/card-generator-ui'; // Import sampleDecks and GameCard
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ArsenalCard as ActualArsenalCard } from '@/types/arsenal';
@@ -88,15 +88,16 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
   const [currentNexusMv, setCurrentNexusMv] = useState<number | null>(null);
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
-
-
+  
   const [selectedCharacterArsenalId, setSelectedCharacterArsenalId] = useState<string | null>(null);
   const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
 
   const currentEquippedArsenal = useMemo(() => {
     if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) return null;
     const card = arsenalCards.find(card => card.id === selectedCharacterArsenalId);
-    return card && !card.id.startsWith('error-') ? card : null;
+    if (!card || card.id.startsWith('error-')) return null;
+    console.log("[Nexus UI] currentEquippedArsenal updated:", card.name);
+    return card;
   }, [selectedCharacterArsenalId, arsenalCards]);
 
   const effectiveNexusCharacterStats = useMemo(() => {
@@ -151,7 +152,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
 
 
   useEffect(() => {
-    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats);
+    console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats, "Current Equipped Arsenal:", currentEquippedArsenal?.name);
     if (effectiveNexusCharacterStats) {
       console.log("[Nexus UI] Setting currentNexusHp and currentNexusSanity from effectiveNexusCharacterStats:", effectiveNexusCharacterStats);
       setCurrentNexusHp(effectiveNexusCharacterStats.maxHp);
@@ -165,14 +166,14 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       setCurrentNexusMv(null);
       setCurrentNexusDef(null);
     }
-  }, [selectedNexusCharacter, effectiveNexusCharacterStats, currentEquippedArsenal]);
+  }, [selectedNexusCharacter, effectiveNexusCharacterStats, currentEquippedArsenal]); // Added currentEquippedArsenal
 
 
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
-    setPartyMembers([character]); // For now, party is just the selected character
-    setIsCharacterSelectionDialogOpen(false);
+    setPartyMembers([character]); 
     setSelectedCharacterArsenalId(null); // Reset arsenal when character changes
+    setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
 
@@ -211,7 +212,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       rolls.push(face);
       faceCounts[face]++;
     }
-    const summary = `S&S: ${faceCounts.swordandshield}, DS: ${faceCounts['double-sword']}, Blk: ${faceCounts.blank}`;
+    const summary = `Sword & Shield: ${faceCounts.swordandshield}, Double Sword: ${faceCounts['double-sword']}, Blank: ${faceCounts.blank}`;
     setNexusLatestRoll({
       type: 'combat',
       notation: `${nexusNumCombatDice}x Combat Dice`,
@@ -245,7 +246,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
-    let baseValueForStat: number | undefined = undefined;
+    let baseValueForStat: number | undefined = undefined; // For stats like MV/DEF
 
     switch (stat) {
         case 'hp':
@@ -267,66 +268,63 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         let newValue = currentValue + delta;
         newValue = Math.max(0, newValue); 
         
-        if (maxValueForStat !== undefined) { // For HP and Sanity
+        if (maxValueForStat !== undefined) { // For HP and Sanity, cap at max
           newValue = Math.min(newValue, maxValueForStat);
         } else if (baseValueForStat !== undefined && operation === 'increment') { // For MV and DEF, cap increment at base
           newValue = Math.min(newValue, baseValueForStat);
         }
+        // For MV and DEF decrement, no lower cap other than 0.
+        
         setter(newValue);
     }
   };
 
-  const getStatProgressColorClass = (current: number | null, max: number | undefined): string => {
+  const getStatProgressColorClass = (current: number | null, max: number | undefined, statType?: 'hp' | 'sanity' | 'mv' | 'def'): string => {
     if (current === null || max === undefined || max === 0) {
       return '[&>div]:bg-gray-400';
     }
     const percentage = (current / max) * 100;
+    if (statType === 'sanity') {
+      if (percentage > 66) return "[&>div]:bg-blue-500";
+      if (percentage > 33) return "[&>div]:bg-blue-400";
+      return "[&>div]:bg-red-500";
+    }
+    if (statType === 'def' || statType === 'mv') {
+      if (percentage >= 75) return "[&>div]:bg-green-500"; 
+      if (percentage >= 40) return "[&>div]:bg-yellow-500";
+      return "[&>div]:bg-red-500";
+    }
+    // Default for HP and others
     if (percentage <= 33) return '[&>div]:bg-red-500';
     if (percentage <= 66) return '[&>div]:bg-yellow-500';
     return '[&>div]:bg-green-500';
   };
-  
-  const getSanityProgressColorClass = (current: number | null, max: number | undefined): string => {
-    if (current === null || max === undefined || max === 0) return '[&>div]:bg-gray-400';
-    const percentage = (current / max) * 100;
-    if (percentage > 66) return "[&>div]:bg-blue-500";
-    if (percentage > 33) return "[&>div]:bg-blue-400";
-    return "[&>div]:bg-red-500";
-  };
-
-  const getMvDefProgressColorClass = (current: number | null, max: number | undefined): string => {
-    if (current === null || max === undefined || max === 0) return '[&>div]:bg-gray-400';
-    const percentage = (current / max) * 100;
-    if (percentage >= 75) return "[&>div]:bg-green-500"; // Using green for high DEF/MV
-    if (percentage >= 40) return "[&>div]:bg-yellow-500";
-    return "[&>div]:bg-red-500";
-  };
 
 
   return (
-    <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
-      <header className="flex-shrink-0 flex items-center justify-between p-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Dot className="h-6 w-6 text-primary animate-pulse" />
-          <span className="font-semibold">Riddle of the Beast Companion</span>
-          <Separator orientation="vertical" className="h-6 mx-2" />
-          <span className="text-sm text-muted-foreground">Room:</span>
-          <span className="text-sm font-mono text-primary">BEAST_NEXUS</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label="Settings">
-            <Settings className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Log Out">
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
+    <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
+      <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
+        <header className="flex-shrink-0 flex items-center justify-between p-3 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Dot className="h-6 w-6 text-primary animate-pulse" />
+            <span className="font-semibold">Riddle of the Beast Companion</span>
+            <Separator orientation="vertical" className="h-6 mx-2" />
+            <span className="text-sm text-muted-foreground">Room:</span>
+            <span className="text-sm font-mono text-primary">BEAST_NEXUS</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" aria-label="Settings">
+              <Settings className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" aria-label="Log Out">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </header>
 
-      <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
-            {/* Dice Roller Card - Moved to the top */}
-            <Card>
+           {/* Dice Roller Card */}
+           <Card>
             <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
                 <Dices className="mr-2 h-5 w-5 text-primary" />
@@ -393,7 +391,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                         <>
                         <div className="flex flex-wrap gap-0.5 justify-center mb-1">
                             {(nexusLatestRoll.rolls as CombatDieFace[]).map((roll, idx) => (
-                            <CombatDieFaceImage key={idx} face={roll} size={24} />
+                            <CombatDieFaceImage key={idx} face={roll} size={48} />
                             ))}
                         </div>
                         <p className="text-xs text-muted-foreground">{nexusLatestRoll.total as string}</p>
@@ -404,9 +402,13 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                 )}
             </CardContent>
             </Card>
-
+          
             {/* Character Info / Selection Block */}
-            <div className={cn("flex-shrink-0 flex flex-col bg-card rounded-lg p-4 shadow-inner", selectedNexusCharacter ? "items-start justify-start" : "items-center justify-center")}>
+            <div className={cn(
+                "flex-shrink-0 flex flex-col bg-card rounded-lg p-4 shadow-md",
+                selectedNexusCharacter ? "items-start justify-start" : "items-center justify-center min-h-[200px]"
+              )}
+            >
             {selectedNexusCharacter && effectiveNexusCharacterStats ? (
                 <div className="w-full space-y-3">
                 <div className="flex items-center gap-3">
@@ -433,7 +435,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                             <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={currentNexusHp === effectiveNexusCharacterStats.maxHp}><UserPlus className="h-2.5 w-2.5" /></Button>
                         </div>
                         </div>
-                        <Progress value={(currentNexusHp / (effectiveNexusCharacterStats.maxHp || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, effectiveNexusCharacterStats.maxHp))} />
+                        <Progress value={(currentNexusHp / (effectiveNexusCharacterStats.maxHp || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, effectiveNexusCharacterStats.maxHp, 'hp'))} />
                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {effectiveNexusCharacterStats.maxHp}</p>
                     </div>
                     )}
@@ -447,7 +449,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                             <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={currentNexusSanity === effectiveNexusCharacterStats.maxSanity}><UserPlus className="h-2.5 w-2.5" /></Button>
                         </div>
                         </div>
-                        <Progress value={(currentNexusSanity / (effectiveNexusCharacterStats.maxSanity || 1)) * 100} className={cn("h-1", getSanityProgressColorClass(currentNexusSanity, effectiveNexusCharacterStats.maxSanity))} />
+                        <Progress value={(currentNexusSanity / (effectiveNexusCharacterStats.maxSanity || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} />
                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {effectiveNexusCharacterStats.maxSanity}</p>
                     </div>
                     )}
@@ -455,13 +457,13 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                     <div>
                       <div className="flex items-center justify-between mb-0.5">
                         <Label className="flex items-center text-xs font-medium"><Footprints className="mr-1.5 h-3 w-3 text-green-500" />MV</Label>
-                        <div className="flex items-center gap-1">
+                         <div className="flex items-center gap-1">
                             <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'decrement')} disabled={currentNexusMv === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
                             <Input type="number" readOnly value={currentNexusMv} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
                             <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv === effectiveNexusCharacterStats.mv}><UserPlus className="h-2.5 w-2.5" /></Button>
                         </div>
                       </div>
-                       <Progress value={(currentNexusMv / (effectiveNexusCharacterStats.mv || 1)) * 100} className={cn("h-1", getMvDefProgressColorClass(currentNexusMv, effectiveNexusCharacterStats.mv))} />
+                       <Progress value={(currentNexusMv / (effectiveNexusCharacterStats.mv || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, effectiveNexusCharacterStats.mv, 'mv'))} />
                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {effectiveNexusCharacterStats.mv}</p>
                     </div>
                     )}
@@ -469,19 +471,19 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                     <div>
                         <div className="flex items-center justify-between mb-0.5">
                             <Label className="flex items-center text-xs font-medium"><Shield className="mr-1.5 h-3 w-3 text-gray-400" />DEF</Label>
-                            <div className="flex items-center gap-1">
+                             <div className="flex items-center gap-1">
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'decrement')} disabled={currentNexusDef === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
                                 <Input type="number" readOnly value={currentNexusDef} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={currentNexusDef === effectiveNexusCharacterStats.def}><UserPlus className="h-2.5 w-2.5" /></Button>
                             </div>
                         </div>
-                        <Progress value={(currentNexusDef / (effectiveNexusCharacterStats.def || 1)) * 100} className={cn("h-1", getMvDefProgressColorClass(currentNexusDef, effectiveNexusCharacterStats.def))} />
+                        <Progress value={(currentNexusDef / (effectiveNexusCharacterStats.def || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusDef, effectiveNexusCharacterStats.def, 'def'))} />
                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {effectiveNexusCharacterStats.def}</p>
                     </div>
                     )}
                 </div>
 
-                {/* Arsenal Selection */}
+                {/* Arsenal Selection & Display */}
                 <div className="mt-4 pt-3 border-t border-muted-foreground/20">
                     <Label htmlFor="nexusArsenalSelect" className="text-md font-medium text-accent flex items-center mb-1">
                     <Package className="mr-2 h-5 w-5" /> Selected Arsenal
@@ -512,38 +514,40 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                     </Select>
                     )}
                     {currentEquippedArsenal && (
-                    <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
-                        <h4 className="text-sm font-semibold text-accent">{currentEquippedArsenal.name}</h4>
-                        {currentEquippedArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentEquippedArsenal.description}</p>}
-                        {(currentEquippedArsenal.imageUrlFront || currentEquippedArsenal.imageUrlBack) && (
-                            <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
-                                {currentEquippedArsenal.imageUrlFront && (
-                                <div className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30">
-                                    <Image src={currentEquippedArsenal.imageUrlFront} alt={`${currentEquippedArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
+                        <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
+                             <h4 className="text-sm font-semibold text-accent">{currentEquippedArsenal.name}</h4>
+                            {currentEquippedArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentEquippedArsenal.description}</p>}
+                            {(currentEquippedArsenal.imageUrlFront || currentEquippedArsenal.imageUrlBack) && (
+                                <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
+                                    {currentEquippedArsenal.imageUrlFront && (
+                                    <div className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30">
+                                        <Image src={currentEquippedArsenal.imageUrlFront} alt={`${currentEquippedArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
+                                    </div>
+                                    )}
+                                    {currentEquippedArsenal.imageUrlBack && (
+                                    <div className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30">
+                                        <Image src={currentEquippedArsenal.imageUrlBack} alt={`${currentEquippedArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
+                                    </div>
+                                    )}
                                 </div>
-                                )}
-                                {currentEquippedArsenal.imageUrlBack && (
-                                <div className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30">
-                                    <Image src={currentEquippedArsenal.imageUrlBack} alt={`${currentEquippedArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
-                                </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
                     )}
+                  </div>
+
                 </div>
-                </div>
-            ) : (
+              ) : (
                 <>
-                <UserCircle2 className="h-20 w-20 md:h-24 md:w-24 text-muted-foreground mb-3 md:mb-4" />
-                <h2 className="text-lg md:text-xl font-semibold text-muted-foreground">No Character Active</h2>
-                <p className="text-xs md:text-sm text-muted-foreground mb-4 md:mb-6">Choose a character to manage for this session.</p>
-                <DialogTrigger asChild>
-                    <Button variant="default">Select Character</Button>
-                </DialogTrigger>
+                  <UserCircle2 className="h-20 w-20 md:h-24 md:w-24 text-muted-foreground mb-3 md:mb-4" />
+                  <h2 className="text-lg md:text-xl font-semibold text-muted-foreground">No Character Active</h2>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-4 md:mb-6">Choose a character to manage for this session.</p>
+                  <DialogTrigger asChild>
+                     <Button variant="default">Select Character</Button>
+                  </DialogTrigger>
                 </>
-            )}
+              )}
             </div>
+
 
             {/* Card Decks Card */}
             <Card>
@@ -617,8 +621,8 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                 )}
             </CardContent>
             </Card>
-
         </main>
+
         <DialogContent className="sm:max-w-[425px] bg-card border-border">
           <DialogHeader>
             <DialogTitle>Select Character for Nexus</DialogTitle>
@@ -627,8 +631,8 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
           <ScrollArea className="h-[300px] mt-4">
             <div className="space-y-2">
               {charactersData.map((char) => (
-                <DialogClose asChild key={char.id}>
                   <Button
+                    key={char.id}
                     variant="ghost"
                     className="w-full justify-start p-2 h-auto"
                     onClick={() => handleSelectCharacterForNexus(char)}
@@ -639,12 +643,13 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                     </Avatar>
                     {char.name}
                   </Button>
-                </DialogClose>
               ))}
             </div>
           </ScrollArea>
         </DialogContent>
-      </Dialog>
-    </div>
+      </div>
+    </Dialog>
   );
 }
+
+    
