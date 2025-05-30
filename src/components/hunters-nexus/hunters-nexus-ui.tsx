@@ -20,7 +20,7 @@ import {
   DialogDescription,
   DialogTrigger,
   DialogClose,
-  DialogFooter, // Added DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Dices,
@@ -87,30 +87,34 @@ interface HuntersNexusUIProps {
 }
 
 export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUIProps) {
-  const arsenalCards = rawArsenalCards || [];
   const { toast } = useToast();
+  const arsenalCards = rawArsenalCards || [];
 
+  // Dice Roller State
   const [nexusNumCombatDice, setNexusNumCombatDice] = useState('1');
   const [nexusNumDice, setNexusNumDice] = useState('1');
   const [nexusDiceSides, setNexusDiceSides] = useState('6');
   const [nexusLatestRoll, setNexusLatestRoll] = useState<NexusRollResult | null>(null);
   const [nexusRollKey, setNexusRollKey] = useState(0);
 
+  // Character State
   const [selectedNexusCharacter, setSelectedNexusCharacter] = useState<Character | null>(null);
   const [isCharacterSelectionDialogOpen, setIsCharacterSelectionDialogOpen] = useState(false);
   const [partyMembers, setPartyMembers] = useState<Character[]>([]);
-
-  const [nexusDrawnCardsHistory, setNexusDrawnCardsHistory] = useState<GameCard[]>([]);
-  const [nexusSelectedDeckName, setNexusSelectedDeckName] = useState<string | undefined>(undefined);
-  const [nexusCardKey, setNexusCardKey] = useState(0);
-  
   const [currentNexusHp, setCurrentNexusHp] = useState<number | null>(null);
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
   const [currentNexusMv, setCurrentNexusMv] = useState<number | null>(null);
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
   
+  // Arsenal State
   const [selectedCharacterArsenalId, setSelectedCharacterArsenalId] = useState<string | null>(null);
+
+  // Card Deck State
+  const [nexusDrawnCardsHistory, setNexusDrawnCardsHistory] = useState<GameCard[]>([]);
+  const [nexusSelectedDeckName, setNexusSelectedDeckName] = useState<string | undefined>(undefined);
+  const [nexusCardKey, setNexusCardKey] = useState(0);
   
+  // Image Modal State
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
@@ -118,23 +122,27 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
   const [touchEndY, setTouchEndY] = useState<number | null>(null);
   const [imageZoomLevel, setImageZoomLevel] = useState(1);
 
+  // Character Details Modal State
   const [isCharacterCardModalOpen, setIsCharacterCardModalOpen] = useState(false);
   const [characterForModal, setCharacterForModal] = useState<Character | null>(null);
+
 
   const criticalArsenalError = useMemo(() => {
     if (!arsenalCards || arsenalCards.length === 0) return null;
     return arsenalCards.find(card => card.id === 'error-critical-arsenal');
   }, [arsenalCards]);
 
-  const currentNexusArsenal = useMemo(() => {
+  const currentEquippedArsenal = useMemo(() => {
     if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) return null;
     const card = arsenalCards.find(c => c.id === selectedCharacterArsenalId);
     if (!card || card.id.startsWith('error-')) return null;
+    console.log("[Nexus UI] currentEquippedArsenal updated:", card.name);
     return card;
   }, [selectedCharacterArsenalId, arsenalCards]);
 
- const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
-    console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentNexusArsenal?.name);
+
+  const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
+    console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentEquippedArsenal?.name);
     if (!selectedNexusCharacter) {
       console.log("[Nexus UI] Memo: No selectedNexusCharacter for effectiveNexusCharacterStats.");
       return null;
@@ -142,17 +150,17 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
 
     let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(selectedNexusCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
 
-    if (currentNexusArsenal) {
-      console.log("[Nexus UI] Applying GLOBAL arsenal modifiers from:", currentNexusArsenal.name, currentNexusArsenal);
-      calculatedStats.hp = (calculatedStats.hp || 0) + (currentNexusArsenal.hpMod || 0);
-      calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentNexusArsenal.maxHpMod || 0);
-      calculatedStats.mv = (calculatedStats.mv || 0) + (currentNexusArsenal.mvMod || 0);
-      calculatedStats.def = (calculatedStats.def || 0) + (currentNexusArsenal.defMod || 0);
-      calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentNexusArsenal.sanityMod || 0);
-      calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentNexusArsenal.maxSanityMod || 0);
+    if (currentEquippedArsenal) {
+      console.log("[Nexus UI] Applying GLOBAL arsenal modifiers from:", currentEquippedArsenal.name, currentEquippedArsenal);
+      calculatedStats.hp = (calculatedStats.hp || 0) + (currentEquippedArsenal.hpMod || 0);
+      calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (currentEquippedArsenal.maxHpMod || 0);
+      calculatedStats.mv = (calculatedStats.mv || 0) + (currentEquippedArsenal.mvMod || 0);
+      calculatedStats.def = (calculatedStats.def || 0) + (currentEquippedArsenal.defMod || 0);
+      calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentEquippedArsenal.sanityMod || 0);
+      calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentEquippedArsenal.maxSanityMod || 0);
       
-      if (currentNexusArsenal.items) {
-        currentNexusArsenal.items.forEach(item => {
+      if (currentEquippedArsenal.items) {
+        currentEquippedArsenal.items.forEach(item => {
           if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
              console.log(`[Nexus UI] Item '${item.abilityName}' is GEAR. Parsed Modifiers:`, JSON.stringify(item.parsedStatModifiers));
             item.parsedStatModifiers.forEach(mod => {
@@ -180,7 +188,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     
     console.log("[Nexus UI] Final effectiveNexusCharacterStats:", calculatedStats);
     return calculatedStats;
-  }, [selectedNexusCharacter, currentNexusArsenal]);
+  }, [selectedNexusCharacter, currentEquippedArsenal]);
 
 
   useEffect(() => {
@@ -198,7 +206,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
         setCurrentNexusMv(null);
         setCurrentNexusDef(null);
     }
-  }, [selectedNexusCharacter, effectiveNexusCharacterStats, currentEquippedArsenal]);
+  }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
 
   useEffect(() => {
     if (!enlargedImageUrl) {
@@ -229,9 +237,9 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     }
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
-    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8 && currentNexusArsenal && enlargedImageUrl) { 
-        if (enlargedImageUrl === currentNexusArsenal.imageUrlFront && currentNexusArsenal.imageUrlBack) setEnlargedImageUrl(currentNexusArsenal.imageUrlBack);
-        else if (enlargedImageUrl === currentNexusArsenal.imageUrlBack && currentNexusArsenal.imageUrlFront) setEnlargedImageUrl(currentNexusArsenal.imageUrlFront);
+    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8 && currentEquippedArsenal && enlargedImageUrl) { 
+        if (enlargedImageUrl === currentEquippedArsenal.imageUrlFront && currentEquippedArsenal.imageUrlBack) setEnlargedImageUrl(currentEquippedArsenal.imageUrlBack);
+        else if (enlargedImageUrl === currentEquippedArsenal.imageUrlBack && currentEquippedArsenal.imageUrlFront) setEnlargedImageUrl(currentEquippedArsenal.imageUrlFront);
         setImageZoomLevel(1);
     } else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) {
         if (imageZoomLevel > 1) setImageZoomLevel(1);
@@ -248,7 +256,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(null); // Reset arsenal when new character is selected
+    setSelectedCharacterArsenalId(null); 
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -256,8 +264,16 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
   const handleNexusNumberedRoll = () => {
     const numDiceVal = parseInt(nexusNumDice, 10);
     const diceSidesVal = parseInt(nexusDiceSides, 10);
-    if (isNaN(numDiceVal) || numDiceVal < 1) { toast({ title: "Invalid Input", description: "Number of dice must be at least 1.", variant: "destructive" }); return; }
-    if (isNaN(diceSidesVal) || diceSidesVal < 2) { toast({ title: "Invalid Input", description: "Number of sides must be at least 2.", variant: "destructive" }); return; }
+
+    if (isNaN(numDiceVal) || numDiceVal < 1) { 
+      toast({ title: "Invalid Input", description: "Number of dice must be at least 1.", variant: "destructive" }); 
+      return; 
+    }
+    if (isNaN(diceSidesVal) || diceSidesVal < 2) { 
+      toast({ title: "Invalid Input", description: "Number of sides must be at least 2.", variant: "destructive" }); 
+      return; 
+    }
+
     const rolls: number[] = []; let total = 0;
     for (let i = 0; i < numDiceVal; i++) { const roll = Math.floor(Math.random() * diceSidesVal) + 1; rolls.push(roll); total += roll; }
     setNexusLatestRoll({ type: 'numbered', notation: `${numDiceVal}d${diceSidesVal}`, rolls, total });
@@ -266,7 +282,10 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
 
   const handleNexusCombatRoll = () => {
     const numCombat = parseInt(nexusNumCombatDice, 10);
-    if (isNaN(numCombat) || numCombat < 1 || numCombat > 12) { toast({ title: "Invalid Input", description: "Number of combat dice must be between 1 and 12.", variant: "destructive" }); return; }
+    if (isNaN(numCombat) || numCombat < 1 || numCombat > 12) { 
+      toast({ title: "Invalid Input", description: "Number of combat dice must be between 1 and 12.", variant: "destructive" }); 
+      return; 
+    }
     const rolls: CombatDieFace[] = []; const faceCounts: Record<CombatDieFace, number> = { swordandshield: 0, 'double-sword': 0, blank: 0 };
     for (let i = 0; i < numCombat; i++) { const rollIndex = Math.floor(Math.random() * 6); const face = combatDieFaces[rollIndex]; rolls.push(face); faceCounts[face]++; }
     const summary = `Sword & Shield: ${faceCounts.swordandshield}, Double Sword: ${faceCounts['double-sword']}, Blank: ${faceCounts.blank}`;
@@ -284,24 +303,44 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     toast({ title: "Card Drawn!", description: `Drew ${drawnCard.name} from ${deck.name}.` });
   };
 
-  const handleNexusStatChange = (stat: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>, operation: 'increment' | 'decrement') => {
-    if (!effectiveNexusCharacterStats) return;
+ const handleNexusStatChange = (stat: Extract<StatName, 'hp' | 'sanity' | 'mv' | 'def'>, operation: 'increment' | 'decrement') => {
+    if (!selectedNexusCharacter || !effectiveNexusCharacterStats) return;
     const delta = operation === 'increment' ? 1 : -1;
+
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
-    let baseValueForStat: number | undefined = undefined;
 
     switch (stat) {
-        case 'hp': setter = setCurrentNexusHp; currentValue = currentNexusHp; maxValueForStat = effectiveNexusCharacterStats.maxHp; break;
-        case 'sanity': setter = setCurrentNexusSanity; currentValue = currentNexusSanity; maxValueForStat = effectiveNexusCharacterStats.maxSanity; break;
-        case 'mv': setter = setCurrentNexusMv; currentValue = currentNexusMv; baseValueForStat = effectiveNexusCharacterStats.mv; maxValueForStat = baseValueForStat; break;
-        case 'def': setter = setCurrentNexusDef; currentValue = currentNexusDef; baseValueForStat = effectiveNexusCharacterStats.def; maxValueForStat = baseValueForStat; break;
-        default: return;
+      case 'hp': 
+        setter = setCurrentNexusHp; 
+        currentValue = currentNexusHp; 
+        maxValueForStat = effectiveNexusCharacterStats.maxHp; 
+        break;
+      case 'sanity': 
+        setter = setCurrentNexusSanity; 
+        currentValue = currentNexusSanity; 
+        maxValueForStat = effectiveNexusCharacterStats.maxSanity; 
+        break;
+      case 'mv':
+        setter = setCurrentNexusMv;
+        currentValue = currentNexusMv;
+        maxValueForStat = effectiveNexusCharacterStats.mv; 
+        break;
+      case 'def':
+        setter = setCurrentNexusDef;
+        currentValue = currentNexusDef;
+        maxValueForStat = effectiveNexusCharacterStats.def; 
+        break;
+      default: return;
     }
+    
     if (setter && currentValue !== null) {
-        let newValue = currentValue + delta; newValue = Math.max(0, newValue); 
-        if (maxValueForStat !== undefined) newValue = Math.min(newValue, maxValueForStat);
+        let newValue = currentValue + delta; 
+        newValue = Math.max(0, newValue); 
+        if (maxValueForStat !== undefined) {
+          newValue = Math.min(newValue, maxValueForStat);
+        }
         setter(newValue);
     }
   };
@@ -321,6 +360,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
     const skillDef = skillDefinitions.find(s => s.id === skillId);
     return skillDef?.icon || Library; 
   };
+
 
   return (
     <>
@@ -346,7 +386,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                   <CardTitle className="text-lg flex items-center"><Dices className="mr-2 h-5 w-5 text-primary" />Dice Roller</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                 <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
                   <Label className="text-sm">Combat Dice</Label>
                   <div className="flex items-end gap-2">
                     <div className="flex-1">
@@ -382,7 +422,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                 )}
               </CardContent>
             </Card>
-
+            
             <div className={cn("flex-shrink-0 flex bg-card rounded-lg p-4 shadow-md w-full", selectedNexusCharacter ? "flex-col items-start justify-start" : "flex-col items-center justify-center min-h-[200px]")}>
               {selectedNexusCharacter && effectiveNexusCharacterStats ? (
                 <div className="w-full space-y-3">
@@ -414,21 +454,21 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                         <SelectContent><SelectItem value="none">None</SelectItem>{arsenalCards.filter(card => !card.id.startsWith('error-')).map(card => (<SelectItem key={card.id} value={card.id}>{card.name}</SelectItem>))}</SelectContent>
                       </Select>
                     )}
-                    {currentNexusArsenal && (
+                    {currentEquippedArsenal && (
                         <div className="mt-3 p-3 rounded-md border border-accent/50 bg-card/50">
-                             <h4 className="text-sm font-semibold text-accent">{currentNexusArsenal.name}</h4>
-                            {currentNexusArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentNexusArsenal.description}</p>}
-                            {(currentNexusArsenal.imageUrlFront || currentNexusArsenal.imageUrlBack) && (
+                             <h4 className="text-sm font-semibold text-accent">{currentEquippedArsenal.name}</h4>
+                            {currentEquippedArsenal.description && <p className="text-xs text-muted-foreground mb-2">{currentEquippedArsenal.description}</p>}
+                            {(currentEquippedArsenal.imageUrlFront || currentEquippedArsenal.imageUrlBack) && (
                                 <div className="mt-2 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-2">
-                                    {currentNexusArsenal.imageUrlFront && (
-                                    <button type="button" onClick={() => openImageModal(currentNexusArsenal.imageUrlFront!)} className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`View front of ${currentNexusArsenal.name} card`}>
-                                        <Image src={currentNexusArsenal.imageUrlFront} alt={`${currentNexusArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
-                                    </button>
+                                    {currentEquippedArsenal.imageUrlFront && (
+                                      <button type="button" onClick={() => openImageModal(currentEquippedArsenal.imageUrlFront!)} className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`View front of ${currentEquippedArsenal.name} card`}>
+                                          <Image src={currentEquippedArsenal.imageUrlFront} alt={`${currentEquippedArsenal.name} - Front`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card front" />
+                                      </button>
                                     )}
-                                    {currentNexusArsenal.imageUrlBack && (
-                                    <button type="button" onClick={() => openImageModal(currentNexusArsenal.imageUrlBack!)} className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`View back of ${currentNexusArsenal.name} card`}>
-                                        <Image src={currentNexusArsenal.imageUrlBack} alt={`${currentNexusArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
-                                    </button>
+                                    {currentEquippedArsenal.imageUrlBack && (
+                                      <button type="button" onClick={() => openImageModal(currentEquippedArsenal.imageUrlBack!)} className="relative w-full sm:w-1/2 md:w-2/5 aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`View back of ${currentEquippedArsenal.name} card`}>
+                                          <Image src={currentEquippedArsenal.imageUrlBack} alt={`${currentEquippedArsenal.name} - Back`} fill style={{ objectFit: 'contain' }} data-ai-hint="arsenal card back" />
+                                      </button>
                                     )}
                                 </div>
                             )}
@@ -448,7 +488,6 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                 </>
               )}
             </div>
-            
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center"><Layers3 className="mr-2 h-5 w-5 text-primary" />Card Decks</CardTitle></CardHeader>
               <CardContent className="space-y-3">
@@ -459,6 +498,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                 </div>
                 {nexusDrawnCardsHistory.length > 0 && latestDrawnCardForDisplay && (
                     <div className="mt-2">
+                         <h4 className="text-sm font-semibold mb-1 text-muted-foreground text-center">Latest Card Drawn</h4>
                         <GameCardDisplay 
                             card={latestDrawnCardForDisplay} 
                             key={`${latestDrawnCardForDisplay.id}-${nexusCardKey}`} 
@@ -473,9 +513,9 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                 {nexusDrawnCardsHistory.length > 0 && (
                     <div className="mt-4">
                         <h4 className="text-sm font-semibold mb-2 text-muted-foreground text-center">Previously Drawn</h4>
-                        {previousDrawnCardsForDisplay.length > 0 ? (
+                        {nexusDrawnCardsHistory.slice(1).length > 0 ? (
                             <div className="grid grid-cols-2 gap-2">
-                                {previousDrawnCardsForDisplay.map((card, idx) => (
+                                {nexusDrawnCardsHistory.slice(1).map((card, idx) => (
                                     <GameCardDisplay 
                                         key={`${card.id}-hist-${idx}`} 
                                         card={card} 
@@ -488,7 +528,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-xs text-muted-foreground text-center">Draw more cards to see history.</p>
+                           <p className="text-xs text-muted-foreground text-center">Draw more cards to see history.</p>
                         )}
                     </div>
                 )}
@@ -519,7 +559,7 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
       {/* Character Card Modal */}
       <Dialog open={isCharacterCardModalOpen} onOpenChange={setIsCharacterCardModalOpen}>
         <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
-          {characterForModal && (
+          {characterForModal && effectiveNexusCharacterStats && (
             <>
               <DialogHeader>
                 <DialogTitle className="text-2xl text-primary text-center">{characterForModal.name}</DialogTitle>
@@ -534,10 +574,10 @@ export function HuntersNexusUI({ arsenalCards: rawArsenalCards }: HuntersNexusUI
                   <Separator />
                   <h4 className="text-lg font-semibold text-primary flex items-center"><Info className="mr-2 h-5 w-5" /> Core Stats</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                    <p><strong className="text-muted-foreground">HP:</strong> {effectiveNexusCharacterStats?.hp} / {effectiveNexusCharacterStats?.maxHp}</p>
-                    <p><strong className="text-muted-foreground">Sanity:</strong> {effectiveNexusCharacterStats?.sanity} / {effectiveNexusCharacterStats?.maxSanity}</p>
-                    <p><strong className="text-muted-foreground">MV:</strong> {effectiveNexusCharacterStats?.mv}</p>
-                    <p><strong className="text-muted-foreground">DEF:</strong> {effectiveNexusCharacterStats?.def}</p>
+                    <p><strong className="text-muted-foreground">HP:</strong> {currentNexusHp ?? effectiveNexusCharacterStats.hp} / {effectiveNexusCharacterStats.maxHp}</p>
+                    <p><strong className="text-muted-foreground">Sanity:</strong> {currentNexusSanity ?? effectiveNexusCharacterStats.sanity} / {effectiveNexusCharacterStats.maxSanity}</p>
+                    <p><strong className="text-muted-foreground">MV:</strong> {currentNexusMv ?? effectiveNexusCharacterStats.mv}</p>
+                    <p><strong className="text-muted-foreground">DEF:</strong> {currentNexusDef ?? effectiveNexusCharacterStats.def}</p>
                     {effectiveNexusCharacterStats?.meleeAttack !== undefined && <p><strong className="text-muted-foreground">Melee ATK:</strong> {effectiveNexusCharacterStats.meleeAttack}</p>}
                   </div>
 
