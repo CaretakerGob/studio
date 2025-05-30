@@ -399,8 +399,14 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     }
   }, [enlargedImageUrl]);
 
+  const abilityDataStringForEffect = useMemo(() => {
+    if (!characterForModal || !effectiveNexusCharacterAbilities) return '';
+    return effectiveNexusCharacterAbilities.map(a => `${a.id}:${a.cooldown ?? ''}:${a.maxQuantity ?? ''}`).join(',');
+  }, [characterForModal, effectiveNexusCharacterAbilities]);
+
+
    useEffect(() => {
-    if (characterForModal && effectiveNexusCharacterAbilities) {
+    if (characterForModal && effectiveNexusCharacterAbilities && effectiveNexusCharacterAbilities.length > 0) {
       const newMaxCDs: Record<string, number> = {};
       const newCurrentCDs: Record<string, number> = {};
       const newMaxQTs: Record<string, number> = {};
@@ -430,7 +436,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setNexusMaxAbilityQuantities({});
       setNexusCurrentAbilityQuantities({});
     }
-  }, [characterForModal, effectiveNexusCharacterAbilities]);
+  }, [characterForModal, abilityDataStringForEffect]); // Use the memoized string
 
 
   const handleImageDoubleClick = () => setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
@@ -452,8 +458,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(null);
-    setCharacterForModal(character);
+    setSelectedCharacterArsenalId(character.selectedArsenalCardId || null); // Use character's saved arsenal or null
+    setCharacterForModal(character); // Set for modal
+    setNexusSessionMaxHpModifier(0); // Reset session modifiers
+    setNexusSessionMaxSanityModifier(0);
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -529,13 +537,12 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
 
   const handleNexusSessionMaxStatModifierChange = (statType: 'hp' | 'sanity', delta: number) => {
-    if (!effectiveNexusCharacterStats) return;
+    if (!selectedNexusCharacter || !effectiveNexusCharacterStats) return;
 
     if (statType === 'hp') {
       setNexusSessionMaxHpModifier(prevMod => {
         const newMod = prevMod + delta;
-        const baseMaxHp = effectiveNexusCharacterStats.maxHp || 1; // Ensure baseMax is at least 1
-        // Ensure effective max doesn't go below 1
+        const baseMaxHp = effectiveNexusCharacterStats.maxHp || 1;
         const finalNewMod = (baseMaxHp + newMod < 1) ? (1 - baseMaxHp) : newMod;
 
         if (currentNexusHp !== null) {
@@ -549,8 +556,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     } else if (statType === 'sanity') {
       setNexusSessionMaxSanityModifier(prevMod => {
         const newMod = prevMod + delta;
-        const baseMaxSanity = effectiveNexusCharacterStats.maxSanity || 1; // Ensure baseMax is at least 1
-        // Ensure effective max doesn't go below 1
+        const baseMaxSanity = effectiveNexusCharacterStats.maxSanity || 1;
         const finalNewMod = (baseMaxSanity + newMod < 1) ? (1 - baseMaxSanity) : newMod;
         
         if (currentNexusSanity !== null) {
@@ -894,7 +900,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         onOpenChange={(open) => {
           setIsCharacterCardModalOpen(open);
           if (!open) {
-            setIsCharacterSelectionDialogOpen(false); 
+            setIsCharacterSelectionDialogOpen(false); // Ensure selection dialog closes too
           }
         }}
       >
