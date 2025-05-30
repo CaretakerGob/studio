@@ -63,8 +63,8 @@ const faceTypeLabels: Record<CombatDieFace, string> = {
   blank: 'Blank',
 };
 
-const MIN_SWIPE_DISTANCE = 50; // pixels
-const MAX_TAP_MOVEMENT = 10; // pixels for tap detection
+const MIN_SWIPE_DISTANCE = 50;
+const MAX_TAP_MOVEMENT = 10;
 
 interface HuntersNexusUIProps {
   arsenalCards: ActualArsenalCard[];
@@ -100,16 +100,14 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchEndY, setTouchEndY] = useState<number | null>(null);
 
-
   const currentNexusArsenal = useMemo(() => {
     if (!selectedCharacterArsenalId || !arsenalCards || arsenalCards.length === 0) return null;
     const card = arsenalCards.find(card => card.id === selectedCharacterArsenalId);
     if (!card || card.id.startsWith('error-')) return null;
-    console.log("[Nexus UI] currentNexusArsenal updated:", card.name);
     return card;
   }, [selectedCharacterArsenalId, arsenalCards]);
 
-  const effectiveNexusCharacterStats = useMemo(() => {
+  const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
     console.log("[Nexus UI] Memo: Recalculating effectiveNexusCharacterStats. Selected Character:", selectedNexusCharacter?.name, "Equipped Arsenal:", currentNexusArsenal?.name);
     if (!selectedNexusCharacter) {
       console.log("[Nexus UI] Memo: No selectedNexusCharacter for effectiveNexusCharacterStats.");
@@ -161,7 +159,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     return calculatedStats;
   }, [selectedNexusCharacter, currentNexusArsenal]);
 
-
   useEffect(() => {
     console.log("[Nexus UI] useEffect for HP/Sanity initialization triggered. Selected Character:", selectedNexusCharacter?.name, "Effective Stats:", effectiveNexusCharacterStats);
     if (effectiveNexusCharacterStats) {
@@ -176,14 +173,12 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       setCurrentNexusSanity(null);
       setCurrentNexusMv(null);
       setCurrentNexusDef(null);
-      setSelectedCharacterArsenalId(null); // Also reset arsenal if character is cleared
     }
   }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
 
-
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
-    setPartyMembers([character]); 
+    setPartyMembers([character]);
     setSelectedCharacterArsenalId(null); 
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
@@ -258,7 +253,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     let setter: React.Dispatch<React.SetStateAction<number | null>> | null = null;
     let currentValue: number | null = null;
     let maxValueForStat: number | undefined = undefined;
-    let baseValueForStat: number | undefined = undefined; 
 
     switch (stat) {
         case 'hp':
@@ -268,10 +262,10 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
             setter = setCurrentNexusSanity; currentValue = currentNexusSanity; maxValueForStat = effectiveNexusCharacterStats.maxSanity;
             break;
         case 'mv':
-            setter = setCurrentNexusMv; currentValue = currentNexusMv; baseValueForStat = effectiveNexusCharacterStats.mv; maxValueForStat = baseValueForStat;
+            setter = setCurrentNexusMv; currentValue = currentNexusMv; maxValueForStat = effectiveNexusCharacterStats.mv;
             break;
         case 'def':
-            setter = setCurrentNexusDef; currentValue = currentNexusDef; baseValueForStat = effectiveNexusCharacterStats.def; maxValueForStat = baseValueForStat;
+            setter = setCurrentNexusDef; currentValue = currentNexusDef; maxValueForStat = effectiveNexusCharacterStats.def;
             break;
         default: return;
     }
@@ -279,7 +273,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     if (setter && currentValue !== null) {
         let newValue = currentValue + delta;
         newValue = Math.max(0, newValue); 
-        
         if (maxValueForStat !== undefined) { 
           newValue = Math.min(newValue, maxValueForStat);
         }
@@ -312,8 +305,8 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEndX(null); // Clear endX on new touch start
-    setTouchEndY(null); // Clear endY on new touch start
+    setTouchEndX(null); 
+    setTouchEndY(null); 
     setTouchStartX(e.targetTouches[0].clientX);
     setTouchStartY(e.targetTouches[0].clientY);
   };
@@ -324,7 +317,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
   };
 
   const handleTouchEnd = () => {
-    if (!touchStartX || !touchEndX || !touchStartY || !touchEndY || !currentNexusArsenal) {
+    if (!touchStartX || !touchEndX || !touchStartY || !touchEndY) {
         setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
         return;
     }
@@ -332,17 +325,15 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
 
-    // Check for horizontal swipe
-    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8) { // More tolerant for Y movement during horizontal swipe
+    if (Math.abs(deltaX) > MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE * 0.8 && currentNexusArsenal) { 
         if (enlargedImageUrl === currentNexusArsenal.imageUrlFront && currentNexusArsenal.imageUrlBack) {
             setEnlargedImageUrl(currentNexusArsenal.imageUrlBack);
         } else if (enlargedImageUrl === currentNexusArsenal.imageUrlBack && currentNexusArsenal.imageUrlFront) {
             setEnlargedImageUrl(currentNexusArsenal.imageUrlFront);
         }
     } 
-    // Check for tap (small movement)
     else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) {
-        setEnlargedImageUrl(null); // Close modal on tap
+        setEnlargedImageUrl(null); 
     }
 
     setTouchStartX(null);
@@ -373,7 +364,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
-           {/* Dice Roller Card - Moved to top */}
            <Card>
             <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
@@ -382,7 +372,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                {/* Combat Dice Section - Moved above Numbered Dice */}
                 <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
                     <Label className="text-sm">Combat Dice</Label>
                     <div className="flex items-end gap-2">
@@ -400,7 +389,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                         </Button>
                     </div>
                 </div>
-                 {/* Numbered Dice Section */}
                 <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
                     <Label className="text-sm">Numbered Dice</Label>
                     <div className="flex items-end gap-2">
@@ -455,7 +443,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
             </CardContent>
             </Card>
           
-            {/* Character Info / Selection Block */}
             <div className={cn(
                 "flex-shrink-0 flex bg-card rounded-lg p-4 shadow-md w-full",
                 selectedNexusCharacter ? "flex-col items-start justify-start" : "flex-col items-center justify-center min-h-[200px]"
@@ -515,7 +502,7 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv === effectiveNexusCharacterStats.mv}><UserPlus className="h-2.5 w-2.5" /></Button>
                                 </div>
                             </div>
-                            <Progress value={(currentNexusMv / (effectiveNexusCharacterStats.mv || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, effectiveNexusCharacterStats.mv, 'mv'))} />
+                             <Progress value={(currentNexusMv / (effectiveNexusCharacterStats.mv || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, effectiveNexusCharacterStats.mv, 'mv'))} />
                             <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {effectiveNexusCharacterStats.mv}</p>
                         </div>
                         )}
@@ -535,7 +522,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                         )}
                     </div>
 
-                    {/* Arsenal Selection & Display */}
                     <div className="mt-4 pt-3 border-t border-muted-foreground/20">
                         <Label htmlFor="nexusArsenalSelect" className="text-md font-medium text-accent flex items-center mb-1">
                         <Package className="mr-2 h-5 w-5" /> Selected Arsenal
@@ -609,7 +595,6 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
               )}
             </div>
 
-            {/* Card Decks Card */}
             <Card>
             <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
@@ -637,23 +622,38 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
                 </Button>
                 </div>
                 {nexusLatestDrawnCard && (
-                <Card key={nexusCardKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
-                    <CardHeader className="p-2">
-                    <CardTitle className="text-sm flex items-center justify-between">
-                        <span>Latest Card Drawn:</span>
-                        <Badge variant="secondary" className="text-xs">{nexusLatestDrawnCard.deck}</Badge>
-                    </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-2 text-left">
-                    <p className="font-semibold text-primary text-xs">{nexusLatestDrawnCard.name} <span className="text-xs text-muted-foreground">({nexusLatestDrawnCard.type})</span></p>
-                    <p className="text-xs text-muted-foreground mt-1">{nexusLatestDrawnCard.description}</p>
-                    </CardContent>
-                </Card>
+                    <Card key={nexusCardKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
+                        <CardHeader className="p-2">
+                            <CardTitle className="text-sm flex items-center justify-between">
+                                <span>Latest Card Drawn:</span>
+                                <Badge variant="secondary" className="text-xs">{nexusLatestDrawnCard.deck}</Badge>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2 text-left space-y-2">
+                            {nexusLatestDrawnCard.imageUrl && (
+                                <button
+                                    type="button"
+                                    onClick={() => openImageModal(nexusLatestDrawnCard.imageUrl!)}
+                                    className="relative w-full max-w-[200px] mx-auto aspect-[63/88] overflow-hidden rounded-md border border-muted-foreground/30 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                                    aria-label={`View ${nexusLatestDrawnCard.name} card`}
+                                >
+                                    <Image 
+                                        src={nexusLatestDrawnCard.imageUrl} 
+                                        alt={nexusLatestDrawnCard.name} 
+                                        fill 
+                                        style={{ objectFit: 'contain' }}
+                                        data-ai-hint={nexusLatestDrawnCard.dataAiHint || nexusLatestDrawnCard.name.toLowerCase()}
+                                    />
+                                </button>
+                            )}
+                            <p className="font-semibold text-primary text-xs">{nexusLatestDrawnCard.name} <span className="text-xs text-muted-foreground">({nexusLatestDrawnCard.type})</span></p>
+                            <p className="text-xs text-muted-foreground mt-1">{nexusLatestDrawnCard.description}</p>
+                        </CardContent>
+                    </Card>
                 )}
             </CardContent>
             </Card>
 
-            {/* Party Members Card */}
             <Card>
             <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
@@ -709,10 +709,12 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
       </div>
 
       <Dialog open={!!enlargedImageUrl} onOpenChange={(isOpen) => { if (!isOpen) setEnlargedImageUrl(null); }}>
-        <DialogContent className="max-w-5xl w-[95vw] h-[95vh] p-2 bg-background border-border shadow-xl flex flex-col">
+        <DialogContent 
+            className="max-w-5xl w-[95vw] h-[95vh] p-2 bg-background border-border shadow-xl flex flex-col"
+        >
           <DialogHeader className="sr-only">
             <DialogTitle>Enlarged Card Image</DialogTitle>
-            <DialogDescription>Full view of the selected arsenal card image.</DialogDescription>
+            <DialogDescription>Full view of the selected card image.</DialogDescription>
           </DialogHeader>
           {enlargedImageUrl && (
             <div 
@@ -720,10 +722,11 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
+              onClick={() => !touchEndX && !touchEndY && setEnlargedImageUrl(null)} // Closes on simple tap (if not a swipe)
             >
               <Image
                 src={enlargedImageUrl}
-                alt="Enlarged arsenal card"
+                alt="Enlarged card"
                 fill
                 style={{ objectFit: 'contain' }}
               />
@@ -734,5 +737,3 @@ export function HuntersNexusUI({ arsenalCards }: HuntersNexusUIProps) {
     </Dialog>
   );
 }
-
-    
