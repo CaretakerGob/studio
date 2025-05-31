@@ -65,7 +65,7 @@ DONE:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
     - Multi-Character Team Display: Main display area shows a grid where each team member has their own card with their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card header sets them as active.
-    - Active Character Focus: Arsenal selection and detailed modal views operate on the selected active character. "Selected Arsenal" card area below the team grid displays the active character's chosen arsenal images.
+    - Active Character Focus: Arsenal selection and detailed modal views operate on the selected active character. "Selected Arsenal" card area below the team grid displays the active character's chosen arsenal images. Active Character Image Display (before team grid) added.
     - Team Management Dialog: Add/remove characters. "Manage Team" button relocated to the page header.
     - Session Crypto Tracker: Global for the session.
     - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
@@ -75,9 +75,9 @@ DONE:
     - Reset Nexus Session: Functionality added to settings dropdown.
     - Changed "Party" to "Team" in all user-facing text for Nexus.
 - How to Play Page (`/how-to-play`):
-    - Page now uses `docs/Riddle_of_the_Beast_Rulebook.md`.
-    - Content is displayed in an Accordion format, with H1s and H2s as main collapsible sections.
-    - Specified shop and large table sections (like Loot Table, Mystery Table) are omitted from the display.
+    - Page now uses `docs/Rotb_rulebook_dropdown_structure.md` for its content.
+    - Content is displayed in an Accordion format based on H2s, H3s and list items from this file.
+    - Specified shop and large table sections are omitted.
     - Added link to sidebar.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
@@ -96,11 +96,12 @@ DONE:
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md` and `docs/Riddle_of_the_Beast_Rulebook.md`.
 - MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob.
-- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms & /privacy, Nexus max update depth error resolved).
+- Numerous bug fixes and UI refinements.
 
 WORKING:
 - Ongoing review and minor clean-up of existing codebase.
 - Refinement of Character Sheet mobile optimization for inner tab content.
+- Refining "How to Play" page Markdown parser for `Rotb_rulebook_dropdown_structure.md`.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -118,9 +119,11 @@ NEXT:
 - Add a bestiary/monster manual section.
 - Implement game rule references or a digital rulebook section (current "How to Play" serves this, but could be enhanced).
 - Implement Hunter's Nexus "Session Display Preferences" (toggle tool visibility, compact mode).
-- **Markdown Rendering**: Further improve Markdown display on "How to Play" page if more complex elements (e.g., non-shop tables, nested lists) are desired.
+- **Markdown Rendering**: Clarify if `Rotb_rulebook_dropdown_structure.md` should only define structure while content comes from the main rulebook, or if it's the sole source for "How to Play".
 - Further mobile optimization for all pages.
 - Caching strategies for Google Sheet data.
 - Address any remaining warnings from the build process.
 - Refine UI/UX across all pages based on testing.
       
+
+    

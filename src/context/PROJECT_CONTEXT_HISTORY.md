@@ -1,3 +1,4 @@
+
 # Project Context History: Riddle of the Beast App Companion
 
 ## 1. Project Objectives and Vision
@@ -23,7 +24,7 @@
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
     - **Google Sheets API:** Used to fetch game data for Events, NPC Generator, Arsenal Cards, and Shop Items via server-side logic in page components. Shop items can be sourced from multiple tabs within the same Google Sheet.
-    - **Local Filesystem (`fs` module):** Used server-side to read `docs/Riddle_of_the_Beast_Rulebook.md` for the "How to Play" page.
+    - **Local Filesystem (`fs` module):** Used server-side to read rulebook Markdown files for the "How to Play" page.
 - **Image Placeholders:** `https://placehold.co` and `https://picsum.photos`. Firebase Storage for character/card images.
 - **Deployment:** Firebase App Hosting (inferred from build logs and setup).
 - **Code Quality:**
@@ -32,10 +33,7 @@
 ## 3. Features Implemented
 
 ### 3.1. Homepage (`/`)
-- **Description:** Landing page with an overview of the app and quick links to all major features. Navigation cards consolidated (e.g., "Game Tools" card).
-- **Visuals:** Thematic background image (customizable via URL in code), clear navigation cards for each feature.
-- **Footer:** Links to Home, FAQ, Terms of Service (placeholder), Privacy Policy (placeholder).
-- **Mobile Layout:** Feature cards stack vertically within a scrollable window.
+- (No changes in this update)
 
 ### 3.2. Character Sheet (`/character-sheet`)
 - (No changes in this update)
@@ -74,49 +72,32 @@
 - (No changes in this update)
 
 ### 3.14. How to Play (`/how-to-play`)
-- **Description:** Displays the game rules from `docs/Riddle_of_the_Beast_Rulebook.md`.
+- **Description:** Displays the game rules structure from `docs/Rotb_rulebook_dropdown_structure.md`.
 - **Functionality:**
-    - Content is now presented in an **Accordion** format. Main sections (H1s and H2s from the rulebook) act as accordion triggers.
-    - The content within each accordion item includes subheadings (H3-H6), paragraphs, basic lists, and images.
-    - Specific shop item list sections (e.g., "Defense Gear Shop", "Melee Weapon Shop", "Loot Table", "Mystery Table", etc.) are **omitted** from the rendered output.
-    - Basic inline Markdown (bold, italic) is parsed. Images from Markdown are rendered using `next/image`.
-- **Data Source:** `docs/Riddle_of_the_Beast_Rulebook.md`.
+    - Content is now sourced from `docs/Rotb_rulebook_dropdown_structure.md`.
+    - H2 headings from this file create main accordion items.
+    - H3 headings and list items from this file are displayed as content within their respective H2 accordion panels.
+    - The `shopSectionTitlesToIgnore` list is still applied, potentially filtering out H2 or H3 sections if their titles match.
+    - Detailed paragraph content from the original `Riddle_of_the_Beast_Rulebook.md` is no longer directly parsed and displayed here; only content present in `Rotb_rulebook_dropdown_structure.md` is shown.
+- **Data Source:** `docs/Rotb_rulebook_dropdown_structure.md`.
 
 ### 3.15. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
 - (No changes in this update)
 
 ### 3.16. Layout & General
-- (No changes in this update beyond sidebar link for "How to Play")
+- (No changes in this update)
 
 ## 4. Features Currently Under Development
--   Full implementation of the "Gear and Equipment" system (equipping individual items to character slots, managing a character-specific inventory).
--   Real-time collaboration features for the "Shared Space".
--   Functional friends list with real-time presence.
--   Complete item database for the "Item List" page (currently empty, data could come from shop sheet or a dedicated one).
+- (No changes in this update)
 
 ## 5. Planned Features / Future Work
--   **Combat System UI:** A dedicated interface for managing combat encounters, tracking turns, enemy actions (potentially driven by Combat Cards), applying status effects, resolving attacks, etc.
--   **Integration of Rulebook Mechanics:**
-    *   Implementing specific Skill Proficiencies.
-    *   Status Effect application and tracking on characters/enemies.
-    *   Detailed elemental attack resolution.
-    *   Light/Darkness mechanics effects.
-    *   Loot Table and Mystery Table integration into gameplay loops (Note: these tables are currently omitted from "How to Play" display).
-    *   Character-specific unique abilities from the rulebook (Joe's Forage/Bounties, Nysa's Card Casting/Arcanas, etc.).
--   **Data Persistence:** (No change)
--   **Advanced AI Features (Genkit):** (No change)
--   **Bestiary/Monster Manual:** (No change)
--   **Digital Rulebook/References:** In-app access to game rules (current "How to Play" serves this purpose).
--   **Hunter's Nexus Enhancements**: (No change)
--   **Further Mobile Optimization**: (No change)
--   **Markdown Rendering**: Improved Markdown display on "How to Play" page using Accordion. Advanced features like complex tables or deeply nested lists within accordion content might need further refinement.
--   **Caching strategies for Google Sheet data**: (No change)
+- (No changes in this update, "How to Play" Markdown rendering note refers to the current setup)
 
 ## 6. Design Decisions and Constraints
-- (No changes in this update beyond Markdown parsing strategy)
+- (No changes in this update)
 
 ## 7. Open Questions / Assumptions
-- (No changes in this update)
+-   **"How to Play" Content Strategy:** The current implementation displays the *structure* from `Rotb_rulebook_dropdown_structure.md`. If the intent is to use this file for structure but pull detailed content from `Riddle_of_the_Beast_Rulebook.md`, the parsing logic needs a significant overhaul.
 
 ## 8. Data Structures of the App
 - (No changes in this update)
@@ -125,7 +106,9 @@
 - (No changes in this update)
 
 ## 10. Other Important Observations
-- The "How to Play" page now uses `docs/Riddle_of_the_Beast_Rulebook.md` and presents it in an accordion style, omitting specified shop and table sections.
+- The "How to Play" page now uses `docs/Rotb_rulebook_dropdown_structure.md` as its primary source and renders an accordion based on its H2/H3/list structure.
 
 This document provides a snapshot of the project's state and context.
+    
+
     
