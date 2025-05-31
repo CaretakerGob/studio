@@ -6,6 +6,7 @@ DONE:
 - Character Sheet:
     - Base stat tracking (HP, Sanity, MV, DEF) with interactive controls.
     - Crypto Tracker: Added persistent crypto tracking (default 0, user adjustable).
+    - Bleed Points Tracker: Added persistent bleed points tracking (default 0, user adjustable, with Hemorrhage warning).
     - Skill display and point-buy system for Custom Characters.
     - Abilities display (Actions, Interrupts, Passives, FREE Actions) with cooldown/quantity trackers.
     - Custom Character ability purchase system.
@@ -18,6 +19,7 @@ DONE:
     - Companion (Pet) display with interactive stats (HP, Sanity, MV, DEF) and melee attack, derived from Arsenal Card items.
     - Firebase Firestore integration for saving/loading character configurations for logged-in users.
     - Updated character images for predefined characters.
+    - Core Stats section mobile layout refined.
 - Dice Roller:
     - Numbered dice rolling (multiple groups, custom sides).
     - Combat dice rolling (image-based faces).
@@ -77,6 +79,8 @@ DONE:
     - Content for App Questions and Board Game Concepts using accordion.
 - Terms of Service Page (`/terms`):
     - Basic placeholder page created.
+- Privacy Policy Page (`/privacy`):
+    - Basic placeholder page created.
 - Sidebar Navigation:
     - Links to all major features.
     - Mobile-responsive (Sheet-based).
@@ -86,11 +90,10 @@ DONE:
     - Homepage feature card layout (vertical scrollable window).
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
-- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms).
+- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms & /privacy).
 
 WORKING:
-- Refinement of Character Sheet mobile optimization for inner tab content.
-- Creation of placeholder /privacy page.
+- Ongoing review and minor clean-up of existing codebase.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -113,4 +116,4 @@ NEXT:
 - Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
 - Refine UI/UX across all pages based on testing.
       
-
+    

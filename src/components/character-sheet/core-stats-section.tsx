@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { Character, CharacterStatDefinition, CharacterStats, StatName } from '@/types/character';
-import { Heart, Footprints, Shield, Brain, UserCircle, UserMinus as Minus, UserPlus as Plus, Settings } from "lucide-react";
+import { Heart, Footprints, Shield, Brain, UserCircle, UserMinus as Minus, UserPlus as Plus, Settings, Droplets, AlertTriangle } from "lucide-react";
 
 export const statDefinitions: CharacterStatDefinition[] = [
   { id: 'hp', label: "Health Points (HP)", icon: Heart, description: "Your character's vitality. Reaching 0 HP usually means defeat." },
@@ -25,6 +25,7 @@ export const customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSa
   def: { cost: 5, max: 3, base: 1 },
 };
 
+const HEMORRHAGE_THRESHOLD = 3; // For BASE template (Hunters)
 
 interface CoreStatsSectionProps {
   editableCharacterData: Character | null;
@@ -33,6 +34,10 @@ interface CoreStatsSectionProps {
   handleStatChange: (statName: StatName, value: number | string) => void;
   incrementStat: (statName: StatName) => void;
   decrementStat: (statName: StatName) => void;
+  currentBleedPoints: number;
+  handleBleedPointsChange: (value: number | string) => void;
+  incrementBleedPoints: () => void;
+  decrementBleedPoints: () => void;
   handleBuyStatPoint: (statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>) => void;
   handleSellStatPoint: (statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>) => void;
   customStatPointBuyConfig: Record<Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>, { cost: number; max: number; base: number }>;
@@ -48,6 +53,10 @@ export function CoreStatsSection({
   handleStatChange,
   incrementStat,
   decrementStat,
+  currentBleedPoints,
+  handleBleedPointsChange,
+  incrementBleedPoints,
+  decrementBleedPoints,
   handleBuyStatPoint,
   handleSellStatPoint,
   customStatPointBuyConfig: propCustomStatPointBuyConfig,
@@ -82,16 +91,16 @@ export function CoreStatsSection({
       sessionModifier = sessionMaxSanityModifier;
       effectiveMax = (effectiveBaseStats.maxSanity || 0) + sessionModifier;
     } else {
-       effectiveMax = currentValue; // For MV, DEF, max is their current effective value
+       effectiveMax = currentValue; 
     }
-    effectiveMax = Math.max(1, effectiveMax); // Ensure max is at least 1
+    effectiveMax = Math.max(1, effectiveMax); 
 
     const progressColorClass = isProgressStat ? getStatProgressColorClass(currentValue, effectiveMax) : '[&>div]:bg-primary';
 
 
     return (
       <div className={cn("p-4 rounded-lg border border-border bg-card/50 shadow-md transition-all duration-300", highlightedStat === def.id ? "ring-2 ring-primary shadow-lg" : "shadow-md")}>
-        <div className="flex flex-col items-start gap-1 mb-2 sm:flex-row sm:items-center sm:justify-between"> {/* Changed line */}
+        <div className="flex flex-col items-start gap-1 mb-2 sm:flex-row sm:items-center sm:justify-between">
           <Label htmlFor={def.id} className="flex items-center text-lg font-medium">
             <def.icon className="mr-2 h-6 w-6 text-primary" />
             {def.label}
@@ -118,7 +127,6 @@ export function CoreStatsSection({
             <Progress value={(currentValue / effectiveMax) * 100 || 0} className={cn("h-3", progressColorClass)} />
             <p className="text-xs text-muted-foreground text-right mt-1">{currentValue} / {effectiveMax}</p>
             
-            {/* Max Stat Modifier Section */}
             <div className="flex items-center gap-2 mt-3 pt-2 border-t border-muted-foreground/20">
                 <Label htmlFor={`maxMod-${def.id}`} className="text-sm text-muted-foreground whitespace-nowrap flex items-center">
                   <Settings className="mr-1 h-3 w-3"/> Max Mod:
@@ -152,11 +160,11 @@ export function CoreStatsSection({
     if (!editableCharacterData || editableCharacterData.id !== 'custom') return null;
 
     const config = propCustomStatPointBuyConfig[statKey];
-    const baseValueFromTemplate = editableCharacterData.baseStats[statKey]; // This is points invested
+    const baseValueFromTemplate = editableCharacterData.baseStats[statKey]; 
     const currentCP = editableCharacterData.characterPoints || 0;
 
 
-    let displayedValue = baseValueFromTemplate || 0; // For custom, effectiveBaseStats reflects the bought points
+    let displayedValue = baseValueFromTemplate || 0; 
     let displayedMaxValue = 0;
     let sessionModifierValue = 0;
 
@@ -168,7 +176,7 @@ export function CoreStatsSection({
       sessionModifierValue = sessionMaxSanityModifier;
       displayedMaxValue = (editableCharacterData.baseStats.maxSanity || 0) + sessionModifierValue;
     } else {
-        displayedMaxValue = displayedValue; // For MV/DEF, max is current for custom buy
+        displayedMaxValue = displayedValue; 
     }
     displayedMaxValue = Math.max(1, displayedMaxValue);
 
@@ -178,7 +186,7 @@ export function CoreStatsSection({
 
     return (
       <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
-        <div className="flex flex-col items-start gap-1 mb-2 sm:flex-row sm:items-center sm:justify-between"> {/* Changed line */}
+        <div className="flex flex-col items-start gap-1 mb-2 sm:flex-row sm:items-center sm:justify-between">
           <Label className="flex items-center text-lg font-medium">
             <Icon className="mr-2 h-6 w-6 text-primary" />
             {label}
@@ -198,7 +206,6 @@ export function CoreStatsSection({
           <div className="mt-2">
             <Progress value={(displayedValue / displayedMaxValue) * 100 || 0} className={cn("h-3", progressColorClass)} />
             <p className="text-xs text-muted-foreground text-right mt-1">{displayedValue} / {displayedMaxValue}</p>
-            {/* Max Stat Modifier Section for Custom Character HP/Sanity */}
             <div className="flex items-center gap-2 mt-3 pt-2 border-t border-muted-foreground/20">
                 <Label htmlFor={`customMaxMod-${statKey}`} className="text-sm text-muted-foreground whitespace-nowrap flex items-center">
                   <Settings className="mr-1 h-3 w-3"/> Max Mod:
@@ -247,7 +254,40 @@ export function CoreStatsSection({
         ) : (
           statDefinitions.map(def => <StatInputComponent key={def.id} def={def} />)
         )}
+        {/* Bleed Points Tracker */}
+        <div className={cn("p-4 rounded-lg border border-border bg-card/50 shadow-md", currentBleedPoints >= HEMORRHAGE_THRESHOLD ? "border-destructive ring-2 ring-destructive" : "")}>
+          <div className="flex flex-col items-start gap-1 mb-2 sm:flex-row sm:items-center sm:justify-between">
+            <Label htmlFor="bleedPoints" className="flex items-center text-lg font-medium">
+              <Droplets className="mr-2 h-6 w-6 text-red-400" />
+              Bleed Points
+            </Label>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={decrementBleedPoints} className="h-8 w-8">
+                <Minus className="h-4 w-4" />
+              </Button>
+              <Input
+                id="bleedPoints"
+                type="number"
+                value={currentBleedPoints}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => handleBleedPointsChange(e.target.value)}
+                className="w-20 h-8 text-center text-lg font-bold"
+                min="0"
+              />
+              <Button variant="outline" size="icon" onClick={incrementBleedPoints} className="h-8 w-8">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Hemorrhage at: {HEMORRHAGE_THRESHOLD} points (Causes 3 damage)</p>
+          {currentBleedPoints >= HEMORRHAGE_THRESHOLD && (
+            <div className="mt-2 flex items-center text-destructive font-bold">
+              <AlertTriangle className="mr-2 h-5 w-5" />
+              HEMORRHAGE!
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+    

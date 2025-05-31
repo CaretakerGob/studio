@@ -91,10 +91,12 @@ export interface Character {
   meleeWeapon?: Weapon;
   rangedWeapon?: RangedWeapon;
   characterPoints?: number;
-  crypto?: number; // Added crypto field
+  crypto?: number;
+  bleedPoints?: number; // Added bleedPoints
   selectedArsenalCardId?: string | null;
   savedCooldowns?: Record<string, number>;
   savedQuantities?: Record<string, number>;
   lastSaved?: string;
 }
 
+    

@@ -43,6 +43,7 @@
     - Selection from predefined character templates (Gob, Cassandra, Fei, Michael, Tamara, Trish, Blake, Walter) or a customizable "Custom Character". Images for predefined characters updated.
     - Track core stats (HP, Sanity, MV, DEF) with interactive trackers and dynamic progress bar colors. Core stat display refined for mobile (label and controls stack vertically on small screens).
     - Crypto Tracker: Added a "Crypto" currency tracker. Defaults to 0. Can be manually adjusted. Saved with character data.
+    - **Bleed Points Tracker**: Added a tracker for "Bleed Points" in the Core Stats section. Displays "Hemorrhage at: 3" and a warning if 3+ points are accumulated. Defaults to 0. Saved with character data.
     - Manage skills:
         - Predefined characters have set skill values.
         - "Custom Character" uses a point-buy system (CP cost) for skills (ATH, CPU, DARE, DEC, EMP, ENG, INV, KNO, OCC, PERS, SUR, TAC, TUN). Min level 1 once a point is invested.
@@ -169,8 +170,8 @@
     - Displays character abilities (base and arsenal-granted) with cooldown/quantity trackers in a modal.
     - Displays character skills and weapons (base and arsenal-modified) in a modal.
     - Max Mod trackers for MV and DEF added to character modal.
-    - **Save Nexus Session**: Logged-in users can save the current state of their Nexus session (selected character, stats, modifiers, arsenal, crypto, ability cooldowns/quantities) to Firestore.
-    - **Load/Delete Nexus Session**: Settings dropdown allows users to load previously saved sessions (overwriting current) or delete them from Firestore.
+    - **Save Nexus Session**: Logged-in users can save the current state of their Nexus session to Firestore.
+    - **Load/Delete Nexus Session**: Settings dropdown allows users to load previously saved sessions or delete them from Firestore.
     - **Reset Nexus Session**: Settings dropdown allows users to reset the current session state.
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session but can be saved/loaded for logged-in users.
 
@@ -231,7 +232,7 @@
 
 ## 8. Data Structures of the App
 
--   **`Character` (`src/types/character.ts`)**: Added `crypto?: number;`
+-   **`Character` (`src/types/character.ts`)**: Added `crypto?: number; bleedPoints?: number;`
 -   **`ArsenalCard` & `ArsenalItem` (`src/types/arsenal.ts`)**: (No changes)
 -   **`GameCard` (`src/components/card-generator/card-generator-ui.tsx`)**: (No changes)
 -   **`EventsSheetData` (`src/components/events/events-sheet-ui.tsx`)**: (No changes)
@@ -246,19 +247,7 @@
 -   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: (No changes)
 -   **Dice Roller Types (`src/components/dice-roller/dice-roller-ui.tsx`)**: (No changes)
 -   **`EventData` (`src/types/event.ts`)**: (No changes)
--   **`SavedNexusState` (`src/types/nexus.ts`)**:
-    -   `id: string` (Firestore document ID)
-    -   `name: string` (User-given name)
-    -   `userId: string` (Firebase UID)
-    -   `lastSaved: string` (ISO date)
-    -   `baseCharacterId: string` (Template ID like "gob", "custom")
-    -   `selectedArsenalId: string | null`
-    -   `currentHp: number`, `currentSanity: number`, `currentMv: number`, `currentDef: number`
-    -   `sessionMaxHpModifier: number`, `sessionMaxSanityModifier: number`, `sessionMvModifier: number`, `sessionDefModifier: number`
-    -   `sessionMeleeAttackModifier: number`, `sessionRangedAttackModifier: number`, `sessionRangedRangeModifier: number`
-    -   `sessionCrypto: number`
-    -   `abilityCooldowns: Record<string, number>`
-    -   `abilityQuantities: Record<string, number>`
+-   **`SavedNexusState` (`src/types/nexus.ts`)**: (No changes)
 
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
@@ -278,3 +267,4 @@
 -   The application is intended to be the "OFFICIAL Riddle of the Beast board game companion app."
 
 This document provides a snapshot of the project's state and context.
+    
