@@ -160,7 +160,7 @@
 - **Description:** Session-based, multiplayer game management hub.
 - **Functionality:**
     - Allows selection of a character template for the session.
-    - Displays core stats (HP, Sanity, MV, DEF) with interactive trackers and session-based max stat modifiers.
+    - Displays core stats (HP, Sanity) with interactive trackers and session-based max stat modifiers. MV and DEF trackers removed from main view, but remain in character modal.
     - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
     - **Session Bleed Points Tracker**: Added bleed points tracking (default 0, user adjustable, shown on main page and in character modal, with Hemorrhage warning).
     - Displays selected arsenal card (front/back images) and its equipment.
@@ -252,7 +252,7 @@
 
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
--   **Firebase Firestore Rules:** Updated to include rules for `userNexusStates/{userId}/{document=**}` allowing read/write for authenticated owners.
+-   **Firebase Firestore Rules:** Updated to include rules for `userNexusStates/{userId}/{document=**}` allowing read/write for authenticated owners. Firestore rules confirmed to allow write access to `userNexusStates/{userId}/states/{sessionId}`.
 -   Other Firebase rules and API usage remain consistent with previous state.
 
 ## 10. Other Important Observations
@@ -269,3 +269,4 @@
 
 This document provides a snapshot of the project's state and context.
     
+

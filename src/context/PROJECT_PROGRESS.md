@@ -66,13 +66,13 @@ DONE:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
     - Session-based character management UI.
-    - Stat tracking with session modifiers (HP, Sanity, MV, DEF).
+    - Stat tracking (HP, Sanity) with session modifiers on main page. MV and DEF visible only in modal.
     - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
     - Session Bleed Points Tracker: Added bleed points tracking (default 0, user adjustable, shown on main page and in character modal, with Hemorrhage warning).
     - Arsenal and equipment display.
     - Integrated dice roller and card generator.
     - Character avatar and arsenal card image modals.
-    - Modal for character details (stats, weapons, abilities, skills).
+    - Modal for character details (stats (including MV/DEF), weapons, abilities, skills).
     - Save Nexus Session: Logged-in users can save their current Nexus session state to Firestore.
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
     - Reset Nexus Session: Functionality added to settings dropdown.
@@ -91,10 +91,12 @@ DONE:
     - Homepage feature card layout (vertical scrollable window).
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
+- MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob (Ranged Tactician, Close Quarters Disruptor using only shop items).
 - Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms & /privacy).
 
 WORKING:
 - Ongoing review and minor clean-up of existing codebase.
+- Refinement of Character Sheet mobile optimization for inner tab content.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -118,3 +120,4 @@ NEXT:
 - Refine UI/UX across all pages based on testing.
       
     
+

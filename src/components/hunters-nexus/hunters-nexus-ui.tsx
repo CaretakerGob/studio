@@ -96,8 +96,8 @@ import {
   UploadCloud, 
   Trash2, 
   Loader2,
-  Droplets, // Added Droplets for bleed points
-  AlertTriangle // For Hemorrhage warning
+  Droplets,
+  AlertTriangle
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -162,7 +162,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [currentNexusMv, setCurrentNexusMv] = useState<number | null>(null);
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
   const [sessionCrypto, setSessionCrypto] = useState<number>(0);
-  const [sessionBleedPoints, setSessionBleedPoints] = useState<number>(0); // Added
+  const [sessionBleedPoints, setSessionBleedPoints] = useState<number>(0);
   
   const [nexusSessionMaxHpModifier, setNexusSessionMaxHpModifier] = useState(0);
   const [nexusSessionMaxSanityModifier, setNexusSessionMaxSanityModifier] = useState(0);
@@ -520,7 +520,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setSelectedCharacterArsenalId(character.selectedArsenalCardId || null);
     setCharacterForModal(character); 
     setSessionCrypto(character.crypto || 0);
-    setSessionBleedPoints(character.bleedPoints || 0); // Initialize bleed points
+    setSessionBleedPoints(character.bleedPoints || 0);
     setNexusSessionMaxHpModifier(0); 
     setNexusSessionMaxSanityModifier(0);
     setNexusSessionMvModifier(0);
@@ -642,13 +642,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         mv: effectiveNexusCharacterStats.mv,
         def: effectiveNexusCharacterStats.def,
     };
-    const currentModifiers = {
-        hp: nexusSessionMaxHpModifier,
-        sanity: nexusSessionMaxSanityModifier,
-        mv: nexusSessionMvModifier,
-        def: nexusSessionDefModifier,
-    }
-
+    
     const setModifier = modifierSetters[statType];
     const setCurrentStat = currentStatSetters[statType];
     const currentStatValue = currentStatValues[statType];
@@ -734,7 +728,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       currentSanity: currentNexusSanity,
       currentMv: currentNexusMv,
       currentDef: currentNexusDef,
-      sessionBleedPoints, // Added
+      sessionBleedPoints,
       sessionMaxHpModifier: nexusSessionMaxHpModifier,
       sessionMaxSanityModifier: nexusSessionMaxSanityModifier,
       sessionMvModifier: nexusSessionMvModifier,
@@ -770,7 +764,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setCurrentNexusSanity(null);
     setCurrentNexusMv(null);
     setCurrentNexusDef(null);
-    setSessionBleedPoints(0); // Reset bleed points
+    setSessionBleedPoints(0);
     
     setSessionCrypto(0);
     
@@ -836,7 +830,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setCurrentNexusSanity(session.currentSanity);
     setCurrentNexusMv(session.currentMv);
     setCurrentNexusDef(session.currentDef);
-    setSessionBleedPoints(session.sessionBleedPoints || 0); // Load bleed points
+    setSessionBleedPoints(session.sessionBleedPoints || 0);
     
     setSessionCrypto(session.sessionCrypto);
     
@@ -1039,7 +1033,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                       </div>
 
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 border p-3 rounded-md bg-background/30">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 border p-3 rounded-md bg-background/30">
                             {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
                                 <div>
                                 <div className="flex items-center justify-between mb-0.5">
@@ -1068,36 +1062,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {(effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier}</p>
                                 </div>
                             )}
-                            {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (
-                                <div>
-                                    <div className="flex items-center justify-between mb-0.5">
-                                    <Label className="flex items-center text-xs font-medium"><Footprints className="mr-1.5 h-3 w-3 text-green-500" />MV</Label>
-                                    <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'decrement')} disabled={currentNexusMv === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
-                                        <Input type="number" readOnly value={currentNexusMv} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                        <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv >= ((effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)}><UserPlus className="h-2.5 w-2.5" /></Button>
-                                    </div>
-                                    </div>
-                                    <Progress value={(currentNexusMv / Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier, 'mv'))} />
-                                    <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {(effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier}</p>
-                                </div>
-                            )}
-                            {currentNexusDef !== null && effectiveNexusCharacterStats.def !== undefined && (
-                                <div>
-                                    <div className="flex items-center justify-between mb-0.5">
-                                    <Label className="flex items-center text-xs font-medium"><Shield className="mr-1.5 h-3 w-3 text-gray-400" />DEF</Label>
-                                    <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'decrement')} disabled={currentNexusDef === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
-                                        <Input type="number" readOnly value={currentNexusDef} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                        <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={currentNexusDef >= ((effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)}><UserPlus className="h-2.5 w-2.5" /></Button>
-                                    </div>
-                                    </div>
-                                    <Progress value={(currentNexusDef / Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusDef, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier, 'def'))} />
-                                    <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {(effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier}</p>
-                                </div>
-                            )}
-                             {/* Bleed Points Tracker on Main Nexus Page */}
-                            <div className={cn(sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "border-destructive ring-1 ring-destructive rounded-md p-1" : "p-1")}>
+                            {/* Bleed Points Tracker on Main Nexus Page */}
+                            <div className={cn("col-span-2", sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "border-destructive ring-1 ring-destructive rounded-md p-1" : "p-1")}>
                                 <div className="flex items-center justify-between mb-0.5">
                                     <Label className="flex items-center text-xs font-medium"><Droplets className="mr-1.5 h-3 w-3 text-red-400" />Bleed</Label>
                                     <div className="flex items-center gap-1">
@@ -1106,11 +1072,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                         <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusBleedPointsChange('increment')}><Plus className="h-2.5 w-2.5" /></Button>
                                     </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground text-right mt-0.5">Hemorrhage at: {NEXUS_HEMORRHAGE_THRESHOLD}</p>
-                                {sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD && (
-                                <div className="text-xs text-destructive font-bold flex items-center justify-end mt-0.5">
+                                 <p className="text-xs text-muted-foreground text-right mt-0.5">Hemorrhage at: {NEXUS_HEMORRHAGE_THRESHOLD}</p>
+                                 {sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD && (
+                                    <div className="text-xs text-destructive font-bold flex items-center justify-end mt-0.5">
                                     <AlertTriangle className="mr-1 h-3 w-3" /> HEMORRHAGE!
-                                </div>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -1357,7 +1323,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                           </div>
                         )}
-                        {/* Bleed Points in Modal */}
                         <div className={cn("space-y-1", sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "border-destructive ring-1 ring-destructive rounded-md p-1" : "p-1")}>
                             <div className="flex items-center justify-between mb-0.5">
                                 <Label className="flex items-center text-xs font-medium"><Droplets className="mr-1.5 h-3 w-3 text-red-400" />Bleed</Label>
