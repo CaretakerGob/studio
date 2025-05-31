@@ -112,7 +112,9 @@ import { AbilityCard } from '@/components/character-sheet/ability-card';
 import { useAuth } from '@/context/auth-context'; 
 import { db, auth } from '@/lib/firebase'; 
 import { doc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore"; 
-import { v4 as uuidv4 } from 'uuid'; 
+// Removed uuid import as it's not used in this file after recent changes.
+// If needed elsewhere, ensure it's imported where used.
+// import { v4 as uuidv4 } from 'uuid'; 
 import type { SavedNexusState } from '@/types/nexus';
 
 
@@ -717,8 +719,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     }
 
     setIsSavingNexus(true);
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const savedState: SavedNexusState = {
-      id: uuidv4(),
+      id: sessionId,
       name: saveNexusName.trim(),
       userId: currentUser.uid,
       lastSaved: new Date().toISOString(),
@@ -1031,11 +1034,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </DialogTrigger>
                         </div>
                       </div>
-
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 border p-3 rounded-md bg-background/30">
+                        
+                        <div className="grid grid-cols-1 gap-y-2 border p-3 rounded-md bg-background/30">
                             {/* HP Tracker */}
                             {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
-                                <div className="col-span-2"> {/* HP takes full width */}
+                                <div className="w-full">
                                     <div className="flex items-center justify-between mb-0.5">
                                         <Label className="flex items-center text-xs font-medium"><Heart className="mr-1.5 h-3 w-3 text-red-500" />HP</Label>
                                         <div className="flex items-center gap-1">
@@ -1050,7 +1053,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             )}
                             {/* Sanity Tracker */}
                             {currentNexusSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (
-                                <div>
+                                <div className="w-full">
                                 <div className="flex items-center justify-between mb-0.5">
                                     <Label className="flex items-center text-xs font-medium"><Brain className="mr-1.5 h-3 w-3 text-blue-400" />Sanity</Label>
                                     <div className="flex items-center gap-1">
@@ -1064,7 +1067,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 </div>
                             )}
                             {/* Bleed Points Tracker on Main Nexus Page */}
-                            <div className={cn(sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "border-destructive ring-1 ring-destructive rounded-md p-1" : "p-1")}>
+                            <div className={cn("w-full", sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "border-destructive ring-1 ring-destructive rounded-md p-1" : "p-1")}>
                                 <div className="flex items-center justify-between mb-0.5">
                                     <Label className="flex items-center text-xs font-medium"><Droplets className="mr-1.5 h-3 w-3 text-red-400" />Bleed</Label>
                                     <div className="flex items-center gap-1">

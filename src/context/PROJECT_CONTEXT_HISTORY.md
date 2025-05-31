@@ -160,7 +160,7 @@
 - **Description:** Session-based, multiplayer game management hub.
 - **Functionality:**
     - Allows selection of a character template for the session.
-    - Main page displays HP, Sanity, and Bleed Points trackers with session-based max stat modifiers. MV and DEF trackers removed from main view, but remain in character modal. HP tracker spans full width; Sanity and Bleed Points are below it, side-by-side.
+    - Main page displays HP, Sanity, and Bleed Points trackers with session-based max stat modifiers. These are now stacked vertically (HP full width, then Sanity full width, then Bleed full width). MV and DEF trackers removed from main view, but remain in character modal.
     - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
     - **Session Bleed Points Tracker**: Added bleed points tracking (default 0, user adjustable, shown on main page and in character modal, with Hemorrhage warning).
     - Displays selected arsenal card (front/back images) and its equipment.
