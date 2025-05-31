@@ -70,7 +70,8 @@ import {
   Plus,
   Clock,
   Box,
-  Briefcase // Icon for Arsenal Gear
+  Briefcase, // Icon for Arsenal Gear
+  Crosshair // for Ranged Weapon
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -98,7 +99,7 @@ const MAX_TAP_MOVEMENT = 10;
 const ZOOM_SCALE_FACTOR = 1.75;
 
 interface HuntersNexusUIProps {
-  arsenalCards: ActualArsenalCard[];
+  arsenalCards?: ActualArsenalCard[];
 }
 
 const parseCooldownRounds = (cooldownString?: string | number): number | undefined => {
@@ -172,6 +173,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
   const [nexusSessionMaxHpModifier, setNexusSessionMaxHpModifier] = useState(0);
   const [nexusSessionMaxSanityModifier, setNexusSessionMaxSanityModifier] = useState(0);
+  
+  const [nexusSessionMeleeAttackModifier, setNexusSessionMeleeAttackModifier] = useState(0);
+  const [nexusSessionRangedAttackModifier, setNexusSessionRangedAttackModifier] = useState(0);
+  const [nexusSessionRangedRangeModifier, setNexusSessionRangedRangeModifier] = useState(0);
   
   const [nexusDrawnCardsHistory, setNexusDrawnCardsHistory] = useState<GameCard[]>([]);
   const [nexusSelectedDeckName, setNexusSelectedDeckName] = useState<string | undefined>(undefined);
@@ -306,7 +311,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
   const effectiveNexusMeleeWeapon = useMemo(() => {
       if (!characterForModal) return undefined;
-      let weaponToDisplay: Weapon | undefined = characterDefaultMeleeWeaponForNexus;
+      let weaponToDisplay: Weapon | undefined = JSON.parse(JSON.stringify(characterDefaultMeleeWeaponForNexus)); // Deep copy
 
       if (currentNexusArsenal?.items) {
           const arsenalMeleeItem = currentNexusArsenal.items.find(item =>
@@ -329,8 +334,14 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
               attack: (weaponToDisplay.attack || 0) + (currentNexusArsenal.meleeAttackMod || 0),
           };
       }
+      
+      // Apply session modifier
+      if (weaponToDisplay) {
+        weaponToDisplay.attack = Math.max(0, (weaponToDisplay.attack || 0) + nexusSessionMeleeAttackModifier);
+      }
+
       const template = charactersData.find(c => c.id === (characterForModal.templateId || characterForModal.id));
-      if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === 1 &&
+      if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === (1 + nexusSessionMeleeAttackModifier) && // Check against potentially modified default
           !template?.meleeWeapon?.name &&
           !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (!i.parsedWeaponStats?.range || i.parsedWeaponStats.range <= 1)) &&
           !currentNexusArsenal?.meleeAttackMod &&
@@ -339,11 +350,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         return undefined;
       }
       return weaponToDisplay;
-  }, [characterForModal, currentNexusArsenal, characterDefaultMeleeWeaponForNexus]);
+  }, [characterForModal, currentNexusArsenal, characterDefaultMeleeWeaponForNexus, nexusSessionMeleeAttackModifier]);
 
   const effectiveNexusRangedWeapon = useMemo(() => {
       if (!characterForModal) return undefined;
-      let weaponToDisplay: RangedWeapon | undefined = characterDefaultRangedWeaponForNexus;
+      let weaponToDisplay: RangedWeapon | undefined = JSON.parse(JSON.stringify(characterDefaultRangedWeaponForNexus)); // Deep copy
 
       if (currentNexusArsenal?.items) {
           const arsenalRangedItem = currentNexusArsenal.items.find(item =>
@@ -368,8 +379,15 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
               range: (weaponToDisplay.range || 0) + (currentNexusArsenal.rangedRangeMod || 0),
           };
       }
+
+      // Apply session modifiers
+      if (weaponToDisplay) {
+        weaponToDisplay.attack = Math.max(0, (weaponToDisplay.attack || 0) + nexusSessionRangedAttackModifier);
+        weaponToDisplay.range = Math.max(0, (weaponToDisplay.range || 0) + nexusSessionRangedRangeModifier);
+      }
+
       const template = charactersData.find(c => c.id === (characterForModal.templateId || characterForModal.id));
-      if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 &&
+      if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === (0 + nexusSessionRangedAttackModifier) && weaponToDisplay.range === (0 + nexusSessionRangedRangeModifier) && // Check against potentially modified default
           !template?.rangedWeapon?.name &&
           !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 1)) &&
           !currentNexusArsenal?.rangedAttackMod && !currentNexusArsenal?.rangedRangeMod &&
@@ -378,7 +396,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         return undefined;
       }
       return weaponToDisplay;
-  }, [characterForModal, currentNexusArsenal, characterDefaultRangedWeaponForNexus]);
+  }, [characterForModal, currentNexusArsenal, characterDefaultRangedWeaponForNexus, nexusSessionRangedAttackModifier, nexusSessionRangedRangeModifier]);
 
   const arsenalProvidedEquipment = useMemo(() => {
     if (!currentNexusArsenal?.items) return [];
@@ -403,6 +421,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setCurrentNexusDef(effectiveNexusCharacterStats.def);
       setNexusSessionMaxHpModifier(0); 
       setNexusSessionMaxSanityModifier(0);
+      setNexusSessionMeleeAttackModifier(0);
+      setNexusSessionRangedAttackModifier(0);
+      setNexusSessionRangedRangeModifier(0);
     } else {
       setCurrentNexusHp(null);
       setCurrentNexusSanity(null);
@@ -410,6 +431,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setCurrentNexusDef(null);
       setNexusSessionMaxHpModifier(0);
       setNexusSessionMaxSanityModifier(0);
+      setNexusSessionMeleeAttackModifier(0);
+      setNexusSessionRangedAttackModifier(0);
+      setNexusSessionRangedRangeModifier(0);
     }
   }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
 
@@ -485,6 +509,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setCharacterForModal(character); 
     setNexusSessionMaxHpModifier(0); 
     setNexusSessionMaxSanityModifier(0);
+    setNexusSessionMeleeAttackModifier(0);
+    setNexusSessionRangedAttackModifier(0);
+    setNexusSessionRangedRangeModifier(0);
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
   };
@@ -590,6 +617,20 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         }
         return finalNewMod;
       });
+    }
+  };
+
+  const handleNexusSessionWeaponStatModifierChange = (
+    weaponType: 'melee' | 'ranged',
+    statType: 'attack' | 'range',
+    delta: number
+  ) => {
+    if (weaponType === 'melee' && statType === 'attack') {
+      setNexusSessionMeleeAttackModifier(prev => Math.max(0, prev + delta));
+    } else if (weaponType === 'ranged' && statType === 'attack') {
+      setNexusSessionRangedAttackModifier(prev => Math.max(0, prev + delta));
+    } else if (weaponType === 'ranged' && statType === 'range') {
+      setNexusSessionRangedRangeModifier(prev => Math.max(0, prev + delta));
     }
   };
 
@@ -1014,12 +1055,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {effectiveNexusCharacterStats.def}</p>
                       </div>
                     )}
-                    {effectiveNexusCharacterStats.meleeAttack !== undefined && (
-                        <div className="col-span-2">
-                            <Label className="flex items-center text-xs font-medium"><MeleeIcon className="mr-1.5 h-3 w-3 text-orange-400" />Melee ATK</Label>
-                            <p className="text-lg font-semibold">{effectiveNexusCharacterStats.meleeAttack}</p>
-                        </div>
-                    )}
                   </div>
 
                   {characterForModal.skills && Object.values(characterForModal.skills).some(val => val && val > 0) && (
@@ -1028,23 +1063,41 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     </>
                   )}
                   
-                  { (effectiveNexusMeleeWeapon || effectiveNexusRangedWeapon) && (
+                  {(effectiveNexusMeleeWeapon || effectiveNexusRangedWeapon) && (
                     <>
                       <Separator />
                       <h4 className="text-lg font-semibold text-primary flex items-center"><Swords className="mr-2 h-5 w-5" /> Weapons</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div className="space-y-3 text-sm">
                         {effectiveNexusMeleeWeapon && (
                           <div className="p-2 bg-muted/20 rounded-md">
-                            <p className="font-medium text-foreground">{effectiveNexusMeleeWeapon.name} (Melee)</p>
+                            <p className="font-medium text-foreground flex items-center"><MeleeIcon className="mr-2 h-4 w-4 text-orange-400"/> {effectiveNexusMeleeWeapon.name} (Melee)</p>
                             <p>ATK: {effectiveNexusMeleeWeapon.attack}</p>
-                            {effectiveNexusMeleeWeapon.flavorText && <p className="text-xs text-muted-foreground">{effectiveNexusMeleeWeapon.flavorText}</p>}
+                            <div className="flex items-center gap-1 mt-1">
+                                <Label htmlFor="nexusModalMeleeAtkMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>ATK Mod:</Label>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('melee', 'attack', -1)} disabled={nexusSessionMeleeAttackModifier <= 0 && effectiveNexusMeleeWeapon.attack === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Input id="nexusModalMeleeAtkMod" type="number" value={nexusSessionMeleeAttackModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('melee', 'attack', 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                            </div>
+                            {effectiveNexusMeleeWeapon.flavorText && <p className="text-xs text-muted-foreground mt-1">{effectiveNexusMeleeWeapon.flavorText}</p>}
                           </div>
                         )}
                         {effectiveNexusRangedWeapon && (
                           <div className="p-2 bg-muted/20 rounded-md">
-                            <p className="font-medium text-foreground">{effectiveNexusRangedWeapon.name} (Ranged)</p>
+                            <p className="font-medium text-foreground flex items-center"><Crosshair className="mr-2 h-4 w-4 text-cyan-400"/> {effectiveNexusRangedWeapon.name} (Ranged)</p>
                             <p>ATK: {effectiveNexusRangedWeapon.attack} / RNG: {effectiveNexusRangedWeapon.range}</p>
-                            {effectiveNexusRangedWeapon.flavorText && <p className="text-xs text-muted-foreground">{effectiveNexusRangedWeapon.flavorText}</p>}
+                             <div className="flex items-center gap-1 mt-1">
+                                <Label htmlFor="nexusModalRangedAtkMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>ATK Mod:</Label>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'attack', -1)} disabled={nexusSessionRangedAttackModifier <= 0 && effectiveNexusRangedWeapon.attack === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Input id="nexusModalRangedAtkMod" type="number" value={nexusSessionRangedAttackModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'attack', 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                            </div>
+                            <div className="flex items-center gap-1 mt-1">
+                                <Label htmlFor="nexusModalRangedRngMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>RNG Mod:</Label>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'range', -1)} disabled={nexusSessionRangedRangeModifier <=0 && effectiveNexusRangedWeapon.range === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Input id="nexusModalRangedRngMod" type="number" value={nexusSessionRangedRangeModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'range', 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                            </div>
+                            {effectiveNexusRangedWeapon.flavorText && <p className="text-xs text-muted-foreground mt-1">{effectiveNexusRangedWeapon.flavorText}</p>}
                           </div>
                         )}
                       </div>
@@ -1080,11 +1133,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   {(effectiveNexusCharacterAbilities.baseAbilities.length > 0 || effectiveNexusCharacterAbilities.arsenalAbilities.length > 0) && (
                      <> 
                         <Separator /> 
-                        <h4 className="text-lg font-semibold text-primary flex items-center"><BookMarked className="mr-2 h-5 w-5" /> Abilities</h4>
                         
                         {effectiveNexusCharacterAbilities.baseAbilities.length > 0 && (
                             <div className="space-y-2">
-                                <h5 className="text-md font-medium text-muted-foreground">Character Abilities:</h5>
+                                <h5 className="text-lg font-semibold text-primary flex items-center"><BookMarked className="mr-2 h-5 w-5" /> Character Abilities:</h5>
                                 {effectiveNexusCharacterAbilities.baseAbilities.map(ability => ( 
                                     <AbilityCard 
                                         key={`modal-base-ability-${ability.id}`} 
@@ -1104,7 +1156,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
                         {effectiveNexusCharacterAbilities.arsenalAbilities.length > 0 && (
                             <div className="space-y-2 mt-3">
-                                <h5 className="text-md font-medium text-muted-foreground">Arsenal-Granted Abilities:</h5>
+                                <h5 className="text-lg font-semibold text-primary flex items-center"><Sparkles className="mr-2 h-5 w-5" /> Arsenal-Granted Abilities:</h5>
                                 {effectiveNexusCharacterAbilities.arsenalAbilities.map(ability => ( 
                                     <AbilityCard 
                                         key={`modal-arsenal-ability-${ability.id}`} 
