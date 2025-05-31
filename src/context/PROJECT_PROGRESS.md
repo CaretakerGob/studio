@@ -1,3 +1,4 @@
+
 DONE:
 - Initial app setup (Next.js, TypeScript, ShadCN UI, Tailwind CSS, Firebase, Genkit)
 - Homepage: Layout, feature navigation cards (consolidated "Game Tools"), footer with links.
@@ -72,10 +73,11 @@ DONE:
     - Save Nexus Session: Logged-in users can save their current team's state (including all members' stats, arsenals, crypto) to Firestore.
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
     - Reset Nexus Session: Functionality added to settings dropdown.
-    - Changed "Party" to "Team" in all user-facing text.
+    - Changed "Party" to "Team" in all user-facing text for Nexus.
 - How to Play Page (`/how-to-play`):
-    - Created page to display game rules from `docs/game-rules.md`.
-    - Implemented server-side Markdown parsing that **omits specific shop item list sections**. Other basic formatting (headings, paragraphs) is applied.
+    - Page now uses `docs/Riddle_of_the_Beast_Rulebook.md`.
+    - Content is displayed in an Accordion format, with H1s and H2s as main collapsible sections.
+    - Specified shop and large table sections (like Loot Table, Mystery Table) are omitted from the display.
     - Added link to sidebar.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
@@ -92,8 +94,8 @@ DONE:
 - Mobile Optimizations:
     - Homepage feature card layout (vertical scrollable window).
     - Character Sheet tabs and header.
-- Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
-- MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob (Ranged Tactician, Close Quarters Disruptor using only shop items).
+- Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md` and `docs/Riddle_of_the_Beast_Rulebook.md`.
+- MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob.
 - Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms & /privacy, Nexus max update depth error resolved).
 
 WORKING:
@@ -107,17 +109,18 @@ NEXT:
     - Logic for equipping/unequipping individual items (Gear, Utility, Augments, Consumables).
     - Dynamic stat/ability updates based on equipped items.
 - Integrate combat rules into a basic combat UI/tracker.
-- Develop "Shared Space" with real-time collaboration features (Firebase).
+- Develop "Shared Space" with real-time collaboration features (Firebase) (using "Party" terminology).
 - Populate "Item List" page with actual game items (from rulebook or new data source, potentially shop sheet).
 - Expand Genkit AI integrations:
     - Dynamic NPC dialogue generation.
     - AI-assisted event or NPC detail generation.
     - Persist AI-generated shop item images.
 - Add a bestiary/monster manual section.
-- Implement game rule references or a digital rulebook section.
+- Implement game rule references or a digital rulebook section (current "How to Play" serves this, but could be enhanced).
 - Implement Hunter's Nexus "Session Display Preferences" (toggle tool visibility, compact mode).
-- **Markdown Rendering**: Improve Markdown display on "How to Play" page (tables, lists, inline styles).
-- Further mobile optimization for all pages (Dice Roller, Card Generator, Events, NPC Generator, Shop, Profile, etc.).
-- Caching strategies for Google Sheet data to improve performance in production.
-- Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
+- **Markdown Rendering**: Further improve Markdown display on "How to Play" page if more complex elements (e.g., non-shop tables, nested lists) are desired.
+- Further mobile optimization for all pages.
+- Caching strategies for Google Sheet data.
+- Address any remaining warnings from the build process.
 - Refine UI/UX across all pages based on testing.
+      
