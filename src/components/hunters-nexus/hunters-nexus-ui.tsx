@@ -69,7 +69,8 @@ import {
   Minus,
   Plus,
   Clock,
-  Box
+  Box,
+  Briefcase // Icon for Arsenal Gear
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -379,6 +380,20 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       return weaponToDisplay;
   }, [characterForModal, currentNexusArsenal, characterDefaultRangedWeaponForNexus]);
 
+  const arsenalProvidedEquipment = useMemo(() => {
+    if (!currentNexusArsenal?.items) return [];
+    return currentNexusArsenal.items.filter(item => {
+      if (item.isPet) return false;
+      const isWeapon = item.isFlaggedAsWeapon || 
+                       item.category?.toUpperCase() === 'WEAPON' || 
+                       !!item.parsedWeaponStats?.attack ||
+                       ((item.category?.toUpperCase() === 'LOAD OUT' || item.category?.toUpperCase() === 'LOADOUT') && item.type?.toUpperCase() === 'WEAPON');
+      const isGear = item.category?.toUpperCase() === 'GEAR' || 
+                     ((item.category?.toUpperCase() === 'LOAD OUT' || item.category?.toUpperCase() === 'LOADOUT') && item.type?.toUpperCase() === 'GEAR');
+      return isWeapon || isGear;
+    });
+  }, [currentNexusArsenal]);
+
 
   useEffect(() => {
     if (selectedNexusCharacter && effectiveNexusCharacterStats) {
@@ -444,7 +459,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setNexusMaxAbilityQuantities({});
       setNexusCurrentAbilityQuantities({});
     }
-  }, [characterForModal, abilityDataStringForEffect]);
+  }, [characterForModal, abilityDataStringForEffect, effectiveNexusCharacterAbilities]);
 
 
   const handleImageDoubleClick = () => setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
@@ -1032,6 +1047,32 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             {effectiveNexusRangedWeapon.flavorText && <p className="text-xs text-muted-foreground">{effectiveNexusRangedWeapon.flavorText}</p>}
                           </div>
                         )}
+                      </div>
+                    </>
+                  )}
+
+                  {arsenalProvidedEquipment.length > 0 && (
+                    <>
+                      <Separator />
+                      <h4 className="text-lg font-semibold text-primary flex items-center"><Briefcase className="mr-2 h-5 w-5" /> Arsenal Weapons & Gear</h4>
+                      <div className="space-y-2 text-sm">
+                        {arsenalProvidedEquipment.map(item => (
+                          <Card key={item.id} className="p-2 bg-muted/20">
+                            <p className="font-medium text-foreground">{item.abilityName}</p>
+                            {item.parsedWeaponStats?.attack !== undefined && (
+                              <p className="text-xs">
+                                ATK: {item.parsedWeaponStats.attack}
+                                {item.parsedWeaponStats.range !== undefined && ` / RNG: ${item.parsedWeaponStats.range}`}
+                              </p>
+                            )}
+                            {item.parsedStatModifiers && item.parsedStatModifiers.length > 0 && (
+                                <p className="text-xs">Mods: {item.parsedStatModifiers.map(mod => `${mod.targetStat.toUpperCase()}: ${mod.value > 0 ? '+' : ''}${mod.value}`).join(', ')}</p>
+                            )}
+                            {(item.itemDescription || item.effect) && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{item.itemDescription || item.effect}</p>
+                            )}
+                          </Card>
+                        ))}
                       </div>
                     </>
                   )}
