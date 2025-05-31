@@ -27,7 +27,8 @@ import {
   Minus,
   Plus,
   Clock,
-  Box
+  Box,
+  Coins // Added Coins icon
 } from "lucide-react";
 import type { CharacterStats, StatName, Character, Ability, AbilityType, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from '@/types/character';
 import type { ArsenalCard as ActualArsenalCard, ArsenalItem } from '@/types/arsenal';
@@ -88,6 +89,7 @@ export const charactersData: Character[] = [
     baseStats: { ...initialCustomCharacterStats },
     skills: { ...initialSkills },
     abilities: [],
+    crypto: 0,
     avatarSeed: 'customcharacter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
     meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
@@ -100,6 +102,7 @@ export const charactersData: Character[] = [
     name: 'Gob',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4, meleeAttack: 0 },
     skills: { ...initialSkills, tac: 3, sur: 2, kno: 3 },
+    crypto: 0,
     avatarSeed: 'gob',
     imageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FGob%20front%201.png?alt=media&token=50020f87-b211-4a89-8232-8be16a3d513e`,
     meleeWeapon: { name: "Knife", attack: 2 },
@@ -118,6 +121,7 @@ export const charactersData: Character[] = [
     name: 'Cassandra',
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4, meleeAttack: 0 },
     skills: { ...initialSkills, occ: 2, emp: 2, tun: 1 },
+    crypto: 0,
     avatarSeed: 'cassandra',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FCassandra%20front%201.png?alt=media&token=20d48903-12e7-4b7b-be18-14b7e32aa5bc',
     meleeWeapon: { name: "Saber", attack: 3 },
@@ -136,6 +140,7 @@ export const charactersData: Character[] = [
     name: 'Fei',
     baseStats: { hp: 5, maxHp: 5, mv: 4, def: 2, sanity: 6, maxSanity: 6, meleeAttack: 0 },
     skills: { ...initialSkills, occ: 4, emp: 2, kno: 2 },
+    crypto: 0,
     avatarSeed: 'fei',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FFei%20front%201.png?alt=media&token=edb4236c-ce3f-4809-8dfb-c9fcc0be303a',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
@@ -156,6 +161,7 @@ export const charactersData: Character[] = [
     name: 'Michael',
     baseStats: { hp: 6, maxHp: 6, mv: 5, def: 3, sanity: 5, maxSanity: 5, meleeAttack: 0 },
     skills: { ...initialSkills, emp: 2, dec: 2, inv: 2, ath: 2 },
+    crypto: 0,
     avatarSeed: 'michael',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FMichael%20front%201.png?alt=media&token=4589bf01-5104-424f-8055-8f35edb2aea3',
     meleeWeapon: { name: "Kunai", attack: 3 },
@@ -175,6 +181,7 @@ export const charactersData: Character[] = [
     name: 'Tamara',
     baseStats: { hp: 7, maxHp: 7, mv: 5, def: 4, sanity: 6, maxSanity: 6, meleeAttack: 0 },
     skills: { ...initialSkills, emp: 4, pers: 2 },
+    crypto: 0,
     avatarSeed: 'tamara',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FTamara%20front%201.png?alt=media&token=b1a57842-f145-4fa7-b239-18ec2977dd8c',
     meleeWeapon: { name: "Martial Arts", attack: 2 },
@@ -193,6 +200,7 @@ export const charactersData: Character[] = [
     name: 'Trish',
     baseStats: { hp: 7, maxHp: 7, mv: 5, def: 3, sanity: 4, maxSanity: 4, meleeAttack: 0 },
     skills: { ...initialSkills, ath: 3, pers: 2 },
+    crypto: 0,
     avatarSeed: 'trish',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FTrish%20front%201.png?alt=media&token=d33490c7-2eff-4abb-8c5d-e260378b7c34',
     meleeWeapon: { name: "Katana", attack: 4 },
@@ -211,6 +219,7 @@ export const charactersData: Character[] = [
     name: 'Blake',
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 5, maxSanity: 5, meleeAttack: 0 },
     skills: { ...initialSkills, eng: 2, sur: 2, tac: 2 },
+    crypto: 0,
     avatarSeed: 'blake',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FBlake%20Back.png?alt=media&token=93ab27db-954b-4fac-ab31-a10337e74529',
     meleeWeapon: { name: "Kukri", attack: 4 },
@@ -230,6 +239,7 @@ export const charactersData: Character[] = [
     name: 'Walter',
     baseStats: { hp: 9, maxHp: 9, mv: 4, def: 4, sanity: 5, maxSanity: 5, meleeAttack: 0 },
     skills: { ...initialSkills, dare: 2, cpu: 2, pers: 2 },
+    crypto: 0,
     avatarSeed: 'walter',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FWalter%20back.png?alt=media&token=ef9ee84f-6c26-4452-ae9a-c2279ead4df7',
     meleeWeapon: { name: "Mace", attack: 3 },
@@ -432,6 +442,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             characterToLoad.baseStats = { ...(baseTemplateForStats.baseStats || initialCustomCharacterStats) , ...characterToLoad.baseStats };
             characterToLoad.skills = { ...(baseTemplateForStats.skills || initialSkills) , ...characterToLoad.skills };
             characterToLoad.abilities = Array.isArray(characterToLoad.abilities) ? characterToLoad.abilities : (baseTemplateForStats.abilities || []);
+            characterToLoad.crypto = characterToLoad.crypto === undefined ? 0 : characterToLoad.crypto; // Default crypto to 0 if not present
             characterToLoad.savedCooldowns = characterToLoad.savedCooldowns || {};
             characterToLoad.savedQuantities = characterToLoad.savedQuantities || {};
             setEditableCharacterData(characterToLoad);
@@ -443,6 +454,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                 console.warn("CharacterSheetUI: loadCharacterData - Fallback to default template (characterToLoad was null for ID:", selectedCharacterId, ")");
                 let fallbackChar: Character = JSON.parse(JSON.stringify(defaultTemplate));
                 fallbackChar.templateId = selectedCharacterId;
+                fallbackChar.crypto = 0; // Default crypto
                 setEditableCharacterData(fallbackChar);
                 showToastHelper({ title: "Default Loaded", description: `Loaded default template for ${defaultTemplate.name || selectedCharacterId}.`, variant: "destructive" });
             } else {
@@ -459,7 +471,10 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           console.error("CharacterSheetUI: loadCharacterData - Error loading character:", err);
           const defaultTemplate = charactersData.find(c => c.id === selectedCharacterId);
           characterToLoad = defaultTemplate ? JSON.parse(JSON.stringify(defaultTemplate)) : null;
-          if (characterToLoad && defaultTemplate) characterToLoad.templateId = defaultTemplate.id;
+          if (characterToLoad && defaultTemplate) {
+            characterToLoad.templateId = defaultTemplate.id;
+            characterToLoad.crypto = 0; // Default crypto
+          }
           setEditableCharacterData(characterToLoad);
           showToastHelper({ title: "Load Failed", description: "Could not load character data. Loading default.", variant: "destructive" });
       } finally {
@@ -771,6 +786,27 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     handleStatChange(statName, (editableCharacterData.baseStats[statName] || 0) - 1);
   };
 
+  const handleCryptoChange = (value: number | string) => {
+    const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    if (isNaN(numericValue)) return;
+
+    setEditableCharacterData(prevData => {
+      if (!prevData) return null;
+      return { ...prevData, crypto: Math.max(0, numericValue) };
+    });
+  };
+
+  const incrementCrypto = () => {
+    if (!editableCharacterData) return;
+    handleCryptoChange((editableCharacterData.crypto || 0) + 1);
+  };
+
+  const decrementCrypto = () => {
+    if (!editableCharacterData) return;
+    handleCryptoChange((editableCharacterData.crypto || 0) - 1);
+  };
+
+
   const handlePetStatChange = (statType: 'hp' | 'sanity' | 'mv' | 'def' | 'meleeAttack', operation: 'increment' | 'decrement') => {
     if (!currentCompanion || !currentCompanion.parsedPetCoreStats) return;
     const delta = operation === 'increment' ? 1 : -1;
@@ -958,9 +994,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         characterToSet.skills = { ...(customDefaultTemplate?.skills || initialSkills) };
         characterToSet.abilities = customDefaultTemplate?.abilities ? [...customDefaultTemplate.abilities] : [];
         characterToSet.characterPoints = customDefaultTemplate?.characterPoints ?? 375;
+        characterToSet.crypto = 0; // Reset crypto
         characterToSet.imageUrl = customDefaultTemplate?.imageUrl;
     } else {
         characterToSet = JSON.parse(JSON.stringify(originalCharacterTemplate));
+        characterToSet.crypto = 0; // Reset crypto
     }
     
     characterToSet.id = editableCharacterData.id; // Keep the Firestore document ID for saving
@@ -1150,6 +1188,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         ...editableCharacterData,
         id: docIdForFirestore,
         templateId: effectiveTemplateId,
+        crypto: editableCharacterData.crypto || 0, // Ensure crypto is saved
         savedCooldowns: currentAbilityCooldowns,
         savedQuantities: currentAbilityQuantities,
         selectedArsenalCardId: editableCharacterData.selectedArsenalCardId || null,
@@ -1182,6 +1221,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       if (docSnap.exists()) {
         let loadedChar = { id: docSnap.id, ...docSnap.data() } as Character;
         loadedChar.templateId = 'custom'; // Ensure templateId is 'custom'
+        loadedChar.crypto = loadedChar.crypto || 0; // Default crypto
         setEditableCharacterData(loadedChar);
         setSessionMaxHpModifier(0); 
         setSessionMaxSanityModifier(0);
@@ -1191,6 +1231,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         if (defaultCustomTemplate) {
           let charToSet: Character = JSON.parse(JSON.stringify(defaultCustomTemplate));
           charToSet.templateId = 'custom';
+          charToSet.crypto = 0; // Default crypto
           setEditableCharacterData(charToSet);
           setSessionMaxHpModifier(0);
           setSessionMaxSanityModifier(0);
@@ -1527,6 +1568,33 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                 sessionMaxSanityModifier={sessionMaxSanityModifier}
                 handleSessionMaxStatModifierChange={handleSessionMaxStatModifierChange}
               />
+              <Separator/>
+              {/* Crypto Tracker Section */}
+                <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
+                    <div className="flex items-center justify-between mb-2">
+                        <Label htmlFor="crypto" className="flex items-center text-lg font-medium">
+                            <Coins className="mr-2 h-6 w-6 text-yellow-400" />
+                            Crypto
+                        </Label>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="icon" onClick={decrementCrypto} className="h-8 w-8">
+                                <Minus className="h-4 w-4" />
+                            </Button>
+                            <Input
+                                id="crypto"
+                                type="number"
+                                value={editableCharacterData.crypto || 0}
+                                onChange={(e) => handleCryptoChange(e.target.value)}
+                                className="w-24 h-8 text-center text-lg font-bold"
+                                min="0"
+                            />
+                            <Button variant="outline" size="icon" onClick={incrementCrypto} className="h-8 w-8">
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Your character's current Crypto balance.</p>
+                </div>
               <Separator/>
               <div>
                   <h3 className="text-xl font-semibold mb-3 flex items-center"><Swords className="mr-2 h-6 w-6 text-primary" /> Weapons</h3>

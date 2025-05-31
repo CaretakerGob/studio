@@ -72,7 +72,8 @@ import {
   Clock,
   Box,
   Briefcase, 
-  Crosshair 
+  Crosshair,
+  Coins // Added Coins icon
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -129,6 +130,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
   const [currentNexusMv, setCurrentNexusMv] = useState<number | null>(null);
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
+  const [sessionCrypto, setSessionCrypto] = useState<number>(0);
   
   const [nexusSessionMaxHpModifier, setNexusSessionMaxHpModifier] = useState(0);
   const [nexusSessionMaxSanityModifier, setNexusSessionMaxSanityModifier] = useState(0);
@@ -377,6 +379,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setCurrentNexusSanity(effectiveNexusCharacterStats.sanity);
       setCurrentNexusMv(effectiveNexusCharacterStats.mv);
       setCurrentNexusDef(effectiveNexusCharacterStats.def);
+      setSessionCrypto(selectedNexusCharacter?.crypto || 0); // Initialize session crypto from selected character
       setNexusSessionMaxHpModifier(0); 
       setNexusSessionMaxSanityModifier(0);
       setNexusSessionMvModifier(0);
@@ -389,6 +392,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setCurrentNexusSanity(null);
       setCurrentNexusMv(null);
       setCurrentNexusDef(null);
+      setSessionCrypto(0);
       setNexusSessionMaxHpModifier(0);
       setNexusSessionMaxSanityModifier(0);
       setNexusSessionMvModifier(0);
@@ -397,7 +401,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setNexusSessionRangedAttackModifier(0);
       setNexusSessionRangedRangeModifier(0);
     }
-  }, [characterForModal, effectiveNexusCharacterStats]);
+  }, [characterForModal, effectiveNexusCharacterStats, selectedNexusCharacter?.crypto]);
 
   useEffect(() => {
     if (!enlargedImageUrl) {
@@ -469,6 +473,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setPartyMembers([character]); 
     setSelectedCharacterArsenalId(character.selectedArsenalCardId || null);
     setCharacterForModal(character); 
+    setSessionCrypto(character.crypto || 0); // Set session crypto from character's saved crypto
     setNexusSessionMaxHpModifier(0); 
     setNexusSessionMaxSanityModifier(0);
     setNexusSessionMvModifier(0);
@@ -550,6 +555,12 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         }
         setter(newValue); 
     }
+  };
+
+  const handleSessionCryptoChange = (value: string | number) => {
+    const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
+    if (isNaN(numericValue)) return;
+    setSessionCrypto(Math.max(0, numericValue));
   };
 
   const handleNexusSessionMaxStatModifierChange = (statType: 'hp' | 'sanity' | 'mv' | 'def', delta: number) => {
@@ -658,6 +669,32 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
           
           <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
             <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
+                {/* Crypto Tracker Card */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center">
+                      <Coins className="mr-2 h-5 w-5 text-yellow-400" />Session Crypto
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="icon" onClick={() => handleSessionCryptoChange(sessionCrypto - 1)} className="h-8 w-8">
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Input
+                        type="number"
+                        value={sessionCrypto}
+                        onChange={(e) => handleSessionCryptoChange(e.target.value)}
+                        className="w-24 h-8 text-center text-lg font-bold"
+                        min="0"
+                      />
+                      <Button variant="outline" size="icon" onClick={() => handleSessionCryptoChange(sessionCrypto + 1)} className="h-8 w-8">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Dice Roller Card */}
                 <Card>
                     <CardHeader className="pb-2">
@@ -981,7 +1018,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                       </Tooltip>
                       
                       <Separator />
-                      <h4 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><Info className="mr-2 h-5 w-5" /> Core Stats</h4>
+                      <h4 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><Info className="mr-2 h-5 w-5" /> Core Stats & Crypto</h4>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                         {/* HP Tracker */}
                         {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
@@ -1067,6 +1104,17 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                           </div>
                         )}
+                         {/* Session Crypto Display in Modal */}
+                        <div className="space-y-1 md:col-span-2">
+                            <div className="flex items-center justify-between mb-0.5">
+                                <Label className="flex items-center text-xs font-medium"><Coins className="mr-1.5 h-3 w-3 text-yellow-400" />Session Crypto</Label>
+                                <div className="flex items-center gap-1">
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleSessionCryptoChange(sessionCrypto - 1)} disabled={sessionCrypto === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                    <Input type="number" readOnly value={sessionCrypto} className="w-12 h-5 text-center p-0 text-xs font-semibold" />
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleSessionCryptoChange(sessionCrypto + 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                                </div>
+                            </div>
+                        </div>
                       </div>
 
                       {(effectiveNexusMeleeWeapon || effectiveNexusRangedWeapon) && (

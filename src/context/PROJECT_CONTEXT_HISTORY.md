@@ -43,6 +43,7 @@
 - **Functionality:**
     - Selection from predefined character templates (Gob, Cassandra, Fei, Michael, Tamara, Trish, Blake, Walter) or a customizable "Custom Character". Images for predefined characters updated.
     - Track core stats (HP, Sanity, MV, DEF) with interactive trackers and dynamic progress bar colors.
+    - **Crypto Tracker:** Added a "Crypto" currency tracker. Defaults to 0. Can be manually adjusted. Saved with character data.
     - Manage skills:
         - Predefined characters have set skill values.
         - "Custom Character" uses a point-buy system (CP cost) for skills (ATH, CPU, DARE, DEC, EMP, ENG, INV, KNO, OCC, PERS, SUR, TAC, TUN). Min level 1 once a point is invested.
@@ -115,13 +116,13 @@
     - Simulated "Crypto" currency tracker (client-side state).
     - Simulated purchasing logic (deducts Crypto, updates stock for consumables).
     - Item data (Name, Cost, Category, Effect, SubCategory, and other optional fields like Stock, Weapon Class, Attack, etc.) is fetched from a Google Sheet (can use multiple tabs).
-    - **AI Image Generation:** For items without an image URL in the sheet, a button allows users to generate an AI image for the item in the current session using a Genkit flow.
+    - AI image generation for items without sheet URLs removed from UI (flow still exists).
 - **Data Source:** Google Sheets for item data.
 
 ### 3.9. AI Item Generator (`/item-generator`)
 - **Description:** Uses Genkit to generate unique game items.
 - **Functionality:**
-    - User inputs: Item Type, optional Theme, optional Rarity, optional Stat Focus, optional Lore Context.
+    - User inputs: Item Type, optional Theme, optional Rarity, optional Stat Focus, optional Lore Context (user-provided text excerpt).
     - Shop items (fetched from Google Sheet) are used as examples for the AI.
     - Genkit flow (`item-generator-flow.ts`) processes inputs and prompts an LLM to generate item details (name, type, lore description, game effect, generated rarity) adhering to the "Riddle of the Beast" rules.
     - Displays the generated item in a card format.
@@ -160,6 +161,7 @@
 - **Functionality:**
     - Allows selection of a character template for the session.
     - Displays core stats (HP, Sanity, MV, DEF) with interactive trackers and session-based max stat modifiers.
+    - **Session Crypto Tracker:** Added a "Session Crypto" tracker, initialized from the selected character's saved crypto (or 0 if new), and can be manually adjusted during the session. Displayed on main page and in character modal.
     - Displays selected arsenal card (front/back images) and its equipment.
     - Allows clicking on character avatar and arsenal card images to view them in a larger modal.
     - Provides a simple dice roller (numbered and combat dice).
@@ -177,7 +179,6 @@
 
 ## 4. Features Currently Under Development
 -   Full implementation of the "Gear and Equipment" system (equipping individual items to character slots, managing a character-specific inventory).
--   Persistent "Crypto" currency for logged-in users.
 -   Real-time collaboration features for the "Shared Space".
 -   Functional friends list with real-time presence.
 -   Complete item database for the "Item List" page (currently empty, data could come from shop sheet or a dedicated one).
@@ -223,7 +224,7 @@
 
 ## 8. Data Structures of the App
 
--   **`Character` (`src/types/character.ts`)**: (No changes)
+-   **`Character` (`src/types/character.ts`)**: Added `crypto?: number;`
 -   **`ArsenalCard` & `ArsenalItem` (`src/types/arsenal.ts`)**: (No changes)
 -   **`GameCard` (`src/components/card-generator/card-generator-ui.tsx`)**: (No changes)
 -   **`EventsSheetData` (`src/components/events/events-sheet-ui.tsx`)**: (No changes)
@@ -257,3 +258,4 @@
 This document provides a snapshot of the project's state and context.
 
     
+

@@ -4,6 +4,7 @@ DONE:
 - Homepage: Layout, feature navigation cards (consolidated "Game Tools"), footer with links.
 - Character Sheet:
     - Base stat tracking (HP, Sanity, MV, DEF) with interactive controls.
+    - **Crypto Tracker:** Added persistent crypto tracking (default 0, user adjustable).
     - Skill display and point-buy system for Custom Characters.
     - Abilities display (Actions, Interrupts, Passives, FREE Actions) with cooldown/quantity trackers.
     - Custom Character ability purchase system.
@@ -39,15 +40,17 @@ DONE:
     - UI with tabbed categories (Defense, Melee Weapon, Ranged Weapon, Augment, Utility, Consumable, Relic).
     - Utility sub-categories.
     - Display of item details (cost, description, stats, charges, etc.).
-    - Simulated "Crypto" currency tracker and purchasing logic.
+    - Simulated "Crypto" currency tracker (client-side state).
+    - Simulated purchasing logic (deducts Crypto, updates stock for consumables).
     - Item data now fetched from Google Sheets instead of hardcoded.
-    - Implemented AI image generation for shop items without existing images (session-based display).
+    - Removed AI image generation button from shop UI (flow still exists).
 - AI Item Generator:
     - Genkit flow for generating game items (name, type, lore, game effect, rarity).
     - UI for user input (item type, theme, rarity, stat focus, lore context).
     - Display of generated item.
     - Shop items (from Google Sheet) used as examples for the AI.
     - Reinforced prompt to strictly use RotB rules and avoid D&D elements.
+    - Added "Lore Context" input field to allow users to paste relevant text excerpts.
 - User Profile Page:
     - Firebase Authentication (Email/Password Sign Up, Log In, Log Out).
     - Edit display name.
@@ -61,6 +64,7 @@ DONE:
 - Hunter's Nexus Page:
     - Session-based character management UI.
     - Stat tracking with session modifiers (HP, Sanity, MV, DEF).
+    - **Session Crypto Tracker:** Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
     - Arsenal and equipment display.
     - Integrated dice roller and card generator.
     - Character avatar and arsenal card image modals.
@@ -89,7 +93,6 @@ NEXT:
     - Logic for equipping/unequipping individual items (Gear, Utility, Augments, Consumables).
     - Dynamic stat/ability updates based on equipped items.
 - Integrate combat rules into a basic combat UI/tracker.
-- Persist "Crypto" currency for logged-in users (Firebase Firestore).
 - Develop "Shared Space" with real-time collaboration features (Firebase).
 - Populate "Item List" page with actual game items (from rulebook or new data source, potentially shop sheet).
 - Expand Genkit AI integrations:
@@ -103,4 +106,3 @@ NEXT:
 - Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
 - Refine UI/UX across all pages based on testing.
       
-
