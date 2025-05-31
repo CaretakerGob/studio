@@ -109,49 +109,6 @@ const parseCooldownRounds = (cooldownString?: string | number): number | undefin
   return match ? parseInt(match[0], 10) : undefined;
 };
 
-// Helper functions (copied from character-sheet/page.tsx for arsenal parsing in Nexus)
-function parseEffectStatChange(statString: string | undefined): ParsedStatModifier[] {
-  if (!statString || typeof statString !== 'string' || statString.trim() === '') {
-    return [];
-  }
-  const modifiers: ParsedStatModifier[] = [];
-  const changes = statString.split(/[,;]/).map(s => s.trim()).filter(Boolean);
-
-  const statNameMap: Record<string, StatName> = {
-    'max hp': 'maxHp', 'maxhp': 'maxHp', 'hp': 'hp',
-    'mv': 'mv', 'movement': 'mv',
-    'def': 'def', 'defense': 'def',
-    'sanity': 'sanity', 'max sanity': 'maxSanity', 'maxsanity': 'maxSanity',
-    'melee attack': 'meleeAttack',
-  };
-
-  for (const change of changes) {
-    const match = change.toLowerCase().match(/([a-zA-Z\s]+)\s*([+-])\s*(\d+)/);
-    if (match) {
-      const rawStatName = match[1].trim().toLowerCase();
-      const operator = match[2];
-      const value = parseInt(match[3], 10);
-      const targetStatKey = statNameMap[rawStatName];
-      if (targetStatKey) { 
-        modifiers.push({ targetStat: targetStatKey, value: operator === '+' ? value : -value });
-      }
-    }
-  }
-  return modifiers;
-}
-
-function parseWeaponDetailsString(detailsStr?: string): { attack?: number; range?: number; rawDetails: string } | undefined {
-  if (!detailsStr || typeof detailsStr !== 'string' || detailsStr.trim() === '') return undefined;
-  const parsed: { attack?: number; range?: number; rawDetails: string } = { rawDetails: detailsStr };
-  const match = detailsStr.match(/A(\d+)(?:\s*[\/-]?\s*R(\d+))?/i);
-  if (match) {
-    if (match[1]) parsed.attack = parseInt(match[1], 10);
-    if (match[2]) parsed.range = parseInt(match[2], 10);
-  }
-  return parsed.attack !== undefined ? parsed : { rawDetails: detailsStr };
-}
-
-
 export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const { toast } = useToast();
 
@@ -171,8 +128,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [currentNexusSanity, setCurrentNexusSanity] = useState<number | null>(null);
   const [currentNexusMv, setCurrentNexusMv] = useState<number | null>(null);
   const [currentNexusDef, setCurrentNexusDef] = useState<number | null>(null);
+  
   const [nexusSessionMaxHpModifier, setNexusSessionMaxHpModifier] = useState(0);
   const [nexusSessionMaxSanityModifier, setNexusSessionMaxSanityModifier] = useState(0);
+  const [nexusSessionMvModifier, setNexusSessionMvModifier] = useState(0);
+  const [nexusSessionDefModifier, setNexusSessionDefModifier] = useState(0);
   
   const [nexusSessionMeleeAttackModifier, setNexusSessionMeleeAttackModifier] = useState(0);
   const [nexusSessionRangedAttackModifier, setNexusSessionRangedAttackModifier] = useState(0);
@@ -216,7 +176,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
 
   const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
-    if (!characterForModal) { // Changed from selectedNexusCharacter to characterForModal
+    if (!characterForModal) {
       return null;
     }
     let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(characterForModal.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
@@ -228,8 +188,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       calculatedStats.def = (calculatedStats.def || 0) + (currentNexusArsenal.defMod || 0);
       calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentNexusArsenal.sanityMod || 0);
       calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentNexusArsenal.maxSanityMod || 0);
-      // Melee attack from global arsenal mods is handled in weapon calculation now.
-
+      
       if (currentNexusArsenal.items) {
         currentNexusArsenal.items.forEach(item => {
           if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
@@ -252,7 +211,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     calculatedStats.def = Math.max(0, calculatedStats.def);
     calculatedStats.sanity = Math.max(0, calculatedStats.sanity);
     calculatedStats.maxSanity = Math.max(1, calculatedStats.maxSanity);
-    calculatedStats.meleeAttack = Math.max(0, calculatedStats.meleeAttack ?? 0); // Keep this as a base if needed elsewhere
+    calculatedStats.meleeAttack = Math.max(0, (calculatedStats.meleeAttack || 0) + (currentNexusArsenal?.meleeAttackMod || 0));
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
     return calculatedStats;
@@ -412,13 +371,15 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
 
   useEffect(() => {
-    if (characterForModal && effectiveNexusCharacterStats) { // Use characterForModal
+    if (characterForModal && effectiveNexusCharacterStats) {
       setCurrentNexusHp(effectiveNexusCharacterStats.hp);
       setCurrentNexusSanity(effectiveNexusCharacterStats.sanity);
       setCurrentNexusMv(effectiveNexusCharacterStats.mv);
       setCurrentNexusDef(effectiveNexusCharacterStats.def);
       setNexusSessionMaxHpModifier(0); 
       setNexusSessionMaxSanityModifier(0);
+      setNexusSessionMvModifier(0);
+      setNexusSessionDefModifier(0);
       setNexusSessionMeleeAttackModifier(0);
       setNexusSessionRangedAttackModifier(0);
       setNexusSessionRangedRangeModifier(0);
@@ -429,11 +390,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setCurrentNexusDef(null);
       setNexusSessionMaxHpModifier(0);
       setNexusSessionMaxSanityModifier(0);
+      setNexusSessionMvModifier(0);
+      setNexusSessionDefModifier(0);
       setNexusSessionMeleeAttackModifier(0);
       setNexusSessionRangedAttackModifier(0);
       setNexusSessionRangedRangeModifier(0);
     }
-  }, [characterForModal, effectiveNexusCharacterStats]); // Use characterForModal
+  }, [characterForModal, effectiveNexusCharacterStats]);
 
   useEffect(() => {
     if (!enlargedImageUrl) {
@@ -507,6 +470,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setCharacterForModal(character); 
     setNexusSessionMaxHpModifier(0); 
     setNexusSessionMaxSanityModifier(0);
+    setNexusSessionMvModifier(0);
+    setNexusSessionDefModifier(0);
     setNexusSessionMeleeAttackModifier(0);
     setNexusSessionRangedAttackModifier(0);
     setNexusSessionRangedRangeModifier(0);
@@ -546,7 +511,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
 
   const handleNexusStatChange = (stat: StatName, operation: 'increment' | 'decrement') => {
-    if (!characterForModal || !effectiveNexusCharacterStats) return; // Use characterForModal
+    if (!characterForModal || !effectiveNexusCharacterStats) return;
     const delta = operation === 'increment' ? 1 : -1;
     
     const setters: Record<string, React.Dispatch<React.SetStateAction<number | null>>> = { 
@@ -576,46 +541,68 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
           const effectiveMaxSanity = (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier;
           newValue = Math.min(newValue, effectiveMaxSanity);
         } else if (stat === 'mv' && effectiveNexusCharacterStats.mv !== undefined) { 
-            newValue = Math.min(newValue, effectiveNexusCharacterStats.mv);
+            const effectiveMaxMv = (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier;
+            newValue = Math.min(newValue, effectiveMaxMv);
         } else if (stat === 'def' && effectiveNexusCharacterStats.def !== undefined) {
-            newValue = Math.min(newValue, effectiveNexusCharacterStats.def);
+            const effectiveMaxDef = (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier;
+            newValue = Math.min(newValue, effectiveMaxDef);
         }
         setter(newValue); 
     }
   };
 
-  const handleNexusSessionMaxStatModifierChange = (statType: 'hp' | 'sanity', delta: number) => {
-    if (!characterForModal || !effectiveNexusCharacterStats) return; // Use characterForModal
+  const handleNexusSessionMaxStatModifierChange = (statType: 'hp' | 'sanity' | 'mv' | 'def', delta: number) => {
+    if (!characterForModal || !effectiveNexusCharacterStats) return;
 
-    if (statType === 'hp') {
-      setNexusSessionMaxHpModifier(prevMod => {
-        const newMod = prevMod + delta;
-        const baseMaxHp = effectiveNexusCharacterStats.maxHp || 1;
-        const finalNewMod = (baseMaxHp + newMod < 1) ? (1 - baseMaxHp) : newMod;
-
-        if (currentNexusHp !== null) {
-          const finalEffectiveMaxForCapping = Math.max(1, baseMaxHp + finalNewMod);
-          if (currentNexusHp > finalEffectiveMaxForCapping) {
-            setCurrentNexusHp(finalEffectiveMaxForCapping);
-          }
-        }
-        return finalNewMod;
-      });
-    } else if (statType === 'sanity') {
-      setNexusSessionMaxSanityModifier(prevMod => {
-        const newMod = prevMod + delta;
-        const baseMaxSanity = effectiveNexusCharacterStats.maxSanity || 1;
-        const finalNewMod = (baseMaxSanity + newMod < 1) ? (1 - baseMaxSanity) : newMod;
-        
-        if (currentNexusSanity !== null) {
-          const finalEffectiveMaxForCapping = Math.max(1, baseMaxSanity + finalNewMod);
-          if (currentNexusSanity > finalEffectiveMaxForCapping) {
-            setCurrentNexusSanity(finalEffectiveMaxForCapping);
-          }
-        }
-        return finalNewMod;
-      });
+    const modifierSetters = {
+      hp: setNexusSessionMaxHpModifier,
+      sanity: setNexusSessionMaxSanityModifier,
+      mv: setNexusSessionMvModifier,
+      def: setNexusSessionDefModifier,
+    };
+    const currentStatSetters = {
+        hp: setCurrentNexusHp,
+        sanity: setCurrentNexusSanity,
+        mv: setCurrentNexusMv,
+        def: setCurrentNexusDef,
+    };
+    const currentStatValues = {
+        hp: currentNexusHp,
+        sanity: currentNexusSanity,
+        mv: currentNexusMv,
+        def: currentNexusDef,
+    };
+    const baseMaxValues = {
+        hp: effectiveNexusCharacterStats.maxHp,
+        sanity: effectiveNexusCharacterStats.maxSanity,
+        mv: effectiveNexusCharacterStats.mv,
+        def: effectiveNexusCharacterStats.def,
+    };
+    const currentModifiers = {
+        hp: nexusSessionMaxHpModifier,
+        sanity: nexusSessionMaxSanityModifier,
+        mv: nexusSessionMvModifier,
+        def: nexusSessionDefModifier,
     }
+
+    const setModifier = modifierSetters[statType];
+    const setCurrentStat = currentStatSetters[statType];
+    const currentStatValue = currentStatValues[statType];
+    const baseMaxValue = baseMaxValues[statType] || (statType === 'hp' || statType === 'sanity' ? 1: 0) ;
+    const currentModifierValue = currentModifiers[statType];
+
+    setModifier(prevMod => {
+        const newMod = prevMod + delta;
+        const finalNewMod = (baseMaxValue + newMod < (statType === 'hp' || statType === 'sanity' ? 1: 0)) ? ((statType === 'hp' || statType === 'sanity' ? 1: 0) - baseMaxValue) : newMod;
+
+        if (setCurrentStat && currentStatValue !== null) {
+          const finalEffectiveMaxForCapping = Math.max((statType === 'hp' || statType === 'sanity' ? 1: 0), baseMaxValue + finalNewMod);
+          if (currentStatValue > finalEffectiveMaxForCapping) {
+            setCurrentStat(finalEffectiveMaxForCapping);
+          }
+        }
+        return finalNewMod;
+    });
   };
 
   const handleNexusSessionWeaponStatModifierChange = (
@@ -624,11 +611,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     delta: number
   ) => {
     if (weaponType === 'melee' && statType === 'attack') {
-      setNexusSessionMeleeAttackModifier(prev => Math.max(0, prev + delta));
+      setNexusSessionMeleeAttackModifier(prev => Math.max(-(effectiveNexusMeleeWeapon?.attack || 0) + prev , prev + delta));
     } else if (weaponType === 'ranged' && statType === 'attack') {
-      setNexusSessionRangedAttackModifier(prev => Math.max(0, prev + delta));
+      setNexusSessionRangedAttackModifier(prev => Math.max(-(effectiveNexusRangedWeapon?.attack || 0) + prev, prev + delta));
     } else if (weaponType === 'ranged' && statType === 'range') {
-      setNexusSessionRangedRangeModifier(prev => Math.max(0, prev + delta));
+      setNexusSessionRangedRangeModifier(prev => Math.max(-(effectiveNexusRangedWeapon?.range || 0) + prev, prev + delta));
     }
   };
 
@@ -803,10 +790,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 <div className="flex items-center gap-1">
                                     <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'decrement')} disabled={currentNexusMv === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
                                     <Input type="number" readOnly value={currentNexusMv} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv === effectiveNexusCharacterStats.mv}><UserPlus className="h-2.5 w-2.5" /></Button>
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv >= ((effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)}><UserPlus className="h-2.5 w-2.5" /></Button>
                                 </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {effectiveNexusCharacterStats.mv}</p>
+                                <Progress value={(currentNexusMv / Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier, 'mv'))} />
+                                <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {(effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier}</p>
                             </div>
                         )}
                         {/* DEF Display */}
@@ -817,10 +805,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 <div className="flex items-center gap-1">
                                     <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'decrement')} disabled={currentNexusDef === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
                                     <Input type="number" readOnly value={currentNexusDef} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={currentNexusDef === effectiveNexusCharacterStats.def}><UserPlus className="h-2.5 w-2.5" /></Button>
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={currentNexusDef >= ((effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)}><UserPlus className="h-2.5 w-2.5" /></Button>
                                 </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {effectiveNexusCharacterStats.def}</p>
+                                <Progress value={(currentNexusDef / Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusDef, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier, 'def'))} />
+                                <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {(effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier}</p>
                             </div>
                         )}
                     </div>
@@ -982,6 +971,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   <Separator />
                   <h4 className="text-lg font-semibold text-primary flex items-center"><Info className="mr-2 h-5 w-5" /> Core Stats</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {/* HP Tracker */}
                     {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
                         <div className="space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
@@ -1002,6 +992,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                         </div>
                     )}
+                    {/* Sanity Tracker */}
                     {currentNexusSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (
                         <div className="space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
@@ -1022,32 +1013,46 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                         </div>
                     )}
+                    {/* MV Tracker */}
                     {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (
-                      <div>
+                      <div className="space-y-1">
                         <div className="flex items-center justify-between mb-0.5">
                           <Label className="flex items-center text-xs font-medium"><Footprints className="mr-1.5 h-3 w-3 text-green-500" />MV</Label>
                          <div className="flex items-center gap-1">
                             <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'decrement')} disabled={currentNexusMv === 0}><Minus className="h-2.5 w-2.5" /></Button>
                             <Input type="number" readOnly value={currentNexusMv} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv === effectiveNexusCharacterStats.mv}><Plus className="h-2.5 w-2.5" /></Button>
+                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={currentNexusMv >= Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)}><Plus className="h-2.5 w-2.5" /></Button>
                           </div>
                         </div>
-                        <Progress value={(currentNexusMv / (effectiveNexusCharacterStats.mv || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, effectiveNexusCharacterStats.mv, 'mv'))} />
-                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {effectiveNexusCharacterStats.mv}</p>
+                        <Progress value={(currentNexusMv / Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier), 'mv'))} />
+                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                            <Label htmlFor="nexusModalMaxMod-mv" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
+                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('mv', -1)}><Minus className="h-2.5 w-2.5" /></Button>
+                            <Input id="nexusModalMaxMod-mv" type="number" value={nexusSessionMvModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('mv', 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                        </div>
                       </div>
                     )}
+                    {/* DEF Tracker */}
                     {currentNexusDef !== null && effectiveNexusCharacterStats.def !== undefined && (
-                      <div>
+                      <div className="space-y-1">
                         <div className="flex items-center justify-between mb-0.5">
                           <Label className="flex items-center text-xs font-medium"><Shield className="mr-1.5 h-3 w-3 text-gray-400" />DEF</Label>
                         <div className="flex items-center gap-1">
                             <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'decrement')} disabled={currentNexusDef === 0}><Minus className="h-2.5 w-2.5" /></Button>
                             <Input type="number" readOnly value={currentNexusDef} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={currentNexusDef === effectiveNexusCharacterStats.def}><Plus className="h-2.5 w-2.5" /></Button>
+                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={currentNexusDef >= Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)}><Plus className="h-2.5 w-2.5" /></Button>
                           </div>
                         </div>
-                        <Progress value={(currentNexusDef / (effectiveNexusCharacterStats.def || 1)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusDef, effectiveNexusCharacterStats.def, 'def'))} />
-                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {effectiveNexusCharacterStats.def}</p>
+                        <Progress value={(currentNexusDef / Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusDef, Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier), 'def'))} />
+                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)}</p>
+                         <div className="flex items-center gap-1 mt-1">
+                            <Label htmlFor="nexusModalMaxMod-def" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
+                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('def', -1)}><Minus className="h-2.5 w-2.5" /></Button>
+                            <Input id="nexusModalMaxMod-def" type="number" value={nexusSessionDefModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('def', 1)}><Plus className="h-2.5 w-2.5" /></Button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1063,7 +1068,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             <p>ATK: {effectiveNexusMeleeWeapon.attack}</p>
                             <div className="flex items-center gap-1 mt-1">
                                 <Label htmlFor="nexusModalMeleeAtkMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>ATK Mod:</Label>
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('melee', 'attack', -1)} disabled={nexusSessionMeleeAttackModifier <= 0 && effectiveNexusMeleeWeapon.attack === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('melee', 'attack', -1)} disabled={nexusSessionMeleeAttackModifier <= -(effectiveNexusMeleeWeapon.attack - nexusSessionMeleeAttackModifier) }><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input id="nexusModalMeleeAtkMod" type="number" value={nexusSessionMeleeAttackModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('melee', 'attack', 1)}><Plus className="h-2.5 w-2.5" /></Button>
                             </div>
@@ -1076,13 +1081,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             <p>ATK: {effectiveNexusRangedWeapon.attack} / RNG: {effectiveNexusRangedWeapon.range}</p>
                              <div className="flex items-center gap-1 mt-1">
                                 <Label htmlFor="nexusModalRangedAtkMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>ATK Mod:</Label>
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'attack', -1)} disabled={nexusSessionRangedAttackModifier <= 0 && effectiveNexusRangedWeapon.attack === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'attack', -1)} disabled={nexusSessionRangedAttackModifier <= -(effectiveNexusRangedWeapon.attack - nexusSessionRangedAttackModifier)}><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input id="nexusModalRangedAtkMod" type="number" value={nexusSessionRangedAttackModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'attack', 1)}><Plus className="h-2.5 w-2.5" /></Button>
                             </div>
                             <div className="flex items-center gap-1 mt-1">
                                 <Label htmlFor="nexusModalRangedRngMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>RNG Mod:</Label>
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'range', -1)} disabled={nexusSessionRangedRangeModifier <=0 && effectiveNexusRangedWeapon.range === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'range', -1)} disabled={nexusSessionRangedRangeModifier <= -(effectiveNexusRangedWeapon.range - nexusSessionRangedRangeModifier)}><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input id="nexusModalRangedRngMod" type="number" value={nexusSessionRangedRangeModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'range', 1)}><Plus className="h-2.5 w-2.5" /></Button>
                             </div>
@@ -1121,10 +1126,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   
                   {(effectiveNexusCharacterAbilities.baseAbilities.length > 0 || effectiveNexusCharacterAbilities.arsenalAbilities.length > 0) && (
                      <> 
-                        <Separator /> 
-                        
                         {effectiveNexusCharacterAbilities.baseAbilities.length > 0 && (
-                            <div className="space-y-2">
+                            <div className="space-y-2 mt-3">
+                                <Separator /> 
                                 <h5 className="text-lg font-semibold text-primary flex items-center"><BookMarked className="mr-2 h-5 w-5" /> Character Abilities:</h5>
                                 {effectiveNexusCharacterAbilities.baseAbilities.map(ability => ( 
                                     <AbilityCard 
@@ -1145,6 +1149,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
                         {effectiveNexusCharacterAbilities.arsenalAbilities.length > 0 && (
                             <div className="space-y-2 mt-3">
+                                <Separator /> 
                                 <h5 className="text-lg font-semibold text-primary flex items-center"><Sparkles className="mr-2 h-5 w-5" /> Arsenal-Granted Abilities:</h5>
                                 {effectiveNexusCharacterAbilities.arsenalAbilities.map(ability => ( 
                                     <AbilityCard 
@@ -1165,7 +1170,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     </>
                   )}
                   {effectiveNexusCharacterAbilities.baseAbilities.length === 0 && effectiveNexusCharacterAbilities.arsenalAbilities.length === 0 && (
-                     <p className="text-sm text-muted-foreground text-center py-3">No abilities defined.</p>
+                     <> <Separator /> <p className="text-sm text-muted-foreground text-center py-3">No abilities defined.</p> </>
                   )}
 
                   {characterForModal.skills && Object.values(characterForModal.skills).some(val => val && val > 0) && (
