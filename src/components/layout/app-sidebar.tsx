@@ -14,7 +14,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  useSidebar, // Correctly imported
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { SheetTitle } from '@/components/ui/sheet';
 import {
@@ -73,7 +73,7 @@ const navItemsConfig: CombinedNavItem[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isMobile, open, setOpen } = useSidebar(); // Called once at the top level
+  const { isMobile, open, setOpen } = useSidebar();
   const [isGameToolsOpen, setIsGameToolsOpen] = useState(false);
 
   const gameToolsChildrenPaths = navItemsConfig
@@ -139,35 +139,39 @@ export function AppSidebar() {
                       )}
                     />
                   </SidebarMenuButton>
-                  {/* Corrected usage of isMobile and open from top-level hook call */}
                   {isGameToolsOpen && !isMobile && open && ( 
                     <SidebarMenuSub>
                       {item.children.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.href}>
                           <Link href={subItem.href} >
                             <SidebarMenuSubButton
+                              asChild // Add asChild here
                               isActive={pathname === subItem.href}
                             >
-                              <subItem.icon className="h-4 w-4 text-sidebar-primary" />
-                              <span>{subItem.label}</span>
+                              <>
+                                <subItem.icon className="h-4 w-4 text-sidebar-primary" />
+                                <span>{subItem.label}</span>
+                              </>
                             </SidebarMenuSubButton>
                           </Link>
                         </SidebarMenuSubItem>
                       ))}
                     </SidebarMenuSub>
                   )}
-                   {/* Corrected usage of isMobile from top-level hook call */}
                    {isGameToolsOpen && isMobile && (
                      <div className="pl-7 flex flex-col gap-0.5 py-1 group-data-[collapsible=icon]:hidden">
                         {item.children.map((subItem) => (
                          <SidebarMenuSubItem key={subItem.href} className="p-0">
                            <Link href={subItem.href} >
                              <SidebarMenuSubButton
+                               asChild // Add asChild here
                                isActive={pathname === subItem.href}
                                className="h-8"
                              >
-                               <subItem.icon className="h-4 w-4 text-sidebar-primary" />
-                               <span>{subItem.label}</span>
+                               <>
+                                 <subItem.icon className="h-4 w-4 text-sidebar-primary" />
+                                 <span>{subItem.label}</span>
+                               </>
                              </SidebarMenuSubButton>
                            </Link>
                          </SidebarMenuSubItem>
