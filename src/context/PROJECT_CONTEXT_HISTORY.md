@@ -22,7 +22,7 @@
     - Implemented for an AI Item Generator feature.
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
-    - **Google Sheets API:** Used to fetch game data for Events, Investigations (now NPC Generator), Arsenal Cards, and Shop Items via server-side logic in page components. Requires service account credentials.
+    - **Google Sheets API:** Used to fetch game data for Events, NPC Generator, Arsenal Cards, and Shop Items via server-side logic in page components. Requires service account credentials. Shop items can be sourced from multiple tabs within the same Google Sheet.
 - **Image Placeholders:** `https://placehold.co` and `https://picsum.photos`.
 - **Deployment:** Firebase App Hosting (inferred from build logs and setup).
 - **Code Quality:**
@@ -112,7 +112,7 @@
     - Utility items are further sub-categorized within their tab.
     - Simulated "Crypto" currency tracker (client-side state).
     - Simulated purchasing logic (deducts Crypto, updates stock for consumables).
-- **Data Source:** Item data (name, cost, description, category, subCategory, weaponClass, attack, actionType, charges, skillCheck, stock) is fetched from a Google Sheet.
+- **Data Source:** Item data (Name, Cost, Category, Effect) is fetched from a Google Sheet (can use multiple tabs within the sheet).
 
 ### 3.9. AI Item Generator (`/item-generator`)
 - **Description:** Uses Genkit to generate unique game items.
@@ -304,20 +304,20 @@
     -   **Output**: `itemName` (string), `itemTypeGenerated` (string), `description` (string), `gameEffect` (string), `rarityGenerated?` (string).
 
 -   **`ShopItem` (`src/types/shop.ts` - for Google Sheet shop data)**:
-    -   `id: string`
-    -   `name: string`
-    -   `description: string`
-    -   `cost: number`
-    -   `imageUrl?: string`
-    -   `dataAiHint?: string`
-    -   `category: ShopItemCategory` ('Defense' | 'Melee Weapon' | 'Ranged Weapon' | 'Augment' | 'Utility' | 'Consumable' | 'Relic')
-    -   `subCategory?: UtilitySubCategory` ('Ammunition' | 'Bombs' | 'Traps' | 'Healing' | 'Battery' | 'Miscellaneous')
-    -   `stock?: number`
-    -   `weaponClass?: string`
-    -   `attack?: string` (e.g., "A2", "A3/R4")
-    -   `actionType?: 'Free Action' | 'Action' | 'Interrupt' | 'Passive'`
-    -   `charges?: number | 'Battery'`
-    -   `skillCheck?: string`
+    -   `id: string` (Generated: `sheetName_rowIndex_itemName`)
+    -   `name: string` (From Sheet: `Name`)
+    -   `description: string` (From Sheet: `Effect`)
+    -   `cost: number` (From Sheet: `Cost`)
+    -   `category: ShopItemCategory` (From Sheet: `Category`)
+    -   `imageUrl?: string` (Not from current simplified sheet)
+    -   `dataAiHint?: string` (Not from current simplified sheet)
+    -   `subCategory?: UtilitySubCategory` (Not from current simplified sheet)
+    -   `stock?: number` (Not from current simplified sheet)
+    -   `weaponClass?: string` (Not from current simplified sheet)
+    -   `attack?: string` (Not from current simplified sheet)
+    -   `actionType?: 'Free Action' | 'Action' | 'Interrupt' | 'Passive'` (Not from current simplified sheet)
+    -   `charges?: number | 'Battery'` (Not from current simplified sheet)
+    -   `skillCheck?: string` (Not from current simplified sheet)
 
 -   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: Standard email/password, with optional displayName and passwordConfirmation for sign-up.
 
@@ -392,6 +392,7 @@
 -   The codebase has undergone significant refactoring to break down large UI components into smaller, more manageable sub-components.
 -   Theming is centralized in `globals.css` and leverages ShadCN's HSL variable system.
 -   Environment variables in `.env.local` are critical for Firebase client configuration and Google Sheets API server-side access.
+    -   `SHOP_ITEMS_GOOGLE_SHEET_RANGE` now supports comma-separated sheet names/ranges for fetching shop data from multiple tabs.
 -   Error handling is present for data fetching and Firebase operations, often using toast notifications.
 -   The rulebook content provided by the user (shop items, abilities, combat rules) is extensive and implies a long-term goal of creating a very rich and interactive digital companion. Much of this is not yet implemented but informs the design of data structures.
 -   The "Investigations" feature has been renamed to "NPC Generator".
