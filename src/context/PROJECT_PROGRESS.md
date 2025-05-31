@@ -75,6 +75,8 @@ DONE:
     - Reset Nexus Session: Functionality added to settings dropdown.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
+- Terms of Service Page (`/terms`):
+    - Basic placeholder page created.
 - Sidebar Navigation:
     - Links to all major features.
     - Mobile-responsive (Sheet-based).
@@ -84,10 +86,11 @@ DONE:
     - Homepage feature card layout (vertical scrollable window).
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
-- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves).
+- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms).
 
 WORKING:
 - Refinement of Character Sheet mobile optimization for inner tab content.
+- Creation of placeholder /privacy page.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:

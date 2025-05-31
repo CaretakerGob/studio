@@ -175,7 +175,11 @@
     - **Reset Nexus Session**: Settings dropdown allows users to reset the current session state.
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session but can be saved/loaded for logged-in users.
 
-### 3.14. Layout & General
+### 3.14. Terms of Service (`/terms`)
+- **Description:** Placeholder page for Terms of Service.
+- **Functionality:** Displays a "Coming Soon" message and basic placeholder information.
+
+### 3.15. Layout & General
 - **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile. "Game Tools" items grouped. "Future Features" dropdown created for AI Item Generator and NPC Generator, which are now greyed out/disabled.
 - **Toasts:** Used for user feedback on various actions.
 - **Theme:** Dark, horror-inspired theme defined in `globals.css`.
@@ -205,8 +209,8 @@
     *   Retrieval Augmented Generation (RAG) for using large lore documents (like the user's book) to inform AI generation.
 -   **Bestiary/Monster Manual:** A section to view details about game enemies.
 -   **Digital Rulebook/References:** In-app access to game rules.
--   **Performance Optimization:** Caching strategies for Google Sheet data (ISR, server-side caching).
 -   **Hunter's Nexus Enhancements**: Session Display Preferences (toggle tool visibility, compact mode).
+-   **Privacy Policy Page (`/privacy`)**: Placeholder page.
 
 ## 6. Design Decisions and Constraints
 -   **Tech Stack Choice:** Next.js, React, TypeScript, ShadCN, Tailwind, Firebase, Genkit, Google Sheets API.
@@ -277,4 +281,5 @@
 This document provides a snapshot of the project's state and context.
 
     
+
 
