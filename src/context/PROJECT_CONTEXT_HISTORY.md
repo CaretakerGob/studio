@@ -57,7 +57,7 @@
         - Companions (pets) from arsenals (flagged "Pet: TRUE") have their stats (HP, Sanity, MV, DEF, Melee Attack) displayed with interactive trackers on the "Stats & Equipment" tab. Their abilities are also shown.
         - Abilities granted by Arsenal items (flagged "Is Action: Y", etc.) are dynamically added to the character's abilities list.
     - Save and load character configurations for logged-in users via Firebase Firestore.
-    - "Reset Template" button reverts the current sheet to the selected character's default template values (does not affect saved data).
+    - "Reset Template" button reverts the current sheet to its original default template values (does not affect saved data).
 - **Layout:** Tab-based (Stats & Equipment, Abilities, Arsenal, Skills). Refactored into multiple sub-components for better organization.
 - **Mobile Optimization:** Responsive layouts for stats, tabs, and controls. Core Stats display in "Stats & Equipment" tab improved for small screens.
 
@@ -162,6 +162,7 @@
     - Allows selection of a character template for the session.
     - Displays core stats (HP, Sanity, MV, DEF) with interactive trackers and session-based max stat modifiers.
     - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
+    - **Session Bleed Points Tracker**: Added bleed points tracking (default 0, user adjustable, shown on main page and in character modal, with Hemorrhage warning).
     - Displays selected arsenal card (front/back images) and its equipment.
     - Allows clicking on character avatar and arsenal card images to view them in a larger modal.
     - Provides a simple dice roller (numbered and combat dice).
@@ -247,7 +248,7 @@
 -   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: (No changes)
 -   **Dice Roller Types (`src/components/dice-roller/dice-roller-ui.tsx`)**: (No changes)
 -   **`EventData` (`src/types/event.ts`)**: (No changes)
--   **`SavedNexusState` (`src/types/nexus.ts`)**: (No changes)
+-   **`SavedNexusState` (`src/types/nexus.ts`)**: Added `sessionBleedPoints: number;`
 
 
 ## 9. Firebase Rules, Cloud Functions, and APIs

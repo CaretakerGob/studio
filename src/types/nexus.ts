@@ -12,6 +12,7 @@ export interface SavedNexusState {
   currentSanity: number;
   currentMv: number;
   currentDef: number;
+  sessionBleedPoints: number; // Added
 
   sessionMaxHpModifier: number;
   sessionMaxSanityModifier: number;
@@ -26,3 +27,4 @@ export interface SavedNexusState {
   abilityCooldowns: Record<string, number>; 
   abilityQuantities: Record<string, number>;
 }
+

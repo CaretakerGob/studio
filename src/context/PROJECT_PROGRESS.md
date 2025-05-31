@@ -68,6 +68,7 @@ DONE:
     - Session-based character management UI.
     - Stat tracking with session modifiers (HP, Sanity, MV, DEF).
     - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
+    - Session Bleed Points Tracker: Added bleed points tracking (default 0, user adjustable, shown on main page and in character modal, with Hemorrhage warning).
     - Arsenal and equipment display.
     - Integrated dice roller and card generator.
     - Character avatar and arsenal card image modals.
