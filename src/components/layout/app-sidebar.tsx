@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useState } from 'react'; // Added useState
+import React, { useState } from 'react';
 import {
   Sidebar,
   SidebarHeader,
@@ -11,10 +11,10 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,      // Added import
-  SidebarMenuSubItem,  // Added import
-  SidebarMenuSubButton,// Added import
-  useSidebar,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
+  useSidebar, // Correctly imported
 } from '@/components/ui/sidebar';
 import { SheetTitle } from '@/components/ui/sheet';
 import {
@@ -31,10 +31,10 @@ import {
   User,
   HelpCircle,
   ShieldHalf,
-  Gamepad2,      // Added Gamepad2 icon
-  ChevronDown,   // Added ChevronDown icon
+  Gamepad2,
+  ChevronDown,
 } from 'lucide-react';
-import { cn } from '@/lib/utils'; // For conditional class names
+import { cn } from '@/lib/utils';
 
 interface NavItem {
   href: string;
@@ -73,7 +73,7 @@ const navItemsConfig: CombinedNavItem[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isMobile, open, setOpen } = useSidebar(); // Use open and setOpen for dropdown on desktop
+  const { isMobile, open, setOpen } = useSidebar(); // Called once at the top level
   const [isGameToolsOpen, setIsGameToolsOpen] = useState(false);
 
   const gameToolsChildrenPaths = navItemsConfig
@@ -82,11 +82,10 @@ export function AppSidebar() {
     ?.children.map(child => child.href) || [];
   const isGameToolsActive = gameToolsChildrenPaths.includes(pathname);
 
-  // Effect to open Game Tools dropdown if a child is active and sidebar is expanded
   React.useEffect(() => {
     if (isGameToolsActive && open && !isMobile) {
       setIsGameToolsOpen(true);
-    } else if (!open && !isMobile) { // Close dropdown if sidebar collapses
+    } else if (!open && !isMobile) {
       setIsGameToolsOpen(false);
     }
   }, [isGameToolsActive, open, isMobile]);
@@ -110,7 +109,7 @@ export function AppSidebar() {
           {navItemsConfig.map((item) => (
             <SidebarMenuItem key={item.label}>
               {item.type === 'link' ? (
-                <Link href={item.href}>
+                <Link href={item.href} >
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.label}
@@ -120,7 +119,7 @@ export function AppSidebar() {
                     <span>{item.label}</span>
                   </SidebarMenuButton>
                 </Link>
-              ) : ( // item.type === 'dropdown'
+              ) : ( 
                 <>
                   <SidebarMenuButton
                     onClick={() => setIsGameToolsOpen(!isGameToolsOpen)}
@@ -140,11 +139,12 @@ export function AppSidebar() {
                       )}
                     />
                   </SidebarMenuButton>
-                  {isGameToolsOpen && !useSidebar().isMobile && open && ( 
+                  {/* Corrected usage of isMobile and open from top-level hook call */}
+                  {isGameToolsOpen && !isMobile && open && ( 
                     <SidebarMenuSub>
                       {item.children.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.href}>
-                          <Link href={subItem.href}>
+                          <Link href={subItem.href} >
                             <SidebarMenuSubButton
                               isActive={pathname === subItem.href}
                             >
@@ -156,11 +156,12 @@ export function AppSidebar() {
                       ))}
                     </SidebarMenuSub>
                   )}
-                   {isGameToolsOpen && useSidebar().isMobile && (
+                   {/* Corrected usage of isMobile from top-level hook call */}
+                   {isGameToolsOpen && isMobile && (
                      <div className="pl-7 flex flex-col gap-0.5 py-1 group-data-[collapsible=icon]:hidden">
                         {item.children.map((subItem) => (
                          <SidebarMenuSubItem key={subItem.href} className="p-0">
-                           <Link href={subItem.href}>
+                           <Link href={subItem.href} >
                              <SidebarMenuSubButton
                                isActive={pathname === subItem.href}
                                className="h-8"
