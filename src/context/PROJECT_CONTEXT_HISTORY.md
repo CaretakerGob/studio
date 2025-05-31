@@ -73,8 +73,10 @@
 
 ### 3.14. How to Play (`/how-to-play`)
 - Now uses `RoTB_Rulebook_Dropdown_Structure.md` for accordion structure (H2s as triggers).
-- For each H2 and H3 from the structure file, it looks up the heading in `Riddle_of_the_Beast_Rulebook.md` and pulls in the detailed content (paragraphs, lists) under that heading.
+- For each H2 and H3 from the structure file, it attempts to look up the heading in `Riddle_of_the_Beast_Rulebook.md` and pulls in the detailed content (paragraphs, lists, images) under that heading.
+- List items from the structure file are rendered directly.
 - Shop sections and specified tables continue to be omitted.
+- Debug messages added if content lookup fails.
 
 ### 3.15. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
 - (No changes in this update)
@@ -92,7 +94,7 @@
 - (No changes in this update)
 
 ## 7. Open Questions / Assumptions
-- The "How to Play" page now attempts a more sophisticated merge of structure from one file and content from another. The robustness of heading matching and content extraction from the main rulebook will depend on consistent formatting.
+- The "How to Play" page's content rendering heavily relies on consistent heading normalization and the presence of matching Markdown headings in `Riddle_of_the_Beast_Rulebook.md`.
 
 ## 8. Data Structures of the App
 - (No changes in this update)
@@ -102,8 +104,10 @@
 
 ## 10. Other Important Observations
 - The "How to Play" page's complexity has increased due to the two-file content merging strategy.
+- The parsing of Markdown for the "How to Play" page, especially for lists and multi-paragraph content from the main rulebook, is a delicate process.
 
 This document provides a snapshot of the project's state and context.
     
 
     
+

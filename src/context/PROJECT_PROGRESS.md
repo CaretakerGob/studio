@@ -76,9 +76,10 @@ DONE:
     - Changed "Party" to "Team" in all user-facing text for Nexus.
 - How to Play Page (`/how-to-play`):
     - Page now uses `RoTB_Rulebook_Dropdown_Structure.md` for accordion structure.
-    - For each H2/H3 from structure, detailed content is pulled from `Riddle_of_the_Beast_Rulebook.md`.
+    - For each H2/H3 from structure, detailed content (text, lists, images) is pulled from `Riddle_of_the_Beast_Rulebook.md` based on heading matching.
     - Specified shop and large table sections are omitted.
     - Added link to sidebar.
+    - Improved parsing and debug messages for content fetching.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
 - Terms of Service Page (`/terms`):
@@ -101,7 +102,7 @@ DONE:
 
 WORKING:
 - Ongoing review and minor clean-up of existing codebase.
-- Refinement of Character Sheet mobile optimization for inner tab content.
+- Refining the "How to Play" page content parsing logic to accurately display detailed text, lists, and images from the main rulebook under the structured headings.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -126,3 +127,4 @@ NEXT:
       
 
     
+
