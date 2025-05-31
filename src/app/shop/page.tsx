@@ -102,7 +102,7 @@ async function getShopItemsFromGoogleSheet(): Promise<ShopItem[]> {
             category = 'Relic';
         }
 
-        // Since the sheet is simplified, other fields are not directly mapped
+        // Since the sheet is simplified, other fields default to undefined as per ShopItem type
         allShopItems.push({
           id,
           name,
@@ -114,9 +114,17 @@ async function getShopItemsFromGoogleSheet(): Promise<ShopItem[]> {
       });
 
     } catch (error) {
-      console.error(`Error fetching Shop Items data from Google Sheet range "${sheetRange}":`, error);
+      // Log the original detailed error to the console for debugging
       const errorMessage = error instanceof Error ? error.message : String(error);
-      allShopItems.push({ id: `error-shop-fetch-${sheetRange.replace('!', '_')}`, name: 'Sheet Fetch Error', description: `Could not load items from ${sheetRange}. Error: ${errorMessage}`, cost: 0, category: 'Relic' });
+      console.error(`Error fetching Shop Items data from Google Sheet range "${sheetRange}": ${errorMessage}`);
+      
+      allShopItems.push({ 
+        id: `error-shop-fetch-${sheetRange.replace('!', '_')}`, 
+        name: 'Sheet Fetch Error', 
+        description: "error", // Changed to "error" as per user request
+        cost: 0, 
+        category: 'Relic' 
+      });
     }
   }
 
