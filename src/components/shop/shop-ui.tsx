@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { ShopItem, ShopItemCategory, UtilitySubCategory } from '@/types/shop';
-import { Store, ShoppingCart, Coins, ShieldAlert, Swords, Crosshair, WandSparkles, Construction, Droplets, HelpCircle, Zap, Flame, Bomb, Ambulance, BatteryCharging, Puzzle, AlertCircle, ImageIcon, Loader2 } from 'lucide-react';
+import { Store, ShoppingCart, Coins, ShieldAlert, Swords, Crosshair, WandSparkles, Construction, Droplets, HelpCircle, Zap, Flame, Bomb, Ambulance, BatteryCharging, Puzzle, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '../ui/separator';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { generateShopItemImage } from '@/ai/flows/generate-shop-item-image-flow';
+// Removed: import { generateShopItemImage } from '@/ai/flows/generate-shop-item-image-flow';
+// Removed: import { Loader2, ImageIcon } from 'lucide-react'; (ImageIcon might still be used by placeholder logic, Loader2 not)
 
 interface ShopUIProps {
   initialInventory: ShopItem[];
@@ -61,7 +62,7 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
   const { toast } = useToast();
   const [playerCrypto, setPlayerCrypto] = useState(2000);
   const [displayInventory, setDisplayInventory] = useState<ShopItem[]>([]);
-  const [generatingImageId, setGeneratingImageId] = useState<string | null>(null);
+  // Removed: const [generatingImageId, setGeneratingImageId] = useState<string | null>(null);
 
   useEffect(() => {
     setDisplayInventory(initialInventory.map(item => ({
@@ -111,38 +112,7 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
     });
   };
 
-  const handleGenerateImage = async (itemToGenerateFor: ShopItem) => {
-    setGeneratingImageId(itemToGenerateFor.id);
-    try {
-      const result = await generateShopItemImage({
-        itemName: itemToGenerateFor.name,
-        itemDescription: itemToGenerateFor.description,
-        itemCategory: itemToGenerateFor.category,
-        itemSubCategory: itemToGenerateFor.subCategory,
-        itemWeaponClass: itemToGenerateFor.weaponClass,
-      });
-
-      setDisplayInventory(prevInv =>
-        prevInv.map(item =>
-          item.id === itemToGenerateFor.id ? { ...item, imageUrl: result.imageDataUri, dataAiHint: undefined } : item
-        )
-      );
-      toast({
-        title: "Image Generated!",
-        description: `AI image created for ${itemToGenerateFor.name}. This image is for the current session.`,
-      });
-    } catch (error) {
-      console.error("Error generating item image:", error);
-      toast({
-        title: "Image Generation Failed",
-        description: error instanceof Error ? error.message : "Could not generate image.",
-        variant: "destructive",
-      });
-    } finally {
-      setGeneratingImageId(null);
-    }
-  };
-
+  // Removed handleGenerateImage function
 
   const renderItemsGrid = (itemsToRender: ShopItem[]) => {
     if (itemsToRender.length === 0) {
@@ -170,7 +140,7 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
         {displayableItems.map((item) => {
           const IconForCategory = categoryIcons[item.category];
           const IconForSubCategory = item.subCategory ? utilitySubCategoryIcons[item.subCategory] : null;
-          const isGeneratingThisImage = generatingImageId === item.id;
+          // Removed: const isGeneratingThisImage = generatingImageId === item.id;
 
           return (
             <Card key={item.id} className="flex flex-col bg-card/80 hover:shadow-primary/30 transition-shadow">
@@ -178,17 +148,12 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
                 <div className="relative w-full h-32 md:h-36 mb-2 rounded overflow-hidden border border-border bg-muted/30 flex items-center justify-center">
                   {item.imageUrl ? (
                     <Image
-                      src={item.imageUrl} // This will be the data URI if generated, or sheet URL
+                      src={item.imageUrl}
                       alt={item.name}
                       fill
                       style={{ objectFit: 'contain' }}
                       data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
                     />
-                  ) : isGeneratingThisImage ? (
-                    <div className="flex flex-col items-center justify-center text-muted-foreground">
-                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                      <p className="text-xs mt-2">Generating image...</p>
-                    </div>
                   ) : (
                     <Image
                       src={`https://placehold.co/200x200.png?text=${encodeURIComponent(item.name.substring(0,10))}`}
@@ -215,18 +180,7 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
                 {item.skillCheck && <p><span className="font-semibold">Skill Check:</span> {item.skillCheck}</p>}
               </CardContent>
               <CardFooter className="p-3 flex flex-col items-start space-y-2 border-t mt-auto">
-                {!item.imageUrl && !item.dataAiHint && ( // Show generate button only if no image URL from sheet and no placeholder hint used
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full mb-1"
-                        onClick={() => handleGenerateImage(item)}
-                        disabled={isGeneratingThisImage || !!item.imageUrl} // Also disable if an image (even generated one) now exists
-                    >
-                        {isGeneratingThisImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
-                        {isGeneratingThisImage ? "Generating..." : (item.imageUrl ? "Image Set" : "Generate AI Image")}
-                    </Button>
-                )}
+                {/* Removed AI Image Generation Button */}
                 <div className="w-full flex justify-between items-center">
                   <p className="text-lg font-semibold text-primary">{item.cost} Crypto</p>
                   {item.stock !== undefined && (
@@ -332,3 +286,4 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
     </div>
   );
 }
+
