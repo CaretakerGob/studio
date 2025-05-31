@@ -26,7 +26,7 @@ async function getShopItemsFromGoogleSheet(): Promise<ShopItem[]> {
   if (missingVars.length > 0) {
     const detailedErrorMessage = `Shop Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables are set in .env.local. SHOP_ITEMS_GOOGLE_SHEET_RANGE should be a comma-separated list of sheet names/ranges (e.g., "Weapons!A:D,Armor!A:D").`;
     console.error(detailedErrorMessage);
-    return [{ id: 'error-shop-env', name: 'System Error', description: detailedErrorMessage, cost: 0, category: 'Relic' }];
+    return [{ id: 'error-shop-env', name: 'System Error', description: "error", cost: 0, category: 'Relic' }];
   }
 
   const allShopItems: ShopItem[] = [];
@@ -59,7 +59,7 @@ async function getShopItemsFromGoogleSheet(): Promise<ShopItem[]> {
 
       if (!rows || rows.length === 0) {
         console.warn(`No data found in Shop Items Google Sheet ID: ${SHOP_ITEMS_GOOGLE_SHEET_ID} at range: ${sheetRange}. Skipping this sheet.`);
-        continue; // Skip to the next sheetRange
+        continue; 
       }
 
       const headers = rows[0] as string[];
@@ -67,20 +67,17 @@ async function getShopItemsFromGoogleSheet(): Promise<ShopItem[]> {
 
       const nameIndex = sanitizedHeaders.indexOf('name');
       const costIndex = sanitizedHeaders.indexOf('cost');
-      const categoryIndex = sanitizedHeaders.indexOf('category');
-      const effectIndex = sanitizedHeaders.indexOf('effect'); // This will map to 'description'
+      const categoryIndex = sanitizedHeaders.indexOf('category'); // Intentionally try to find it for each sheet
+      const effectIndex = sanitizedHeaders.indexOf('effect'); 
 
-      // Simplified essential columns check for the 4 required fields
-      if (nameIndex === -1 || costIndex === -1 || categoryIndex === -1 || effectIndex === -1) {
+      if (nameIndex === -1 || costIndex === -1 || effectIndex === -1) {
           const missing: string[] = [];
           if (nameIndex === -1) missing.push('Name');
           if (costIndex === -1) missing.push('Cost');
-          if (categoryIndex === -1) missing.push('Category');
-          if (effectIndex === -1) missing.push('Effect'); // Expecting 'Effect' from sheet
-          const errorMsg = `Critical Error: Essential columns (${missing.join(', ')}) not found in Shop Google Sheet tab "${sheetRange}". Headers found: [${sanitizedHeaders.join(', ')}]. Skipping this sheet.`;
+          if (effectIndex === -1) missing.push('Effect');
+          const errorMsg = `Critical Error: Essential columns (Name, Cost, Effect) not found in Shop Google Sheet tab "${sheetRange}". Headers found: [${sanitizedHeaders.join(', ')}]. Skipping this sheet.`;
           console.error(errorMsg);
-          // Optionally, add an error item to allShopItems to indicate this sheet failed
-          allShopItems.push({ id: `error-shop-headers-${sheetNameForId}`, name: 'Sheet Error', description: errorMsg, cost: 0, category: 'Relic' });
+          allShopItems.push({ id: `error-shop-headers-${sheetNameForId}`, name: 'Sheet Error', description: "error", cost: 0, category: 'Relic' });
           continue; 
       }
       
@@ -88,40 +85,42 @@ async function getShopItemsFromGoogleSheet(): Promise<ShopItem[]> {
 
       rows.slice(1).forEach((row: any[], rowIndex: number) => {
         const name = row[nameIndex] ? String(row[nameIndex]).trim() : `Unnamed Item ${sheetNameForId}_${rowIndex + 1}`;
-        // Generate ID based on sheet name, row index, and item name to ensure uniqueness
         const id = `${sheetNameForId}_${rowIndex}_${name.toLowerCase().replace(/\s+/g, '_')}`;
         const cost = row[costIndex] ? parseInt(String(row[costIndex]), 10) : 0;
-        let category = row[categoryIndex] ? String(row[categoryIndex]).trim() as ShopItemCategory : 'Relic';
-        const description = row[effectIndex] ? String(row[effectIndex]).trim() : ''; // 'Effect' column maps to 'description'
+        const description = row[effectIndex] ? String(row[effectIndex]).trim() : ''; 
 
-        if (isNaN(cost)) {
-          console.warn(`Invalid cost for item "${name}" (Row ${rowIndex + 2} in ${sheetRange}). Setting to 0.`);
-        }
-        if (!validCategories.includes(category)) {
-            console.warn(`Invalid category "${category}" for item "${name}" (Row ${rowIndex + 2} in ${sheetRange}). Defaulting to "Relic".`);
-            category = 'Relic';
+        let category: ShopItemCategory = 'Relic'; // Default category
+
+        if (categoryIndex !== -1) { // "Category" column header exists in this sheet
+            const rawCategoryValue = row[categoryIndex] ? String(row[categoryIndex]).trim() : "";
+            if (rawCategoryValue && validCategories.includes(rawCategoryValue as ShopItemCategory)) {
+                category = rawCategoryValue as ShopItemCategory;
+            } else if (rawCategoryValue) { // Column exists, value exists, but value is not a valid category
+                console.warn(`Invalid category value "${rawCategoryValue}" for item "${name}" in sheet "${sheetRange}", row ${rowIndex + 2}. Defaulting to "Relic". Valid categories are: ${validCategories.join(', ')}.`);
+            } else { // Column exists, but cell is empty for this item
+                 console.warn(`Missing category value for item "${name}" in sheet "${sheetRange}", row ${rowIndex + 2}. Defaulting to "Relic".`);
+            }
+        } else { // "Category" column header does NOT exist in this sheet
+            console.warn(`"Category" column header not found in sheet "${sheetRange}". Items from this sheet (e.g., "${name}", Row ${rowIndex + 2}) will default to "Relic" category.`);
         }
 
-        // Since the sheet is simplified, other fields default to undefined as per ShopItem type
+
         allShopItems.push({
           id,
           name,
-          description, // Mapped from 'Effect' column
+          description, 
           cost: isNaN(cost) ? 0 : cost,
-          category,
-          // Other fields default to undefined as per ShopItem type
+          category, // Use the determined category
         });
       });
 
     } catch (error) {
-      // Log the original detailed error to the console for debugging
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`Error fetching Shop Items data from Google Sheet range "${sheetRange}": ${errorMessage}`);
-      
       allShopItems.push({ 
         id: `error-shop-fetch-${sheetRange.replace('!', '_')}`, 
         name: 'Sheet Fetch Error', 
-        description: "error", // Changed to "error" as per user request
+        description: "error", 
         cost: 0, 
         category: 'Relic' 
       });
@@ -129,7 +128,6 @@ async function getShopItemsFromGoogleSheet(): Promise<ShopItem[]> {
   }
 
   if (allShopItems.length === 0 && sheetRanges.length > 0) {
-      // This case means all specified sheets were empty or had errors
       return [{ id: 'warning-shop-empty-all', name: 'System Warning', description: 'No shop items found in any of the specified Google Sheet tabs, or all tabs had errors.', cost: 0, category: 'Relic' }];
   }
 
@@ -144,3 +142,4 @@ export default async function ShopPage() {
     </div>
   );
 }
+
