@@ -101,7 +101,7 @@ import {
   UserRoundPlus,
   UserRoundX,
   CheckCircle,
-  Image as LucideImage, // Added for active character image card
+  Image as LucideImage,
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -521,7 +521,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     activeCharacterBase, 
     effectiveNexusCharacterAbilities, 
     partySessionData, 
-    parseCooldownRounds
 ]);
 
 
@@ -1286,66 +1285,43 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
                     {/* Column 2: Party Display & Active Character Arsenal */}
                     <div className="lg:col-span-2 space-y-6">
-                        {activeCharacterBase && (
-                            <Card className="bg-card/80 border-primary shadow-md">
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <div className="flex items-center gap-2">
-                                        <LucideImage className="h-6 w-6 text-primary"/>
-                                        <CardTitle className="text-xl text-primary">Active Hunter: {activeCharacterBase.name}</CardTitle>
-                                    </div>
-                                    <Button variant="ghost" size="icon" onClick={() => { setIsCharacterCardModalOpen(true); }} aria-label={`View full details for ${activeCharacterBase.name}`}>
-                                        <Info className="h-5 w-5"/>
-                                    </Button>
-                                </CardHeader>
-                                <CardContent className="flex justify-center p-4">
-                                    {activeCharacterBase.imageUrl ? (
-                                        <button 
-                                            type="button" 
-                                            onClick={() => openImageModal(activeCharacterBase.imageUrl!)} 
-                                            className="relative w-48 h-64 md:w-56 md:h-72 rounded-lg overflow-hidden border-2 border-primary hover:ring-2 hover:ring-accent focus:outline-none focus:ring-2 focus:ring-accent"
-                                            aria-label={`View image for ${activeCharacterBase.name}`}
-                                        >
-                                            <Image 
-                                                src={activeCharacterBase.imageUrl} 
-                                                alt={activeCharacterBase.name} 
-                                                fill 
-                                                style={{ objectFit: 'contain' }} 
-                                                data-ai-hint={`${activeCharacterBase.name} character art`}
-                                                priority
-                                            />
-                                        </button>
-                                    ) : (
-                                        <div className="w-48 h-64 md:w-56 md:h-72 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
-                                            <UserCircle2 className="h-24 w-24 text-muted-foreground" />
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        )}
-
                         {partyMembers.length > 0 ? (
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {partyMembers.map((member) => {
+                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-3"> {/* Adjusted grid for new card design */}
+                                {partyMembers.map((member, memberIndex) => {
                                     const memberSessionData = partySessionData[member.id];
                                     const memberEffectiveStats = calculateEffectiveStatsForMember(member.id);
                                     if (!memberSessionData || !memberEffectiveStats) return null;
 
                                     return (
-                                        <Card 
-                                            key={member.id} 
-                                            className={cn("p-3 flex flex-col", activeCharacterId === member.id && "border-2 border-primary ring-2 ring-primary shadow-lg")}
-                                        >
-                                            <CardHeader className="p-1 flex-row items-center gap-2 cursor-pointer" onClick={() => setActiveCharacterId(member.id)}>
-                                                <Avatar className="h-10 w-10 border-2 border-muted-foreground">
-                                                    <AvatarImage src={member.imageUrl || `https://placehold.co/40x40.png`} alt={member.name} data-ai-hint="party member small avatar"/>
-                                                    <AvatarFallback>{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
-                                                </Avatar>
-                                                <CardTitle className="text-md font-semibold text-primary truncate">{member.name}</CardTitle>
-                                                <Button variant="ghost" size="icon" className="ml-auto h-7 w-7" onClick={(e) => { e.stopPropagation(); setActiveCharacterId(member.id); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${member.name}`}>
-                                                  <Info className="h-4 w-4"/>
+                                        <Card key={member.id} className={cn("p-2 flex flex-col", activeCharacterId === member.id && "border-2 border-primary ring-2 ring-primary shadow-lg")}>
+                                            {member.imageUrl ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openImageModal(member.imageUrl!)}
+                                                    className="relative w-full h-32 sm:h-36 rounded-md overflow-hidden border border-border mb-2 hover:ring-1 hover:ring-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                                                    aria-label={`View image for ${member.name}`}
+                                                >
+                                                    <Image
+                                                        src={member.imageUrl}
+                                                        alt={member.name}
+                                                        fill
+                                                        style={{ objectFit: 'contain' }}
+                                                        data-ai-hint={`${member.name} character art compact`}
+                                                        priority={activeCharacterId === member.id || memberIndex < 2} 
+                                                    />
+                                                </button>
+                                            ) : (
+                                                <div className="w-full h-32 sm:h-36 rounded-md bg-muted flex items-center justify-center border border-border mb-2">
+                                                    <UserCircle2 className="h-16 w-16 text-muted-foreground" />
+                                                </div>
+                                            )}
+                                            <CardHeader className="p-1 pt-0 flex-row items-center justify-between gap-1 cursor-pointer" onClick={() => setActiveCharacterId(member.id)}>
+                                                <CardTitle className="text-sm font-semibold text-primary truncate flex-grow">{member.name}</CardTitle>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); setActiveCharacterId(member.id); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${member.name}`}>
+                                                  <Info className="h-3.5 w-3.5"/>
                                                 </Button>
                                             </CardHeader>
-                                            <CardContent className="p-1 space-y-2 flex-grow">
+                                            <CardContent className="p-1 space-y-1.5 flex-grow mt-1">
                                                 {/* HP */}
                                                 <div className="space-y-0.5">
                                                     <div className="flex items-center justify-between">
@@ -1895,3 +1871,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
+
+
+    

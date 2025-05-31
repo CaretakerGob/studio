@@ -159,17 +159,16 @@
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
 - **Description:** Session-based game management hub, supporting multiple characters.
 - **Functionality:**
-    - **Multi-Character Support & Display**: Main view displays a grid of party members (up to 4). Each character card shows their avatar, name, and interactive trackers for HP, Sanity, and Bleed Points. The individual cards in this grid are clickable to set the character as "active".
-    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
-    - **Active Character Image Display**: A dedicated card is displayed above the party grid, showing the active character's name and a large, clickable image (opens in modal).
+    - **Multi-Character Display**: Main view displays a grid of party members (up to 4). Each character's card now prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card (header area) sets them as active.
+    - **Active Character Focus**: Arsenal selection (now below the party grid) and detailed modal views operate on the selected active character.
     - Party Management Dialog: Add/remove characters. "Manage Party" button relocated to the page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal. HP, Sanity, Bleed trackers are stacked vertically for each character in the main grid.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
-    - Arsenal and equipment display for active character.
+    - Arsenal and equipment display for active character (images of selected arsenal).
     - Integrated dice roller and card generator.
     - Character avatar and arsenal card image modals.
-    - Modal for active character details (stats, weapons, abilities, skills).
-    - Save Nexus Session: Logged-in users can save their current party's state to Firestore.
+    - Modal for active character details (all stats including MV/DEF, weapons, abilities, skills).
+    - Save Nexus Session: Logged-in users can save their current party's state (including all members' stats, arsenals, crypto) to Firestore.
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
     - Reset Nexus Session: Functionality added to settings dropdown.
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets. Party state is client-side, can be persisted.
@@ -246,7 +245,7 @@
 -   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: (No changes)
 -   **Dice Roller Types (`src/components/dice-roller/dice-roller-ui.tsx`)**: (No changes)
 -   **`EventData` (`src/types/event.ts`)**: (No changes)
--   **`SavedNexusState` & `PartyMemberSavedState` (`src/types/nexus.ts`)**: Updated to support multiple party members. `SavedNexusState` now contains `party: PartyMemberSavedState[]` and `activeCharacterIdInSession: string | null`. `PartyMemberSavedState` defined to hold individual character session data.
+-   **`SavedNexusState` & `PartyMemberSavedState` (`src/types/nexus.ts`)**: Updated to support multiple party members. `SavedNexusState` now contains `party: PartyMemberSavedState[]` and `activeCharacterIdInSession: string | null`. `PartyMemberSavedState` defined to hold individual character session data. Added `characterName` and `characterImageUrl` to `PartyMemberSavedState` for better display on load.
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
 -   **Firebase Firestore Rules:** Updated to include rules for `userNexusStates/{userId}/{document=**}` allowing read/write for authenticated owners. Firestore rules confirmed to allow write access to `userNexusStates/{userId}/states/{sessionId}`.
@@ -268,3 +267,6 @@ This document provides a snapshot of the project's state and context.
     
 
     
+
+    
+

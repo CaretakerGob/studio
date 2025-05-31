@@ -64,17 +64,16 @@ DONE:
 - Shared Space Page:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
-    - **Multi-Character Support & Display**: Main view displays a grid of party members (up to 4). Each character card shows their avatar, name, and interactive trackers for HP, Sanity, and Bleed Points. The individual cards in this grid are clickable to set the character as "active".
-    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
-    - **Active Character Image Display**: A dedicated card is displayed above the party grid, showing the active character's name and a large, clickable image (opens in modal).
+    - **Multi-Character Display**: Main view displays a grid of party members (up to 4). Each character's card now prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card (header area) sets them as active.
+    - **Active Character Focus**: Arsenal selection (now below the party grid) and detailed modal views operate on the selected active character.
     - Party Management Dialog: Add/remove characters. "Manage Party" button relocated to the page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal. HP, Sanity, Bleed trackers are stacked vertically for each character in the main grid.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
-    - Arsenal and equipment display for active character.
+    - Arsenal and equipment display for active character (images of selected arsenal).
     - Integrated dice roller and card generator.
     - Character avatar and arsenal card image modals.
-    - Modal for active character details (stats, weapons, abilities, skills).
-    - Save Nexus Session: Logged-in users can save their current party's state to Firestore.
+    - Modal for active character details (all stats including MV/DEF, weapons, abilities, skills).
+    - Save Nexus Session: Logged-in users can save their current party's state (including all members' stats, arsenals, crypto) to Firestore.
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
     - Reset Nexus Session: Functionality added to settings dropdown.
 - FAQ Page:
@@ -93,7 +92,7 @@ DONE:
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
 - MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob (Ranged Tactician, Close Quarters Disruptor using only shop items).
-- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms & /privacy, Nexus max update depth error).
+- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms & /privacy, Nexus max update depth error resolved).
 
 WORKING:
 - Ongoing review and minor clean-up of existing codebase.
@@ -123,3 +122,6 @@ NEXT:
     
 
     
+
+    
+
