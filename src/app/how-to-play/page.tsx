@@ -15,42 +15,31 @@ export const metadata: Metadata = {
 };
 
 interface SectionNode {
-  type: 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'ul' | 'ol' | 'hr' | 'img' | 'br';
+  type: 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'ul' | 'ol' | 'hr' | 'img' | 'br' | 'debug';
   content?: React.ReactNode[];
   src?: string;
   alt?: string;
-  items?: React.ReactNode[][]; // For ul/ol, array of arrays of nodes
+  items?: React.ReactNode[][];
   key: string;
+  level?: number; // For lists
 }
 
 interface Section {
   id: string;
-  title: string; // H2 title for AccordionTrigger
-  contentNodes: SectionNode[]; // Content under this H2, including H3s and their content
+  title: string;
+  contentNodes: SectionNode[];
 }
-
-const normalizeKey = (text: string): string => {
-  if (!text) return "";
-  return text
-    .toLowerCase()
-    .replace(/&amp;/g, 'and') 
-    .replace(/[’'´`]/g, '')   
-    .replace(/[,\.:!"“”;?()]/g, '') 
-    .replace(/[^a-z0-9\s-]/g, '') 
-    .trim()                     
-    .replace(/\s+/g, '-');      
-};
 
 const shopSectionTitlesToIgnore = [
   "defense-gear-shop", "melee-weapons", "melee-weapon-shop", "melee-weapon-shop-continued",
   "range-weapons", "range-weapon-shop", "range-weapon-shop-continued",
-  "upgrades", "augment-shop", "utility-shop", "consumable-shop", "relics", 
+  "upgrades", "augment-shop", "utility-shop", "consumable-shop", "relics",
   "loot-table", "mystery-table", "dybbuk-boxes",
   "ammunition", "bombs", "traps", "healing-items", "battery-items", "miscellaneous-items",
-  "bleed-threshold-table", "you-are-hunted-table", "maniac-table", "tenebrae-resurrection-table", 
-  "bounty-trait-1-table", "bounty-trait-2-table", "rare-bounty-trait-3-table", "pet-rank-table", 
+  "bleed-threshold-table", "you-are-hunted-table", "maniac-table", "tenebrae-resurrection-table",
+  "bounty-trait-1-table", "bounty-trait-2-table", "rare-bounty-trait-3-table", "pet-rank-table",
   "renown", "infamy", "order-1d6", "chaos-1d6", "ghoul-table", "killer-plants",
-  "drowned-ones", "giant-insects", "possessed-objects", "skirmish-mode-pvp", "skirmish-mode-with-enemy-units", 
+  "drowned-ones", "giant-insects", "possessed-objects", "skirmish-mode-pvp", "skirmish-mode-with-enemy-units",
   "example-armor-types", "weapon-class-special-ability", "gear-and-equipment", "equipment-slots", "gear-shop", "categories",
   "hunter-armor", "enemy-armor", "damage-resolution-steps", "starting-arsenals-listed-below-at-level-1", "leveling-up-starting-arsenals",
   "the-horror-journal", "sample-stat-block", "enemy-targeting-and-movement",
@@ -58,8 +47,24 @@ const shopSectionTitlesToIgnore = [
   "skirmish-mode-round-order", "welcome-to-your-first-hunt-the-chupacabra", "setup-estimated-time-5-minutes", "select-hunters", "starting-gear", "map-tokens", "light-setting", "cards-needed", "objectives", "round-walkthrough-what-to-do", "initiative-phase", "hunter-round", "enemy-round", "clash-card", "tips-for-first-time-players"
 ].map(title => normalizeKey(title));
 
+let keyCounter = 0;
+const generateNodeKey = (prefix: string) => `${prefix}-${keyCounter++}`;
 
-let keyIndex = 0;
+const normalizeKey = (text: string): string => {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .replace(/&amp;/g, 'and')      // Replace &amp; with 'and'
+    .replace(/[’'´`]/g, '')        // Remove various apostrophes (curly, straight, backtick, grave)
+    // More aggressive removal of ALL punctuation and symbols EXCEPT hyphens and spaces (which are handled next)
+    // This should happen BEFORE replacing spaces with hyphens to avoid creating "--" from "word - word"
+    .replace(/[^\w\s-]|_/g, "")    // Remove non-alphanumeric, non-whitespace, non-hyphen. Also removes underscores.
+    .trim()                        // Trim leading/trailing whitespace
+    .replace(/\s+/g, '-')         // Replace sequences of whitespace with a single hyphen
+    .replace(/-+/g, '-')          // Replace multiple hyphens with a single hyphen (e.g., "word---word" to "word-word")
+    .replace(/^-+|-+$/g, '');     // Remove leading or trailing hyphens (e.g., "-word-" to "word")
+};
+
 
 const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[] => {
   if (!text) return [];
@@ -95,6 +100,7 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
     if (linkMatch) {
       return <a href={linkMatch[2]} key={currentKey} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{linkMatch[1]}</a>;
     }
+    // Basic handling for line breaks within paragraphs from main content
     return segment.split('\n').map((line, lineIdx) => (
       <React.Fragment key={`${currentKey}-line-${lineIdx}`}>
         {lineIdx > 0 && <br />}
@@ -106,54 +112,62 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
 
 const buildMainRulebookLookup = (markdown: string): Map<string, string[]> => {
   const lookup = new Map<string, string[]>();
+  if (!markdown) return lookup;
+
   const lines = markdown.split('\n');
   let currentHeadingKey: string | null = null;
   let currentContentLines: string[] = [];
 
-  const flushContent = () => {
-    if (currentHeadingKey) {
-      lookup.set(currentHeadingKey, [...currentContentLines]);
-    }
-    currentContentLines = [];
-  };
-
   for (const line of lines) {
-    const hMatch = line.match(/^(#{1,6})\s+(.*)/);
+    const hMatch = line.match(/^(#{1,6})\s+(.*)/); // Matches H1-H6
     if (hMatch) {
-      flushContent(); // Flush content for the PREVIOUS heading
-      const headingText = hMatch[2].trim();
-      currentHeadingKey = normalizeKey(headingText);
-    } else if (currentHeadingKey) {
-      currentContentLines.push(line); // Collect all lines (including empty ones for paragraph breaks)
+      // If there was a previous heading, store its collected content
+      if (currentHeadingKey && currentContentLines.length > 0) {
+        lookup.set(currentHeadingKey, [...currentContentLines]);
+      }
+      // Start new heading
+      currentHeadingKey = normalizeKey(hMatch[2].trim());
+      currentContentLines = []; // Reset content for the new heading
+    } else if (currentHeadingKey !== null) { // Ensure we are under a heading
+      // Collect the line (even if empty, for paragraph breaks needed by addContentFromMainRulebook)
+      currentContentLines.push(line);
     }
   }
-  flushContent(); // Flush content for the very last heading in the file
+
+  // After the loop, store the content for the last heading
+  if (currentHeadingKey && currentContentLines.length > 0) {
+    lookup.set(currentHeadingKey, [...currentContentLines]);
+  }
   return lookup;
 };
 
-const addContentFromMainRulebook = (headingTextForLookup: string, section: Section, mainRulebookLookup: Map<string, string[]>) => {
+const addContentFromMainRulebook = (
+  headingTextForLookup: string,
+  section: Section,
+  mainRulebookLookup: Map<string, string[]>
+) => {
   const normalizedLookupKey = normalizeKey(headingTextForLookup);
 
   if (shopSectionTitlesToIgnore.includes(normalizedLookupKey)) {
-    return; 
+    return; // Skip ignored sections
   }
 
   const mainContentLines = mainRulebookLookup.get(normalizedLookupKey);
 
   if (mainContentLines === undefined) {
     section.contentNodes.push({
-      type: 'p',
-      content: parseInlineMarkdown(`_Debug: Key "${normalizedLookupKey}" (from "${headingTextForLookup}") not found in main rulebook lookup._`, `main-debug-key-${section.id}-${keyIndex}`),
-      key: `main-debug-key-${keyIndex++}`,
+      type: 'debug',
+      content: parseInlineMarkdown(`_Debug: Key "${normalizedLookupKey}" (from "${headingTextForLookup}") not found in main rulebook lookup._`, generateNodeKey(`main-debug-key-${section.id}`)),
+      key: generateNodeKey(`main-debug-key`),
     });
     return;
   }
 
   if (mainContentLines.length === 0 || mainContentLines.every(l => l.trim() === '')) {
     section.contentNodes.push({
-      type: 'p',
-      content: parseInlineMarkdown(`_No detailed content found for "${headingTextForLookup}" in the main rulebook (content was empty)._`, `main-placeholder-${section.id}-${keyIndex}`),
-      key: `main-placeholder-key-${keyIndex++}`,
+      type: 'debug',
+      content: parseInlineMarkdown(`_No detailed content found for "${headingTextForLookup}" in the main rulebook (content was empty)._`, generateNodeKey(`main-placeholder-${section.id}`)),
+      key: generateNodeKey(`main-placeholder-key`),
     });
     return;
   }
@@ -168,17 +182,17 @@ const addContentFromMainRulebook = (headingTextForLookup: string, section: Secti
       if (paragraphText) {
         section.contentNodes.push({
           type: 'p',
-          content: parseInlineMarkdown(paragraphText, `main-p-${section.id}-${keyIndex}`),
-          key: `main-p-key-${keyIndex++}`,
+          content: parseInlineMarkdown(paragraphText, generateNodeKey(`main-p-${section.id}`)),
+          key: generateNodeKey(`main-p-key`),
         });
       }
       paragraphBuffer = [];
     }
   };
-  
+
   const flushList = () => {
     if (listItemsBuffer.length > 0 && listType) {
-      section.contentNodes.push({ type: listType, items: [...listItemsBuffer], key: `main-list-${listType}-${section.id}-${keyIndex++}` });
+      section.contentNodes.push({ type: listType, items: [...listItemsBuffer], key: generateNodeKey(`main-list-${listType}-${section.id}`) });
       listItemsBuffer = [];
     }
     listType = null;
@@ -197,7 +211,7 @@ const addContentFromMainRulebook = (headingTextForLookup: string, section: Secti
         type: 'img',
         src: imgMatch[2],
         alt: imgMatch[1] || 'Rulebook image',
-        key: `main-img-${section.id}-${keyIndex++}`,
+        key: generateNodeKey(`main-img-${section.id}`),
       });
     } else if (ulMatch || olMatch) {
       flushParagraph();
@@ -205,31 +219,33 @@ const addContentFromMainRulebook = (headingTextForLookup: string, section: Secti
       const currentItemType = ulMatch ? 'ul' : 'ol';
 
       if (listType !== currentItemType) {
-        flushList();
+        flushList(); // Flush previous list if type changes
         listType = currentItemType;
       }
-      listItemsBuffer.push(parseInlineMarkdown(itemText, `main-li-text-${section.id}-${keyIndex}`));
+      listItemsBuffer.push(parseInlineMarkdown(itemText, generateNodeKey(`main-li-text-${section.id}`)));
     } else if (trimmedLine === '---') {
       flushParagraph();
       flushList();
-      section.contentNodes.push({ type: 'hr', key: `main-hr-${section.id}-${keyIndex++}` });
+      section.contentNodes.push({ type: 'hr', key: generateNodeKey(`main-hr-${section.id}`) });
     } else if (!trimmedLine) { // Empty line indicates a paragraph break
-      flushList();
+      flushList(); // Important to flush list before paragraph
       flushParagraph();
     } else { // Non-empty, non-list, non-image, non-hr line
-      flushList();
+      flushList(); // If we were in a list and now have paragraph text, flush list
       paragraphBuffer.push(line);
     }
   }
-  flushList();
-  flushParagraph();
+  flushList(); // Flush any remaining list items
+  flushParagraph(); // Flush any remaining paragraph content
 };
 
-const parseStructureFileToSections = (structureMarkdown: string, mainRulebookLookup: Map<string, string[]>): Section[] => {
+const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLookup: Map<string, string[]>): Section[] => {
   const sections: Section[] = [];
+  if (!structureMarkdown) return sections;
+
   let currentH2Section: Section | null = null;
   const lines = structureMarkdown.split('\n');
-  keyIndex = 0; 
+  keyCounter = 0;
 
   const flushH2Section = () => {
     if (currentH2Section) {
@@ -244,51 +260,44 @@ const parseStructureFileToSections = (structureMarkdown: string, mainRulebookLoo
 
     const h2Match = trimmedLine.match(/^##\s+(.*)/);
     const h3Match = trimmedLine.match(/^###\s+(.*)/);
-    
+
     if (h2Match) {
       flushH2Section();
       const title = h2Match[1].trim();
-      if (shopSectionTitlesToIgnore.includes(normalizeKey(title))) {
-        continue; 
+      const normalizedTitleKey = normalizeKey(title);
+      if (shopSectionTitlesToIgnore.includes(normalizedTitleKey)) {
+        continue;
       }
       currentH2Section = {
-        id: `section-h2-${normalizeKey(title)}-${keyIndex++}`,
+        id: generateNodeKey(`section-h2-${normalizedTitleKey}`),
         title: title,
         contentNodes: [],
       };
       addContentFromMainRulebook(title, currentH2Section, mainRulebookLookup);
     } else if (h3Match && currentH2Section) {
       const title = h3Match[1].trim();
-       if (shopSectionTitlesToIgnore.includes(normalizeKey(title))) {
-        continue; 
+      const normalizedTitleKey = normalizeKey(title);
+      if (shopSectionTitlesToIgnore.includes(normalizedTitleKey)) {
+        continue;
       }
       currentH2Section.contentNodes.push({
         type: 'h3',
-        content: parseInlineMarkdown(title, `h3-title-${currentH2Section.id}-${keyIndex}`),
-        key: `h3-key-${keyIndex++}`,
+        content: parseInlineMarkdown(title, generateNodeKey(`h3-title-${currentH2Section.id}`)),
+        key: generateNodeKey(`h3-key`),
       });
       addContentFromMainRulebook(title, currentH2Section, mainRulebookLookup);
-    } else if (currentH2Section && (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ') || /^\d+\.\s/.test(trimmedLine))) {
-        // List items from the structure file are NOT rendered if we expect their content from mainRulebookLookup
-        // If you want to render structure file list items *as is*, this part needs to change.
-        // For now, we assume structure H2/H3 points to content blocks in the main file.
     }
+    // List items from structure file are no longer directly rendered or used to fetch content independently.
+    // Their explanations are expected to be part of the content block fetched for their parent H2 or H3 from the main rulebook.
   }
-  flushH2Section(); 
+  flushH2Section();
   return sections;
 };
-
 
 const renderSectionNode = (node: SectionNode): React.ReactNode => {
   switch (node.type) {
     case 'h3':
       return <h3 key={node.key} className="text-xl font-semibold mt-4 mb-2 text-primary/90">{node.content}</h3>;
-    case 'h4':
-      return <h4 key={node.key} className="text-lg font-medium mt-3 mb-1 text-primary/85">{node.content}</h4>;
-    case 'h5':
-      return <h5 key={node.key} className="text-base font-medium mt-2 mb-1 text-primary/80">{node.content}</h5>;
-    case 'h6':
-      return <h6 key={node.key} className="text-sm font-medium mt-1 mb-0.5 text-primary/75">{node.content}</h6>;
     case 'p':
       return <p key={node.key} className="mb-3 leading-relaxed text-foreground/90">{node.content}</p>;
     case 'ul':
@@ -297,8 +306,6 @@ const renderSectionNode = (node: SectionNode): React.ReactNode => {
       return <ol key={node.key} className="list-decimal pl-6 my-3 space-y-1.5">{node.items?.map((itemContent, idx) => <li key={`${node.key}-li-${idx}`}>{itemContent}</li>)}</ol>;
     case 'hr':
       return <Separator key={node.key} className="my-4" />;
-    case 'br':
-      return <br key={node.key} />;
     case 'img':
       if (node.src) {
         return (
@@ -315,6 +322,8 @@ const renderSectionNode = (node: SectionNode): React.ReactNode => {
         );
       }
       return null;
+    case 'debug': // For rendering debug messages
+      return <p key={node.key} className="text-xs text-destructive italic my-1">{node.content}</p>;
     default:
       return null;
   }
@@ -341,19 +350,15 @@ export default async function HowToPlayPage() {
     }
 
     if (structureFileContent.length > 0 && !errorMessage) {
-      sections = parseStructureFileToSections(structureFileContent, mainRulebookLookup);
-    } else if (!errorMessage) {
+      sections = parseStructureAndMergeContent(structureFileContent, mainRulebookLookup);
+    } else if (!errorMessage) { // structureFileContent is empty but no other error
          errorMessage = "Error: The rulebook structure file (RoTB_Rulebook_Dropdown_Structure.md) could not be read or is empty.";
     }
     
-    if (sections.length === 0 && !errorMessage && structureFileContent.length > 0 && mainRulebookFileContent.length > 0) { 
-      if (mainRulebookLookup.size === 0 && mainRulebookFileContent.length > 0) {
-        errorMessage = "Error: The main rulebook content was read, but no headings could be parsed from it to build the content lookup. Please check its structure (e.g., ensure it uses markdown headings like ## Section Title).";
-      } else if (mainRulebookLookup.size > 0) { 
-        errorMessage = "No displayable sections were constructed. This might mean all H2 sections in the structure file were filtered out by the ignore list, or there's a persistent issue matching headings for content.";
-      } else { 
-        errorMessage = "No displayable sections could be parsed from the rulebook. Content might be structured in an unexpected way or is entirely composed of ignored sections.";
-      }
+    if (mainRulebookFileContent.length > 0 && mainRulebookLookup.size === 0 && !errorMessage) {
+      errorMessage = "Error: Main rulebook content was read, but no headings could be parsed from it to build the content lookup. Please check its Markdown heading structure (e.g., ensure it uses '## Section Title').";
+    } else if (sections.length === 0 && structureFileContent.length > 0 && !errorMessage) { 
+      errorMessage = "No displayable sections could be parsed. This might mean all H2 sections in the structure file were filtered out by the ignore list, or there's a persistent issue matching headings for content.";
     }
 
   } catch (error: any) {
@@ -365,7 +370,7 @@ export default async function HowToPlayPage() {
         } else if (error.path?.includes('Riddle_of_the_Beast_Rulebook.md')) {
             errorMessage = "Error: The main rulebook content file (Riddle_of_the_Beast_Rulebook.md) was not found. Please check the 'docs' directory.";
         } else {
-            errorMessage = `Error loading rulebook file: ${error.message}. Path: ${error.path}`;
+            errorMessage = `Error loading rulebook file: ${error.message}. Path: ${error.path || 'Unknown path'}`;
         }
     } else {
         errorMessage = `Error loading or processing game rules: ${error.message}. Please check the server logs.`;
