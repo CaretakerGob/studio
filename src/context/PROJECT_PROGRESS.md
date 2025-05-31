@@ -1,10 +1,11 @@
 
+
 DONE:
 - Initial app setup (Next.js, TypeScript, ShadCN UI, Tailwind CSS, Firebase, Genkit)
 - Homepage: Layout, feature navigation cards (consolidated "Game Tools"), footer with links.
 - Character Sheet:
     - Base stat tracking (HP, Sanity, MV, DEF) with interactive controls.
-    - **Crypto Tracker:** Added persistent crypto tracking (default 0, user adjustable).
+    - Crypto Tracker: Added persistent crypto tracking (default 0, user adjustable).
     - Skill display and point-buy system for Custom Characters.
     - Abilities display (Actions, Interrupts, Passives, FREE Actions) with cooldown/quantity trackers.
     - Custom Character ability purchase system.
@@ -64,11 +65,12 @@ DONE:
 - Hunter's Nexus Page:
     - Session-based character management UI.
     - Stat tracking with session modifiers (HP, Sanity, MV, DEF).
-    - **Session Crypto Tracker:** Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
+    - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
     - Arsenal and equipment display.
     - Integrated dice roller and card generator.
     - Character avatar and arsenal card image modals.
     - Modal for character details (stats, weapons, abilities, skills).
+    - **Save Nexus Session**: Logged-in users can save their current Nexus session state (character, stats, arsenal, crypto, ability states) to Firestore.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
 - Sidebar Navigation:
@@ -83,8 +85,8 @@ DONE:
 - Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing).
 
 WORKING:
-- Ongoing review and minor clean-up of existing codebase.
 - Refinement of Character Sheet mobile optimization for inner tab content.
+- UI/UX for listing and loading saved Hunter's Nexus sessions.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -106,3 +108,4 @@ NEXT:
 - Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
 - Refine UI/UX across all pages based on testing.
       
+

@@ -17,7 +17,7 @@
 - **State Management:** React Hooks (`useState`, `useEffect`, `useMemo`, `useCallback`, `useContext`).
 - **Backend-as-a-Service (BaaS):** Firebase
     - **Authentication:** Firebase Authentication (Email/Password).
-    - **Database:** Firebase Firestore (for user-specific data like saved characters, preferences, default character ID).
+    - **Database:** Firebase Firestore (for user-specific data like saved characters, preferences, default character ID, and saved Nexus states).
     - **Storage:** Firebase Storage (for user profile images).
 - **Generative AI:** Genkit (Google AI - Gemini models)
     - Implemented for an AI Item Generator feature (`item-generator-flow.ts`).
@@ -43,7 +43,7 @@
 - **Functionality:**
     - Selection from predefined character templates (Gob, Cassandra, Fei, Michael, Tamara, Trish, Blake, Walter) or a customizable "Custom Character". Images for predefined characters updated.
     - Track core stats (HP, Sanity, MV, DEF) with interactive trackers and dynamic progress bar colors.
-    - **Crypto Tracker:** Added a "Crypto" currency tracker. Defaults to 0. Can be manually adjusted. Saved with character data.
+    - Crypto Tracker: Added a "Crypto" currency tracker. Defaults to 0. Can be manually adjusted. Saved with character data.
     - Manage skills:
         - Predefined characters have set skill values.
         - "Custom Character" uses a point-buy system (CP cost) for skills (ATH, CPU, DARE, DEC, EMP, ENG, INV, KNO, OCC, PERS, SUR, TAC, TUN). Min level 1 once a point is invested.
@@ -161,7 +161,7 @@
 - **Functionality:**
     - Allows selection of a character template for the session.
     - Displays core stats (HP, Sanity, MV, DEF) with interactive trackers and session-based max stat modifiers.
-    - **Session Crypto Tracker:** Added a "Session Crypto" tracker, initialized from the selected character's saved crypto (or 0 if new), and can be manually adjusted during the session. Displayed on main page and in character modal.
+    - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
     - Displays selected arsenal card (front/back images) and its equipment.
     - Allows clicking on character avatar and arsenal card images to view them in a larger modal.
     - Provides a simple dice roller (numbered and combat dice).
@@ -170,7 +170,8 @@
     - Displays character abilities (base and arsenal-granted) with cooldown/quantity trackers in a modal.
     - Displays character skills and weapons (base and arsenal-modified) in a modal.
     - Max Mod trackers for MV and DEF added to character modal.
-- **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session.
+    - **Save Nexus Session**: Logged-in users can save the current state of their Nexus session (selected character, stats, modifiers, arsenal, crypto, ability cooldowns/quantities) to Firestore.
+- **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session but can be saved/loaded for logged-in users.
 
 ### 3.14. Layout & General
 - **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile. "Game Tools" items grouped. "Future Features" dropdown created for AI Item Generator and NPC Generator, which are now greyed out/disabled.
@@ -182,6 +183,7 @@
 -   Real-time collaboration features for the "Shared Space".
 -   Functional friends list with real-time presence.
 -   Complete item database for the "Item List" page (currently empty, data could come from shop sheet or a dedicated one).
+-   Loading saved Hunter's Nexus sessions.
 
 ## 5. Planned Features / Future Work
 -   **Combat System UI:** A dedicated interface for managing combat encounters, tracking turns, enemy actions (potentially driven by Combat Cards), applying status effects, resolving attacks, etc.
@@ -239,9 +241,24 @@
 -   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: (No changes)
 -   **Dice Roller Types (`src/components/dice-roller/dice-roller-ui.tsx`)**: (No changes)
 -   **`EventData` (`src/types/event.ts`)**: (No changes)
+-   **`SavedNexusState` (`src/types/nexus.ts`)**:
+    -   `id: string` (Firestore document ID)
+    -   `name: string` (User-given name)
+    -   `userId: string` (Firebase UID)
+    -   `lastSaved: string` (ISO date)
+    -   `baseCharacterId: string` (Template ID like "gob", "custom")
+    -   `selectedArsenalId: string | null`
+    -   `currentHp: number`, `currentSanity: number`, `currentMv: number`, `currentDef: number`
+    -   `sessionMaxHpModifier: number`, `sessionMaxSanityModifier: number`, `sessionMvModifier: number`, `sessionDefModifier: number`
+    -   `sessionMeleeAttackModifier: number`, `sessionRangedAttackModifier: number`, `sessionRangedRangeModifier: number`
+    -   `sessionCrypto: number`
+    -   `abilityCooldowns: Record<string, number>`
+    -   `abilityQuantities: Record<string, number>`
+
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
-(No changes from previous state)
+-   **Firebase Firestore Rules:** Updated to include rules for `userNexusStates/{userId}/{document=**}` allowing read/write for authenticated owners.
+-   Other Firebase rules and API usage remain consistent with previous state.
 
 ## 10. Other Important Observations
 -   The application heavily relies on client-side rendering for its UI components ("use client").
@@ -258,4 +275,5 @@
 This document provides a snapshot of the project's state and context.
 
     
+
 

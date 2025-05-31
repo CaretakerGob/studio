@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // Added import
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
   Dialog,
   DialogContent,
@@ -73,7 +73,8 @@ import {
   Box,
   Briefcase, 
   Crosshair,
-  Coins // Added Coins icon
+  Coins,
+  Save // Added Save icon
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -85,6 +86,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ArsenalCard as ActualArsenalCard, ArsenalItem, ParsedStatModifier, ArsenalItemCategory } from '@/types/arsenal';
 import { AbilityCard } from '@/components/character-sheet/ability-card';
+import { useAuth } from '@/context/auth-context'; // Import useAuth
+import { db, auth } from '@/lib/firebase'; // Import db and auth
+import { doc, setDoc, collection } from "firebase/firestore"; // Import Firestore functions
+import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for saved states
+import type { SavedNexusState } from '@/types/nexus';
 
 
 interface NexusRollResult {
@@ -113,6 +119,7 @@ const parseCooldownRounds = (cooldownString?: string | number): number | undefin
 
 export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const { toast } = useToast();
+  const { currentUser } = useAuth(); // Get current user
 
   const [nexusNumCombatDice, setNexusNumCombatDice] = useState('1');
   const [nexusNumDice, setNexusNumDice] = useState('1');
@@ -159,6 +166,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [nexusMaxAbilityCooldowns, setNexusMaxAbilityCooldowns] = useState<Record<string, number>>({});
   const [nexusCurrentAbilityQuantities, setNexusCurrentAbilityQuantities] = useState<Record<string, number>>({});
   const [nexusMaxAbilityQuantities, setNexusMaxAbilityQuantities] = useState<Record<string, number>>({});
+
+  const [isSaveNexusDialogOpen, setIsSaveNexusDialogOpen] = useState(false);
+  const [saveNexusName, setSaveNexusName] = useState("");
+  const [isSavingNexus, setIsSavingNexus] = useState(false);
 
 
   const criticalArsenalError = useMemo(() => {
@@ -379,7 +390,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setCurrentNexusSanity(effectiveNexusCharacterStats.sanity);
       setCurrentNexusMv(effectiveNexusCharacterStats.mv);
       setCurrentNexusDef(effectiveNexusCharacterStats.def);
-      setSessionCrypto(selectedNexusCharacter?.crypto || 0); // Initialize session crypto from selected character
+      setSessionCrypto(selectedNexusCharacter?.crypto || 0);
       setNexusSessionMaxHpModifier(0); 
       setNexusSessionMaxSanityModifier(0);
       setNexusSessionMvModifier(0);
@@ -473,7 +484,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setPartyMembers([character]); 
     setSelectedCharacterArsenalId(character.selectedArsenalCardId || null);
     setCharacterForModal(character); 
-    setSessionCrypto(character.crypto || 0); // Set session crypto from character's saved crypto
+    setSessionCrypto(character.crypto || 0);
     setNexusSessionMaxHpModifier(0); 
     setNexusSessionMaxSanityModifier(0);
     setNexusSessionMvModifier(0);
@@ -648,6 +659,67 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
   const getSkillIcon = (skillId: SkillName): React.ElementType => { const skillDef = skillDefinitions.find(s => s.id === skillId); return skillDef?.icon || Library; };
 
+  const handleInitiateSaveNexusState = () => {
+    if (!currentUser) {
+      toast({ title: "Login Required", description: "You must be logged in to save a Nexus session.", variant: "destructive" });
+      return;
+    }
+    if (!selectedNexusCharacter) {
+      toast({ title: "No Character Active", description: "Please select a character for the Nexus session before saving.", variant: "destructive" });
+      return;
+    }
+    setSaveNexusName(`Nexus Session - ${selectedNexusCharacter.name} - ${new Date().toLocaleDateString()}`);
+    setIsSaveNexusDialogOpen(true);
+  };
+
+  const executeSaveNexusState = async () => {
+    if (!currentUser || !selectedNexusCharacter || !auth.currentUser || currentNexusHp === null || currentNexusSanity === null || currentNexusMv === null || currentNexusDef === null) {
+      toast({ title: "Error", description: "Missing data to save Nexus session.", variant: "destructive" });
+      return;
+    }
+    if (!saveNexusName.trim()) {
+      toast({ title: "Save Name Required", description: "Please enter a name for your saved session.", variant: "destructive" });
+      return;
+    }
+
+    setIsSavingNexus(true);
+    const savedState: SavedNexusState = {
+      id: uuidv4(),
+      name: saveNexusName.trim(),
+      userId: currentUser.uid,
+      lastSaved: new Date().toISOString(),
+      baseCharacterId: selectedNexusCharacter.id,
+      selectedArsenalId,
+      currentHp: currentNexusHp,
+      currentSanity: currentNexusSanity,
+      currentMv: currentNexusMv,
+      currentDef: currentNexusDef,
+      sessionMaxHpModifier: nexusSessionMaxHpModifier,
+      sessionMaxSanityModifier: nexusSessionMaxSanityModifier,
+      sessionMvModifier: nexusSessionMvModifier,
+      sessionDefModifier: nexusSessionDefModifier,
+      sessionMeleeAttackModifier: nexusSessionMeleeAttackModifier,
+      sessionRangedAttackModifier: nexusSessionRangedAttackModifier,
+      sessionRangedRangeModifier: nexusSessionRangedRangeModifier,
+      sessionCrypto,
+      abilityCooldowns: nexusCurrentAbilityCooldowns,
+      abilityQuantities: nexusCurrentAbilityQuantities,
+    };
+
+    try {
+      const nexusStatesCollectionRef = collection(db, "userNexusStates", currentUser.uid, "states");
+      await setDoc(doc(nexusStatesCollectionRef, savedState.id), savedState);
+      toast({ title: "Nexus Session Saved!", description: `Session "${savedState.name}" has been saved.` });
+      setIsSaveNexusDialogOpen(false);
+      setSaveNexusName("");
+    } catch (error) {
+      console.error("Error saving Nexus session:", error);
+      toast({ title: "Save Failed", description: "Could not save Nexus session. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSavingNexus(false);
+    }
+  };
+
 
   return (
     <>
@@ -661,7 +733,12 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
               <span className="text-sm text-muted-foreground">Room:</span>
               <span className="text-sm font-mono text-primary">BEAST_NEXUS</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              {currentUser && selectedNexusCharacter && (
+                <Button variant="outline" size="sm" onClick={handleInitiateSaveNexusState} disabled={isSavingNexus}>
+                  <Save className="mr-1.5 h-4 w-4" /> Save Session
+                </Button>
+              )}
               <Button variant="ghost" size="icon" aria-label="Settings"><Settings className="h-5 w-5" /></Button>
               <Button variant="ghost" size="icon" aria-label="Log Out"><LogOut className="h-5 w-5" /></Button>
             </div>
@@ -669,7 +746,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
           
           <Dialog open={isCharacterSelectionDialogOpen} onOpenChange={setIsCharacterSelectionDialogOpen}>
             <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
-                {/* Crypto Tracker Card */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex items-center">
@@ -695,7 +771,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   </CardContent>
                 </Card>
 
-                {/* Dice Roller Card */}
                 <Card>
                     <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex items-center"><Dices className="mr-2 h-5 w-5 text-primary" />Dice Roller</CardTitle>
@@ -761,7 +836,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     </CardContent>
                 </Card>
 
-                {/* Character Panel */}
                 <div className={cn("flex-shrink-0 flex bg-card rounded-lg p-4 shadow-md w-full", selectedNexusCharacter ? "flex-col items-start justify-start" : "flex-col items-center justify-center min-h-[200px]")}>
                 {selectedNexusCharacter && effectiveNexusCharacterStats ? (
                     <div className="w-full space-y-3">
@@ -791,7 +865,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
 
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 border p-3 rounded-md bg-background/30">
-                            {/* HP Tracker */}
                             {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
                                 <div>
                                 <div className="flex items-center justify-between mb-0.5">
@@ -806,7 +879,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {(effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier}</p>
                                 </div>
                             )}
-                            {/* Sanity Tracker */}
                             {currentNexusSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (
                                 <div>
                                 <div className="flex items-center justify-between mb-0.5">
@@ -821,7 +893,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {(effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier}</p>
                                 </div>
                             )}
-                            {/* MV Display */}
                             {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (
                                 <div>
                                     <div className="flex items-center justify-between mb-0.5">
@@ -836,7 +907,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                     <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {(effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier}</p>
                                 </div>
                             )}
-                            {/* DEF Display */}
                             {currentNexusDef !== null && effectiveNexusCharacterStats.def !== undefined && (
                                 <div>
                                     <div className="flex items-center justify-between mb-0.5">
@@ -853,7 +923,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             )}
                         </div>
 
-                        {/* Arsenal Selection Section */}
                         <div className="mt-4 pt-3 border-t border-muted-foreground/20">
                             <Label htmlFor="nexusArsenalSelect" className="text-md font-medium text-accent flex items-center mb-1"><Package className="mr-2 h-5 w-5" /> Selected Arsenal</Label>
                             {criticalArsenalError ? (
@@ -899,7 +968,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   )}
                 </div>
                 
-                {/* Card Decks Card */}
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg flex items-center"><Layers3 className="mr-2 h-5 w-5 text-primary" />Card Decks</CardTitle>
@@ -936,7 +1004,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     </CardContent>
                 </Card>
 
-                {/* Party Members Card */}
                 <Card>
                     <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex items-center"><Users2 className="mr-2 h-5 w-5 text-primary" />Party Members</CardTitle>
@@ -961,7 +1028,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                 </Card>
             </main>
 
-            {/* Character Selection Dialog Content */}
             <DialogContent className="sm:max-w-[425px] bg-card border-border">
                 <DialogHeader>
                   <DialogTitle>Select Character for Nexus</DialogTitle>
@@ -984,7 +1050,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
           </Dialog>
           
 
-          {/* Character Details Modal */}
           <Dialog 
             open={isCharacterCardModalOpen} 
             onOpenChange={(open) => {
@@ -1020,7 +1085,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                       <Separator />
                       <h4 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><Info className="mr-2 h-5 w-5" /> Core Stats & Crypto</h4>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-                        {/* HP Tracker */}
                         {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
                             <div className="space-y-1">
                                 <div className="flex items-center justify-between mb-0.5">
@@ -1041,7 +1105,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 </div>
                             </div>
                         )}
-                        {/* Sanity Tracker */}
                         {currentNexusSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (
                             <div className="space-y-1">
                                 <div className="flex items-center justify-between mb-0.5">
@@ -1062,7 +1125,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 </div>
                             </div>
                         )}
-                        {/* MV Tracker */}
                         {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (
                           <div className="space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
@@ -1083,7 +1145,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                           </div>
                         )}
-                        {/* DEF Tracker */}
                         {currentNexusDef !== null && effectiveNexusCharacterStats.def !== undefined && (
                           <div className="space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
@@ -1104,7 +1165,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                           </div>
                         )}
-                         {/* Session Crypto Display in Modal */}
                         <div className="space-y-1 md:col-span-2">
                             <div className="flex items-center justify-between mb-0.5">
                                 <Label className="flex items-center text-xs font-medium"><Coins className="mr-1.5 h-3 w-3 text-yellow-400" />Session Crypto</Label>
@@ -1265,7 +1325,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             </DialogContent>
           </Dialog>
 
-          {/* Image Enlargement Modal */}
           <Dialog open={!!enlargedImageUrl} onOpenChange={(isOpen) => { if (!isOpen) setEnlargedImageUrl(null); }}>
             <DialogContent 
               className="max-w-5xl w-[95vw] h-[95vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center" 
@@ -1305,9 +1364,43 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
               )}
             </DialogContent>
           </Dialog>
+
+           {/* Save Nexus Session Dialog */}
+          <Dialog open={isSaveNexusDialogOpen} onOpenChange={setIsSaveNexusDialogOpen}>
+            <DialogContent className="sm:max-w-[425px] bg-card border-border">
+              <DialogHeader>
+                <DialogTitle>Save Nexus Session</DialogTitle>
+                <DialogDescription>
+                  Enter a name for this Nexus session state. This will save the current character, stats, modifiers, arsenal, and crypto.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="saveNexusName" className="text-right col-span-1">
+                    Save Name
+                  </Label>
+                  <Input
+                    id="saveNexusName"
+                    value={saveNexusName}
+                    onChange={(e) => setSaveNexusName(e.target.value)}
+                    className="col-span-3"
+                    disabled={isSavingNexus}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsSaveNexusDialogOpen(false)} disabled={isSavingNexus}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={executeSaveNexusState} disabled={isSavingNexus || !saveNexusName.trim()}>
+                  {isSavingNexus ? "Saving..." : "Save Session"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
         </div>
       </TooltipProvider>
     </>
   );
 }
-
