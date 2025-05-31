@@ -65,15 +65,15 @@ DONE:
 - Shared Space Page:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
-    - Session-based character management UI.
-    - Stat tracking (HP, Sanity) with session modifiers on main page. MV and DEF visible only in modal.
-    - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
-    - Session Bleed Points Tracker: Added bleed points tracking (default 0, user adjustable, shown on main page and in character modal, with Hemorrhage warning).
-    - Arsenal and equipment display.
+    - **Multi-Character Support**: Can manage a party of up to 4 characters. Main UI focuses on an "active" character.
+    - Party Management Dialog: Add/remove characters.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers on main page for active character. MV and DEF visible only in modal.
+    - Session Crypto Tracker: Global for the session.
+    - Arsenal and equipment display for active character.
     - Integrated dice roller and card generator.
     - Character avatar and arsenal card image modals.
-    - Modal for character details (stats (including MV/DEF), weapons, abilities, skills).
-    - Save Nexus Session: Logged-in users can save their current Nexus session state to Firestore.
+    - Modal for active character details (stats, weapons, abilities, skills).
+    - Save Nexus Session: Logged-in users can save their current party's state to Firestore.
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
     - Reset Nexus Session: Functionality added to settings dropdown.
 - FAQ Page:

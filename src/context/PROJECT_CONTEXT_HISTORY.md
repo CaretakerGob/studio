@@ -157,24 +157,21 @@
 - **Functionality:** Displays FAQs categorized into "App Questions" and "Board Game Concepts" using accordion style.
 
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
-- **Description:** Session-based, multiplayer game management hub.
+- **Description:** Session-based game management hub, now supporting multiple characters.
 - **Functionality:**
-    - Allows selection of a character template for the session.
-    - Main page displays HP, Sanity, and Bleed Points trackers with session-based max stat modifiers. These are now stacked vertically (HP full width, then Sanity full width, then Bleed full width). MV and DEF trackers removed from main view, but remain in character modal.
-    - Session Crypto Tracker: Added crypto tracking (default 0, user adjustable, shown on main page and in character modal).
-    - **Session Bleed Points Tracker**: Added bleed points tracking (default 0, user adjustable, shown on main page and in character modal, with Hemorrhage warning).
-    - Displays selected arsenal card (front/back images) and its equipment.
+    - **Multi-Character Support:** Allows managing a party of up to 4 characters.
+    - **Active Character:** Main UI displays stats, arsenal, and tools for one "active" character at a time.
+    - **Party Management:** Dialog to add/remove characters from the party. List of party members displayed, allowing user to set the active character.
+    - **Individual Character Session State:** Each character in the party has its own session-specific data (HP, Sanity, Bleed, modifiers, arsenal, ability states).
+    - Displays stats for the active character (HP, Sanity, Bleed Points trackers) with session-based max stat modifiers. MV and DEF accessible in character modal.
+    - Session Crypto Tracker: Global for the session.
+    - Displays selected arsenal card (front/back images) for the active character.
     - Allows clicking on character avatar and arsenal card images to view them in a larger modal.
-    - Provides a simple dice roller (numbered and combat dice).
-    - Provides a card generator for drawing from game decks.
-    - Shows a list of party members (currently just the selected character).
-    - Displays character abilities (base and arsenal-granted) with cooldown/quantity trackers in a modal.
-    - Displays character skills and weapons (base and arsenal-modified) in a modal.
-    - Max Mod trackers for MV and DEF added to character modal.
-    - **Save Nexus Session**: Logged-in users can save the current state of their Nexus session to Firestore.
-    - **Load/Delete Nexus Session**: Settings dropdown allows users to load previously saved sessions or delete them from Firestore.
-    - **Reset Nexus Session**: Settings dropdown allows users to reset the current session state.
-- **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session but can be saved/loaded for logged-in users.
+    - Provides a simple dice roller and card generator.
+    - Character details modal: Displays full stats (including MV/DEF), weapons, abilities, and skills for the active character.
+    - **Save/Load Nexus Session**: Saves/loads the entire party's state (all members, their session data, active character ID, session crypto) to/from Firestore.
+    - **Reset Nexus Session**: Clears the entire party and session data.
+- **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets. Party state is client-side, can be persisted.
 
 ### 3.14. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
 - **Description:** Placeholder pages for legal documents.
@@ -201,7 +198,7 @@
     *   Loot Table and Mystery Table integration into gameplay loops.
     *   Character-specific unique abilities from the rulebook (Joe's Forage/Bounties, Nysa's Card Casting/Arcanas, etc.).
 -   **Data Persistence:**
-    *   Saving current pet HP/Sanity.
+    *   Saving current pet HP/Sanity (if pets are part of party member state in Nexus).
     *   Saving character inventory.
     *   Persisting AI-generated shop item images (e.g., to Firebase Storage, updating Google Sheet with URL).
 -   **Advanced AI Features (Genkit):**
@@ -219,7 +216,7 @@
 -   **Modularity:** Ongoing effort to refactor large components into smaller, focused ones.
 -   **Styling:** Primary reliance on ShadCN component styling and Tailwind utilities, with global theme variables.
 -   **AI Integration:** Genkit for LLM interactions, keeping AI logic in server-side flows. User-provided lore excerpts can be passed to AI. Shop item image generation is session-based.
--   **State Management:** Primarily local component state and React Context for authentication.
+-   **State Management:** Primarily local component state and React Context for authentication. Hunter's Nexus uses local state for party management, persisted to Firestore on demand.
 -   **User Data:** Stored in Firestore under user-specific paths for security and organization.
 -   **Error Handling:** Implemented for API calls (Google Sheets, Firebase) and user actions.
 -   **Prototyping:** Some features like Shared Space and Friends List are currently simulated on the client-side.
@@ -248,8 +245,7 @@
 -   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: (No changes)
 -   **Dice Roller Types (`src/components/dice-roller/dice-roller-ui.tsx`)**: (No changes)
 -   **`EventData` (`src/types/event.ts`)**: (No changes)
--   **`SavedNexusState` (`src/types/nexus.ts`)**: Added `sessionBleedPoints: number;`
-
+-   **`SavedNexusState` & `PartyMemberSavedState` (`src/types/nexus.ts`)**: Updated to support multiple party members. `SavedNexusState` now contains `party: PartyMemberSavedState[]` and `activeCharacterIdInSession: string | null`. `PartyMemberSavedState` defined to hold individual character session data.
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
 -   **Firebase Firestore Rules:** Updated to include rules for `userNexusStates/{userId}/{document=**}` allowing read/write for authenticated owners. Firestore rules confirmed to allow write access to `userNexusStates/{userId}/states/{sessionId}`.
