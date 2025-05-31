@@ -39,10 +39,9 @@ const shopSectionTitlesToIgnore = [
   "upgrades", "augment shop", "utility shop", "consumable shop", "relics*", "relics",
   "loot table", "mystery table", "dybbuk boxes",
   "ammunition", "bombs", "traps", "healing items", "battery items", "miscellaneous items",
-  // "weapon class special ability" // Decided to keep this one if present under a weapon type
 ].map(title => normalizeKey(title));
 
-let keyIndex = 0; // Global key index for React nodes
+let keyIndex = 0; 
 
 const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[] => {
   if (!text) return [];
@@ -77,7 +76,6 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
     if (linkMatch) {
       return <a href={linkMatch[2]} key={currentKey} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{linkMatch[1]}</a>;
     }
-    // Basic handling for line breaks within paragraphs from main content
     return segment.split('\n').map((line, lineIdx) => (
       <React.Fragment key={`${currentKey}-line-${lineIdx}`}>
         {lineIdx > 0 && <br />}
@@ -86,7 +84,6 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
     ));
   });
 };
-
 
 const buildMainRulebookLookup = (markdown: string): Map<string, string[]> => {
   const lookup = new Map<string, string[]>();
@@ -108,7 +105,7 @@ const buildMainRulebookLookup = (markdown: string): Map<string, string[]> => {
       const headingText = hMatch[2].trim();
       currentHeadingKey = normalizeKey(headingText);
     } else if (currentHeadingKey) {
-      currentContentLines.push(line); // Push raw line, includes empty lines for paragraph breaks
+      currentContentLines.push(line); 
     }
   }
   flushMainContent();
@@ -117,16 +114,19 @@ const buildMainRulebookLookup = (markdown: string): Map<string, string[]> => {
 
 const addContentFromMainRulebook = (headingTextForLookup: string, section: Section, mainRulebookLookup: Map<string, string[]>) => {
   const normalizedLookupKey = normalizeKey(headingTextForLookup);
+  
+  if (shopSectionTitlesToIgnore.includes(normalizedLookupKey)) {
+    return; // Skip adding content for explicitly ignored sections
+  }
+
   const mainContentLines = mainRulebookLookup.get(normalizedLookupKey);
 
   if (!mainContentLines || mainContentLines.length === 0) {
-    if (!shopSectionTitlesToIgnore.includes(normalizedLookupKey)) {
-      section.contentNodes.push({
-        type: 'p',
-        content: parseInlineMarkdown(`_No detailed content found for "${headingTextForLookup}" in the main rulebook, or key mismatch._`, `placeholder-${section.id}-${keyIndex}`),
-        key: `placeholder-key-${keyIndex++}`,
-      });
-    }
+    section.contentNodes.push({
+      type: 'p',
+      content: parseInlineMarkdown(`_No detailed content found for "${headingTextForLookup}" in the main rulebook, or key mismatch._`, `placeholder-${section.id}-${keyIndex}`),
+      key: `main-placeholder-key-${keyIndex++}`,
+    });
     return;
   }
 
@@ -137,7 +137,7 @@ const addContentFromMainRulebook = (headingTextForLookup: string, section: Secti
 
   const flushPBuffer = () => {
     if (paragraphBuffer.length > 0) {
-      const paragraphText = paragraphBuffer.join('\n').trim(); // Join with \n, then trim
+      const paragraphText = paragraphBuffer.join('\n').trim();
       if (paragraphText) {
         section.contentNodes.push({
           type: 'p',
@@ -164,12 +164,12 @@ const addContentFromMainRulebook = (headingTextForLookup: string, section: Secti
     const olMatch = trimmedLine.match(/^\d+\.\s+(.*)/);
 
     if (ulMatch || olMatch) {
-      flushPBuffer(); // End current paragraph
+      flushPBuffer();
       const itemText = ulMatch ? ulMatch[1] : olMatch![1];
       const currentItemType = ulMatch ? 'ul' : 'ol';
 
       if (!inList || listType !== currentItemType) {
-        flushList(); // Flush previous list if type changes or starting new
+        flushList();
         inList = true;
         listType = currentItemType;
       }
@@ -181,8 +181,8 @@ const addContentFromMainRulebook = (headingTextForLookup: string, section: Secti
     } else if (!trimmedLine && paragraphBuffer.length > 0) { 
         flushPBuffer();
     } else if (trimmedLine) {
-        flushList(); // End current list if line is not a list item
-        paragraphBuffer.push(contentLine); // Push original line to preserve potential internal newlines for <br>
+        flushList();
+        paragraphBuffer.push(contentLine); 
     }
   }
   flushPBuffer();
@@ -195,7 +195,21 @@ const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLo
   let currentH2Section: Section | null = null;
   const lines = structureMarkdown.split('\n');
 
-  keyIndex = 0; // Reset global keyIndex for each parse
+  keyIndex = 0; 
+
+  const flushH2Section = () => {
+    if (currentH2Section) {
+      if (currentH2Section.title && !shopSectionTitlesToIgnore.includes(normalizeKey(currentH2Section.title))) {
+         if (currentH2Section.contentNodes.length === 0) { // If H2 has no sub-items from structure, try to get its own content
+            addContentFromMainRulebook(currentH2Section.title, currentH2Section, mainRulebookLookup);
+         }
+         if (currentH2Section.contentNodes.some(node => node.type !== 'p' || (node.content && node.content.length > 0 && node.content.join('').trim() !== ''))) { // Only add if it has meaningful content or non-empty H3s
+            sections.push(currentH2Section);
+         }
+      }
+      currentH2Section = null;
+    }
+  };
 
   for (const line of lines) {
     const trimmedLine = line.trim();
@@ -205,63 +219,45 @@ const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLo
     const h3Match = trimmedLine.match(/^###\s+(.*)/);
 
     if (h2Match) {
-      if (currentH2Section) sections.push(currentH2Section);
-      
+      flushH2Section();
       const title = h2Match[1].trim();
-      const normalizedTitle = normalizeKey(title);
-
-      if (shopSectionTitlesToIgnore.includes(normalizedTitle)) {
+      if (shopSectionTitlesToIgnore.includes(normalizeKey(title))) {
         currentH2Section = null; // Skip this H2 section entirely
         continue;
       }
-
       currentH2Section = {
-        id: `section-h2-${normalizedTitle}-${keyIndex++}`,
+        id: `section-h2-${normalizeKey(title)}-${keyIndex++}`,
         title: title,
         level: 2,
         contentNodes: [],
       };
-      // Add content for H2 itself from main rulebook, if any exists directly under this H2
-      addContentFromMainRulebook(title, currentH2Section, mainRulebookLookup);
-
     } else if (h3Match && currentH2Section) {
       const title = h3Match[1].trim();
-      const normalizedTitle = normalizeKey(title);
-
-      if (shopSectionTitlesToIgnore.includes(normalizedTitle)) {
-        // Skip this H3 and its content from main rulebook
-        continue;
+      if (shopSectionTitlesToIgnore.includes(normalizeKey(title))) {
+        continue; // Skip this H3 and its content
       }
-
       currentH2Section.contentNodes.push({
         type: 'h3',
         content: parseInlineMarkdown(title, `h3-title-${currentH2Section.id}-${keyIndex}`),
         key: `h3-key-${keyIndex++}`,
       });
-      // Add content for this H3 from main rulebook
       addContentFromMainRulebook(title, currentH2Section, mainRulebookLookup);
     
-    } else if (currentH2Section) {
-      // This part handles list items from the structure file if any.
-      // As per previous discussion, we decided to primarily rely on main rulebook for content.
-      // If structure file lists are purely structural and don't need their own lookup, they can be simple text.
-      // For now, let's assume structure file list items are just for display and don't fetch more content.
-      const ulMatch = trimmedLine.match(/^[\-\*]\s+(.*)/);
-      const olMatch = trimmedLine.match(/^\d+\.\s+(.*)/);
-      if (ulMatch || olMatch) {
-        // If we want to render list items from structure file directly:
-        // This would require currentH2Section.contentNodes to correctly handle lists.
-        // For simplicity and to avoid duplicating list parsing, we'll assume lists under H2/H3
-        // are primarily driven by content fetched from main rulebook by addContentFromMainRulebook.
-        // If structure file needs its own list items rendered *as text*, they'd be part of a 'p' node.
-        // For now, we'll not add these directly to avoid complex list merging.
-        // The primary content should come from `addContentFromMainRulebook`.
-      }
+    } else if (trimmedLine.match(/^[\-\*]\s+(.*)/) && currentH2Section && currentH2Section.contentNodes.length > 0) {
+      // This handles list items directly under H2s, if any, from the structure file.
+      // We will NOT fetch content for these from main rulebook, assuming H2/H3 content fetching is primary.
+      const listItemText = trimmedLine.substring(trimmedLine.indexOf(' ') + 1).trim();
+       if (currentH2Section.contentNodes[currentH2Section.contentNodes.length - 1]?.type !== 'ul') {
+          currentH2Section.contentNodes.push({ type: 'ul', items: [], key: `ul-struct-${keyIndex++}` });
+       }
+       const lastNode = currentH2Section.contentNodes[currentH2Section.contentNodes.length - 1];
+       if (lastNode && lastNode.type === 'ul' && lastNode.items) {
+         lastNode.items.push(parseInlineMarkdown(listItemText, `struct-li-${keyIndex}`));
+       }
     }
   }
-
-  if (currentH2Section) sections.push(currentH2Section);
-  return sections.filter(section => section.title && section.contentNodes.length > 0);
+  flushH2Section();
+  return sections;
 };
 
 
@@ -311,25 +307,39 @@ export default async function HowToPlayPage() {
   let errorMessage: string | null = null;
   let structureFileContent = "";
   let mainRulebookFileContent = "";
+  let mainRulebookLookup: Map<string, string[]> = new Map();
 
   try {
     const structureFilePath = path.join(process.cwd(), 'docs', 'RoTB_Rulebook_Dropdown_Structure.md');
-    const mainRulebookFilePath = path.join(process.cwd(), 'docs', 'Riddle_of_the_Beast_Rulebook.md');
-
     structureFileContent = await fs.readFile(structureFilePath, 'utf8');
-    mainRulebookFileContent = await fs.readFile(mainRulebookFilePath, 'utf8');
 
-    const mainRulebookLookup = buildMainRulebookLookup(mainRulebookFileContent);
-    sections = parseStructureAndMergeContent(structureFileContent, mainRulebookLookup);
+    const mainRulebookFilePath = path.join(process.cwd(), 'docs', 'Riddle_of_the_Beast_Rulebook.md');
+    mainRulebookFileContent = await fs.readFile(mainRulebookFilePath, 'utf8');
     
-    if (sections.length === 0 && structureFileContent.length > 0) {
-      errorMessage = "No displayable sections could be parsed. This might mean all H2 sections in the structure file were filtered out, the file structure is not as expected, or no matching content headings were found in the main rulebook.";
+    if (mainRulebookFileContent.length > 0) {
+      mainRulebookLookup = buildMainRulebookLookup(mainRulebookFileContent);
+    }
+
+    if (structureFileContent.length > 0) {
+      sections = parseStructureAndMergeContent(structureFileContent, mainRulebookLookup);
+    }
+    
+    if (sections.length === 0 && !errorMessage) { 
+      if (structureFileContent.length === 0) {
+        errorMessage = "Error: The rulebook structure file (RoTB_Rulebook_Dropdown_Structure.md) could not be read or is empty.";
+      } else if (mainRulebookFileContent.length === 0) {
+        errorMessage = "Error: The main rulebook content file (Riddle_of_the_Beast_Rulebook.md) could not be read or is empty. This file is needed for the detailed explanations.";
+      } else if (mainRulebookLookup.size === 0) {
+        errorMessage = "Error: The main rulebook content was read, but no headings could be parsed from it to build the content lookup. Please check its structure (e.g., ensure it uses markdown headings like ## Section Title).";
+      } else {
+        errorMessage = "No displayable sections were constructed. This might mean all top-level sections in the structure file were filtered out by the ignore list, or there's an issue matching headings between the structure file and the main rulebook content.";
+      }
     }
 
   } catch (error: any) {
     console.error("Failed to read or parse game rules for How to Play:", error);
     sections = [];
-    errorMessage = `Error loading or processing game rules: ${error.message}. Please check the server logs and file paths.`;
+    errorMessage = `Error loading or processing game rules: ${error.message}. Please check the server logs and file paths. Make sure both rulebook files exist in the 'docs' directory and are correctly named.`;
   }
 
   return (
@@ -348,7 +358,7 @@ export default async function HowToPlayPage() {
           {errorMessage ? (
             <p className="text-destructive text-center">{errorMessage}</p>
           ) : sections.length === 0 ? (
-             <p className="text-muted-foreground text-center">No sections were rendered. Please check the structure and content files, or the ignore filters.</p>
+             <p className="text-muted-foreground text-center">No sections were rendered. Please check the structure and content files.</p>
           ) : (
             <Accordion type="multiple" className="w-full space-y-3">
               {sections.map((section) => (
@@ -357,7 +367,7 @@ export default async function HowToPlayPage() {
                     {section.title}
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 bg-background/30">
-                    {section.contentNodes.length > 0 ? section.contentNodes.map(renderSectionNode) : <p className="italic text-muted-foreground">_No detailed content loaded for this section._</p>}
+                    {section.contentNodes.length > 0 ? section.contentNodes.map(renderSectionNode) : <p className="italic text-muted-foreground">_No specific sub-content loaded for this section header from the structure file; details might be in the main text or section was empty._</p>}
                   </AccordionContent>
                 </AccordionItem>
               ))}
@@ -369,3 +379,4 @@ export default async function HowToPlayPage() {
   );
 }
     
+
