@@ -1,4 +1,3 @@
-
 {
   "characters": [
     {
@@ -66,6 +65,80 @@
       },
       "playstyleSummary": "Gob should prioritize maintaining distance, utilizing cover if available, and using his AR-15 with Vital Shot for consistent damage. Leadership should be used to buff allies before key engagements. Flares are critical for visibility and countering stealth. Quick Draw provides defensive repositioning.",
       "counterPlayConsiderations": "Vulnerable to fast melee attackers if caught out of position. May struggle against multiple enemies without AoE options unless provided by an Arsenal."
+    },
+    {
+      "characterId": "gob",
+      "characterName": "Gob",
+      "buildName": "Close Quarters Disruptor",
+      "description": "Focuses on Gob's melee prowess with his Knife and Wounding Strike, combined with Quick Draw for battlefield control and Leadership for team support. This build emphasizes getting close, dealing armor-ignoring damage, and creating openings.",
+      "keyAbilities": [
+        "Wounding Strike",
+        "Quick Draw",
+        "Leadership",
+        "Flare x3"
+      ],
+      "coreStatsFocus": [
+        "Emphasizes HP and Sanity for survivability in melee.",
+        "Leverages MV for closing distances and positioning."
+      ],
+      "skillsSynergy": [
+        "Tactician (TAC): Identifying enemy weaknesses for Wounding Strike or disrupting key targets.",
+        "Survivalist (SUR): Navigating terrain to get into melee range or escape danger.",
+        "Athletics (ATH): Could be useful for maneuvers if points are invested in a custom Gob variant, or for general survivability checks."
+      ],
+      "primaryWeaponStrategy": "Utilizing Wounding Strike (A3) to bypass armor or a potent melee weapon granted by an Arsenal.",
+      "secondaryWeaponStrategy": "Base Knife (A2) for standard attacks if Wounding Strike is on cooldown or not needed. Using Quick Draw (A3/R3) to control enemy positioning or create space.",
+      "recommendedArsenalFocus": [
+        "Enhanced Melee Attack or a superior Melee Weapon.",
+        "Increased Defense or HP for survivability.",
+        "Items granting movement abilities or close-range debuffs.",
+        "Gear improving Sanity or resistance to melee-related status effects."
+      ],
+      "exampleArsenalCardConception": {
+        "name": "Shadow Striker's Kit (Conceptual - Uses existing item ideas)",
+        "description": "An arsenal designed to enhance Gob's effectiveness as a close-quarters combatant and disruptor, using concepts from available gear.",
+        "globalStatModifiers": {
+          "defenseMod": 1
+        },
+        "items": [
+          {
+            "name": "Elite Tactical Knife",
+            "category": "WEAPON",
+            "type": "Melee Weapon",
+            "effect": "Replaces base Knife. Grants A4 Melee. Nimble Class: Quick Strike Interrupt. Critical Hits allow an extra attack (once per turn).",
+            "itemDescription": "A high-quality combat knife designed for swift, precise strikes. (Based on shop item)"
+          },
+          {
+            "name": "Knee Pad",
+            "category": "GEAR",
+            "type": "Mobility",
+            "abilityName": "Evasive Roll",
+            "isInterrupt": true,
+            "cd": "1 round CD",
+            "effect": "Interrupt: Move 2 spaces in any direction.",
+            "itemDescription": "Allows for quick dodges and repositioning in combat. (Based on shop item)"
+          },
+          {
+            "name": "Pepper Spray (x1)",
+            "category": "BONUS",
+            "type": "Utility",
+            "qty": 1,
+            "abilityName": "Pepper Spray",
+            "isInterrupt": true,
+            "effect": "Interrupt: Blind target within 4 spaces for 1 turn. Consumed on use.",
+            "itemDescription": "A potent irritant to disable an enemy temporarily. (Based on shop item)"
+          },
+          {
+            "name": "Stealth Suit (Passive)",
+            "category": "GEAR",
+            "type": "ArmorEffect",
+            "effect": "Passive: Lowers Range value of all enemy attacks by 2 when targeting Gob.",
+            "itemDescription": "A suit designed to reduce visibility, aiding in approaches. (Based on shop item)"
+          }
+        ]
+      },
+      "playstyleSummary": "Gob should focus on identifying key targets for Wounding Strike. Use Leadership to buff allies before engaging or during crucial moments. Quick Draw is essential for controlling enemy movement, pushing threats away, or pulling allies out of danger. Flares maintain visibility. If equipped with an Arsenal like the 'Shadow Striker's Kit', leverage the upgraded melee weapon and mobility/disruption tools.",
+      "counterPlayConsiderations": "Can be kited by highly mobile ranged attackers if unable to close the distance. Multiple tough enemies might overwhelm him if he can't isolate targets or receive support."
     }
   ]
 }
