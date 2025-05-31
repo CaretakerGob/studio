@@ -217,7 +217,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     return calculatedStats;
   }, [characterForModal, currentNexusArsenal]);
 
-  const effectiveNexusCharacterAbilities = useMemo(() => {
+ const effectiveNexusCharacterAbilities = useMemo(() => {
     const result: { baseAbilities: CharacterAbility[], arsenalAbilities: CharacterAbility[] } = {
       baseAbilities: [],
       arsenalAbilities: [],
@@ -951,7 +951,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         onOpenChange={(open) => {
           setIsCharacterCardModalOpen(open);
           if (!open) {
-            setIsCharacterSelectionDialogOpen(false); 
+            // Do not reset characterForModal here if you want to keep it for the main panel
+            // setIsCharacterSelectionDialogOpen(false); // Only if this should also close
           }
         }}
       >
@@ -963,14 +964,14 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
               </DialogHeader>
               <ScrollArea className="max-h-[70vh] p-1">
                 <div className="space-y-4 p-2">
-                  <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-primary shadow-lg">
+                  <Avatar className="w-32 h-32 mx-auto mb-6 border-4 border-primary shadow-lg">
                     <AvatarImage src={characterForModal.imageUrl || `https://placehold.co/128x128.png`} alt={characterForModal.name} data-ai-hint="character avatar large"/>
                     <AvatarFallback className="text-4xl bg-muted">{characterForModal.name.substring(0,2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   
                   <Separator />
-                  <h4 className="text-lg font-semibold text-primary flex items-center"><Info className="mr-2 h-5 w-5" /> Core Stats</h4>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <h4 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><Info className="mr-2 h-5 w-5" /> Core Stats</h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                     {/* HP Tracker */}
                     {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
                         <div className="space-y-1">
@@ -983,8 +984,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 </div>
                             </div>
                             <Progress value={(currentNexusHp / Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusHp, Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier), 'hp'))} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusHp} / {Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)}</p>
-                            <div className="flex items-center gap-1 mt-1">
+                            <p className="text-xs text-muted-foreground text-right mt-1">{currentNexusHp} / {Math.max(1, (effectiveNexusCharacterStats.maxHp || 0) + nexusSessionMaxHpModifier)}</p>
+                            <div className="flex items-center gap-1 mt-2">
                                 <Label htmlFor="nexusModalMaxMod-hp" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('hp', -1)}><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input id="nexusModalMaxMod-hp" type="number" value={nexusSessionMaxHpModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
@@ -1004,8 +1005,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 </div>
                             </div>
                             <Progress value={(currentNexusSanity / Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusSanity, Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier), 'sanity'))} />
-                            <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusSanity} / {Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)}</p>
-                             <div className="flex items-center gap-1 mt-1">
+                            <p className="text-xs text-muted-foreground text-right mt-1">{currentNexusSanity} / {Math.max(1, (effectiveNexusCharacterStats.maxSanity || 0) + nexusSessionMaxSanityModifier)}</p>
+                             <div className="flex items-center gap-1 mt-2">
                                 <Label htmlFor="nexusModalMaxMod-sanity" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('sanity', -1)}><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input id="nexusModalMaxMod-sanity" type="number" value={nexusSessionMaxSanityModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
@@ -1025,8 +1026,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                           </div>
                         </div>
                         <Progress value={(currentNexusMv / Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusMv, Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier), 'mv'))} />
-                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)}</p>
-                        <div className="flex items-center gap-1 mt-1">
+                        <p className="text-xs text-muted-foreground text-right mt-1">{currentNexusMv} / {Math.max(0, (effectiveNexusCharacterStats.mv || 0) + nexusSessionMvModifier)}</p>
+                        <div className="flex items-center gap-1 mt-2">
                             <Label htmlFor="nexusModalMaxMod-mv" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
                             <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('mv', -1)}><Minus className="h-2.5 w-2.5" /></Button>
                             <Input id="nexusModalMaxMod-mv" type="number" value={nexusSessionMvModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
@@ -1046,8 +1047,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                           </div>
                         </div>
                         <Progress value={(currentNexusDef / Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)) * 100} className={cn("h-1", getStatProgressColorClass(currentNexusDef, Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier), 'def'))} />
-                        <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusDef} / {Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)}</p>
-                         <div className="flex items-center gap-1 mt-1">
+                        <p className="text-xs text-muted-foreground text-right mt-1">{currentNexusDef} / {Math.max(0, (effectiveNexusCharacterStats.def || 0) + nexusSessionDefModifier)}</p>
+                         <div className="flex items-center gap-1 mt-2">
                             <Label htmlFor="nexusModalMaxMod-def" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>Max Mod:</Label>
                             <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionMaxStatModifierChange('def', -1)}><Minus className="h-2.5 w-2.5" /></Button>
                             <Input id="nexusModalMaxMod-def" type="number" value={nexusSessionDefModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
@@ -1059,14 +1060,14 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
                   {(effectiveNexusMeleeWeapon || effectiveNexusRangedWeapon) && (
                     <>
-                      <Separator />
-                      <h4 className="text-lg font-semibold text-primary flex items-center"><Swords className="mr-2 h-5 w-5" /> Weapons</h4>
+                      <Separator className="my-3"/>
+                      <h4 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><Swords className="mr-2 h-5 w-5" /> Weapons</h4>
                       <div className="space-y-3 text-sm">
                         {effectiveNexusMeleeWeapon && (
                           <div className="p-2 bg-muted/20 rounded-md">
                             <p className="font-medium text-foreground flex items-center"><MeleeIcon className="mr-2 h-4 w-4 text-orange-400"/> {effectiveNexusMeleeWeapon.name} (Melee)</p>
                             <p>ATK: {effectiveNexusMeleeWeapon.attack}</p>
-                            <div className="flex items-center gap-1 mt-1">
+                            <div className="flex items-center gap-1 mt-2">
                                 <Label htmlFor="nexusModalMeleeAtkMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>ATK Mod:</Label>
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('melee', 'attack', -1)} disabled={nexusSessionMeleeAttackModifier <= -(effectiveNexusMeleeWeapon.attack - nexusSessionMeleeAttackModifier) }><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input id="nexusModalMeleeAtkMod" type="number" value={nexusSessionMeleeAttackModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
@@ -1079,13 +1080,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                           <div className="p-2 bg-muted/20 rounded-md">
                             <p className="font-medium text-foreground flex items-center"><Crosshair className="mr-2 h-4 w-4 text-cyan-400"/> {effectiveNexusRangedWeapon.name} (Ranged)</p>
                             <p>ATK: {effectiveNexusRangedWeapon.attack} / RNG: {effectiveNexusRangedWeapon.range}</p>
-                             <div className="flex items-center gap-1 mt-1">
+                             <div className="flex items-center gap-1 mt-2">
                                 <Label htmlFor="nexusModalRangedAtkMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>ATK Mod:</Label>
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'attack', -1)} disabled={nexusSessionRangedAttackModifier <= -(effectiveNexusRangedWeapon.attack - nexusSessionRangedAttackModifier)}><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input id="nexusModalRangedAtkMod" type="number" value={nexusSessionRangedAttackModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'attack', 1)}><Plus className="h-2.5 w-2.5" /></Button>
                             </div>
-                            <div className="flex items-center gap-1 mt-1">
+                            <div className="flex items-center gap-1 mt-2">
                                 <Label htmlFor="nexusModalRangedRngMod" className="text-xs text-muted-foreground whitespace-nowrap flex items-center"><Settings className="mr-1 h-3 w-3"/>RNG Mod:</Label>
                                 <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusSessionWeaponStatModifierChange('ranged', 'range', -1)} disabled={nexusSessionRangedRangeModifier <= -(effectiveNexusRangedWeapon.range - nexusSessionRangedRangeModifier)}><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input id="nexusModalRangedRngMod" type="number" value={nexusSessionRangedRangeModifier} readOnly className="w-8 h-5 text-center p-0 text-xs font-semibold" />
@@ -1100,8 +1101,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
                   {arsenalProvidedEquipment.length > 0 && (
                     <>
-                      <Separator />
-                      <h4 className="text-lg font-semibold text-primary flex items-center"><Briefcase className="mr-2 h-5 w-5" /> Arsenal Weapons & Gear</h4>
+                      <Separator className="my-3"/>
+                      <h4 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><Briefcase className="mr-2 h-5 w-5" /> Arsenal Weapons & Gear</h4>
                       <div className="space-y-2 text-sm">
                         {arsenalProvidedEquipment.map(item => (
                           <Card key={item.id} className="p-2 bg-muted/20">
@@ -1128,8 +1129,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                      <> 
                         {effectiveNexusCharacterAbilities.baseAbilities.length > 0 && (
                             <div className="space-y-2 mt-3">
-                                <Separator /> 
-                                <h5 className="text-lg font-semibold text-primary flex items-center"><BookMarked className="mr-2 h-5 w-5" /> Character Abilities:</h5>
+                                <Separator className="my-3"/> 
+                                <h5 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><BookMarked className="mr-2 h-5 w-5" /> Character Abilities:</h5>
                                 {effectiveNexusCharacterAbilities.baseAbilities.map(ability => ( 
                                     <AbilityCard 
                                         key={`modal-base-ability-${ability.id}`} 
@@ -1149,8 +1150,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
                         {effectiveNexusCharacterAbilities.arsenalAbilities.length > 0 && (
                             <div className="space-y-2 mt-3">
-                                <Separator /> 
-                                <h5 className="text-lg font-semibold text-primary flex items-center"><Sparkles className="mr-2 h-5 w-5" /> Arsenal-Granted Abilities:</h5>
+                                <Separator className="my-3"/> 
+                                <h5 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><Sparkles className="mr-2 h-5 w-5" /> Arsenal-Granted Abilities:</h5>
                                 {effectiveNexusCharacterAbilities.arsenalAbilities.map(ability => ( 
                                     <AbilityCard 
                                         key={`modal-arsenal-ability-${ability.id}`} 
@@ -1169,14 +1170,14 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         )}
                     </>
                   )}
-                  {effectiveNexusCharacterAbilities.baseAbilities.length === 0 && effectiveNexusCharacterAbilities.arsenalAbilities.length === 0 && (
-                     <> <Separator /> <p className="text-sm text-muted-foreground text-center py-3">No abilities defined.</p> </>
+                  {(effectiveNexusCharacterAbilities.baseAbilities.length === 0 && effectiveNexusCharacterAbilities.arsenalAbilities.length === 0) && (
+                     <> <Separator className="my-3"/> <p className="text-sm text-muted-foreground text-center py-3">No abilities defined.</p> </>
                   )}
 
                   {characterForModal.skills && Object.values(characterForModal.skills).some(val => val && val > 0) && (
                     <> 
-                      <Separator /> 
-                      <h4 className="text-lg font-semibold text-primary flex items-center"><ListChecks className="mr-2 h-5 w-5" /> Skills</h4>
+                      <Separator className="my-3"/> 
+                      <h4 className="text-lg font-semibold text-primary flex items-center mt-1 mb-2"><ListChecks className="mr-2 h-5 w-5" /> Skills</h4>
                       <div className="space-y-1 text-sm"> {skillDefinitions.map(skillDef => { const skillValue = characterForModal.skills?.[skillDef.id as SkillName] || 0; if (skillValue > 0) { const IconComponent = getSkillIcon(skillDef.id as SkillName); return ( <div key={skillDef.id} className="flex items-center justify-between p-1 bg-muted/20 rounded-sm"> <span className="flex items-center"><IconComponent className="mr-2 h-4 w-4 text-muted-foreground" /> {skillDef.label}</span> <span>{skillValue}</span> </div> ); } return null; })} </div>
                     </>
                   )}
