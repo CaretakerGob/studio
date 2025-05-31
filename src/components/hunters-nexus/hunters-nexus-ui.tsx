@@ -14,6 +14,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -74,7 +90,8 @@ import {
   Briefcase, 
   Crosshair,
   Coins,
-  Save // Added Save icon
+  Save,
+  RotateCcw // Added for Reset Session
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -86,10 +103,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ArsenalCard as ActualArsenalCard, ArsenalItem, ParsedStatModifier, ArsenalItemCategory } from '@/types/arsenal';
 import { AbilityCard } from '@/components/character-sheet/ability-card';
-import { useAuth } from '@/context/auth-context'; // Import useAuth
-import { db, auth } from '@/lib/firebase'; // Import db and auth
-import { doc, setDoc, collection } from "firebase/firestore"; // Import Firestore functions
-import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs for saved states
+import { useAuth } from '@/context/auth-context'; 
+import { db, auth } from '@/lib/firebase'; 
+import { doc, setDoc, collection } from "firebase/firestore"; 
+import { v4 as uuidv4 } from 'uuid'; 
 import type { SavedNexusState } from '@/types/nexus';
 
 
@@ -119,7 +136,7 @@ const parseCooldownRounds = (cooldownString?: string | number): number | undefin
 
 export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const { toast } = useToast();
-  const { currentUser } = useAuth(); // Get current user
+  const { currentUser } = useAuth(); 
 
   const [nexusNumCombatDice, setNexusNumCombatDice] = useState('1');
   const [nexusNumDice, setNexusNumDice] = useState('1');
@@ -170,6 +187,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [isSaveNexusDialogOpen, setIsSaveNexusDialogOpen] = useState(false);
   const [saveNexusName, setSaveNexusName] = useState("");
   const [isSavingNexus, setIsSavingNexus] = useState(false);
+
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 
 
   const criticalArsenalError = useMemo(() => {
@@ -612,7 +631,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     const setCurrentStat = currentStatSetters[statType];
     const currentStatValue = currentStatValues[statType];
     const baseMaxValue = baseMaxValues[statType] || (statType === 'hp' || statType === 'sanity' ? 1: 0) ;
-    const currentModifierValue = currentModifiers[statType];
 
     setModifier(prevMod => {
         const newMod = prevMod + delta;
@@ -689,7 +707,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       userId: currentUser.uid,
       lastSaved: new Date().toISOString(),
       baseCharacterId: selectedNexusCharacter.id,
-      selectedArsenalId,
+      selectedArsenalId: selectedCharacterArsenalId,
       currentHp: currentNexusHp,
       currentSanity: currentNexusSanity,
       currentMv: currentNexusMv,
@@ -720,6 +738,41 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     }
   };
 
+  const executeResetNexusSession = () => {
+    setSelectedNexusCharacter(null);
+    setPartyMembers([]);
+    setSelectedCharacterArsenalId(null);
+    
+    setCurrentNexusHp(null);
+    setCurrentNexusSanity(null);
+    setCurrentNexusMv(null);
+    setCurrentNexusDef(null);
+    
+    setSessionCrypto(0);
+    
+    setNexusSessionMaxHpModifier(0);
+    setNexusSessionMaxSanityModifier(0);
+    setNexusSessionMvModifier(0);
+    setNexusSessionDefModifier(0);
+    setNexusSessionMeleeAttackModifier(0);
+    setNexusSessionRangedAttackModifier(0);
+    setNexusSessionRangedRangeModifier(0);
+    
+    setNexusLatestRoll(null);
+    setNexusDrawnCardsHistory([]);
+    setNexusSelectedDeckName(undefined);
+    
+    setNexusCurrentAbilityCooldowns({});
+    setNexusMaxAbilityCooldowns({});
+    setNexusCurrentAbilityQuantities({});
+    setNexusMaxAbilityQuantities({});
+    
+    setCharacterForModal(null);
+    
+    setIsResetDialogOpen(false);
+    toast({ title: "Nexus Session Reset", description: "The current session has been cleared." });
+  };
+
 
   return (
     <>
@@ -739,7 +792,20 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   <Save className="mr-1.5 h-4 w-4" /> Save Session
                 </Button>
               )}
-              <Button variant="ghost" size="icon" aria-label="Settings"><Settings className="h-5 w-5" /></Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Session Settings">
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setIsResetDialogOpen(true)} disabled={!selectedNexusCharacter}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Reset Session
+                  </DropdownMenuItem>
+                  {/* Future items like "Load Session" can be added here */}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="ghost" size="icon" aria-label="Log Out"><LogOut className="h-5 w-5" /></Button>
             </div>
           </header>
@@ -1399,8 +1465,28 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             </DialogContent>
           </Dialog>
 
+          {/* Reset Session Confirmation Dialog */}
+          <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset Nexus Session?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action will clear the current active character, all stats, modifiers, arsenal selection, crypto, and any session-specific progress. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsResetDialogOpen(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={executeResetNexusSession} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                  Reset Session
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+
         </div>
       </TooltipProvider>
     </>
   );
 }
+
