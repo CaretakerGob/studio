@@ -323,6 +323,15 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     return result;
   }, [activeCharacterBase, currentNexusArsenal]);
 
+  const abilityDataStringForEffect = useMemo(() => {
+    if (!activeCharacterBase || (!effectiveNexusCharacterAbilities.baseAbilities.length && !effectiveNexusCharacterAbilities.arsenalAbilities.length)) return '';
+    const allAbilities = [...effectiveNexusCharacterAbilities.baseAbilities, ...effectiveNexusCharacterAbilities.arsenalAbilities];
+    // Sort by ID to ensure string is stable if order changes but content doesn't
+    allAbilities.sort((a, b) => a.id.localeCompare(b.id));
+    return allAbilities.map(a => `${a.id}:${a.cooldown ?? ''}:${a.maxQuantity ?? ''}`).join(',');
+  }, [activeCharacterBase, effectiveNexusCharacterAbilities]);
+
+
   const characterDefaultMeleeWeaponForNexus = useMemo(() => {
       if (!activeCharacterBase) return undefined;
       const template = charactersData.find(c => c.id === (activeCharacterBase.templateId || activeCharacterBase.id));
@@ -441,60 +450,74 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   }, [currentNexusArsenal]);
 
 
-  const abilityDataStringForEffect = useMemo(() => {
-    if (!activeCharacterBase || (!effectiveNexusCharacterAbilities.baseAbilities.length && !effectiveNexusCharacterAbilities.arsenalAbilities.length)) return '';
-    const allAbilities = [...effectiveNexusCharacterAbilities.baseAbilities, ...effectiveNexusCharacterAbilities.arsenalAbilities];
-    return allAbilities.map(a => `${a.id}:${a.cooldown ?? ''}:${a.maxQuantity ?? ''}`).join(',');
-  }, [activeCharacterBase, effectiveNexusCharacterAbilities]);
-
-
    useEffect(() => {
-    if (activeCharacterBase && activeCharacterSessionData && (effectiveNexusCharacterAbilities.baseAbilities.length > 0 || effectiveNexusCharacterAbilities.arsenalAbilities.length > 0)) {
-      const newMaxCDs: Record<string, number> = {};
-      const newCurrentCDs: Record<string, number> = {};
-      const newMaxQTs: Record<string, number> = {};
-      const newCurrentQTs: Record<string, number> = {};
+    if (!activeCharacterId || !activeCharacterBase) {
+        if (activeCharacterId && partySessionData[activeCharacterId]) {
+            const charSession = partySessionData[activeCharacterId]!;
+            if (Object.keys(charSession.abilityCooldowns || {}).length > 0 || Object.keys(charSession.abilityQuantities || {}).length > 0) {
+                setPartySessionData(prev => ({
+                    ...prev,
+                    [activeCharacterId]: {
+                        ...(prev[activeCharacterId] || {}),
+                        abilityCooldowns: {},
+                        abilityQuantities: {},
+                    } as PartyMemberSessionSpecificData,
+                }));
+            }
+        }
+        return;
+    }
 
-      const allModalAbilities = [...effectiveNexusCharacterAbilities.baseAbilities, ...effectiveNexusCharacterAbilities.arsenalAbilities];
-      
-      const savedCDs = activeCharacterSessionData.abilityCooldowns || {};
-      const savedQTs = activeCharacterSessionData.abilityQuantities || {};
+    const allModalAbilities = [...effectiveNexusCharacterAbilities.baseAbilities, ...effectiveNexusCharacterAbilities.arsenalAbilities]
+                              .sort((a, b) => a.id.localeCompare(b.id)); // Sort for stable key order
+    
+    const newCalculatedCDs: Record<string, number> = {};
+    const newCalculatedQTs: Record<string, number> = {};
 
-      allModalAbilities.forEach(ability => {
+    const currentSessionForChar = partySessionData[activeCharacterId];
+    const stateCDs = currentSessionForChar?.abilityCooldowns || {};
+    const stateQTs = currentSessionForChar?.abilityQuantities || {};
+
+    allModalAbilities.forEach(ability => {
         if (ability.cooldown) {
-          const maxRounds = parseCooldownRounds(String(ability.cooldown));
-          if (maxRounds !== undefined) {
-            newMaxCDs[ability.id] = maxRounds;
-            newCurrentCDs[ability.id] = savedCDs[ability.id] !== undefined ? savedCDs[ability.id] : maxRounds; 
-          }
+            const maxRounds = parseCooldownRounds(String(ability.cooldown));
+            if (maxRounds !== undefined) {
+                newCalculatedCDs[ability.id] = stateCDs[ability.id] !== undefined ? stateCDs[ability.id] : maxRounds;
+            }
         }
         if (ability.maxQuantity !== undefined) {
-          newMaxQTs[ability.id] = ability.maxQuantity;
-          newCurrentQTs[ability.id] = savedQTs[ability.id] !== undefined ? savedQTs[ability.id] : ability.maxQuantity; 
+            newCalculatedQTs[ability.id] = stateQTs[ability.id] !== undefined ? stateQTs[ability.id] : ability.maxQuantity;
         }
-      });
-      
-      setPartySessionData(prev => ({
-        ...prev,
-        [activeCharacterId!]: {
-          ...(prev[activeCharacterId!] || {}),
-          abilityCooldowns: newCurrentCDs,
-          abilityQuantities: newCurrentQTs,
-        } as PartyMemberSessionSpecificData, 
-      }));
-
-    } else if (activeCharacterId) { // Clear if no abilities or no active char
-      setPartySessionData(prev => ({
-        ...prev,
-        [activeCharacterId]: {
-          ...(prev[activeCharacterId] || {}),
-          abilityCooldowns: {},
-          abilityQuantities: {},
-        } as PartyMemberSessionSpecificData,
-      }));
+    });
+    
+    if (
+        JSON.stringify(stateCDs) !== JSON.stringify(newCalculatedCDs) ||
+        JSON.stringify(stateQTs) !== JSON.stringify(newCalculatedQTs)
+    ) {
+        setPartySessionData(prev => {
+            const charPrevSession = prev[activeCharacterId!] || {};
+            const updatedCharSessionData = {
+                ...charPrevSession,
+                abilityCooldowns: newCalculatedCDs,
+                abilityQuantities: newCalculatedQTs,
+            };
+            if (JSON.stringify(prev[activeCharacterId!]) !== JSON.stringify(updatedCharSessionData)) {
+                return {
+                    ...prev,
+                    [activeCharacterId!]: updatedCharSessionData as PartyMemberSessionSpecificData,
+                };
+            }
+            return prev;
+        });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCharacterId, activeCharacterBase, activeCharacterSessionData?.abilityCooldowns, activeCharacterSessionData?.abilityQuantities, abilityDataStringForEffect]);
+}, [
+    activeCharacterId, 
+    abilityDataStringForEffect, 
+    activeCharacterBase, 
+    effectiveNexusCharacterAbilities, 
+    partySessionData, 
+    parseCooldownRounds
+]);
 
 
   const handleImageDoubleClick = () => setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
@@ -543,8 +566,31 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       abilityCooldowns: {},
       abilityQuantities: {},
     };
-    // Initialize ability cooldowns/quantities
-    (newPartyMemberBase.abilities || []).forEach(ab => {
+    
+    const charAbilities = newPartyMemberBase.abilities || [];
+    const arsenalForNewChar = arsenalCards.find(ac => ac.id === defaultSessionData.selectedArsenalId);
+    const combinedAbilitiesForNewChar: CharacterAbility[] = [...charAbilities];
+
+    if (arsenalForNewChar && arsenalForNewChar.items) {
+        arsenalForNewChar.items.forEach(item => {
+            const createAbility = (type: AbilityType, flag: boolean | undefined) => {
+                if (flag === true) {
+                    combinedAbilitiesForNewChar.push({
+                        id: `nexus-arsenal-${arsenalForNewChar.id}-${item.id}-${type.replace(/\s+/g, '')}-init`,
+                        name: item.abilityName || `Arsenal ${type}`, type,
+                        description: item.itemDescription || item.effect || "",
+                        cooldown: item.cd, maxQuantity: item.qty, cost: 0,
+                    });
+                }
+            };
+            createAbility('Action', item.isAction);
+            createAbility('Interrupt', item.isInterrupt);
+            createAbility('Passive', item.isPassive);
+            createAbility('FREE Action', item.isFreeAction);
+        });
+    }
+    
+    combinedAbilitiesForNewChar.forEach(ab => {
         if(ab.cooldown) {
             const maxCd = parseCooldownRounds(ab.cooldown);
             if(maxCd !== undefined) defaultSessionData.abilityCooldowns[ab.id] = maxCd;
@@ -607,27 +653,27 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
 
   const handleNexusStatChange = (stat: StatName, operation: 'increment' | 'decrement') => {
-    if (!activeCharacterId || !activeCharacterSessionData || !activeCharacterBase) return;
+    if (!activeCharacterId || !activeCharacterSessionData || !activeCharacterBase || !effectiveNexusCharacterStats) return;
     const delta = operation === 'increment' ? 1 : -1;
     
     let currentValToChange = 0;
     if (stat === 'hp') currentValToChange = activeCharacterSessionData.currentHp;
     else if (stat === 'sanity') currentValToChange = activeCharacterSessionData.currentSanity;
-    else if (stat === 'mv') currentValToChange = activeCharacterSessionData.currentMv;
-    else if (stat === 'def') currentValToChange = activeCharacterSessionData.currentDef;
+    // MV and DEF are now only in modal, this part can be simplified if not used on main page
+    // else if (stat === 'mv') currentValToChange = activeCharacterSessionData.currentMv; 
+    // else if (stat === 'def') currentValToChange = activeCharacterSessionData.currentDef;
     else return;
 
 
     let newValue = currentValToChange + delta; 
     newValue = Math.max(0, newValue); 
     
-    const baseStats = activeCharacterBase.baseStats;
     let effectiveMax = 0;
 
-    if (stat === 'hp') effectiveMax = (baseStats.maxHp || 0) + (currentNexusArsenal?.maxHpMod || 0) + activeCharacterSessionData.sessionMaxHpModifier;
-    else if (stat === 'sanity') effectiveMax = (baseStats.maxSanity || 0) + (currentNexusArsenal?.maxSanityMod || 0) + activeCharacterSessionData.sessionMaxSanityModifier;
-    else if (stat === 'mv') effectiveMax = (baseStats.mv || 0) + (currentNexusArsenal?.mvMod || 0) + activeCharacterSessionData.sessionMvModifier;
-    else if (stat === 'def') effectiveMax = (baseStats.def || 0) + (currentNexusArsenal?.defMod || 0) + activeCharacterSessionData.sessionDefModifier;
+    if (stat === 'hp') effectiveMax = effectiveNexusCharacterStats.maxHp;
+    else if (stat === 'sanity') effectiveMax = effectiveNexusCharacterStats.maxSanity;
+    // else if (stat === 'mv') effectiveMax = effectiveNexusCharacterStats.mv;
+    // else if (stat === 'def') effectiveMax = effectiveNexusCharacterStats.def;
     
     effectiveMax = Math.max((stat === 'hp' || stat === 'sanity' ? 1 : 0), effectiveMax);
     newValue = Math.min(newValue, effectiveMax);
@@ -636,10 +682,50 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         ...prev,
         [activeCharacterId]: {
             ...prev[activeCharacterId]!,
-            [stat === 'hp' ? 'currentHp' : stat === 'sanity' ? 'currentSanity' : stat === 'mv' ? 'currentMv' : 'currentDef']: newValue,
+            [stat === 'hp' ? 'currentHp' : 'currentSanity']: newValue, // Simplified for main page HP/Sanity
         }
     }));
   };
+  
+  const handleNexusModalStatChange = (stat: StatName, operation: 'increment' | 'decrement') => {
+    if (!activeCharacterId || !activeCharacterSessionData || !activeCharacterBase || !effectiveNexusCharacterStats) return;
+    const delta = operation === 'increment' ? 1 : -1;
+    
+    let currentValToChange: number;
+    let statKeyInSessionData: keyof PartyMemberSessionSpecificData;
+
+    switch(stat) {
+        case 'hp': currentValToChange = activeCharacterSessionData.currentHp; statKeyInSessionData = 'currentHp'; break;
+        case 'sanity': currentValToChange = activeCharacterSessionData.currentSanity; statKeyInSessionData = 'currentSanity'; break;
+        case 'mv': currentValToChange = activeCharacterSessionData.currentMv; statKeyInSessionData = 'currentMv'; break;
+        case 'def': currentValToChange = activeCharacterSessionData.currentDef; statKeyInSessionData = 'currentDef'; break;
+        default: return;
+    }
+
+    let newValue = currentValToChange + delta; 
+    newValue = Math.max(0, newValue); 
+    
+    let effectiveMax: number;
+    switch(stat) {
+        case 'hp': effectiveMax = effectiveNexusCharacterStats.maxHp; break;
+        case 'sanity': effectiveMax = effectiveNexusCharacterStats.maxSanity; break;
+        case 'mv': effectiveMax = effectiveNexusCharacterStats.mv; break;
+        case 'def': effectiveMax = effectiveNexusCharacterStats.def; break;
+        default: return; // Should not happen
+    }
+    
+    effectiveMax = Math.max((stat === 'hp' || stat === 'sanity' ? 1 : 0), effectiveMax);
+    newValue = Math.min(newValue, effectiveMax);
+
+    setPartySessionData(prev => ({
+        ...prev,
+        [activeCharacterId]: {
+            ...prev[activeCharacterId]!,
+            [statKeyInSessionData]: newValue,
+        }
+    }));
+  };
+
 
   const handleNexusBleedPointsChange = (operation: 'increment' | 'decrement') => {
     if (!activeCharacterId || !activeCharacterSessionData) return;
@@ -660,7 +746,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
 
   const handleNexusSessionMaxStatModifierChange = (statType: 'hp' | 'sanity' | 'mv' | 'def', delta: number) => {
-    if (!activeCharacterId || !activeCharacterSessionData || !activeCharacterBase) return;
+    if (!activeCharacterId || !activeCharacterSessionData || !activeCharacterBase || !effectiveNexusCharacterStats) return;
 
     const statKeyForModifier: keyof PartyMemberSessionSpecificData = 
         statType === 'hp' ? 'sessionMaxHpModifier' :
@@ -687,11 +773,21 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         const updatedCharacterData = { ...currentCharacterData, [statKeyForModifier]: newModifier };
         
         const currentStatValue = updatedCharacterData[currentStatToCapKey] as number;
-        const finalEffectiveMaxForCapping = Math.max(minEffectiveMax, baseMaxValue + newModifier + (currentNexusArsenal?.[`${statType}Mod` as keyof ActualArsenalCard] as number || 0) );
+        // Recalculate effectiveNexusCharacterStats with the *new* modifier to get the correct cap
+        // This is tricky because effectiveNexusCharacterStats is a memoized value outside this scope.
+        // For now, we'll use the current effectiveNexusCharacterStats but adjust its relevant max by the delta.
+        let maxStatFromEffective = 0;
+        if (statType === 'hp') maxStatFromEffective = effectiveNexusCharacterStats.maxHp - currentModifier + newModifier;
+        else if (statType === 'sanity') maxStatFromEffective = effectiveNexusCharacterStats.maxSanity - currentModifier + newModifier;
+        else if (statType === 'mv') maxStatFromEffective = effectiveNexusCharacterStats.mv - currentModifier + newModifier;
+        else if (statType === 'def') maxStatFromEffective = effectiveNexusCharacterStats.def - currentModifier + newModifier;
+
+        const finalEffectiveMaxForCapping = Math.max(minEffectiveMax, maxStatFromEffective);
         
         if (currentStatValue > finalEffectiveMaxForCapping) {
             updatedCharacterData[currentStatToCapKey] = finalEffectiveMaxForCapping;
         }
+
 
         return { ...prev, [activeCharacterId]: updatedCharacterData };
     });
@@ -716,9 +812,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         const currentModifier = currentCharacterData[modifierKey] as number;
         let newModifier = currentModifier + delta;
 
-        // Prevent modifier from making effective stat negative
-        if (baseStatValue + newModifier < 0) {
-            newModifier = -baseStatValue;
+        // Prevent modifier from making effective stat negative if baseStatValue is initially derived including old modifier
+        // A cleaner way is to calculate effective stat using base + newModifier
+        const currentEffectiveStat = baseStatValue; // This baseWeapon already includes the old modifier
+        const newEffectiveStat = currentEffectiveStat - currentModifier + newModifier;
+
+        if (newEffectiveStat < 0) { // If the new *effective* stat would be negative
+            newModifier = currentModifier - (currentEffectiveStat - currentModifier); // Revert to make effective 0
         }
         return { ...prev, [activeCharacterId]: { ...currentCharacterData, [modifierKey]: newModifier } };
     });
@@ -814,49 +914,32 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     const partyToSave: PartyMemberSavedState[] = partyMembers.map(member => {
       const sessionDataForMember = partySessionData[member.id];
       if (!sessionDataForMember) {
-        // This case should ideally not happen if session data is initialized properly when adding members
         console.error(`Missing session data for party member ${member.id} during save.`);
-        // Fallback to very basic data structure if truly missing
-        return {
+        const baseChar = charactersData.find(c => c.id === member.id) || charactersData.find(c=> c.id === 'custom')!;
+        return { // Fallback, should ideally not happen
           baseCharacterId: member.id,
           characterName: member.name,
           characterImageUrl: member.imageUrl,
           selectedArsenalId: null,
-          currentHp: member.baseStats.maxHp,
-          currentSanity: member.baseStats.maxSanity,
-          currentMv: member.baseStats.mv,
-          currentDef: member.baseStats.def,
-          sessionBleedPoints: 0,
-          sessionMaxHpModifier: 0,
-          sessionMaxSanityModifier: 0,
-          sessionMvModifier: 0,
-          sessionDefModifier: 0,
-          sessionMeleeAttackModifier: 0,
-          sessionRangedAttackModifier: 0,
-          sessionRangedRangeModifier: 0,
-          abilityCooldowns: {},
-          abilityQuantities: {},
+          currentHp: baseChar.baseStats.maxHp, currentSanity: baseChar.baseStats.maxSanity, currentMv: baseChar.baseStats.mv, currentDef: baseChar.baseStats.def,
+          sessionBleedPoints: 0, sessionMaxHpModifier: 0, sessionMaxSanityModifier: 0, sessionMvModifier: 0, sessionDefModifier: 0,
+          sessionMeleeAttackModifier: 0, sessionRangedAttackModifier: 0, sessionRangedRangeModifier: 0,
+          abilityCooldowns: {}, abilityQuantities: {},
         };
       }
       return {
         baseCharacterId: member.id,
-        characterName: member.name, // Store the name at time of save
-        characterImageUrl: member.imageUrl, // Store image URL at time of save
+        characterName: member.name, 
+        characterImageUrl: member.imageUrl, 
         selectedArsenalId: sessionDataForMember.selectedArsenalId,
-        currentHp: sessionDataForMember.currentHp,
-        currentSanity: sessionDataForMember.currentSanity,
-        currentMv: sessionDataForMember.currentMv,
-        currentDef: sessionDataForMember.currentDef,
+        currentHp: sessionDataForMember.currentHp, currentSanity: sessionDataForMember.currentSanity,
+        currentMv: sessionDataForMember.currentMv, currentDef: sessionDataForMember.currentDef,
         sessionBleedPoints: sessionDataForMember.sessionBleedPoints,
-        sessionMaxHpModifier: sessionDataForMember.sessionMaxHpModifier,
-        sessionMaxSanityModifier: sessionDataForMember.sessionMaxSanityModifier,
-        sessionMvModifier: sessionDataForMember.sessionMvModifier,
-        sessionDefModifier: sessionDataForMember.sessionDefModifier,
+        sessionMaxHpModifier: sessionDataForMember.sessionMaxHpModifier, sessionMaxSanityModifier: sessionDataForMember.sessionMaxSanityModifier,
+        sessionMvModifier: sessionDataForMember.sessionMvModifier, sessionDefModifier: sessionDataForMember.sessionDefModifier,
         sessionMeleeAttackModifier: sessionDataForMember.sessionMeleeAttackModifier,
-        sessionRangedAttackModifier: sessionDataForMember.sessionRangedAttackModifier,
-        sessionRangedRangeModifier: sessionDataForMember.sessionRangedRangeModifier,
-        abilityCooldowns: sessionDataForMember.abilityCooldowns,
-        abilityQuantities: sessionDataForMember.abilityQuantities,
+        sessionRangedAttackModifier: sessionDataForMember.sessionRangedAttackModifier, sessionRangedRangeModifier: sessionDataForMember.sessionRangedRangeModifier,
+        abilityCooldowns: sessionDataForMember.abilityCooldowns, abilityQuantities: sessionDataForMember.abilityQuantities,
       };
     });
 
@@ -916,32 +999,24 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     session.party.forEach(savedMember => {
       const baseCharTemplate = charactersData.find(c => c.id === savedMember.baseCharacterId);
       if (baseCharTemplate) {
-        // Create a character instance from template, but ensure ID is the one from savedMember.baseCharacterId for consistency
-        // The name and imageUrl will come from the savedMember to reflect their state at time of save.
         const charInstance: Character = {
-            ...JSON.parse(JSON.stringify(baseCharTemplate)), // Deep copy template
-            id: savedMember.baseCharacterId, // Ensure ID matches the one used as key
-            name: savedMember.characterName || baseCharTemplate.name, // Use saved name, fallback to template
-            imageUrl: savedMember.characterImageUrl || baseCharTemplate.imageUrl, // Use saved image, fallback to template
+            ...JSON.parse(JSON.stringify(baseCharTemplate)),
+            id: savedMember.baseCharacterId, 
+            name: savedMember.characterName || baseCharTemplate.name, 
+            imageUrl: savedMember.characterImageUrl || baseCharTemplate.imageUrl, 
         };
         loadedPartyMembers.push(charInstance);
         
         loadedPartySessionData[savedMember.baseCharacterId] = {
           selectedArsenalId: savedMember.selectedArsenalId,
-          currentHp: savedMember.currentHp,
-          currentSanity: savedMember.currentSanity,
-          currentMv: savedMember.currentMv,
-          currentDef: savedMember.currentDef,
+          currentHp: savedMember.currentHp, currentSanity: savedMember.currentSanity,
+          currentMv: savedMember.currentMv, currentDef: savedMember.currentDef,
           sessionBleedPoints: savedMember.sessionBleedPoints,
-          sessionMaxHpModifier: savedMember.sessionMaxHpModifier,
-          sessionMaxSanityModifier: savedMember.sessionMaxSanityModifier,
-          sessionMvModifier: savedMember.sessionMvModifier,
-          sessionDefModifier: savedMember.sessionDefModifier,
+          sessionMaxHpModifier: savedMember.sessionMaxHpModifier, sessionMaxSanityModifier: savedMember.sessionMaxSanityModifier,
+          sessionMvModifier: savedMember.sessionMvModifier, sessionDefModifier: savedMember.sessionDefModifier,
           sessionMeleeAttackModifier: savedMember.sessionMeleeAttackModifier,
-          sessionRangedAttackModifier: savedMember.sessionRangedAttackModifier,
-          sessionRangedRangeModifier: savedMember.sessionRangedRangeModifier,
-          abilityCooldowns: savedMember.abilityCooldowns || {},
-          abilityQuantities: savedMember.abilityQuantities || {},
+          sessionRangedAttackModifier: savedMember.sessionRangedAttackModifier, sessionRangedRangeModifier: savedMember.sessionRangedRangeModifier,
+          abilityCooldowns: savedMember.abilityCooldowns || {}, abilityQuantities: savedMember.abilityQuantities || {},
         };
       } else {
         console.warn(`Base character template for ID ${savedMember.baseCharacterId} not found during load. Skipping member.`);
@@ -1132,19 +1207,19 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         </div>
                       </div>
                         
-                        <div className="grid grid-cols-1 gap-y-2 border p-3 rounded-md bg-background/30">
+                        <div className="grid grid-cols-1 gap-y-3 border p-3 rounded-md bg-background/30">
                             {/* HP Tracker */}
                             {activeCharacterSessionData.currentHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
                                 <div className="w-full">
                                     <div className="flex items-center justify-between mb-0.5">
-                                        <Label className="flex items-center text-xs font-medium"><Heart className="mr-1.5 h-3 w-3 text-red-500" />HP</Label>
+                                        <Label className="flex items-center text-sm font-medium"><Heart className="mr-1.5 h-4 w-4 text-red-500" />HP</Label>
                                         <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={activeCharacterSessionData.currentHp === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
-                                        <Input type="number" readOnly value={activeCharacterSessionData.currentHp} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                        <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={activeCharacterSessionData.currentHp >= effectiveNexusCharacterStats.maxHp}><UserPlus className="h-2.5 w-2.5" /></Button>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={activeCharacterSessionData.currentHp === 0}><UserMinus className="h-3 w-3" /></Button>
+                                        <Input type="number" readOnly value={activeCharacterSessionData.currentHp} className="w-12 h-6 text-center p-0 text-sm font-semibold" />
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={activeCharacterSessionData.currentHp >= effectiveNexusCharacterStats.maxHp}><UserPlus className="h-3 w-3" /></Button>
                                         </div>
                                     </div>
-                                    <Progress value={(activeCharacterSessionData.currentHp / Math.max(1, effectiveNexusCharacterStats.maxHp)) * 100} className={cn("h-1", getStatProgressColorClass(activeCharacterSessionData.currentHp, effectiveNexusCharacterStats.maxHp, 'hp'))} />
+                                    <Progress value={(activeCharacterSessionData.currentHp / Math.max(1, effectiveNexusCharacterStats.maxHp)) * 100} className={cn("h-1.5", getStatProgressColorClass(activeCharacterSessionData.currentHp, effectiveNexusCharacterStats.maxHp, 'hp'))} />
                                     <p className="text-xs text-muted-foreground text-right mt-0.5">{activeCharacterSessionData.currentHp} / {effectiveNexusCharacterStats.maxHp}</p>
                                 </div>
                             )}
@@ -1152,25 +1227,25 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             {activeCharacterSessionData.currentSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (
                                 <div className="w-full">
                                 <div className="flex items-center justify-between mb-0.5">
-                                    <Label className="flex items-center text-xs font-medium"><Brain className="mr-1.5 h-3 w-3 text-blue-400" />Sanity</Label>
+                                    <Label className="flex items-center text-sm font-medium"><Brain className="mr-1.5 h-4 w-4 text-blue-400" />Sanity</Label>
                                     <div className="flex items-center gap-1">
-                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={activeCharacterSessionData.currentSanity === 0}><UserMinus className="h-2.5 w-2.5" /></Button>
-                                    <Input type="number" readOnly value={activeCharacterSessionData.currentSanity} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={activeCharacterSessionData.currentSanity >= effectiveNexusCharacterStats.maxSanity}><UserPlus className="h-2.5 w-2.5" /></Button>
+                                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={activeCharacterSessionData.currentSanity === 0}><UserMinus className="h-3 w-3" /></Button>
+                                    <Input type="number" readOnly value={activeCharacterSessionData.currentSanity} className="w-12 h-6 text-center p-0 text-sm font-semibold" />
+                                    <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={activeCharacterSessionData.currentSanity >= effectiveNexusCharacterStats.maxSanity}><UserPlus className="h-3 w-3" /></Button>
                                     </div>
                                 </div>
-                                <Progress value={(activeCharacterSessionData.currentSanity / Math.max(1, effectiveNexusCharacterStats.maxSanity)) * 100} className={cn("h-1", getStatProgressColorClass(activeCharacterSessionData.currentSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} />
+                                <Progress value={(activeCharacterSessionData.currentSanity / Math.max(1, effectiveNexusCharacterStats.maxSanity)) * 100} className={cn("h-1.5", getStatProgressColorClass(activeCharacterSessionData.currentSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} />
                                 <p className="text-xs text-muted-foreground text-right mt-0.5">{activeCharacterSessionData.currentSanity} / {effectiveNexusCharacterStats.maxSanity}</p>
                                 </div>
                             )}
                             {/* Bleed Points Tracker on Main Nexus Page */}
                             <div className={cn("w-full", (activeCharacterSessionData.sessionBleedPoints || 0) >= NEXUS_HEMORRHAGE_THRESHOLD ? "border-destructive ring-1 ring-destructive rounded-md p-1" : "p-1")}>
                                 <div className="flex items-center justify-between mb-0.5">
-                                    <Label className="flex items-center text-xs font-medium"><Droplets className="mr-1.5 h-3 w-3 text-red-400" />Bleed</Label>
+                                    <Label className="flex items-center text-sm font-medium"><Droplets className="mr-1.5 h-4 w-4 text-red-400" />Bleed</Label>
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusBleedPointsChange('decrement')} disabled={activeCharacterSessionData.sessionBleedPoints === 0}><Minus className="h-2.5 w-2.5" /></Button>
-                                        <Input type="number" readOnly value={activeCharacterSessionData.sessionBleedPoints} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                        <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusBleedPointsChange('increment')}><Plus className="h-2.5 w-2.5" /></Button>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusBleedPointsChange('decrement')} disabled={activeCharacterSessionData.sessionBleedPoints === 0}><Minus className="h-3 w-3" /></Button>
+                                        <Input type="number" readOnly value={activeCharacterSessionData.sessionBleedPoints} className="w-12 h-6 text-center p-0 text-sm font-semibold" />
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleNexusBleedPointsChange('increment')}><Plus className="h-3 w-3" /></Button>
                                     </div>
                                 </div>
                                  <p className="text-xs text-muted-foreground text-right mt-0.5">Hemorrhage at: {NEXUS_HEMORRHAGE_THRESHOLD}</p>
@@ -1397,9 +1472,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             <div className="flex items-center justify-between mb-0.5">
                                 <Label className="flex items-center text-xs font-medium"><Heart className="mr-1.5 h-3 w-3 text-red-500" />HP</Label>
                                 <div className="flex items-center gap-1">
-                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'decrement')} disabled={activeCharacterSessionData.currentHp === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusModalStatChange('hp', 'decrement')} disabled={activeCharacterSessionData.currentHp === 0}><Minus className="h-2.5 w-2.5" /></Button>
                                     <Input type="number" readOnly value={activeCharacterSessionData.currentHp} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('hp', 'increment')} disabled={activeCharacterSessionData.currentHp >= effectiveNexusCharacterStats.maxHp}><Plus className="h-2.5 w-2.5" /></Button>
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusModalStatChange('hp', 'increment')} disabled={activeCharacterSessionData.currentHp >= effectiveNexusCharacterStats.maxHp}><Plus className="h-2.5 w-2.5" /></Button>
                                 </div>
                             </div>
                             <Progress value={(activeCharacterSessionData.currentHp / Math.max(1, effectiveNexusCharacterStats.maxHp)) * 100} className={cn("h-1", getStatProgressColorClass(activeCharacterSessionData.currentHp, effectiveNexusCharacterStats.maxHp, 'hp'))} />
@@ -1416,9 +1491,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             <div className="flex items-center justify-between mb-0.5">
                                 <Label className="flex items-center text-xs font-medium"><Brain className="mr-1.5 h-3 w-3 text-blue-400" />Sanity</Label>
                                 <div className="flex items-center gap-1">
-                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'decrement')} disabled={activeCharacterSessionData.currentSanity === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusModalStatChange('sanity', 'decrement')} disabled={activeCharacterSessionData.currentSanity === 0}><Minus className="h-2.5 w-2.5" /></Button>
                                     <Input type="number" readOnly value={activeCharacterSessionData.currentSanity} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('sanity', 'increment')} disabled={activeCharacterSessionData.currentSanity >= effectiveNexusCharacterStats.maxSanity}><Plus className="h-2.5 w-2.5" /></Button>
+                                    <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusModalStatChange('sanity', 'increment')} disabled={activeCharacterSessionData.currentSanity >= effectiveNexusCharacterStats.maxSanity}><Plus className="h-2.5 w-2.5" /></Button>
                                 </div>
                             </div>
                             <Progress value={(activeCharacterSessionData.currentSanity / Math.max(1, effectiveNexusCharacterStats.maxSanity)) * 100} className={cn("h-1", getStatProgressColorClass(activeCharacterSessionData.currentSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} />
@@ -1435,9 +1510,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             <div className="flex items-center justify-between mb-0.5">
                               <Label className="flex items-center text-xs font-medium"><Footprints className="mr-1.5 h-3 w-3 text-green-500" />MV</Label>
                              <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'decrement')} disabled={activeCharacterSessionData.currentMv === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusModalStatChange('mv', 'decrement')} disabled={activeCharacterSessionData.currentMv === 0}><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input type="number" readOnly value={activeCharacterSessionData.currentMv} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('mv', 'increment')} disabled={activeCharacterSessionData.currentMv >= effectiveNexusCharacterStats.mv}><Plus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusModalStatChange('mv', 'increment')} disabled={activeCharacterSessionData.currentMv >= effectiveNexusCharacterStats.mv}><Plus className="h-2.5 w-2.5" /></Button>
                               </div>
                             </div>
                             <Progress value={(activeCharacterSessionData.currentMv / Math.max(0, effectiveNexusCharacterStats.mv)) * 100} className={cn("h-1", getStatProgressColorClass(activeCharacterSessionData.currentMv, effectiveNexusCharacterStats.mv, 'mv'))} />
@@ -1454,9 +1529,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             <div className="flex items-center justify-between mb-0.5">
                               <Label className="flex items-center text-xs font-medium"><Shield className="mr-1.5 h-3 w-3 text-gray-400" />DEF</Label>
                             <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'decrement')} disabled={activeCharacterSessionData.currentDef === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusModalStatChange('def', 'decrement')} disabled={activeCharacterSessionData.currentDef === 0}><Minus className="h-2.5 w-2.5" /></Button>
                                 <Input type="number" readOnly value={activeCharacterSessionData.currentDef} className="w-10 h-5 text-center p-0 text-xs font-semibold" />
-                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusStatChange('def', 'increment')} disabled={activeCharacterSessionData.currentDef >= effectiveNexusCharacterStats.def}><Plus className="h-2.5 w-2.5" /></Button>
+                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={() => handleNexusModalStatChange('def', 'increment')} disabled={activeCharacterSessionData.currentDef >= effectiveNexusCharacterStats.def}><Plus className="h-2.5 w-2.5" /></Button>
                               </div>
                             </div>
                             <Progress value={(activeCharacterSessionData.currentDef / Math.max(0, effectiveNexusCharacterStats.def)) * 100} className={cn("h-1", getStatProgressColorClass(activeCharacterSessionData.currentDef, effectiveNexusCharacterStats.def, 'def'))} />
@@ -1803,3 +1878,5 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
+
+    
