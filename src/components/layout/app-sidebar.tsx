@@ -33,7 +33,8 @@ import {
   ShieldHalf,
   Gamepad2,
   ChevronDown,
-  Lightbulb, // Added Lightbulb icon
+  Lightbulb,
+  BookOpenText, // Added BookOpenText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,7 +42,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ElementType;
-  disabled?: boolean; // Added for greying out
+  disabled?: boolean; 
 }
 
 interface DropdownNavItem {
@@ -61,12 +62,12 @@ const navItemsConfig: CombinedNavItem[] = [
       { href: '/character-sheet', label: 'Character Sheet', icon: UserCircle },
       { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
       { href: '/card-generator', label: 'Card Generator', icon: Layers },
-      { href: '/item-list', label: 'Events', icon: CalendarDays }, // Event Generator
+      { href: '/item-list', label: 'Events', icon: CalendarDays }, 
       { href: '/shop', label: 'Whispers & Wares', icon: Store },
-      { href: '/events', label: 'Item List', icon: List }, // Item List Page
-      // AI Item Generator and NPC Generator moved from here
+      { href: '/events', label: 'Item List', icon: List }, 
     ]
   },
+  { href: '/how-to-play', label: 'How to Play', icon: BookOpenText, type: 'link' }, // NEW ITEM
   {
     label: 'Future Features', icon: Lightbulb, type: 'dropdown', children: [
       { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles, disabled: true },
@@ -83,7 +84,6 @@ export function AppSidebar() {
   const { isMobile, open } = useSidebar();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
 
-  // Effect to open dropdown if a child is active and sidebar is open (desktop)
   useEffect(() => {
     if (!isMobile && open) {
       const newOpenDropdowns = { ...openDropdowns };
@@ -101,7 +101,6 @@ export function AppSidebar() {
         setOpenDropdowns(newOpenDropdowns);
       }
     } else if (!open && !isMobile) {
-      // Collapse all dropdowns if sidebar collapses on desktop
       setOpenDropdowns({});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,7 +136,7 @@ export function AppSidebar() {
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
-              ) : ( // Dropdown item
+              ) : ( 
                 <>
                   <SidebarMenuButton
                     onClick={() => setOpenDropdowns(prev => ({ ...prev, [item.label]: !prev[item.label] }))}
@@ -164,7 +163,6 @@ export function AppSidebar() {
                            <SidebarMenuSubButton
                               asChild
                               isActive={pathname === subItem.href && !subItem.disabled}
-                              // Use aria-disabled for styling provided by ui/sidebar.tsx
                               aria-disabled={subItem.disabled}
                             >
                               <Link

@@ -23,6 +23,7 @@
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
     - **Google Sheets API:** Used to fetch game data for Events, NPC Generator, Arsenal Cards, and Shop Items via server-side logic in page components. Requires service account credentials. Shop items can be sourced from multiple tabs within the same Google Sheet.
+    - **Local Filesystem (`fs` module):** Used server-side to read `docs/game-rules.md` for the "How to Play" page.
 - **Image Placeholders:** `https://placehold.co` and `https://picsum.photos`.
 - **Deployment:** Firebase App Hosting (inferred from build logs and setup).
 - **Code Quality:**
@@ -160,8 +161,8 @@
 - **Functionality:**
     - **Multi-Character Team Display**: Main view displays a grid of team members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points, stacked vertically. Clicking a character's card header sets them as active.
     - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
-    - Team Management Dialog: Add/remove characters. "Manage Team" button located in the page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal (removed from main card display).
+    - Team Management Dialog: Add/remove characters. "Manage Team" button relocated to the page header.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
     - Arsenal and equipment display for active character (images of selected arsenal).
     - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
@@ -171,12 +172,19 @@
     - Reset Nexus Session: Functionality added to settings dropdown.
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets. Team state is client-side, can be persisted.
 
-### 3.14. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
+### 3.14. How to Play (`/how-to-play`)
+- **Description:** Displays the game rules.
+- **Functionality:**
+    - Fetches game rules from `docs/game-rules.md`.
+    - Renders the Markdown content with basic formatting (headings, paragraphs, horizontal rules).
+    - Accessible via a new "How to Play" tab in the sidebar.
+
+### 3.15. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
 - **Description:** Placeholder pages for legal documents.
 - **Functionality:** Display "Coming Soon" messages and basic placeholder information.
 
-### 3.15. Layout & General
-- **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile. "Game Tools" items grouped. "Future Features" dropdown created for AI Item Generator and NPC Generator, which are now greyed out/disabled.
+### 3.16. Layout & General
+- **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile. "Game Tools" items grouped. "Future Features" dropdown created for AI Item Generator and NPC Generator, which are now greyed out/disabled. "How to Play" link added.
 - **Toasts:** Used for user feedback on various actions.
 - **Theme:** Dark, horror-inspired theme defined in `globals.css`.
 
@@ -207,10 +215,11 @@
 -   **Digital Rulebook/References:** In-app access to game rules.
 -   **Hunter's Nexus Enhancements**: Session Display Preferences (toggle tool visibility, compact mode).
 -   **Further Mobile Optimization**: Continue refining mobile responsiveness for all pages.
+-   **Markdown Rendering**: Implement a proper Markdown renderer for the "How to Play" page for better display of tables, lists, and inline formatting from `game-rules.md`.
 
 ## 6. Design Decisions and Constraints
 -   **Tech Stack Choice:** Next.js, React, TypeScript, ShadCN, Tailwind, Firebase, Genkit, Google Sheets API.
--   **Data Flow for Sheets:** Server Components fetch data from Google Sheets on page load.
+-   **Data Flow for Sheets:** Server Components fetch data from Google Sheets on page load. `fs` module used for local Markdown files.
 -   **Modularity:** Ongoing effort to refactor large components into smaller, focused ones.
 -   **Styling:** Primary reliance on ShadCN component styling and Tailwind utilities, with global theme variables.
 -   **AI Integration:** Genkit for LLM interactions, keeping AI logic in server-side flows. User-provided lore excerpts can be passed to AI. Shop item image generation is session-based.
@@ -218,12 +227,13 @@
 -   **User Data:** Stored in Firestore under user-specific paths for security and organization.
 -   **Error Handling:** Implemented for API calls (Google Sheets, Firebase) and user actions.
 -   **Prototyping:** Some features like Shared Space and Friends List are currently simulated on the client-side. Naming convention: "Team" for single-user character groups in Nexus, "Party" to be used for multi-user groups in Shared Space.
+-   **Markdown Display**: Basic server-side parsing for `game-rules.md` to convert headings and paragraphs to HTML for the "How to Play" page. Full Markdown features (tables, inline styles) are not yet supported by this basic parser.
 
 ## 7. Open Questions / Assumptions
 -   **Combat UI/UX:** How will the detailed turn-based combat be represented and managed interactively in the app?
 -   **Game State Management:** For a full combat simulation or shared space, a more robust game state management solution might be needed beyond current page/component state.
 -   **Scalability of Google Sheets:** For very large datasets, alternative database solutions might be considered for performance, though Google Sheets is suitable for moderate game data.
--   **Offline Support:** Currently, features relying on online data (Firebase, Google Sheets) require a connection.
+-   **Offline Support:** Currently, features relying on online data (Firebase, Google Sheets) require a connection. The "How to Play" page content is bundled at build time for server components.
 -   **Detailed Game Logic Implementation:** The depth to which specific board game rules (e.g., enemy AI from combat cards, complex status interactions) will be automated in the app vs. just tracked.
 
 ## 8. Data Structures of the App
@@ -251,7 +261,7 @@
 
 ## 10. Other Important Observations
 -   The application heavily relies on client-side rendering for its UI components ("use client").
--   Server Components are used for page-level data fetching from Google Sheets.
+-   Server Components are used for page-level data fetching from Google Sheets and local Markdown files.
 -   The codebase has undergone significant refactoring to break down large UI components into smaller, more manageable sub-components.
 -   Theming is centralized in `globals.css` and leverages ShadCN's HSL variable system.
 -   Environment variables in `.env.local` are critical for Firebase client configuration and Google Sheets API server-side access.
@@ -271,4 +281,5 @@ This document provides a snapshot of the project's state and context.
     
 
     
+
 

@@ -63,10 +63,10 @@ DONE:
 - Shared Space Page:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
-    - **Multi-Character Team Display**: Main view displays a grid of team members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points, stacked vertically. Clicking a character's card header sets them as active.
-    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
-    - Team Management Dialog: Add/remove characters. "Manage Team" button located in the page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal (removed from main card display).
+    - Multi-Character Team Display: Main view displays a grid of team members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points, stacked vertically. Clicking a character's card header sets them as active.
+    - Active Character Focus: Arsenal selection and detailed modal views operate on the selected active character.
+    - Team Management Dialog: Add/remove characters. "Manage Team" button relocated to the page header.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
     - Arsenal and equipment display for active character (images of selected arsenal).
     - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
@@ -75,6 +75,10 @@ DONE:
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
     - Reset Nexus Session: Functionality added to settings dropdown.
     - Changed "Party" to "Team" in all user-facing text.
+- How to Play Page (`/how-to-play`):
+    - Created page to display game rules from `docs/game-rules.md`.
+    - Implemented basic server-side Markdown parsing for headings and paragraphs.
+    - Added link to sidebar.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
 - Terms of Service Page (`/terms`):
@@ -86,6 +90,7 @@ DONE:
     - Mobile-responsive (Sheet-based).
     - "Game Tools" items grouped under a dropdown.
     - "Future Features" dropdown added; AI Item Generator and NPC Generator moved there and greyed out.
+    - Added "How to Play" link.
 - Mobile Optimizations:
     - Homepage feature card layout (vertical scrollable window).
     - Character Sheet tabs and header.
@@ -113,6 +118,7 @@ NEXT:
 - Add a bestiary/monster manual section.
 - Implement game rule references or a digital rulebook section.
 - Implement Hunter's Nexus "Session Display Preferences" (toggle tool visibility, compact mode).
+- **Markdown Rendering**: Improve Markdown display on "How to Play" page (tables, lists, inline styles).
 - Further mobile optimization for all pages (Dice Roller, Card Generator, Events, NPC Generator, Shop, Profile, etc.).
 - Caching strategies for Google Sheet data to improve performance in production.
 - Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
@@ -125,4 +131,5 @@ NEXT:
     
 
     
+
 
