@@ -24,7 +24,7 @@
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
     - **Google Sheets API:** Used to fetch game data for Events, NPC Generator, Arsenal Cards, and Shop Items via server-side logic in page components. Shop items can be sourced from multiple tabs within the same Google Sheet.
-    - **Local Filesystem (`fs` module):** Used server-side to read rulebook Markdown files for the "How to Play" page.
+    - **Local Filesystem (`fs` module):** Used server-side to read rulebook Markdown files for the "How to Play" page. Reads `RoTB_Rulebook_Dropdown_Structure.md` for structure and `Riddle_of_the_Beast_Rulebook.md` for detailed content.
 - **Image Placeholders:** `https://placehold.co` and `https://picsum.photos`. Firebase Storage for character/card images.
 - **Deployment:** Firebase App Hosting (inferred from build logs and setup).
 - **Code Quality:**
@@ -72,10 +72,12 @@
 - (No changes in this update)
 
 ### 3.14. How to Play (`/how-to-play`)
-- (No changes in this update)
+- Now uses `RoTB_Rulebook_Dropdown_Structure.md` for accordion structure (H2s as triggers).
+- For each H2 and H3 from the structure file, it looks up the heading in `Riddle_of_the_Beast_Rulebook.md` and pulls in the detailed content (paragraphs, lists) under that heading.
+- Shop sections and specified tables continue to be omitted.
 
 ### 3.15. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
-- **Privacy Policy (`/privacy`):** Created a placeholder page with a "Coming Soon" message, similar in structure and content to the Terms of Service page. Icon updated to ShieldCheckIcon.
+- (No changes in this update)
 
 ### 3.16. Layout & General
 - (No changes in this update)
@@ -84,13 +86,13 @@
 - (No changes in this update)
 
 ## 5. Planned Features / Future Work
-- (No changes in this update, "How to Play" Markdown rendering note refers to the current setup)
+- (No changes in this update)
 
 ## 6. Design Decisions and Constraints
 - (No changes in this update)
 
 ## 7. Open Questions / Assumptions
--   **"How to Play" Content Strategy:** The current implementation displays the *structure* from `Rotb_rulebook_dropdown_structure.md`. If the intent is to use this file for structure but pull detailed content from `Riddle_of_the_Beast_Rulebook.md`, the parsing logic needs a significant overhaul.
+- The "How to Play" page now attempts a more sophisticated merge of structure from one file and content from another. The robustness of heading matching and content extraction from the main rulebook will depend on consistent formatting.
 
 ## 8. Data Structures of the App
 - (No changes in this update)
@@ -99,7 +101,7 @@
 - (No changes in this update)
 
 ## 10. Other Important Observations
-- The "How to Play" page now uses `docs/Rotb_rulebook_dropdown_structure.md` as its primary source and renders an accordion based on its H2/H3/list structure.
+- The "How to Play" page's complexity has increased due to the two-file content merging strategy.
 
 This document provides a snapshot of the project's state and context.
     

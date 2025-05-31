@@ -75,8 +75,8 @@ DONE:
     - Reset Nexus Session: Functionality added to settings dropdown.
     - Changed "Party" to "Team" in all user-facing text for Nexus.
 - How to Play Page (`/how-to-play`):
-    - Page now uses `docs/Rotb_rulebook_dropdown_structure.md` for its content.
-    - Content is displayed in an Accordion format based on H2s, H3s and list items from this file.
+    - Page now uses `RoTB_Rulebook_Dropdown_Structure.md` for accordion structure.
+    - For each H2/H3 from structure, detailed content is pulled from `Riddle_of_the_Beast_Rulebook.md`.
     - Specified shop and large table sections are omitted.
     - Added link to sidebar.
 - FAQ Page:
@@ -96,6 +96,7 @@ DONE:
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md` and `docs/Riddle_of_the_Beast_Rulebook.md`.
 - MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob.
+- Corrected filename case sensitivity issue for `RoTB_Rulebook_Dropdown_Structure.md` in `how-to-play/page.tsx`.
 - Numerous bug fixes and UI refinements.
 
 WORKING:
@@ -118,7 +119,6 @@ NEXT:
 - Add a bestiary/monster manual section.
 - Implement game rule references or a digital rulebook section (current "How to Play" serves this, but could be enhanced).
 - Implement Hunter's Nexus "Session Display Preferences" (toggle tool visibility, compact mode).
-- **Markdown Rendering**: Clarify if `Rotb_rulebook_dropdown_structure.md` should only define structure while content comes from the main rulebook, or if it's the sole source for "How to Play".
 - Further mobile optimization for all pages.
 - Caching strategies for Google Sheet data.
 - Address any remaining warnings from the build process.
