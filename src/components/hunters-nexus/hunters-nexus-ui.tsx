@@ -253,19 +253,24 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   }, [selectedNexusCharacter, currentNexusArsenal]);
 
   const effectiveNexusCharacterAbilities = useMemo(() => {
-    if (!characterForModal) return [];
-    let baseAbilities = characterForModal.abilities ? [...characterForModal.abilities] : [];
-    const arsenalGrantedAbilities: CharacterAbility[] = [];
+    const result: { baseAbilities: CharacterAbility[], arsenalAbilities: CharacterAbility[] } = {
+      baseAbilities: [],
+      arsenalAbilities: [],
+    };
 
+    if (!characterForModal) return result;
+
+    result.baseAbilities = characterForModal.abilities ? [...characterForModal.abilities] : [];
+    
     if (currentNexusArsenal && currentNexusArsenal.items) {
       currentNexusArsenal.items.forEach(item => {
         const createAbilityFromFlag = (type: AbilityType, flag: boolean | undefined, flagSource: string) => {
           if (flag === true) {
-            arsenalGrantedAbilities.push({
+            result.arsenalAbilities.push({
               id: `nexus-arsenal-${currentNexusArsenal.id}-${item.id}-${type.replace(/\s+/g, '')}-${flagSource}`,
               name: item.abilityName || `Arsenal ${type}`,
               type: type,
-              description: item.itemDescription || item.effect || `Granted by ${item.abilityName || 'equipped arsenal'}.`,
+              description: item.itemDescription || item.effect || `Granted by ${item.abilityName || 'equipped arsenal item'}.`,
               cooldown: item.cd,
               maxQuantity: item.qty,
               details: item.class || item.type,
@@ -279,7 +284,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         createAbilityFromFlag('FREE Action', item.isFreeAction, 'isFreeAction');
       });
     }
-    return [...baseAbilities, ...arsenalGrantedAbilities];
+    return result;
   }, [characterForModal, currentNexusArsenal]);
 
   const characterDefaultMeleeWeaponForNexus = useMemo(() => {
@@ -400,19 +405,22 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   }, [enlargedImageUrl]);
 
   const abilityDataStringForEffect = useMemo(() => {
-    if (!characterForModal || !effectiveNexusCharacterAbilities) return '';
-    return effectiveNexusCharacterAbilities.map(a => `${a.id}:${a.cooldown ?? ''}:${a.maxQuantity ?? ''}`).join(',');
+    if (!characterForModal || (!effectiveNexusCharacterAbilities.baseAbilities.length && !effectiveNexusCharacterAbilities.arsenalAbilities.length)) return '';
+    const allAbilities = [...effectiveNexusCharacterAbilities.baseAbilities, ...effectiveNexusCharacterAbilities.arsenalAbilities];
+    return allAbilities.map(a => `${a.id}:${a.cooldown ?? ''}:${a.maxQuantity ?? ''}`).join(',');
   }, [characterForModal, effectiveNexusCharacterAbilities]);
 
 
    useEffect(() => {
-    if (characterForModal && effectiveNexusCharacterAbilities && effectiveNexusCharacterAbilities.length > 0) {
+    if (characterForModal && (effectiveNexusCharacterAbilities.baseAbilities.length > 0 || effectiveNexusCharacterAbilities.arsenalAbilities.length > 0)) {
       const newMaxCDs: Record<string, number> = {};
       const newCurrentCDs: Record<string, number> = {};
       const newMaxQTs: Record<string, number> = {};
       const newCurrentQTs: Record<string, number> = {};
 
-      effectiveNexusCharacterAbilities.forEach(ability => {
+      const allModalAbilities = [...effectiveNexusCharacterAbilities.baseAbilities, ...effectiveNexusCharacterAbilities.arsenalAbilities];
+
+      allModalAbilities.forEach(ability => {
         if (ability.cooldown) {
           const maxRounds = parseCooldownRounds(String(ability.cooldown));
           if (maxRounds !== undefined) {
@@ -436,7 +444,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setNexusMaxAbilityQuantities({});
       setNexusCurrentAbilityQuantities({});
     }
-  }, [characterForModal, abilityDataStringForEffect]); // Use the memoized string
+  }, [characterForModal, abilityDataStringForEffect]);
 
 
   const handleImageDoubleClick = () => setImageZoomLevel(prev => prev > 1 ? 1 : ZOOM_SCALE_FACTOR);
@@ -458,9 +466,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const handleSelectCharacterForNexus = (character: Character) => {
     setSelectedNexusCharacter(character);
     setPartyMembers([character]); 
-    setSelectedCharacterArsenalId(character.selectedArsenalCardId || null); // Use character's saved arsenal or null
-    setCharacterForModal(character); // Set for modal
-    setNexusSessionMaxHpModifier(0); // Reset session modifiers
+    setSelectedCharacterArsenalId(character.selectedArsenalCardId || null);
+    setCharacterForModal(character); 
+    setNexusSessionMaxHpModifier(0); 
     setNexusSessionMaxSanityModifier(0);
     setIsCharacterSelectionDialogOpen(false);
     toast({ title: "Character Selected", description: `${character.name} is now active in the Nexus.` });
@@ -900,7 +908,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         onOpenChange={(open) => {
           setIsCharacterCardModalOpen(open);
           if (!open) {
-            setIsCharacterSelectionDialogOpen(false); // Ensure selection dialog closes too
+            setIsCharacterSelectionDialogOpen(false); 
           }
         }}
       >
@@ -1028,25 +1036,54 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     </>
                   )}
 
-                  {effectiveNexusCharacterAbilities && effectiveNexusCharacterAbilities.length > 0 && (
-                     <> <Separator /> <h4 className="text-lg font-semibold text-primary flex items-center"><BookMarked className="mr-2 h-5 w-5" /> Abilities</h4>
-                      <div className="space-y-2 text-sm"> 
-                        {effectiveNexusCharacterAbilities.map(ability => ( 
-                            <AbilityCard 
-                                key={`modal-ability-${ability.id}`} 
-                                ability={ability} 
-                                currentCooldown={nexusCurrentAbilityCooldowns[ability.id]} 
-                                maxCooldown={nexusMaxAbilityCooldowns[ability.id]} 
-                                onIncrementCooldown={() => handleIncrementNexusCooldown(ability.id)} 
-                                onDecrementCooldown={() => handleDecrementNexusCooldown(ability.id)} 
-                                currentQuantity={nexusCurrentAbilityQuantities[ability.id]} 
-                                maxQuantity={nexusMaxAbilityQuantities[ability.id]} 
-                                onIncrementQuantity={() => handleIncrementNexusQuantity(ability.id)} 
-                                onDecrementQuantity={() => handleDecrementNexusQuantity(ability.id)} 
-                            /> 
-                        ))} 
-                      </div>
+                  {(effectiveNexusCharacterAbilities.baseAbilities.length > 0 || effectiveNexusCharacterAbilities.arsenalAbilities.length > 0) && (
+                     <> 
+                        <Separator /> 
+                        <h4 className="text-lg font-semibold text-primary flex items-center"><BookMarked className="mr-2 h-5 w-5" /> Abilities</h4>
+                        
+                        {effectiveNexusCharacterAbilities.baseAbilities.length > 0 && (
+                            <div className="space-y-2">
+                                <h5 className="text-md font-medium text-muted-foreground">Character Abilities:</h5>
+                                {effectiveNexusCharacterAbilities.baseAbilities.map(ability => ( 
+                                    <AbilityCard 
+                                        key={`modal-base-ability-${ability.id}`} 
+                                        ability={ability} 
+                                        currentCooldown={nexusCurrentAbilityCooldowns[ability.id]} 
+                                        maxCooldown={nexusMaxAbilityCooldowns[ability.id]} 
+                                        onIncrementCooldown={() => handleIncrementNexusCooldown(ability.id)} 
+                                        onDecrementCooldown={() => handleDecrementNexusCooldown(ability.id)} 
+                                        currentQuantity={nexusCurrentAbilityQuantities[ability.id]} 
+                                        maxQuantity={nexusMaxAbilityQuantities[ability.id]} 
+                                        onIncrementQuantity={() => handleIncrementNexusQuantity(ability.id)} 
+                                        onDecrementQuantity={() => handleDecrementNexusQuantity(ability.id)} 
+                                    /> 
+                                ))} 
+                            </div>
+                        )}
+
+                        {effectiveNexusCharacterAbilities.arsenalAbilities.length > 0 && (
+                            <div className="space-y-2 mt-3">
+                                <h5 className="text-md font-medium text-muted-foreground">Arsenal-Granted Abilities:</h5>
+                                {effectiveNexusCharacterAbilities.arsenalAbilities.map(ability => ( 
+                                    <AbilityCard 
+                                        key={`modal-arsenal-ability-${ability.id}`} 
+                                        ability={ability} 
+                                        currentCooldown={nexusCurrentAbilityCooldowns[ability.id]} 
+                                        maxCooldown={nexusMaxAbilityCooldowns[ability.id]} 
+                                        onIncrementCooldown={() => handleIncrementNexusCooldown(ability.id)} 
+                                        onDecrementCooldown={() => handleDecrementNexusCooldown(ability.id)} 
+                                        currentQuantity={nexusCurrentAbilityQuantities[ability.id]} 
+                                        maxQuantity={nexusMaxAbilityQuantities[ability.id]} 
+                                        onIncrementQuantity={() => handleIncrementNexusQuantity(ability.id)} 
+                                        onDecrementQuantity={() => handleDecrementNexusQuantity(ability.id)} 
+                                    /> 
+                                ))} 
+                            </div>
+                        )}
                     </>
+                  )}
+                  {effectiveNexusCharacterAbilities.baseAbilities.length === 0 && effectiveNexusCharacterAbilities.arsenalAbilities.length === 0 && (
+                     <p className="text-sm text-muted-foreground text-center py-3">No abilities defined.</p>
                   )}
                 </div>
               </ScrollArea>
@@ -1091,3 +1128,4 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </TooltipProvider>
   );
 }
+
