@@ -84,7 +84,7 @@ DONE:
 - Terms of Service Page (`/terms`):
     - Basic placeholder page created.
 - Privacy Policy Page (`/privacy`):
-    - Basic placeholder page created.
+    - Basic placeholder page created with a "Coming Soon" message.
 - Sidebar Navigation:
     - Links to all major features.
     - Mobile-responsive (Sheet-based).
@@ -101,7 +101,6 @@ DONE:
 WORKING:
 - Ongoing review and minor clean-up of existing codebase.
 - Refinement of Character Sheet mobile optimization for inner tab content.
-- Refining "How to Play" page Markdown parser for `Rotb_rulebook_dropdown_structure.md`.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:

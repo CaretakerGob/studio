@@ -72,17 +72,10 @@
 - (No changes in this update)
 
 ### 3.14. How to Play (`/how-to-play`)
-- **Description:** Displays the game rules structure from `docs/Rotb_rulebook_dropdown_structure.md`.
-- **Functionality:**
-    - Content is now sourced from `docs/Rotb_rulebook_dropdown_structure.md`.
-    - H2 headings from this file create main accordion items.
-    - H3 headings and list items from this file are displayed as content within their respective H2 accordion panels.
-    - The `shopSectionTitlesToIgnore` list is still applied, potentially filtering out H2 or H3 sections if their titles match.
-    - Detailed paragraph content from the original `Riddle_of_the_Beast_Rulebook.md` is no longer directly parsed and displayed here; only content present in `Rotb_rulebook_dropdown_structure.md` is shown.
-- **Data Source:** `docs/Rotb_rulebook_dropdown_structure.md`.
+- (No changes in this update)
 
 ### 3.15. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
-- (No changes in this update)
+- **Privacy Policy (`/privacy`):** Created a placeholder page with a "Coming Soon" message, similar in structure and content to the Terms of Service page. Icon updated to ShieldCheckIcon.
 
 ### 3.16. Layout & General
 - (No changes in this update)
