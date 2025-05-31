@@ -222,7 +222,7 @@ export default async function HowToPlayPage() {
   let rulesContent = "";
 
   try {
-    const filePath = path.join(process.cwd(), 'docs', 'Rotb_rulebook_dropdown_structure.md');
+    const filePath = path.join(process.cwd(), 'docs', 'RoTB_Rulebook_Dropdown_Structure.md'); // Corrected filename
     rulesContent = await fs.readFile(filePath, 'utf8');
     sections = parseMarkdownToSectionsFromStructureFile(rulesContent);
     if (sections.length === 0 && rulesContent.length > 0) {
