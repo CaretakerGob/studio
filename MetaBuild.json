@@ -1,0 +1,71 @@
+
+{
+  "characters": [
+    {
+      "characterId": "gob",
+      "characterName": "Gob",
+      "buildName": "Ranged Tactician",
+      "description": "Focuses on utilizing Gob's AR-15 and tactical abilities to control the battlefield and support the team from a distance. Emphasizes consistent ranged damage and utility.",
+      "keyAbilities": [
+        "Vital Shot",
+        "Leadership",
+        "Flare x3",
+        "Quick Draw"
+      ],
+      "coreStatsFocus": [
+        "Maintains decent HP and Sanity for survivability.",
+        "Leverages MV for positioning."
+      ],
+      "skillsSynergy": [
+        "Tactician (TAC): Enhances tactical decision-making and potentially spotting enemy weaknesses.",
+        "Survivalist (SUR): Aids in battlefield positioning and navigating hazardous terrain.",
+        "Knowledge (KNO): Useful for identifying enemy patterns or environmental clues."
+      ],
+      "primaryWeaponStrategy": "AR-15 (A4/R5), using Vital Shot to maximize hit probability.",
+      "secondaryWeaponStrategy": "Knife (A2) or Wounding Strike (A3/R1) for close-quarters defense or against high-armor targets.",
+      "recommendedArsenalFocus": [
+        "Increased Ranged Attack or Range",
+        "Abilities/Items that Mark targets",
+        "Utility items like special ammunition or grenades",
+        "Gear enhancing survivability or mobility"
+      ],
+      "exampleArsenalCardConception": {
+        "name": "Marksman's Overwatch Kit (Conceptual)",
+        "description": "An arsenal designed to enhance a ranged operative's effectiveness and tactical awareness.",
+        "globalStatModifiers": {
+          "rangedAttackMod": 1
+        },
+        "items": [
+          {
+            "name": "Advanced Scope",
+            "category": "GEAR",
+            "type": "Upgrade",
+            "effect": "Passive - Attacks against Marked targets deal +1 damage. If target is at max range, gain +1 ATK.",
+            "itemDescription": "A high-quality rifle scope with integrated targeting assistance."
+          },
+          {
+            "name": "Incendiary Rounds (x2)",
+            "category": "BONUS",
+            "type": "Ammunition",
+            "qty": 2,
+            "abilityName": "Load Incendiary Round",
+            "isFreeAction": true,
+            "effect": "Next Ranged attack this turn deals FIRE damage and applies BURNING status on hit.",
+            "itemDescription": "Specialized rounds that ignite on impact."
+          },
+          {
+            "name": "Targeting Binoculars",
+            "category": "ACTION",
+            "type": "Tool",
+            "abilityName": "Designate Target",
+            "cd": "2 round CD",
+            "effect": "Action: Mark one enemy within 8 spaces. Target remains Marked for 2 rounds.",
+            "itemDescription": "Advanced binoculars that paint a target for enhanced engagement."
+          }
+        ]
+      },
+      "playstyleSummary": "Gob should prioritize maintaining distance, utilizing cover if available, and using his AR-15 with Vital Shot for consistent damage. Leadership should be used to buff allies before key engagements. Flares are critical for visibility and countering stealth. Quick Draw provides defensive repositioning.",
+      "counterPlayConsiderations": "Vulnerable to fast melee attackers if caught out of position. May struggle against multiple enemies without AoE options unless provided by an Arsenal."
+    }
+  ]
+}
