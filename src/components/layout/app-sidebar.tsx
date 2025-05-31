@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sidebar,
   SidebarHeader,
@@ -23,7 +23,7 @@ import {
   Dices,
   Layers,
   CalendarDays,
-  Users as UsersIcon, // Changed from ClipboardList for NPC Generator
+  Users as UsersIcon,
   Store,
   List,
   WandSparkles,
@@ -33,6 +33,7 @@ import {
   ShieldHalf,
   Gamepad2,
   ChevronDown,
+  Lightbulb, // Added Lightbulb icon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +41,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ElementType;
+  disabled?: boolean; // Added for greying out
 }
 
 interface DropdownNavItem {
@@ -60,10 +62,15 @@ const navItemsConfig: CombinedNavItem[] = [
       { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
       { href: '/card-generator', label: 'Card Generator', icon: Layers },
       { href: '/item-list', label: 'Events', icon: CalendarDays }, // Event Generator
-      { href: '/investigations', label: 'NPC Generator', icon: UsersIcon }, // Renamed, changed icon
       { href: '/shop', label: 'Whispers & Wares', icon: Store },
       { href: '/events', label: 'Item List', icon: List }, // Item List Page
-      { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles },
+      // AI Item Generator and NPC Generator moved from here
+    ]
+  },
+  {
+    label: 'Future Features', icon: Lightbulb, type: 'dropdown', children: [
+      { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles, disabled: true },
+      { href: '/investigations', label: 'NPC Generator', icon: UsersIcon, disabled: true },
     ]
   },
   { href: '/shared-space', label: 'Shared Space', icon: Share2, type: 'link' },
@@ -73,19 +80,32 @@ const navItemsConfig: CombinedNavItem[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isMobile, open } = useSidebar(); // Removed setOpen as it's not used directly here for toggling
-  const [isGameToolsOpen, setIsGameToolsOpen] = useState(false);
+  const { isMobile, open } = useSidebar();
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
 
-  const gameToolsChildrenPaths = (navItemsConfig.find(item => item.type === 'dropdown' && item.label === 'Game Tools') as DropdownNavItem | undefined)?.children.map(child => child.href) || [];
-  const isGameToolsActive = gameToolsChildrenPaths.includes(pathname);
-
-  React.useEffect(() => {
-    if (isGameToolsActive && open && !isMobile) {
-      setIsGameToolsOpen(true);
+  // Effect to open dropdown if a child is active and sidebar is open (desktop)
+  useEffect(() => {
+    if (!isMobile && open) {
+      const newOpenDropdowns = { ...openDropdowns };
+      let changed = false;
+      navItemsConfig.forEach(item => {
+        if (item.type === 'dropdown') {
+          const isActiveParent = item.children.some(child => child.href === pathname);
+          if (isActiveParent && !newOpenDropdowns[item.label]) {
+            newOpenDropdowns[item.label] = true;
+            changed = true;
+          }
+        }
+      });
+      if (changed) {
+        setOpenDropdowns(newOpenDropdowns);
+      }
     } else if (!open && !isMobile) {
-      setIsGameToolsOpen(false);
+      // Collapse all dropdowns if sidebar collapses on desktop
+      setOpenDropdowns({});
     }
-  }, [isGameToolsActive, open, isMobile]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, open, isMobile]);
 
 
   return (
@@ -117,14 +137,14 @@ export function AppSidebar() {
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
-              ) : (
+              ) : ( // Dropdown item
                 <>
                   <SidebarMenuButton
-                    onClick={() => setIsGameToolsOpen(!isGameToolsOpen)}
-                    isActive={isGameToolsActive}
+                    onClick={() => setOpenDropdowns(prev => ({ ...prev, [item.label]: !prev[item.label] }))}
+                    isActive={item.children.some(child => child.href === pathname)}
                     tooltip={item.label}
                     className="justify-between w-full"
-                    aria-expanded={isGameToolsOpen}
+                    aria-expanded={openDropdowns[item.label]}
                   >
                     <div className="flex items-center gap-2">
                       <item.icon className="h-5 w-5 text-sidebar-primary" />
@@ -133,19 +153,27 @@ export function AppSidebar() {
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 transition-transform group-data-[collapsible=icon]:hidden",
-                        isGameToolsOpen && "rotate-180"
+                        openDropdowns[item.label] && "rotate-180"
                       )}
                     />
                   </SidebarMenuButton>
-                  {isGameToolsOpen && !isMobile && open && (
+                  {openDropdowns[item.label] && !isMobile && open && (
                     <SidebarMenuSub>
                       {item.children.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.href}>
                            <SidebarMenuSubButton
                               asChild
-                              isActive={pathname === subItem.href}
+                              isActive={pathname === subItem.href && !subItem.disabled}
+                              // Use aria-disabled for styling provided by ui/sidebar.tsx
+                              aria-disabled={subItem.disabled}
                             >
-                              <Link href={subItem.href}>
+                              <Link
+                                href={subItem.disabled ? "#" : subItem.href}
+                                onClick={(e) => { if (subItem.disabled) e.preventDefault(); }}
+                                className={cn(
+                                  subItem.disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+                                )}
+                              >
                                 <subItem.icon className="h-4 w-4 text-sidebar-primary" />
                                 <span>{subItem.label}</span>
                               </Link>
@@ -154,16 +182,23 @@ export function AppSidebar() {
                       ))}
                     </SidebarMenuSub>
                   )}
-                   {isGameToolsOpen && isMobile && (
+                   {openDropdowns[item.label] && isMobile && (
                      <div className="pl-7 flex flex-col gap-0.5 py-1 group-data-[collapsible=icon]:hidden">
                         {item.children.map((subItem) => (
                          <SidebarMenuSubItem key={subItem.href} className="p-0">
                             <SidebarMenuSubButton
                               asChild
-                              isActive={pathname === subItem.href}
+                              isActive={pathname === subItem.href && !subItem.disabled}
+                              aria-disabled={subItem.disabled}
                               className="h-8"
                             >
-                              <Link href={subItem.href}>
+                              <Link
+                                href={subItem.disabled ? "#" : subItem.href}
+                                onClick={(e) => { if (subItem.disabled) e.preventDefault(); }}
+                                className={cn(
+                                  subItem.disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+                                )}
+                              >
                                 <subItem.icon className="h-4 w-4 text-sidebar-primary" />
                                 <span>{subItem.label}</span>
                               </Link>
