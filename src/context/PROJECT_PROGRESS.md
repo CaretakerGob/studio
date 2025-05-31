@@ -65,9 +65,10 @@ DONE:
 - Shared Space Page:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
-    - **Multi-Character Support**: Can manage a party of up to 4 characters. Main UI focuses on an "active" character.
-    - Party Management Dialog: Add/remove characters.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers on main page for active character. MV and DEF visible only in modal.
+    - **Multi-Character Support & Display**: Main view displays a grid of party members (up to 4) with individual HP, Sanity, and Bleed trackers.
+    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
+    - Party Management Dialog: Add/remove characters. "Manage Party" button moved to page header.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
     - Arsenal and equipment display for active character.
     - Integrated dice roller and card generator.
@@ -92,7 +93,7 @@ DONE:
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
 - MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob (Ranged Tactician, Close Quarters Disruptor using only shop items).
-- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms & /privacy).
+- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves, 404 errors for /terms & /privacy, Nexus max update depth error).
 
 WORKING:
 - Ongoing review and minor clean-up of existing codebase.
@@ -121,3 +122,4 @@ NEXT:
       
     
 
+    

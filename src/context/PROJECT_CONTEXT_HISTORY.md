@@ -157,19 +157,17 @@
 - **Functionality:** Displays FAQs categorized into "App Questions" and "Board Game Concepts" using accordion style.
 
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
-- **Description:** Session-based game management hub, now supporting multiple characters.
+- **Description:** Session-based game management hub, supporting multiple characters.
 - **Functionality:**
-    - **Multi-Character Support:** Allows managing a party of up to 4 characters.
-    - **Active Character:** Main UI displays stats, arsenal, and tools for one "active" character at a time.
-    - **Party Management:** Dialog to add/remove characters from the party. List of party members displayed, allowing user to set the active character.
-    - **Individual Character Session State:** Each character in the party has its own session-specific data (HP, Sanity, Bleed, modifiers, arsenal, ability states).
-    - Displays stats for the active character (HP, Sanity, Bleed Points trackers) with session-based max stat modifiers. MV and DEF accessible in character modal.
+    - **Multi-Character Support & Display:** Party members (up to 4) are displayed in a grid as the main character view. Each character card shows their avatar, name, and interactive trackers for HP, Sanity, and Bleed Points.
+    - **Active Character:** One character is "active" for Arsenal selection and detailed modal views. Clicking a character's card in the grid sets them as active.
+    - **Party Management:** "Manage Party" button in the page header opens a dialog to add/remove characters.
+    - **Individual Character Session State:** Each character in the party has its own session-specific data (current HP, Sanity, Bleed, modifiers, arsenal, ability states).
     - Session Crypto Tracker: Global for the session.
     - Displays selected arsenal card (front/back images) for the active character.
-    - Allows clicking on character avatar and arsenal card images to view them in a larger modal.
-    - Provides a simple dice roller and card generator.
+    - Allows clicking on character avatar (in modal) and arsenal card images (on main page for active character) to view them in a larger modal.
     - Character details modal: Displays full stats (including MV/DEF), weapons, abilities, and skills for the active character.
-    - **Save/Load Nexus Session**: Saves/loads the entire party's state (all members, their session data, active character ID, session crypto) to/from Firestore.
+    - **Save/Load Nexus Session**: Saves/loads the entire party's state to/from Firestore.
     - **Reset Nexus Session**: Clears the entire party and session data.
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets. Party state is client-side, can be persisted.
 
@@ -264,4 +262,6 @@
 -   The application is intended to be the "OFFICIAL Riddle of the Beast board game companion app."
 
 This document provides a snapshot of the project's state and context.
+    
+
     
