@@ -1,14 +1,18 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     // User-specific character data (saved characters) and preferences (default character)
     match /userCharacters/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
     // User-specific Nexus session states
+    // This rule allows a user to read/write documents in their own "userNexusStates/{userId}" path
+    // and any documents in any subcollections under it (e.g., "/userNexusStates/{userId}/states/{stateId}")
     match /userNexusStates/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    // Add other rules here if needed, for example, for public data
   }
 }
