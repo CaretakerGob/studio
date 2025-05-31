@@ -1,7 +1,7 @@
 
 DONE:
 - Initial app setup (Next.js, TypeScript, ShadCN UI, Tailwind CSS, Firebase, Genkit)
-- Homepage: Layout, feature navigation cards, footer with links.
+- Homepage: Layout, feature navigation cards (consolidated "Game Tools"), footer with links.
 - Character Sheet:
     - Base stat tracking (HP, Sanity, MV, DEF) with interactive controls.
     - Skill display and point-buy system for Custom Characters.
@@ -15,6 +15,7 @@ DONE:
     - Dynamic granting of abilities from Arsenal Card items.
     - Companion (Pet) display with interactive stats (HP, Sanity, MV, DEF) and melee attack, derived from Arsenal Card items.
     - Firebase Firestore integration for saving/loading character configurations for logged-in users.
+    - Updated character images for predefined characters.
 - Dice Roller:
     - Numbered dice rolling (multiple groups, custom sides).
     - Combat dice rolling (image-based faces).
@@ -29,9 +30,9 @@ DONE:
     - Random event generation based on selected color or random type (Any, Chaos, Order).
     - Display of drawn event with thematic background image.
     - History of previously drawn events.
-- Investigations Page:
+- NPC Generator Page (formerly Investigations):
     - Data fetched from Google Sheets.
-    - Random encounter generation based on selected "Location Color" and 1d6 roll.
+    - Random NPC encounter generation based on selected "Location Color" and 1d6 roll.
 - Item List Page:
     - Placeholder UI, currently empty.
 - Whispers & Wares (Shop):
@@ -54,17 +55,24 @@ DONE:
     - Simulated friends list.
 - Shared Space Page:
     - Simulated access code UI for joining a session.
+- Hunter's Nexus Page:
+    - Session-based character management UI.
+    - Stat tracking with session modifiers (HP, Sanity, MV, DEF).
+    - Arsenal and equipment display.
+    - Integrated dice roller and card generator.
+    - Character avatar and arsenal card image modals.
+    - Modal for character details (stats, weapons, abilities, skills).
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
 - Sidebar Navigation:
     - Links to all major features.
     - Mobile-responsive (Sheet-based).
-    - Intuitively organized.
+    - "Game Tools" items grouped under a dropdown.
 - Mobile Optimizations:
     - Homepage feature card layout (vertical scrollable window).
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
-- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments).
+- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs).
 
 WORKING:
 - Ongoing review and minor clean-up of existing codebase.
@@ -82,10 +90,10 @@ NEXT:
 - Populate "Item List" page with actual game items (from rulebook or new data source).
 - Expand Genkit AI integrations:
     - Dynamic NPC dialogue generation.
-    - AI-assisted event or investigation detail generation.
+    - AI-assisted event or NPC detail generation.
 - Add a bestiary/monster manual section.
 - Implement game rule references or a digital rulebook section.
-- Further mobile optimization for all pages (Dice Roller, Card Generator, Events, Investigations, Shop, Profile, etc.).
+- Further mobile optimization for all pages (Dice Roller, Card Generator, Events, NPC Generator, Shop, Profile, etc.).
 - Caching strategies for Google Sheet data to improve performance in production.
 - Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
 - Refine UI/UX across all pages based on testing.

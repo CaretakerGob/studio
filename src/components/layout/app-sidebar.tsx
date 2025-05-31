@@ -23,7 +23,7 @@ import {
   Dices,
   Layers,
   CalendarDays,
-  ClipboardList,
+  Users as UsersIcon, // Changed from ClipboardList for NPC Generator
   Store,
   List,
   WandSparkles,
@@ -60,7 +60,7 @@ const navItemsConfig: CombinedNavItem[] = [
       { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
       { href: '/card-generator', label: 'Card Generator', icon: Layers },
       { href: '/item-list', label: 'Events', icon: CalendarDays }, // Event Generator
-      { href: '/investigations', label: 'Investigations', icon: ClipboardList },
+      { href: '/investigations', label: 'NPC Generator', icon: UsersIcon }, // Renamed, changed icon
       { href: '/shop', label: 'Whispers & Wares', icon: Store },
       { href: '/events', label: 'Item List', icon: List }, // Item List Page
       { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles },
@@ -73,22 +73,16 @@ const navItemsConfig: CombinedNavItem[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isMobile, open, setOpen } = useSidebar();
+  const { isMobile, open } = useSidebar(); // Removed setOpen as it's not used directly here for toggling
   const [isGameToolsOpen, setIsGameToolsOpen] = useState(false);
 
-  const gameToolsChildrenPaths = navItemsConfig
-    .find(item => item.type === 'dropdown' && item.label === 'Game Tools')
-    // @ts-ignore
-    ?.children.map(child => child.href) || [];
+  const gameToolsChildrenPaths = (navItemsConfig.find(item => item.type === 'dropdown' && item.label === 'Game Tools') as DropdownNavItem | undefined)?.children.map(child => child.href) || [];
   const isGameToolsActive = gameToolsChildrenPaths.includes(pathname);
 
   React.useEffect(() => {
     if (isGameToolsActive && open && !isMobile) {
       setIsGameToolsOpen(true);
     } else if (!open && !isMobile) {
-      // Retain open state if sidebar is collapsed but a child is active,
-      // for cases where sidebar might auto-open on child activation.
-      // For now, explicit close if parent sidebar is not open.
       setIsGameToolsOpen(false);
     }
   }, [isGameToolsActive, open, isMobile]);

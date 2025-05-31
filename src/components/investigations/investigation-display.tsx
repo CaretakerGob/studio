@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ClipboardList } from "lucide-react";
+import { AlertCircle, Users } from "lucide-react"; // Changed icon to Users
 import type { InvestigationData } from "@/types/investigation";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,7 +29,7 @@ export function InvestigationDisplay({
   return (
     <Card className="md:col-span-2 shadow-xl min-h-[300px] flex flex-col">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Encounter Details</CardTitle>
+        <CardTitle className="text-2xl">Generated NPC Details</CardTitle>
         {diceRollResult && selectedColor && (
           <CardDescription>
             Rolled a <span className="font-bold text-primary">{diceRollResult}</span> for <span className="font-bold text-primary">{selectedColor}</span>
@@ -42,7 +42,7 @@ export function InvestigationDisplay({
             <AlertCircle className="h-8 w-8 mx-auto mb-2" />
             <AlertTitle>System Error</AlertTitle>
             <AlertDescription>
-              {systemErrorMessage || "Could not load Investigation data. Please check logs."}
+              {systemErrorMessage || "Could not load NPC data. Please check logs."}
             </AlertDescription>
           </Alert>
         ) : isLoading ? (
@@ -67,10 +67,10 @@ export function InvestigationDisplay({
           </div>
         ) : (
           <Alert variant="default" className="max-w-md text-center border-dashed border-muted-foreground/50">
-            <ClipboardList className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-            <AlertTitle>No Encounter Generated</AlertTitle>
+            <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+            <AlertTitle>No NPC Generated</AlertTitle>
             <AlertDescription>
-              {availableColors.length === 0 && !systemError ? "No investigation data loaded to generate encounters from." : "Select a location color and roll the dice to see encounter details."}
+              {availableColors.length === 0 && !systemError ? "No NPC data loaded to generate NPCs from." : "Select a location color and roll the dice to see NPC details."}
             </AlertDescription>
           </Alert>
         )}

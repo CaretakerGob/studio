@@ -67,8 +67,8 @@ A comprehensive digital companion application for the "Riddle of the Beast" (Rot
     - History of the last 2 previously drawn events.
 - **Data Source:** Event data (Color, Type, Description) is fetched from a Google Sheet.
 
-### 3.6. Investigations (`/investigations`)
-- **Description:** Generate random investigation encounters.
+### 3.6. NPC Generator (`/investigations`)
+- **Description:** Generate random NPC encounters.
 - **Functionality:**
     - Select a "Location Color" from a dropdown.
     - Roll a 1d6 for the selected location.
@@ -141,4 +141,3 @@ A comprehensive digital companion application for the "Riddle of the Beast" (Rot
 - Add a bestiary or monster manual section.
 - Implement game rule references or a digital rulebook.
 - Caching strategies for Google Sheet data to improve performance.
-```

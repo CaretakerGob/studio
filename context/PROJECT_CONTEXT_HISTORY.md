@@ -22,7 +22,7 @@
     - Implemented for an AI Item Generator feature.
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
-    - **Google Sheets API:** Used to fetch game data for Events, Investigations, and Arsenal Cards via server-side logic in page components. Requires service account credentials.
+    - **Google Sheets API:** Used to fetch game data for Events, Investigations (now NPC Generator), and Arsenal Cards via server-side logic in page components. Requires service account credentials.
 - **Image Placeholders:** `https://placehold.co` and `https://picsum.photos`.
 - **Deployment:** Firebase App Hosting (inferred from build logs and setup).
 - **Code Quality:**
@@ -31,7 +31,7 @@
 ## 3. Features Implemented
 
 ### 3.1. Homepage (`/`)
-- **Description:** Landing page with an overview of the app and quick links to all major features.
+- **Description:** Landing page with an overview of the app and quick links to all major features. Navigation cards consolidated (e.g., "Game Tools" card).
 - **Visuals:** Thematic background image (customizable via URL in code), clear navigation cards for each feature.
 - **Footer:** Links to Home, FAQ, Terms of Service (placeholder), Privacy Policy (placeholder).
 - **Mobile Layout:** Feature cards stack vertically within a scrollable window.
@@ -39,7 +39,7 @@
 ### 3.2. Character Sheet (`/character-sheet`)
 - **Description:** Digital management of player characters.
 - **Functionality:**
-    - Selection from predefined character templates (Gob, Cassandra, Fei, Michael, Tamara, Trish, Blake, Walter) or a customizable "Custom Character".
+    - Selection from predefined character templates (Gob, Cassandra, Fei, Michael, Tamara, Trish, Blake, Walter) or a customizable "Custom Character". Images for predefined characters updated.
     - Track core stats (HP, Sanity, MV, DEF) with interactive trackers and dynamic progress bar colors.
     - Manage skills:
         - Predefined characters have set skill values.
@@ -91,14 +91,14 @@
 - **Data Source:** Event data (Color, Type, Description - Insert & Count columns are fetched but hidden) from a Google Sheet.
 - **Layout:** Refactored into sub-components.
 
-### 3.6. Investigations (`/investigations`)
-- **Description:** Generate random investigation encounters.
+### 3.6. NPC Generator (`/investigations`)
+- **Description:** Generate random NPC encounters.
 - **Functionality:**
     - Select a "Location Color" from a dropdown.
     - Roll a 1d6 for the selected location.
-    - Display the specific encounter details (NPC, Unit, Persona, Demand, Skill Check, Goals, Passive, Description).
+    - Display the specific NPC details (NPC, Unit, Persona, Demand, Skill Check, Goals, Passive, Description).
     - "Reset" button.
-- **Data Source:** Investigation encounter data from a Google Sheet.
+- **Data Source:** NPC encounter data (formerly "Investigation data") from a Google Sheet.
 - **Layout:** Refactored into sub-components.
 
 ### 3.7. Item List (`/events` - URL path)
@@ -149,8 +149,23 @@
 - **Description:** Frequently Asked Questions page.
 - **Functionality:** Displays FAQs categorized into "App Questions" and "Board Game Concepts" using accordion style.
 
-### 3.13. Layout & General
-- **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile with a dedicated trigger.
+### 3.13. Hunter's Nexus (`/hunters-nexus`)
+- **Description:** Session-based, multiplayer game management hub.
+- **Functionality:**
+    - Allows selection of a character template for the session.
+    - Displays core stats (HP, Sanity, MV, DEF) with interactive trackers and session-based max stat modifiers.
+    - Displays selected arsenal card (front/back images) and its equipment.
+    - Allows clicking on character avatar and arsenal card images to view them in a larger modal.
+    - Provides a simple dice roller (numbered and combat dice).
+    - Provides a card generator for drawing from game decks.
+    - Shows a list of party members (currently just the selected character).
+    - Displays character abilities (base and arsenal-granted) with cooldown/quantity trackers in a modal.
+    - Displays character skills and weapons (base and arsenal-modified) in a modal.
+    - Max Mod trackers for MV and DEF added to character modal.
+- **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session.
+
+### 3.14. Layout & General
+- **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile with a dedicated trigger. "Game Tools" items (Character Sheet, Dice Roller, Card Generator, Events, NPC Generator, Shop, Item List, AI Item Generator) grouped under a dropdown.
 - **Toasts:** Used for user feedback on various actions.
 - **Theme:** Dark, horror-inspired theme defined in `globals.css`.
 
@@ -175,7 +190,7 @@
     *   Saving character inventory.
 -   **Advanced AI Features (Genkit):**
     *   Dynamic NPC dialogue.
-    *   AI-assisted event or investigation detail generation.
+    *   AI-assisted event or NPC detail generation.
 -   **Bestiary/Monster Manual:** A section to view details about game enemies.
 -   **Digital Rulebook/References:** In-app access to game rules.
 -   **Performance Optimization:** Caching strategies for Google Sheet data (ISR, server-side caching).
@@ -271,7 +286,7 @@
     -   `Type: string`
     -   `Description: string`
 
--   **`InvestigationData` (`src/types/investigation.ts` - from Google Sheet)**:
+-   **`InvestigationData` (now `NPCEncounterData` implicitly) (`src/types/investigation.ts` - from Google Sheet)**:
     -   `'Location Color': string`
     -   `'1d6 Roll': string`
     -   `NPC: string`
@@ -357,7 +372,7 @@
     -   None explicitly implemented yet.
 
 -   **External APIs & SDKs Used:**
-    -   **Google Sheets API:** Accessed server-side via the `googleapis` npm package to fetch data for Events, Investigations, and Arsenal Cards. Requires service account credentials (`GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, and sheet-specific IDs/ranges) stored in `.env.local`.
+    -   **Google Sheets API:** Accessed server-side via the `googleapis` npm package to fetch data for Events, NPC Generator (formerly Investigations), and Arsenal Cards. Requires service account credentials (`GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, and sheet-specific IDs/ranges) stored in `.env.local`.
     -   **Firebase SDK (Client-Side):**
         -   `firebase/app`: For initialization.
         -   `firebase/auth`: For user sign-up, login, logout, password reset, profile updates.
@@ -379,7 +394,7 @@
 -   Environment variables in `.env.local` are critical for Firebase client configuration and Google Sheets API server-side access.
 -   Error handling is present for data fetching and Firebase operations, often using toast notifications.
 -   The rulebook content provided by the user (shop items, abilities, combat rules) is extensive and implies a long-term goal of creating a very rich and interactive digital companion. Much of this is not yet implemented but informs the design of data structures.
--   There's a URL/label mismatch between the "Events" (random generator using item sheet data at `/item-list`) and "Item List" (empty table at `/events`) pages that might benefit from renaming/restructuring for user clarity.
+-   The "Investigations" feature has been renamed to "NPC Generator".
 -   Build process uses Firebase App Hosting buildpacks. Previous build issues related to dependencies (`firebase`, `@tanstack-query-firebase/react`, `@opentelemetry/exporter-jaeger`) and Next.js Suspense boundaries have been addressed.
 -   The application is intended to be the "OFFICIAL Riddle of the Beast board game companion app."
 

@@ -5,8 +5,8 @@ import type { InvestigationData } from "@/types/investigation";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Investigations - Beast Companion',
-  description: 'Generate random investigation encounters.', // Updated description
+  title: 'NPC Generator - Beast Companion',
+  description: 'Generate random NPC encounters for your game.', 
 };
 
 async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> {
@@ -24,7 +24,7 @@ async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> 
   if (!INVESTIGATIONS_GOOGLE_SHEET_RANGE) missingVars.push('INVESTIGATIONS_GOOGLE_SHEET_RANGE');
 
   if (missingVars.length > 0) {
-    const detailedErrorMessage = `Investigations Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, INVESTIGATIONS_GOOGLE_SHEET_ID, INVESTIGATIONS_GOOGLE_SHEET_RANGE) are correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.`;
+    const detailedErrorMessage = `NPC Generator Google Sheets API environment variables are not configured. Missing: ${missingVars.join(', ')}. Please ensure all required variables (GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, INVESTIGATIONS_GOOGLE_SHEET_ID, INVESTIGATIONS_GOOGLE_SHEET_RANGE) are correctly set in your .env.local file. Remember to restart your development server after making changes to .env.local.`;
     console.error(detailedErrorMessage);
     // Return a single error object that matches InvestigationData structure for consistent handling in UI
     return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: detailedErrorMessage } as unknown as InvestigationData];
@@ -48,7 +48,7 @@ async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> 
     const rows = response.data.values;
 
     if (!rows || rows.length === 0) {
-      const warningMessage = `No data found in Investigations Google Sheet ID: ${INVESTIGATIONS_GOOGLE_SHEET_ID} at range: ${INVESTIGATIONS_GOOGLE_SHEET_RANGE}.`;
+      const warningMessage = `No data found in NPC Generator Google Sheet ID: ${INVESTIGATIONS_GOOGLE_SHEET_ID} at range: ${INVESTIGATIONS_GOOGLE_SHEET_RANGE}.`;
       console.warn(warningMessage);
       return [{ 'Location Color': 'Warning', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: warningMessage } as unknown as InvestigationData];
     }
@@ -78,9 +78,9 @@ async function getInvestigationsFromGoogleSheet(): Promise<InvestigationData[]> 
     });
 
   } catch (error) {
-    console.error("Error fetching Investigation data from Google Sheets API:", error);
+    console.error("Error fetching NPC Generator data from Google Sheets API:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: `Could not load Investigation data. Error: ${errorMessage}` } as unknown as InvestigationData];
+    return [{ 'Location Color': 'Error', '1d6 Roll': '', NPC: 'System', Unit: '', Persona: '', Demand: '', 'Skill Check': '', Goals: '', Passive: '', Description: `Could not load NPC Generator data. Error: ${errorMessage}` } as unknown as InvestigationData];
   }
 }
 

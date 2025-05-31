@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices } from "lucide-react";
+import { Users } from "lucide-react"; // Changed icon to Users for NPC context
 import type { InvestigationData } from "@/types/investigation";
 import { useToast } from '@/hooks/use-toast';
 import { InvestigationControls } from './investigation-controls';
@@ -62,14 +62,14 @@ export function InvestigationsUI({ investigations }: InvestigationsUIProps) {
       if (foundEncounter) {
         setCurrentEncounter(foundEncounter);
         toast({
-          title: "Encounter Found!",
+          title: "NPC Details Generated!",
           description: `Rolled a ${roll} for ${selectedColor}.`,
         });
       } else {
         setCurrentEncounter(null);
         toast({
-          title: "No Encounter Found",
-          description: `No encounter details found for ${selectedColor} with a roll of ${roll}.`,
+          title: "No NPC Found",
+          description: `No NPC details found for ${selectedColor} with a roll of ${roll}.`,
           variant: "destructive",
         });
       }
@@ -82,7 +82,7 @@ export function InvestigationsUI({ investigations }: InvestigationsUIProps) {
     setDiceRollResult(null);
     setCurrentEncounter(null);
     setIsLoading(false);
-    toast({ title: "Generator Reset", description: "Location color and encounter details cleared." });
+    toast({ title: "Generator Reset", description: "Location color and NPC details cleared." });
   };
 
   return (
@@ -90,10 +90,10 @@ export function InvestigationsUI({ investigations }: InvestigationsUIProps) {
       <Card className="md:col-span-1 shadow-xl">
         <CardHeader>
           <div className="flex items-center">
-            <Dices className="mr-3 h-8 w-8 text-primary" />
-            <CardTitle className="text-2xl">Investigation Controls</CardTitle>
+            <Users className="mr-3 h-8 w-8 text-primary" />
+            <CardTitle className="text-2xl">NPC Generator Controls</CardTitle>
           </div>
-          <CardDescription>Select a location color and roll for an encounter.</CardDescription>
+          <CardDescription>Select a location color and roll for an NPC.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <InvestigationControls
