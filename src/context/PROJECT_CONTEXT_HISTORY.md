@@ -1,5 +1,4 @@
 
-
 # Project Context History: Riddle of the Beast App Companion
 
 ## 1. Project Objectives and Vision
@@ -21,7 +20,7 @@
     - **Storage:** Firebase Storage (for user profile images).
 - **Generative AI:** Genkit (Google AI - Gemini models)
     - Implemented for an AI Item Generator feature (`item-generator-flow.ts`).
-    - Implemented for an AI Shop Item Image Generator feature (`generate-shop-item-image-flow.ts`).
+    - Implemented for an AI Shop Item Image Generator feature (`generate-shop-item-image-flow.ts`) (currently not used in Shop UI).
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
     - **Google Sheets API:** Used to fetch game data for Events, NPC Generator, Arsenal Cards, and Shop Items via server-side logic in page components. Requires service account credentials. Shop items can be sourced from multiple tabs within the same Google Sheet.
@@ -42,7 +41,7 @@
 - **Description:** Digital management of player characters.
 - **Functionality:**
     - Selection from predefined character templates (Gob, Cassandra, Fei, Michael, Tamara, Trish, Blake, Walter) or a customizable "Custom Character". Images for predefined characters updated.
-    - Track core stats (HP, Sanity, MV, DEF) with interactive trackers and dynamic progress bar colors.
+    - Track core stats (HP, Sanity, MV, DEF) with interactive trackers and dynamic progress bar colors. Core stat display refined for mobile (label and controls stack vertically on small screens).
     - Crypto Tracker: Added a "Crypto" currency tracker. Defaults to 0. Can be manually adjusted. Saved with character data.
     - Manage skills:
         - Predefined characters have set skill values.
@@ -59,7 +58,7 @@
     - Save and load character configurations for logged-in users via Firebase Firestore.
     - "Reset Template" button reverts the current sheet to the selected character's default template values (does not affect saved data).
 - **Layout:** Tab-based (Stats & Equipment, Abilities, Arsenal, Skills). Refactored into multiple sub-components for better organization.
-- **Mobile Optimization:** Responsive layouts for stats, tabs, and controls.
+- **Mobile Optimization:** Responsive layouts for stats, tabs, and controls. Core Stats display in "Stats & Equipment" tab improved for small screens.
 
 ### 3.3. Dice Roller (`/dice-roller`)
 - **Description:** Versatile dice rolling tool.
@@ -116,7 +115,7 @@
     - Simulated "Crypto" currency tracker (client-side state).
     - Simulated purchasing logic (deducts Crypto, updates stock for consumables).
     - Item data (Name, Cost, Category, Effect, SubCategory, and other optional fields like Stock, Weapon Class, Attack, etc.) is fetched from a Google Sheet (can use multiple tabs).
-    - AI image generation for items without sheet URLs removed from UI (flow still exists).
+    - AI image generation button removed from UI. Placeholders shown for items without sheet URLs.
 - **Data Source:** Google Sheets for item data.
 
 ### 3.9. AI Item Generator (`/item-generator`)
@@ -175,9 +174,9 @@
     - **Reset Nexus Session**: Settings dropdown allows users to reset the current session state.
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session but can be saved/loaded for logged-in users.
 
-### 3.14. Terms of Service (`/terms`)
-- **Description:** Placeholder page for Terms of Service.
-- **Functionality:** Displays a "Coming Soon" message and basic placeholder information.
+### 3.14. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
+- **Description:** Placeholder pages for legal documents.
+- **Functionality:** Display "Coming Soon" messages and basic placeholder information.
 
 ### 3.15. Layout & General
 - **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile. "Game Tools" items grouped. "Future Features" dropdown created for AI Item Generator and NPC Generator, which are now greyed out/disabled.
@@ -210,7 +209,7 @@
 -   **Bestiary/Monster Manual:** A section to view details about game enemies.
 -   **Digital Rulebook/References:** In-app access to game rules.
 -   **Hunter's Nexus Enhancements**: Session Display Preferences (toggle tool visibility, compact mode).
--   **Privacy Policy Page (`/privacy`)**: Placeholder page.
+-   **Further Mobile Optimization**: Continue refining mobile responsiveness for all pages.
 
 ## 6. Design Decisions and Constraints
 -   **Tech Stack Choice:** Next.js, React, TypeScript, ShadCN, Tailwind, Firebase, Genkit, Google Sheets API.
@@ -279,7 +278,3 @@
 -   The application is intended to be the "OFFICIAL Riddle of the Beast board game companion app."
 
 This document provides a snapshot of the project's state and context.
-
-    
-
-

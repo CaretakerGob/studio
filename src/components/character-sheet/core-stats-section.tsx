@@ -91,7 +91,7 @@ export function CoreStatsSection({
 
     return (
       <div className={cn("p-4 rounded-lg border border-border bg-card/50 shadow-md transition-all duration-300", highlightedStat === def.id ? "ring-2 ring-primary shadow-lg" : "shadow-md")}>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-col items-start gap-1 mb-2 sm:flex-row sm:items-center sm:justify-between"> {/* Changed line */}
           <Label htmlFor={def.id} className="flex items-center text-lg font-medium">
             <def.icon className="mr-2 h-6 w-6 text-primary" />
             {def.label}
@@ -178,7 +178,7 @@ export function CoreStatsSection({
 
     return (
       <div className="p-4 rounded-lg border border-border bg-card/50 shadow-md">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-col items-start gap-1 mb-2 sm:flex-row sm:items-center sm:justify-between"> {/* Changed line */}
           <Label className="flex items-center text-lg font-medium">
             <Icon className="mr-2 h-6 w-6 text-primary" />
             {label}
@@ -251,5 +251,3 @@ export function CoreStatsSection({
     </div>
   );
 }
-
-
