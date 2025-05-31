@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // Added import
 import {
   Dialog,
   DialogContent,
@@ -70,8 +71,8 @@ import {
   Plus,
   Clock,
   Box,
-  Briefcase, // Icon for Arsenal Gear
-  Crosshair // for Ranged Weapon
+  Briefcase, 
+  Crosshair 
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -211,7 +212,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     calculatedStats.def = Math.max(0, calculatedStats.def);
     calculatedStats.sanity = Math.max(0, calculatedStats.sanity);
     calculatedStats.maxSanity = Math.max(1, calculatedStats.maxSanity);
-    // Melee Attack is handled by effectiveNexusMeleeWeapon
+
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
     return calculatedStats;
@@ -1218,7 +1219,18 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
           {/* Image Enlargement Modal */}
           <Dialog open={!!enlargedImageUrl} onOpenChange={(isOpen) => { if (!isOpen) setEnlargedImageUrl(null); }}>
-            <DialogContent className="max-w-5xl w-[95vw] h-[95vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center" onInteractOutside={(e) => { if (imageZoomLevel > 1) { setImageZoomLevel(1); e.preventDefault(); }}}>
+            <DialogContent 
+              className="max-w-5xl w-[95vw] h-[95vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center" 
+              onInteractOutside={(e) => { if (imageZoomLevel > 1) { setImageZoomLevel(1); e.preventDefault(); }}}
+            >
+              <DialogHeader>
+                  <VisuallyHidden>
+                    <DialogTitle>Enlarged Image View</DialogTitle>
+                    <DialogDescription>
+                      Showing an enlarged view of the selected card or image.
+                    </DialogDescription>
+                  </VisuallyHidden>
+              </DialogHeader>
               {enlargedImageUrl && (
                 <div 
                   className="relative w-full h-full flex items-center justify-center overflow-hidden" 
