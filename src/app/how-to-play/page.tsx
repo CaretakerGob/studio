@@ -47,34 +47,39 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
     }
     const linkMatch = segment.match(/\[(.*?)\]\((.*?)\)/);
     if (linkMatch) {
-      return <span key={currentKey} className="text-primary hover:underline">{linkMatch[1]}</span>;
+      return <span key={currentKey} className="text-primary hover:underline">{linkMatch[1]}</span>; // Links are styled but not functional as href is not used
     }
-    return <span key={currentKey} dangerouslySetInnerHTML={{ __html: segment }} />;
+    // For general text, replace multiple spaces with a single space for better rendering, and handle newlines via CSS on the <p>
+    return <span key={currentKey} dangerouslySetInnerHTML={{ __html: segment.replace(/  +/g, ' ') }} />;
   });
 };
 
 const parseMarkdownToSections = (markdown: string): Section[] => {
   const lines = markdown.split('\n');
   const sections: Section[] = [];
-  let currentSection: Section | null = null;
+  let currentMajorSection: Section | null = null;
   let currentParagraphLines: string[] = [];
   let keyIndex = 0;
 
-  let ignoreCurrentH1H2Content = false; // True if the current H1/H2 title itself means its content should be skipped
-  let ignoreSubsequentContent = false;  // True if an H3+ title means subsequent content should be skipped
+  let ignoreContentOfCurrentMajorSection = false;
+  let ignoreSubLevelContent = false;
 
   const shopSectionTitlesToIgnore = [
-    "defense gear shop", "melee weapons", "melee weapon shop", "range weapons", "range weapon shop", 
+    "defense gear shop", "melee weapons", "melee weapon shop", 
+    "range weapons", "range weapon shop", 
     "augment shop", "utility shop", "consumable shop", "relics*", 
-    "loot table", "mystery table", "weapon class special ability" 
+    "loot table", "mystery table", "weapon class special ability",
+    // Titles from Utility Shop that are H4 but act as main sections to ignore if "Utility Shop" H3 itself wasn't caught
+    "ammunition", "bombs", "traps", "healing items", "battery items", "miscellaneous items", 
+    "dybbuk boxes" // Added just in case as it's a list of items
   ].map(title => title.toLowerCase());
 
-  const flushParagraph = () => {
-    if (currentParagraphLines.length > 0 && currentSection && !ignoreCurrentH1H2Content && !ignoreSubsequentContent) {
+  const flushParagraph = (targetSection: Section | null) => {
+    if (currentParagraphLines.length > 0 && targetSection) {
       const paragraphText = currentParagraphLines.join('\n').trim();
       if (paragraphText) {
-        const uniqueKey = `p-${currentSection.id}-${keyIndex++}`;
-        currentSection.contentNodes.push(
+        const uniqueKey = `p-${targetSection.id}-${keyIndex++}`;
+        targetSection.contentNodes.push(
           <p key={uniqueKey} className="mb-3 leading-relaxed text-foreground/90">
             {parseInlineMarkdown(paragraphText, uniqueKey)}
           </p>
@@ -89,102 +94,90 @@ const parseMarkdownToSections = (markdown: string): Section[] => {
     let headingLevel = 0;
     let headingText = "";
 
-    if (trimmedLine.startsWith('#')) {
-      const match = trimmedLine.match(/^(#+)\s*(.*)/);
-      if (match) {
-        headingLevel = match[1].length;
-        headingText = match[2].trim();
-      }
+    const headingMatch = trimmedLine.match(/^(#+)\s*(.*)/);
+    if (headingMatch) {
+      headingLevel = headingMatch[1].length;
+      headingText = headingMatch[2].trim();
     }
 
     if (headingLevel === 1 || headingLevel === 2) {
-      flushParagraph();
-      if (currentSection) {
-        // Add previous section only if it's not an ignored H1/H2 title OR if it actually got content
-        // (An H1/H2 not on ignore list should be kept even if its content was all ignored H3s)
-        if (!shopSectionTitlesToIgnore.includes(currentSection.title.toLowerCase()) || currentSection.contentNodes.length > 0) {
-            sections.push(currentSection);
-        }
+      flushParagraph(currentMajorSection);
+      if (currentMajorSection && !ignoreContentOfCurrentMajorSection) {
+        sections.push(currentMajorSection);
       }
-      
-      const sectionId = `section-${headingText.toLowerCase().replace(/\s+/g, '-')}-${keyIndex++}`;
-      currentSection = { id: sectionId, title: headingText, level: headingLevel, contentNodes: [] };
-      
-      ignoreCurrentH1H2Content = shopSectionTitlesToIgnore.includes(headingText.toLowerCase());
-      ignoreSubsequentContent = false; // Reset for new H1/H2 section
 
-      if (ignoreCurrentH1H2Content) { // If H1/H2 title itself is on ignore list, we skip this whole section
-        currentSection = null; // Effectively discard this section
-        continue;
+      const newSectionTitleLower = headingText.toLowerCase();
+      if (shopSectionTitlesToIgnore.includes(newSectionTitleLower)) {
+        ignoreContentOfCurrentMajorSection = true;
+        currentMajorSection = null;
+      } else {
+        ignoreContentOfCurrentMajorSection = false;
+        const sectionId = `section-${newSectionTitleLower.replace(/\s+/g, '-')}-${keyIndex++}`;
+        currentMajorSection = { id: sectionId, title: headingText, level: headingLevel, contentNodes: [] };
       }
-    } else if (currentSection) { // Processing content for an active (non-ignored H1/H2) section
-      if (headingLevel >= 3) { // H3, H4, etc.
-        flushParagraph();
-        if (shopSectionTitlesToIgnore.includes(headingText.toLowerCase())) {
-          ignoreSubsequentContent = true; // Start ignoring from this H3
-          continue; // Don't add this H3 title or its content
+      ignoreSubLevelContent = false; // Reset for new major section
+    } else {
+      if (ignoreContentOfCurrentMajorSection || !currentMajorSection) {
+        continue; // Skip content if major section is ignored or doesn't exist
+      }
+
+      if (headingLevel >= 3) { // H3, H4, H5, H6
+        flushParagraph(currentMajorSection);
+        const subHeadingTextLower = headingText.toLowerCase();
+        if (shopSectionTitlesToIgnore.includes(subHeadingTextLower)) {
+          ignoreSubLevelContent = true;
         } else {
-          ignoreSubsequentContent = false; // New non-ignorable H3, stop ignoring
+          ignoreSubLevelContent = false;
+          const uniqueKeyPrefix = `${currentMajorSection.id}-${keyIndex++}`;
+          if (headingLevel === 3) currentMajorSection.contentNodes.push(<h3 key={`h3-${uniqueKeyPrefix}`} className="text-2xl font-bold mt-5 mb-2 pb-1 border-b border-border text-primary/95">{headingText}</h3>);
+          else if (headingLevel === 4) currentMajorSection.contentNodes.push(<h4 key={`h4-${uniqueKeyPrefix}`} className="text-xl font-semibold mt-4 mb-2 text-primary/90">{headingText}</h4>);
+          else if (headingLevel === 5) currentMajorSection.contentNodes.push(<h5 key={`h5-${uniqueKeyPrefix}`} className="text-lg font-semibold mt-3 mb-1 text-primary/85">{headingText}</h5>);
+          else if (headingLevel === 6) currentMajorSection.contentNodes.push(<h6 key={`h6-${uniqueKeyPrefix}`} className="text-base font-semibold mt-2 mb-1 text-primary/80">{headingText}</h6>);
+        }
+      } else if (!ignoreSubLevelContent) {
+        // Process paragraph lines, list items, separators for the currentMajorSection
+        const uniqueKeyPrefix = `${currentMajorSection.id}-${keyIndex++}`;
+        if (trimmedLine.startsWith('---') || trimmedLine.startsWith('***') || trimmedLine.startsWith('___')) {
+          flushParagraph(currentMajorSection);
+          currentMajorSection.contentNodes.push(<Separator key={`hr-${uniqueKeyPrefix}`} className="my-4" />);
+        } else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+          flushParagraph(currentMajorSection);
+          currentMajorSection.contentNodes.push(
+            <li key={`li-${uniqueKeyPrefix}`} className="ml-5 list-disc text-foreground/90 my-1">
+              {parseInlineMarkdown(trimmedLine.substring(2), `li-text-${uniqueKeyPrefix}`)}
+            </li>
+          );
+        } else if (trimmedLine.match(/^\d+\.\s/)) {
+          flushParagraph(currentMajorSection);
+          currentMajorSection.contentNodes.push(
+            <li key={`oli-${uniqueKeyPrefix}`} className="ml-5 list-decimal text-foreground/90 my-1">
+              {parseInlineMarkdown(trimmedLine.replace(/^\d+\.\s/, ''), `oli-text-${uniqueKeyPrefix}`)}
+            </li>
+          );
+        } else if (trimmedLine !== '') {
+          currentParagraphLines.push(line);
         }
       }
-
-      if (ignoreSubsequentContent) {
-        currentParagraphLines = []; // Clear any buffer if we are in an ignore block
-        continue;
-      }
-
-      // Add content to currentSection.contentNodes
-      const uniqueKeyPrefix = `${currentSection.id}-${keyIndex++}`;
-      if (headingLevel === 3) {
-        currentSection.contentNodes.push(<h3 key={`h3-${uniqueKeyPrefix}`} className="text-2xl font-bold mt-5 mb-2 pb-1 border-b border-border text-primary/95">{headingText}</h3>);
-      } else if (headingLevel === 4) {
-        currentSection.contentNodes.push(<h4 key={`h4-${uniqueKeyPrefix}`} className="text-xl font-semibold mt-4 mb-2 text-primary/90">{headingText}</h4>);
-      } else if (headingLevel === 5) {
-        currentSection.contentNodes.push(<h5 key={`h5-${uniqueKeyPrefix}`} className="text-lg font-semibold mt-3 mb-1 text-primary/85">{headingText}</h5>);
-      } else if (headingLevel === 6) {
-        currentSection.contentNodes.push(<h6 key={`h6-${uniqueKeyPrefix}`} className="text-base font-semibold mt-2 mb-1 text-primary/80">{headingText}</h6>);
-      } else if (trimmedLine.startsWith('---') || trimmedLine.startsWith('***') || trimmedLine.startsWith('___')) {
-        flushParagraph();
-        currentSection.contentNodes.push(<Separator key={`hr-${uniqueKeyPrefix}`} className="my-4" />);
-      } else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-        flushParagraph(); // Ensure paragraph is flushed before list item
-        currentSection.contentNodes.push(
-          <li key={`li-${uniqueKeyPrefix}`} className="ml-5 list-disc text-foreground/90 my-1">
-            {parseInlineMarkdown(trimmedLine.substring(2), `li-text-${uniqueKeyPrefix}`)}
-          </li>
-        );
-      } else if (trimmedLine.match(/^\d+\.\s/)) {
-        flushParagraph(); // Ensure paragraph is flushed before list item
-        currentSection.contentNodes.push(
-          <li key={`oli-${uniqueKeyPrefix}`} className="ml-5 list-decimal text-foreground/90 my-1">
-            {parseInlineMarkdown(trimmedLine.replace(/^\d+\.\s/, ''), `oli-text-${uniqueKeyPrefix}`)}
-          </li>
-        );
-      } else if (trimmedLine !== '') {
-        currentParagraphLines.push(line);
-      }
-    } else { // Lines before the first H1/H2, typically none or intro
-        if (trimmedLine !== '') currentParagraphLines.push(line);
     }
   }
 
-  flushParagraph();
-  if (currentSection) {
-     if (!shopSectionTitlesToIgnore.includes(currentSection.title.toLowerCase()) || currentSection.contentNodes.length > 0) {
-        sections.push(currentSection);
-     }
+  flushParagraph(currentMajorSection);
+  if (currentMajorSection && !ignoreContentOfCurrentMajorSection) {
+    sections.push(currentMajorSection);
   }
   
   return sections;
 };
 
+
 export default async function HowToPlayPage() {
   let sections: Section[] = [];
   let errorMessage: string | null = null;
+  let rulesContent = "";
 
   try {
     const filePath = path.join(process.cwd(), 'docs', 'Riddle_of_the_Beast_Rulebook.md');
-    const rulesContent = await fs.readFile(filePath, 'utf8');
+    rulesContent = await fs.readFile(filePath, 'utf8');
     sections = parseMarkdownToSections(rulesContent);
     if (sections.length === 0 && rulesContent.length > 0) {
         errorMessage = "No displayable sections could be parsed from the rulebook. Content might be structured in an unexpected way or is entirely composed of ignored sections."
@@ -211,7 +204,7 @@ export default async function HowToPlayPage() {
           {errorMessage ? (
             <p className="text-destructive text-center">{errorMessage}</p>
           ) : sections.length === 0 ? (
-            <p className="text-muted-foreground text-center">No rulebook content to display.</p>
+            <p className="text-muted-foreground text-center">No rulebook content to display. Check console for parsing details.</p>
           ) : (
             <Accordion type="multiple" className="w-full space-y-3">
               {sections.map((section, index) => (
@@ -231,3 +224,5 @@ export default async function HowToPlayPage() {
     </div>
   );
 }
+
+    
