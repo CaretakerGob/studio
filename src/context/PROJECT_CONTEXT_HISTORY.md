@@ -158,9 +158,9 @@
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
 - **Description:** Session-based game management hub, supporting multiple characters.
 - **Functionality:**
-    - **Multi-Character Display**: Main view displays a grid of party members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card (header area) sets them as active. The character's MV and DEF are hidden from this main card view but remain in the detailed modal. Stat trackers are stacked vertically (HP, then Sanity, then Bleed).
-    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character. The active character's image is prominently displayed above the party grid.
-    - Party Management Dialog: Add/remove characters. "Manage Party" button relocated to the page header.
+    - **Multi-Character Display**: Main view displays a grid of party members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card (header area) sets them as active.
+    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
+    - Party Management Dialog: Add/remove characters. "Manage Party" button located in the page header.
     - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
     - Arsenal and equipment display for active character (images of selected arsenal).
@@ -262,6 +262,8 @@
 -   The application is intended to be the "OFFICIAL Riddle of the Beast board game companion app."
 
 This document provides a snapshot of the project's state and context.
+    
+
     
 
     

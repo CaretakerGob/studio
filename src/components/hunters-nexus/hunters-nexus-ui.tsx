@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -568,7 +569,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         };
       });
     } else if (!touchEndX && !touchEndY) { 
-      // Close if avatar or arsenal with only one side (or same front/back), and not a swipe/drag
       setEnlargedModalContent(null);
     }
   };
@@ -594,16 +594,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
           };
         });
         setImageZoomLevel(1);
-      } else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) { // Tap
+      } else if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) { 
         if (imageZoomLevel > 1) {
           setImageZoomLevel(1);
         }
-        // Note: Tap on arsenal card is handled by handleModalImageInteraction for flip.
-        // If tap should close unzoomed arsenal, that logic would conflict or need more complexity.
-        // Current Dialog Primitive handles Esc and X button for close.
       }
-    } else { // Avatar or single-sided arsenal
-      if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) { // Tap
+    } else { 
+      if (Math.abs(deltaX) < MAX_TAP_MOVEMENT && Math.abs(deltaY) < MAX_TAP_MOVEMENT) { 
         if (imageZoomLevel > 1) {
           setImageZoomLevel(1);
         } else {
@@ -1362,66 +1359,47 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     </div>
 
                     <div className="lg:col-span-2 space-y-6">
-                        {activeCharacterBase && activeCharacterBase.imageUrl && (
-                            <Card className="overflow-hidden">
-                                <CardHeader className="p-2 sm:p-3 text-center">
-                                    <CardTitle className="text-lg sm:text-xl text-primary">{activeCharacterBase.name}</CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-0 flex justify-center items-center">
-                                    <button 
-                                        type="button" 
-                                        onClick={() => openAvatarImageModal(activeCharacterBase.imageUrl!)}
-                                        className="relative w-full max-w-xs aspect-[2/3] sm:aspect-auto sm:h-64 md:h-72 rounded-md overflow-hidden border border-border hover:ring-1 hover:ring-accent focus:outline-none focus:ring-1 focus:ring-accent block mx-auto"
-                                        aria-label={`View image for ${activeCharacterBase.name}`}
-                                    >
-                                        <Image
-                                            src={activeCharacterBase.imageUrl}
-                                            alt={activeCharacterBase.name}
-                                            fill
-                                            style={{ objectFit: 'contain' }}
-                                            data-ai-hint={`${activeCharacterBase.name} character art prominent`}
-                                            priority
-                                        />
-                                    </button>
-                                </CardContent>
-                            </Card>
-                        )}
                         {partyMembers.length > 0 ? (
-                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {partyMembers.map((member, memberIndex) => {
                                     const memberSessionData = partySessionData[member.id];
                                     const memberEffectiveStats = calculateEffectiveStatsForMember(member.id);
                                     if (!memberSessionData || !memberEffectiveStats) return null;
 
                                     return (
-                                        <Card key={member.id} className={cn("p-2 flex flex-col", activeCharacterId === member.id && "border-2 border-primary ring-2 ring-primary shadow-lg")}>
-                                            {member.imageUrl ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openAvatarImageModal(member.imageUrl!)}
-                                                    className="relative w-full h-32 sm:h-36 rounded-md overflow-hidden border border-border mb-2 hover:ring-1 hover:ring-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                                                    aria-label={`View image for ${member.name}`}
-                                                >
-                                                    <Image
-                                                        src={member.imageUrl}
-                                                        alt={member.name}
-                                                        fill
-                                                        style={{ objectFit: 'contain' }}
-                                                        data-ai-hint={`${member.name} character art compact`}
-                                                        priority={activeCharacterId === member.id || memberIndex < 2} 
-                                                    />
-                                                </button>
-                                            ) : (
-                                                <div className="w-full h-32 sm:h-36 rounded-md bg-muted flex items-center justify-center border border-border mb-2">
-                                                    <UserCircle2 className="h-16 w-16 text-muted-foreground" />
+                                        <Card key={member.id} className={cn("p-2 flex flex-col min-w-0", activeCharacterId === member.id && "border-2 border-primary ring-2 ring-primary shadow-lg")}>
+                                            <CardHeader 
+                                                className="p-1.5 pt-0 flex-row items-center justify-between gap-1 cursor-pointer" 
+                                                onClick={() => setActiveCharacterId(member.id)}
+                                            >
+                                                <div className="flex items-center gap-1.5 flex-grow min-w-0">
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarImage src={member.imageUrl || `https://placehold.co/40x40.png?text=${member.name.substring(0,1)}`} alt={member.name} data-ai-hint="character avatar small"/>
+                                                        <AvatarFallback>{member.name.substring(0,1)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <CardTitle className="text-sm font-semibold text-primary truncate flex-grow">{member.name}</CardTitle>
                                                 </div>
-                                            )}
-                                            <CardHeader className="p-1 pt-0 flex-row items-center justify-between gap-1 cursor-pointer" onClick={() => setActiveCharacterId(member.id)}>
-                                                <CardTitle className="text-sm font-semibold text-primary truncate flex-grow">{member.name}</CardTitle>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); setActiveCharacterId(member.id); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${member.name}`}>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={(e) => { e.stopPropagation(); setActiveCharacterId(member.id); setIsCharacterCardModalOpen(true); }} aria-label={`View details for ${member.name}`}>
                                                   <Info className="h-3.5 w-3.5"/>
                                                 </Button>
                                             </CardHeader>
+                                            {member.imageUrl && (
+                                              <button
+                                                  type="button"
+                                                  onClick={() => openAvatarImageModal(member.imageUrl!)}
+                                                  className="relative w-full h-32 sm:h-36 rounded-md overflow-hidden border border-border mb-2 hover:ring-1 hover:ring-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                                                  aria-label={`View image for ${member.name}`}
+                                              >
+                                                  <Image
+                                                      src={member.imageUrl}
+                                                      alt={member.name}
+                                                      fill
+                                                      style={{ objectFit: 'contain' }}
+                                                      data-ai-hint={`${member.name} character art compact`}
+                                                      priority={activeCharacterId === member.id || memberIndex < 2} 
+                                                  />
+                                              </button>
+                                            )}
                                             <CardContent className="p-1 space-y-1.5 flex-grow mt-1">
                                                 <div className="space-y-0.5">
                                                     <div className="flex items-center justify-between">
@@ -1965,3 +1943,5 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
+
+    
