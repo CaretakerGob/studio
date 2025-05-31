@@ -2,21 +2,22 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon, WandSparkles, Store, ShieldHalf } from "lucide-react";
+import { Dices, Layers, UserCircle, List, CalendarDays, ClipboardList, Home, User, Share2, HelpCircle, FileText, ShieldCheckIcon, WandSparkles, Store, ShieldHalf, Gamepad2 } from "lucide-react";
 
 export default function HomePage() {
   const features = [
-    { name: "Character Sheet", href: "/character-sheet", icon: UserCircle, description: "Track your hero's stats and progress." },
-    { name: "Dice Roller", href: "/dice-roller", icon: Dices, description: "Roll various dice for your game actions." },
-    { name: "Card Generator", href: "/card-generator", icon: Layers, description: "Draw random cards from selected decks." },
-    { name: "Events", href: "/item-list", icon: CalendarDays, description: "Generate random events from game data." },
-    { name: "Investigations", href: "/investigations", icon: ClipboardList, description: "Manage and track your investigations." },
-    { name: "Whispers & Wares", href: "/shop", icon: Store, description: "Purchase unique items and gear." },
-    { name: "Item List", href: "/events", icon: List, description: "View a list of items from the game." },
-    { name: "Item Generator (AI)", href: "/item-generator", icon: WandSparkles, description: "Generate unique game items using AI." },
     { name: "Hunter's Nexus", href: "/hunters-nexus", icon: ShieldHalf, description: "Access your session-based game hub." },
+    { 
+      name: "Game Tools", 
+      href: "/character-sheet", // Link to a primary tool, others accessible via sidebar
+      icon: Gamepad2, 
+      description: "Access character sheets, dice, cards, event generators, and more." 
+    },
     { name: "Shared Space", href: "/shared-space", icon: Share2, description: "Join or create a shared session." },
     { name: "User Profile", href: "/profile", icon: User, description: "Manage your profile and saved data." },
+    // Individual tool links are removed from here, now accessible via "Game Tools" or the sidebar.
+    // Example of one that was removed:
+    // { name: "Character Sheet", href: "/character-sheet", icon: UserCircle, description: "Track your hero's stats and progress." },
   ];
 
   const footerLinks = [
