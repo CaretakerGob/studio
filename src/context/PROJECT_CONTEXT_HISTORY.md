@@ -159,12 +159,10 @@
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
 - **Description:** Session-based game management hub, supporting a team of multiple characters.
 - **Functionality:**
-    - **Multi-Character Team Display**: Main view displays a grid of team members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points, stacked vertically. Clicking a character's card header sets them as active.
-    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
+    - **Multi-Character Team Display**: Main display area shows a grid where each team member has their own card with their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card header sets them as active.
+    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character. "Selected Arsenal" card area below the team grid displays the active character's chosen arsenal images.
     - Team Management Dialog: Add/remove characters. "Manage Team" button relocated to the page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
-    - Arsenal and equipment display for active character (images of selected arsenal).
     - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
     - Modal for active character details (all stats including MV/DEF, weapons, abilities, skills).
     - Save Nexus Session: Logged-in users can save their current team's state (including all members' stats, arsenals, crypto) to Firestore.
@@ -176,8 +174,9 @@
 - **Description:** Displays the game rules.
 - **Functionality:**
     - Fetches game rules from `docs/game-rules.md`.
-    - Renders the Markdown content with basic formatting (headings, paragraphs, horizontal rules).
-    - Accessible via a new "How to Play" tab in the sidebar.
+    - Renders the Markdown content, **omitting specific shop item list sections** (e.g., "Defense Gear Shop", "Melee Weapons" shop table, etc.).
+    - Basic formatting (headings, paragraphs, horizontal rules) for other content.
+    - Accessible via a "How to Play" tab in the sidebar.
 
 ### 3.15. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
 - **Description:** Placeholder pages for legal documents.
@@ -227,7 +226,7 @@
 -   **User Data:** Stored in Firestore under user-specific paths for security and organization.
 -   **Error Handling:** Implemented for API calls (Google Sheets, Firebase) and user actions.
 -   **Prototyping:** Some features like Shared Space and Friends List are currently simulated on the client-side. Naming convention: "Team" for single-user character groups in Nexus, "Party" to be used for multi-user groups in Shared Space.
--   **Markdown Display**: Basic server-side parsing for `game-rules.md` to convert headings and paragraphs to HTML for the "How to Play" page. Full Markdown features (tables, inline styles) are not yet supported by this basic parser.
+-   **Markdown Display**: Basic server-side parsing for `game-rules.md` to convert headings and paragraphs to HTML for the "How to Play" page. Specific shop item list sections are now excluded. Full Markdown features (tables, inline styles) are not yet supported by this basic parser.
 
 ## 7. Open Questions / Assumptions
 -   **Combat UI/UX:** How will the detailed turn-based combat be represented and managed interactively in the app?
@@ -273,13 +272,3 @@
 
 This document provides a snapshot of the project's state and context.
     
-
-    
-
-    
-
-    
-
-    
-
-

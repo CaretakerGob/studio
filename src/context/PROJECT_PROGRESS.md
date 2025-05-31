@@ -63,12 +63,10 @@ DONE:
 - Shared Space Page:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
-    - Multi-Character Team Display: Main view displays a grid of team members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points, stacked vertically. Clicking a character's card header sets them as active.
-    - Active Character Focus: Arsenal selection and detailed modal views operate on the selected active character.
+    - Multi-Character Team Display: Main display area shows a grid where each team member has their own card with their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card header sets them as active.
+    - Active Character Focus: Arsenal selection and detailed modal views operate on the selected active character. "Selected Arsenal" card area below the team grid displays the active character's chosen arsenal images.
     - Team Management Dialog: Add/remove characters. "Manage Team" button relocated to the page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
-    - Arsenal and equipment display for active character (images of selected arsenal).
     - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
     - Modal for active character details (all stats including MV/DEF, weapons, abilities, skills).
     - Save Nexus Session: Logged-in users can save their current team's state (including all members' stats, arsenals, crypto) to Firestore.
@@ -77,7 +75,7 @@ DONE:
     - Changed "Party" to "Team" in all user-facing text.
 - How to Play Page (`/how-to-play`):
     - Created page to display game rules from `docs/game-rules.md`.
-    - Implemented basic server-side Markdown parsing for headings and paragraphs.
+    - Implemented server-side Markdown parsing that **omits specific shop item list sections**. Other basic formatting (headings, paragraphs) is applied.
     - Added link to sidebar.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
@@ -123,13 +121,3 @@ NEXT:
 - Caching strategies for Google Sheet data to improve performance in production.
 - Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
 - Refine UI/UX across all pages based on testing.
-      
-    
-
-    
-
-    
-
-    
-
-
