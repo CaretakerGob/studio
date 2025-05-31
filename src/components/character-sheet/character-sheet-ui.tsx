@@ -101,7 +101,7 @@ export const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 4, maxSanity: 4, meleeAttack: 0 },
     skills: { ...initialSkills, tac: 3, sur: 2, kno: 3 },
     avatarSeed: 'gob',
-    imageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FGob.png?alt=media&token=d5d63a0b-0465-4c50-a179-351ac7cc7fa9`,
+    imageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FGob%20front%201.png?alt=media&token=50020f87-b211-4a89-8232-8be16a3d513e`,
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
     abilities: [
@@ -119,7 +119,7 @@ export const charactersData: Character[] = [
     baseStats: { hp: 6, maxHp: 6, mv: 4, def: 3, sanity: 4, maxSanity: 4, meleeAttack: 0 },
     skills: { ...initialSkills, occ: 2, emp: 2, tun: 1 },
     avatarSeed: 'cassandra',
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCassandra.png?alt=media&token=6df9b49f-aeb0-45a1-ae75-7f77945ce18c',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FCassandra%20front%201.png?alt=media&token=20d48903-12e7-4b7b-be18-14b7e32aa5bc',
     meleeWeapon: { name: "Saber", attack: 3 },
     rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
     abilities: [
@@ -137,7 +137,7 @@ export const charactersData: Character[] = [
     baseStats: { hp: 5, maxHp: 5, mv: 4, def: 2, sanity: 6, maxSanity: 6, meleeAttack: 0 },
     skills: { ...initialSkills, occ: 4, emp: 2, kno: 2 },
     avatarSeed: 'fei',
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2Ffei.png?alt=media&token=ec84180b-3734-499e-9767-0846580cdce9',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FFei%20front%201.png?alt=media&token=edb4236c-ce3f-4809-8dfb-c9fcc0be303a',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon." },
     abilities: [
@@ -157,7 +157,7 @@ export const charactersData: Character[] = [
     baseStats: { hp: 6, maxHp: 6, mv: 5, def: 3, sanity: 5, maxSanity: 5, meleeAttack: 0 },
     skills: { ...initialSkills, emp: 2, dec: 2, inv: 2, ath: 2 },
     avatarSeed: 'michael',
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FMichael.png?alt=media&token=4674d3b6-5f0e-494c-97cb-b768b84f17fe',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FMichael%20front%201.png?alt=media&token=4589bf01-5104-424f-8055-8f35edb2aea3',
     meleeWeapon: { name: "Kunai", attack: 3 },
     rangedWeapon: { name: "Kunai", attack: 4, range: 2 },
     abilities: [
@@ -176,7 +176,7 @@ export const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 5, def: 4, sanity: 6, maxSanity: 6, meleeAttack: 0 },
     skills: { ...initialSkills, emp: 4, pers: 2 },
     avatarSeed: 'tamara',
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FEnhanced%20Tamara%20new.png?alt=media&token=f3408528-8abe-4ed5-b518-47e375ca09fb',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FTamara%20front%201.png?alt=media&token=b1a57842-f145-4fa7-b239-18ec2977dd8c',
     meleeWeapon: { name: "Martial Arts", attack: 2 },
     rangedWeapon: { name: "M7", attack: 3, range: 3 },
     abilities: [
@@ -194,7 +194,7 @@ export const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 5, def: 3, sanity: 4, maxSanity: 4, meleeAttack: 0 },
     skills: { ...initialSkills, ath: 3, pers: 2 },
     avatarSeed: 'trish',
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FTrish%20Black%20Shoes.png?alt=media&token=6bb82bb4-c06f-40b1-bd55-5c86a78cedb5',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FTrish%20front%201.png?alt=media&token=d33490c7-2eff-4abb-8c5d-e260378b7c34',
     meleeWeapon: { name: "Katana", attack: 4 },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [
@@ -212,7 +212,7 @@ export const charactersData: Character[] = [
     baseStats: { hp: 7, maxHp: 7, mv: 4, def: 3, sanity: 5, maxSanity: 5, meleeAttack: 0 },
     skills: { ...initialSkills, eng: 2, sur: 2, tac: 2 },
     avatarSeed: 'blake',
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FBlake%202.png?alt=media&token=6992782d-124a-44ff-8eec-be9cfd0221f2',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FBlake%20Back.png?alt=media&token=93ab27db-954b-4fac-ab31-a10337e74529',
     meleeWeapon: { name: "Kukri", attack: 4 },
     rangedWeapon: { name: "Outlaw .44", attack: 3, range: 3 },
     abilities: [
@@ -231,7 +231,7 @@ export const charactersData: Character[] = [
     baseStats: { hp: 9, maxHp: 9, mv: 4, def: 4, sanity: 5, maxSanity: 5, meleeAttack: 0 },
     skills: { ...initialSkills, dare: 2, cpu: 2, pers: 2 },
     avatarSeed: 'walter',
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FWalter.png?alt=media&token=0f5ccd9d-7f35-4400-b9a4-c5d4f5e051e7',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FWalter%20back.png?alt=media&token=ef9ee84f-6c26-4452-ae9a-c2279ead4df7',
     meleeWeapon: { name: "Mace", attack: 3 },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [
