@@ -1,4 +1,5 @@
 
+import React from 'react'; // Added this import
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { Metadata } from 'next';
@@ -97,7 +98,6 @@ const buildMainRulebookLookup = (markdown: string): Map<string, string[]> => {
       currentHeadingKey = normalizeKey(headingText);
     } else if (currentHeadingKey) {
       // Add line to current content, even if it's an empty line, to preserve paragraph structure.
-      // Will filter out truly empty paragraphs later if needed.
       currentContentLines.push(line);
     }
   }
@@ -145,7 +145,7 @@ const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLo
       const flushPBuffer = () => {
         if (paragraphBuffer.length > 0) {
           const paragraphText = paragraphBuffer.join('\n').trim();
-          if (paragraphText) {
+          if (paragraphText) { // Only add if there's actual text
             section.contentNodes.push({
               type: 'p',
               content: parseInlineMarkdown(paragraphText, `main-p-${section.id}-${keyIndex}`),
@@ -164,7 +164,7 @@ const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLo
           paragraphBuffer.push(contentLine);
         }
       }
-      flushPBuffer(); // Flush any remaining content
+      flushPBuffer(); // Flush any remaining content for the last paragraph
     }
   };
 
@@ -179,7 +179,7 @@ const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLo
 
       const title = h2Match[1].trim();
       if (shopSectionTitlesToIgnore.includes(normalizeKey(title))) {
-        currentH2Section = null;
+        currentH2Section = null; // Skip this entire section
       } else {
         currentH2Section = {
           id: `section-h2-${normalizeKey(title)}-${keyIndex++}`,
@@ -192,7 +192,7 @@ const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLo
       continue;
     }
 
-    if (!currentH2Section) continue;
+    if (!currentH2Section) continue; // Skip if current H2 is ignored or not yet defined
 
     const h3Match = trimmedLine.match(/^###\s+(.*)/);
     const ulListItemMatch = trimmedLine.match(/^[\-\*]\s+(.*)/);
@@ -212,18 +212,29 @@ const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLo
          flushListToSection(currentH2Section);
       }
       currentListType = newListType;
-      currentListItems.push(parseInlineMarkdown(itemText, `li-text-${currentH2Section.id}-${keyIndex}`));
-      // Attempt to add content for the list item itself if it's a heading in the main book
-      // addContentFromMainRulebook(itemText, currentH2Section); // This might make sense if list items are also major topics
+      const parsedListItemContent = parseInlineMarkdown(itemText, `li-text-${currentH2Section.id}-${keyIndex}`);
+      currentListItems.push(parsedListItemContent);
+      
+      // Try to add content for list items if they are also headings in the main book
+      addContentFromMainRulebook(itemText, currentH2Section); 
+
     } else if (trimmedLine.startsWith('---') || trimmedLine.startsWith('***') || trimmedLine.startsWith('___')) {
       flushListToSection(currentH2Section);
       currentH2Section.contentNodes.push({ type: 'hr', key: `hr-${keyIndex++}` });
-    } else if (trimmedLine && currentH2Section) {
-      // This was for paragraphs directly in structure file, which might not exist.
-      // The main content is now primarily handled by addContentFromMainRulebook.
-      // If structure file has its own paragraphs, they would be added here.
-      // For now, let's assume primary content comes from main rulebook lookup.
-      // flushListToSection(currentH2Section);
+    } else if (trimmedLine) { 
+      // This case is for paragraphs that might be directly in the structure file,
+      // or for flushing list items when a paragraph follows.
+      // The main content for headings is handled by addContentFromMainRulebook.
+      // If a paragraph appears in the structure file under an H2/H3 that ISN'T also in the main rulebook
+      // then we add it here. Otherwise, addContentFromMainRulebook handles it.
+      if (currentListType) { // If we were in a list, flush it before starting a paragraph.
+        flushListToSection(currentH2Section);
+      }
+      // Only add paragraph if it's not already part of addContentFromMainRulebook logic (which is hard to check here)
+      // This simplified approach assumes paragraphs in structure are rare and distinct from main rulebook content.
+      // For now, let's rely on addContentFromMainRulebook for primary text content.
+      // If structure file itself has unique paragraphs, they might need specific handling.
+      // Let's remove direct paragraph adding from here to avoid duplicates, as main content should be fetched by addContentFromMainRulebook
       // currentH2Section.contentNodes.push({ type: 'p', content: parseInlineMarkdown(trimmedLine, `p-text-${currentH2Section.id}-${keyIndex}`), key: `p-key-${keyIndex++}` });
     }
   }
@@ -231,7 +242,7 @@ const parseStructureAndMergeContent = (structureMarkdown: string, mainRulebookLo
   flushListToSection(currentH2Section);
   if (currentH2Section) sections.push(currentH2Section);
 
-  return sections.filter(section => section.title);
+  return sections.filter(section => section.title && section.contentNodes.length > 0); // Only return sections with content
 };
 
 
