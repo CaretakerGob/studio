@@ -1,5 +1,4 @@
 
-
 DONE:
 - Initial app setup (Next.js, TypeScript, ShadCN UI, Tailwind CSS, Firebase, Genkit)
 - Homepage: Layout, feature navigation cards (consolidated "Game Tools"), footer with links.
@@ -65,10 +64,11 @@ DONE:
 - Shared Space Page:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
-    - **Multi-Character Support & Display**: Main view displays a grid of party members (up to 4) with individual HP, Sanity, and Bleed trackers.
+    - **Multi-Character Support & Display**: Main view displays a grid of party members (up to 4). Each character card shows their avatar, name, and interactive trackers for HP, Sanity, and Bleed Points. The individual cards in this grid are clickable to set the character as "active".
     - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
-    - Party Management Dialog: Add/remove characters. "Manage Party" button moved to page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
+    - **Active Character Image Display**: A dedicated card is displayed above the party grid, showing the active character's name and a large, clickable image (opens in modal).
+    - Party Management Dialog: Add/remove characters. "Manage Party" button relocated to the page header.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal. HP, Sanity, Bleed trackers are stacked vertically for each character in the main grid.
     - Session Crypto Tracker: Global for the session.
     - Arsenal and equipment display for active character.
     - Integrated dice roller and card generator.

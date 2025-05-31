@@ -159,16 +159,19 @@
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
 - **Description:** Session-based game management hub, supporting multiple characters.
 - **Functionality:**
-    - **Multi-Character Support & Display:** Party members (up to 4) are displayed in a grid as the main character view. Each character card shows their avatar, name, and interactive trackers for HP, Sanity, and Bleed Points.
-    - **Active Character:** One character is "active" for Arsenal selection and detailed modal views. Clicking a character's card in the grid sets them as active.
-    - **Party Management:** "Manage Party" button in the page header opens a dialog to add/remove characters.
-    - **Individual Character Session State:** Each character in the party has its own session-specific data (current HP, Sanity, Bleed, modifiers, arsenal, ability states).
+    - **Multi-Character Support & Display**: Main view displays a grid of party members (up to 4). Each character card shows their avatar, name, and interactive trackers for HP, Sanity, and Bleed Points. The individual cards in this grid are clickable to set the character as "active".
+    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
+    - **Active Character Image Display**: A dedicated card is displayed above the party grid, showing the active character's name and a large, clickable image (opens in modal).
+    - Party Management Dialog: Add/remove characters. "Manage Party" button relocated to the page header.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal. HP, Sanity, Bleed trackers are stacked vertically for each character in the main grid.
     - Session Crypto Tracker: Global for the session.
-    - Displays selected arsenal card (front/back images) for the active character.
-    - Allows clicking on character avatar (in modal) and arsenal card images (on main page for active character) to view them in a larger modal.
-    - Character details modal: Displays full stats (including MV/DEF), weapons, abilities, and skills for the active character.
-    - **Save/Load Nexus Session**: Saves/loads the entire party's state to/from Firestore.
-    - **Reset Nexus Session**: Clears the entire party and session data.
+    - Arsenal and equipment display for active character.
+    - Integrated dice roller and card generator.
+    - Character avatar and arsenal card image modals.
+    - Modal for active character details (stats, weapons, abilities, skills).
+    - Save Nexus Session: Logged-in users can save their current party's state to Firestore.
+    - Load/Delete Nexus Session: Functionality added to settings dropdown.
+    - Reset Nexus Session: Functionality added to settings dropdown.
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets. Party state is client-side, can be persisted.
 
 ### 3.14. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)

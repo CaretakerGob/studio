@@ -101,6 +101,7 @@ import {
   UserRoundPlus,
   UserRoundX,
   CheckCircle,
+  Image as LucideImage, // Added for active character image card
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -1283,8 +1284,45 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         </Card>
                     </div>
 
-                    {/* Column 2: Party Members Grid */}
-                    <div className="lg:col-span-2">
+                    {/* Column 2: Party Display & Active Character Arsenal */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {activeCharacterBase && (
+                            <Card className="bg-card/80 border-primary shadow-md">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <div className="flex items-center gap-2">
+                                        <LucideImage className="h-6 w-6 text-primary"/>
+                                        <CardTitle className="text-xl text-primary">Active Hunter: {activeCharacterBase.name}</CardTitle>
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => { setIsCharacterCardModalOpen(true); }} aria-label={`View full details for ${activeCharacterBase.name}`}>
+                                        <Info className="h-5 w-5"/>
+                                    </Button>
+                                </CardHeader>
+                                <CardContent className="flex justify-center p-4">
+                                    {activeCharacterBase.imageUrl ? (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => openImageModal(activeCharacterBase.imageUrl!)} 
+                                            className="relative w-48 h-64 md:w-56 md:h-72 rounded-lg overflow-hidden border-2 border-primary hover:ring-2 hover:ring-accent focus:outline-none focus:ring-2 focus:ring-accent"
+                                            aria-label={`View image for ${activeCharacterBase.name}`}
+                                        >
+                                            <Image 
+                                                src={activeCharacterBase.imageUrl} 
+                                                alt={activeCharacterBase.name} 
+                                                fill 
+                                                style={{ objectFit: 'contain' }} 
+                                                data-ai-hint={`${activeCharacterBase.name} character art`}
+                                                priority
+                                            />
+                                        </button>
+                                    ) : (
+                                        <div className="w-48 h-64 md:w-56 md:h-72 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
+                                            <UserCircle2 className="h-24 w-24 text-muted-foreground" />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+
                         {partyMembers.length > 0 ? (
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {partyMembers.map((member) => {
@@ -1296,9 +1334,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                         <Card 
                                             key={member.id} 
                                             className={cn("p-3 flex flex-col", activeCharacterId === member.id && "border-2 border-primary ring-2 ring-primary shadow-lg")}
-                                            onClick={() => setActiveCharacterId(member.id)}
                                         >
-                                            <CardHeader className="p-1 flex-row items-center gap-2 cursor-pointer">
+                                            <CardHeader className="p-1 flex-row items-center gap-2 cursor-pointer" onClick={() => setActiveCharacterId(member.id)}>
                                                 <Avatar className="h-10 w-10 border-2 border-muted-foreground">
                                                     <AvatarImage src={member.imageUrl || `https://placehold.co/40x40.png`} alt={member.name} data-ai-hint="party member small avatar"/>
                                                     <AvatarFallback>{member.name.substring(0,2).toUpperCase()}</AvatarFallback>
@@ -1858,5 +1895,3 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
-
-    
