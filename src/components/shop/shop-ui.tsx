@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { ShopItem, ShopItemCategory, UtilitySubCategory } from '@/types/shop';
-import { Store, ShoppingCart, Coins, ShieldAlert, Swords, Crosshair, WandSparkles, Construction, Droplets, HelpCircle, Zap, Flame, Bomb, Ambulance, BatteryCharging, Puzzle, AlertCircle } from 'lucide-react';
+import { Store, ShoppingCart, Coins, ShieldAlert, Swords, Crosshair, WandSparkles, Construction, Droplets, HelpCircle, Zap, Flame, Bomb, Ambulance, BatteryCharging, Puzzle, AlertCircle, ImageIcon, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from '../ui/separator';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { generateShopItemImage } from '@/ai/flows/generate-shop-item-image-flow';
 
 interface ShopUIProps {
   initialInventory: ShopItem[];
@@ -58,31 +59,20 @@ const orderedUtilitySubCategories: UtilitySubCategory[] = [
 
 export function ShopUI({ initialInventory }: ShopUIProps) {
   const { toast } = useToast();
-  const [playerCrypto, setPlayerCrypto] = useState(2000); // Initial crypto, could be loaded from user profile later
-  
-  // Initialize inventory state from props, ensuring stock for consumables is correctly handled
-  const [inventory, setInventory] = useState<ShopItem[]>(() => {
-    return initialInventory.map(item => ({
-      ...item,
-      // Default stock for consumables to 1 if not specified, or use specified charges if charges is a number
-      stock: item.category === 'Consumable' && item.stock === undefined
-             ? (typeof item.charges === 'number' ? item.charges : 1)
-             : item.stock,
-    }));
-  });
-  
-  const [activeCategory, setActiveCategory] = useState<ShopItemCategory>(orderedCategories[0]);
+  const [playerCrypto, setPlayerCrypto] = useState(2000);
+  const [displayInventory, setDisplayInventory] = useState<ShopItem[]>([]);
+  const [generatingImageId, setGeneratingImageId] = useState<string | null>(null);
 
-  // Effect to update inventory if initialInventory prop changes (e.g., due to re-fetch or SSR update)
   useEffect(() => {
-    setInventory(initialInventory.map(item => ({
+    setDisplayInventory(initialInventory.map(item => ({
       ...item,
       stock: item.category === 'Consumable' && item.stock === undefined
              ? (typeof item.charges === 'number' ? item.charges : 1)
              : item.stock,
     })));
   }, [initialInventory]);
-
+  
+  const [activeCategory, setActiveCategory] = useState<ShopItemCategory>(orderedCategories[0]);
 
   const handleBuyItem = (itemToBuy: ShopItem) => {
     if (playerCrypto < itemToBuy.cost) {
@@ -94,8 +84,7 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
       return;
     }
 
-    // Find the item in the current state to check its stock
-    const currentItemState = inventory.find(item => item.id === itemToBuy.id);
+    const currentItemState = displayInventory.find(item => item.id === itemToBuy.id);
 
     if (currentItemState?.stock !== undefined && currentItemState.stock <= 0) {
       toast({
@@ -108,9 +97,8 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
 
     setPlayerCrypto(prevCrypto => prevCrypto - itemToBuy.cost);
     
-    // Only update stock if the item actually has a stock property
     if (currentItemState?.stock !== undefined) {
-      setInventory(prevInv => 
+      setDisplayInventory(prevInv => 
         prevInv.map(item => 
           item.id === itemToBuy.id ? { ...item, stock: Math.max(0, (item.stock || 0) - 1) } : item
         )
@@ -123,14 +111,46 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
     });
   };
 
+  const handleGenerateImage = async (itemToGenerateFor: ShopItem) => {
+    setGeneratingImageId(itemToGenerateFor.id);
+    try {
+      const result = await generateShopItemImage({
+        itemName: itemToGenerateFor.name,
+        itemDescription: itemToGenerateFor.description,
+        itemCategory: itemToGenerateFor.category,
+        itemSubCategory: itemToGenerateFor.subCategory,
+        itemWeaponClass: itemToGenerateFor.weaponClass,
+      });
+
+      setDisplayInventory(prevInv =>
+        prevInv.map(item =>
+          item.id === itemToGenerateFor.id ? { ...item, imageUrl: result.imageDataUri, dataAiHint: undefined } : item
+        )
+      );
+      toast({
+        title: "Image Generated!",
+        description: `AI image created for ${itemToGenerateFor.name}. This image is for the current session.`,
+      });
+    } catch (error) {
+      console.error("Error generating item image:", error);
+      toast({
+        title: "Image Generation Failed",
+        description: error instanceof Error ? error.message : "Could not generate image.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingImageId(null);
+    }
+  };
+
+
   const renderItemsGrid = (itemsToRender: ShopItem[]) => {
     if (itemsToRender.length === 0) {
         return <p className="text-muted-foreground text-center py-10 col-span-full">No items in this category currently.</p>;
     }
-    // Filter out any system error items before rendering
     const displayableItems = itemsToRender.filter(item => !item.id.startsWith('error-') && !item.id.startsWith('warning-'));
     
-    if (displayableItems.length === 0 && itemsToRender.length > 0) { // All items were errors/warnings
+    if (displayableItems.length === 0 && itemsToRender.length > 0) {
         return (
            <Alert variant="destructive" className="col-span-full">
             <AlertCircle className="h-4 w-4" />
@@ -141,7 +161,7 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
           </Alert>
         );
     }
-    if (displayableItems.length === 0) { // No items at all
+    if (displayableItems.length === 0) {
         return <p className="text-muted-foreground text-center py-10 col-span-full">No items in this category currently.</p>;
     }
 
@@ -150,25 +170,35 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
         {displayableItems.map((item) => {
           const IconForCategory = categoryIcons[item.category];
           const IconForSubCategory = item.subCategory ? utilitySubCategoryIcons[item.subCategory] : null;
+          const isGeneratingThisImage = generatingImageId === item.id;
 
           return (
             <Card key={item.id} className="flex flex-col bg-card/80 hover:shadow-primary/30 transition-shadow">
               <CardHeader className="p-3">
-                {item.imageUrl ? (
-                  <div className="relative w-full h-32 md:h-36 mb-2 rounded overflow-hidden border border-border bg-muted/30">
+                <div className="relative w-full h-32 md:h-36 mb-2 rounded overflow-hidden border border-border bg-muted/30 flex items-center justify-center">
+                  {item.imageUrl ? (
                     <Image
-                      src={item.imageUrl}
+                      src={item.imageUrl} // This will be the data URI if generated, or sheet URL
                       alt={item.name}
                       fill
                       style={{ objectFit: 'contain' }}
                       data-ai-hint={item.dataAiHint || item.name.toLowerCase()}
                     />
-                  </div>
-                ) : (
-                  <div className="relative w-full h-32 md:h-36 mb-2 rounded overflow-hidden border border-border bg-muted/30 flex items-center justify-center">
-                    <Store className="h-16 w-16 text-muted-foreground/50" />
-                  </div>
-                )}
+                  ) : isGeneratingThisImage ? (
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                      <p className="text-xs mt-2">Generating image...</p>
+                    </div>
+                  ) : (
+                    <Image
+                      src={`https://placehold.co/200x200.png?text=${encodeURIComponent(item.name.substring(0,10))}`}
+                      alt={item.name + " placeholder"}
+                      fill
+                      style={{ objectFit: 'contain' }}
+                      data-ai-hint={item.dataAiHint || "item placeholder"}
+                    />
+                  )}
+                </div>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-md leading-tight">{item.name}</CardTitle>
                   {IconForCategory && !IconForSubCategory && <IconForCategory className="h-5 w-5 text-muted-foreground" />}
@@ -185,6 +215,18 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
                 {item.skillCheck && <p><span className="font-semibold">Skill Check:</span> {item.skillCheck}</p>}
               </CardContent>
               <CardFooter className="p-3 flex flex-col items-start space-y-2 border-t mt-auto">
+                {!item.imageUrl && !item.dataAiHint && ( // Show generate button only if no image URL from sheet and no placeholder hint used
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mb-1"
+                        onClick={() => handleGenerateImage(item)}
+                        disabled={isGeneratingThisImage || !!item.imageUrl} // Also disable if an image (even generated one) now exists
+                    >
+                        {isGeneratingThisImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
+                        {isGeneratingThisImage ? "Generating..." : (item.imageUrl ? "Image Set" : "Generate AI Image")}
+                    </Button>
+                )}
                 <div className="w-full flex justify-between items-center">
                   <p className="text-lg font-semibold text-primary">{item.cost} Crypto</p>
                   {item.stock !== undefined && (
@@ -208,8 +250,8 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
     );
   };
   
-  const systemErrorItem = inventory.find(item => item.id.startsWith('error-shop-'));
-  const systemWarningItem = inventory.find(item => item.id.startsWith('warning-shop-'));
+  const systemErrorItem = displayInventory.find(item => item.id.startsWith('error-shop-'));
+  const systemWarningItem = displayInventory.find(item => item.id.startsWith('warning-shop-'));
 
   return (
     <div className="max-w-6xl mx-auto"> 
@@ -244,7 +286,6 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
             </Alert>
           )}
 
-
           <Tabs value={activeCategory} onValueChange={(value) => setActiveCategory(value as ShopItemCategory)} className="w-full">
             <ScrollArea className="pb-2"> 
               <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:flex md:flex-wrap justify-start gap-1">
@@ -265,7 +306,7 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
                 <ScrollArea className="h-[calc(100vh-28rem)] md:h-[calc(100vh-32rem)] pr-3">
                   {category === 'Utility' ? (
                     orderedUtilitySubCategories.map(subCategory => {
-                      const itemsForSubCategory = inventory.filter(item => item.category === 'Utility' && item.subCategory === subCategory);
+                      const itemsForSubCategory = displayInventory.filter(item => item.category === 'Utility' && item.subCategory === subCategory);
                       if (itemsForSubCategory.length === 0) return null;
                       const SubCategoryIcon = utilitySubCategoryIcons[subCategory];
                       return (
@@ -280,7 +321,7 @@ export function ShopUI({ initialInventory }: ShopUIProps) {
                       );
                     })
                   ) : (
-                    renderItemsGrid(inventory.filter(item => item.category === category))
+                    renderItemsGrid(displayInventory.filter(item => item.category === category))
                   )}
                 </ScrollArea>
               </TabsContent>

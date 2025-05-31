@@ -1,4 +1,5 @@
 
+
 # Project Context History: Riddle of the Beast App Companion
 
 ## 1. Project Objectives and Vision
@@ -19,7 +20,8 @@
     - **Database:** Firebase Firestore (for user-specific data like saved characters, preferences, default character ID).
     - **Storage:** Firebase Storage (for user profile images).
 - **Generative AI:** Genkit (Google AI - Gemini models)
-    - Implemented for an AI Item Generator feature.
+    - Implemented for an AI Item Generator feature (`item-generator-flow.ts`).
+    - Implemented for an AI Shop Item Image Generator feature (`generate-shop-item-image-flow.ts`).
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
     - **Google Sheets API:** Used to fetch game data for Events, NPC Generator, Arsenal Cards, and Shop Items via server-side logic in page components. Requires service account credentials. Shop items can be sourced from multiple tabs within the same Google Sheet.
@@ -112,14 +114,18 @@
     - Utility items are further sub-categorized within their tab.
     - Simulated "Crypto" currency tracker (client-side state).
     - Simulated purchasing logic (deducts Crypto, updates stock for consumables).
-- **Data Source:** Item data (Name, Cost, Category, Effect, SubCategory, and other optional fields like Stock, Weapon Class, Attack, etc.) is fetched from a Google Sheet (can use multiple tabs). Handles parsing of "Utility [Type]" from Category column into main 'Utility' category and specific sub-category.
+    - Item data (Name, Cost, Category, Effect, SubCategory, and other optional fields like Stock, Weapon Class, Attack, etc.) is fetched from a Google Sheet (can use multiple tabs).
+    - **AI Image Generation:** For items without an image URL in the sheet, a button allows users to generate an AI image for the item in the current session using a Genkit flow.
+- **Data Source:** Google Sheets for item data.
 
 ### 3.9. AI Item Generator (`/item-generator`)
 - **Description:** Uses Genkit to generate unique game items.
 - **Functionality:**
-    - User inputs: Item Type (Gear, Melee Weapon, Ranged Weapon, Augment, Utility, Consumable), optional Theme, optional Rarity (Common, Uncommon, Rare, Artifact), optional Stat Focus.
-    - Genkit flow (`item-generator-flow.ts`) processes inputs and prompts an LLM to generate item details (name, type, lore description, game effect, generated rarity) adhering to the "Riddle of the Beast" current-day dark horror theme and game rules.
+    - User inputs: Item Type, optional Theme, optional Rarity, optional Stat Focus, optional Lore Context.
+    - Shop items (fetched from Google Sheet) are used as examples for the AI.
+    - Genkit flow (`item-generator-flow.ts`) processes inputs and prompts an LLM to generate item details (name, type, lore description, game effect, generated rarity) adhering to the "Riddle of the Beast" rules.
     - Displays the generated item in a card format.
+- **Data Source for Examples:** Shop items from Google Sheets.
 
 ### 3.10. Shared Space (`/shared-space`)
 - **Description:** Placeholder for a collaborative session feature.
@@ -165,7 +171,7 @@
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session.
 
 ### 3.14. Layout & General
-- **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile with a dedicated trigger. "Game Tools" items (Character Sheet, Dice Roller, Card Generator, Events, NPC Generator, Shop, Item List, AI Item Generator) grouped under a dropdown.
+- **Sidebar:** Persistent sidebar with navigation links, collapsible on desktop, sheet-style on mobile. "Game Tools" items grouped. "Future Features" dropdown created for AI Item Generator and NPC Generator, which are now greyed out/disabled.
 - **Toasts:** Used for user feedback on various actions.
 - **Theme:** Dark, horror-inspired theme defined in `globals.css`.
 
@@ -188,9 +194,11 @@
 -   **Data Persistence:**
     *   Saving current pet HP/Sanity.
     *   Saving character inventory.
+    *   Persisting AI-generated shop item images (e.g., to Firebase Storage, updating Google Sheet with URL).
 -   **Advanced AI Features (Genkit):**
     *   Dynamic NPC dialogue.
     *   AI-assisted event or NPC detail generation.
+    *   Retrieval Augmented Generation (RAG) for using large lore documents (like the user's book) to inform AI generation.
 -   **Bestiary/Monster Manual:** A section to view details about game enemies.
 -   **Digital Rulebook/References:** In-app access to game rules.
 -   **Performance Optimization:** Caching strategies for Google Sheet data (ISR, server-side caching).
@@ -200,7 +208,7 @@
 -   **Data Flow for Sheets:** Server Components fetch data from Google Sheets on page load.
 -   **Modularity:** Ongoing effort to refactor large components into smaller, focused ones.
 -   **Styling:** Primary reliance on ShadCN component styling and Tailwind utilities, with global theme variables.
--   **AI Integration:** Genkit for LLM interactions, keeping AI logic in server-side flows.
+-   **AI Integration:** Genkit for LLM interactions, keeping AI logic in server-side flows. User-provided lore excerpts can be passed to AI. Shop item image generation is session-based.
 -   **State Management:** Primarily local component state and React Context for authentication.
 -   **User Data:** Stored in Firestore under user-specific paths for security and organization.
 -   **Error Handling:** Implemented for API calls (Google Sheets, Firebase) and user actions.
@@ -215,176 +223,24 @@
 
 ## 8. Data Structures of the App
 
--   **`Character` (`src/types/character.ts`)**:
-    -   `id: string`
-    -   `templateId?: string`
-    -   `name: string`
-    -   `baseStats: CharacterStats` { hp, maxHp, mv, def, sanity, maxSanity, meleeAttack? }
-    -   `skills?: Skills` { ath, cpu, dare, dec, emp, eng, inv, kno, occ, pers, sur, tac, tun - all optional numbers }
-    -   `abilities: Ability[]` [{ id, name, type (Action | Interrupt | Passive | FREE Action), description, cost?, range?, cooldown?, details?, maxQuantity? }]
-    -   `avatarSeed?: string`
-    -   `imageUrl?: string`
-    -   `meleeWeapon?: Weapon` { name, attack, flavorText? }
-    -   `rangedWeapon?: RangedWeapon` { name, attack, range, flavorText? }
-    -   `characterPoints?: number`
-    -   `selectedArsenalCardId?: string | null`
-    -   `savedCooldowns?: Record<string, number>`
-    -   `savedQuantities?: Record<string, number>`
-    -   `lastSaved?: string`
-
--   **`ArsenalCard` (`src/types/arsenal.ts`)**:
-    -   `id: string`
-    -   `name: string`
-    -   `description?: string`
-    -   `items: ArsenalItem[]`
-    -   `imageUrlFront: string`
-    -   `imageUrlBack: string`
-    -   Global stat mods: `hpMod?`, `maxHpMod?`, `mvMod?`, `defMod?`, `sanityMod?`, `maxSanityMod?`, `meleeAttackMod?`, `rangedAttackMod?`, `rangedRangeMod?` (all optional numbers)
-
--   **`ArsenalItem` (`src/types/arsenal.ts`)**:
-    -   `id: string`
-    -   `category?: ArsenalItemCategory` ('WEAPON' | 'GEAR' | 'INTERRUPT' | 'PASSIVE' | 'ACTION' | 'LOAD OUT' | 'LOADOUT' | 'BONUS' | 'ELITE')
-    -   `level?: number`
-    -   `qty?: number`
-    -   `cd?: string`
-    -   `abilityName?: string` (Primary name for the item/ability)
-    -   `type?: string` (e.g., "WEAPON", "GEAR" if category is "LOAD OUT")
-    -   `class?: string` (e.g., "Shotgun", "Blunt")
-    -   `itemDescription?: string`
-    -   `effect?: string`
-    -   `secondaryEffect?: string`
-    -   `toggle?: boolean`
-    -   `isFlaggedAsWeapon?: boolean`
-    -   `effectStatChangeString?: string`
-    -   `parsedStatModifiers?: ParsedStatModifier[]` [{ targetStat: string, value: number }]
-    -   `weaponDetails?: string` (Raw A/R string from sheet)
-    -   `parsedWeaponStats?: { attack?: number, range?: number, rawDetails?: string }`
-    -   `isPet?: boolean`
-    -   `petName?: string`
-    -   `petStats?: string` (Raw pet stats string from sheet)
-    -   `petAbilities?: string`
-    -   `parsedPetCoreStats?: Partial<CharacterStats>`
-    -   `isAction?: boolean`
-    -   `isInterrupt?: boolean`
-    -   `isPassive?: boolean`
-    -   `isFreeAction?: boolean`
-
--   **`GameCard` (`src/components/card-generator/card-generator-ui.tsx`)**:
-    -   `id: string`
-    -   `name: string`
-    -   `type: string` (e.g., "Event", "Item", "Madness")
-    -   `deck: string` (e.g., "Event Deck")
-    -   `description: string`
-    -   `imageUrl?: string`
-    -   `dataAiHint: string`
-    -   `isHoldable?: boolean`
-
--   **`EventsSheetData` (`src/components/events/events-sheet-ui.tsx` - used for Events page, from Google Sheet via `/item-list` route)**:
-    -   `Insert?: string`
-    -   `Count?: string`
-    -   `Color: string`
-    -   `Type: string`
-    -   `Description: string`
-
--   **`InvestigationData` (now `NPCEncounterData` implicitly) (`src/types/investigation.ts` - from Google Sheet)**:
-    -   `'Location Color': string`
-    -   `'1d6 Roll': string`
-    -   `NPC: string`
-    -   `Unit: string`
-    -   `Persona: string`
-    -   `Demand: string`
-    -   `'Skill Check': string`
-    -   `Goals: string`
-    -   `Passive: string`
-    -   `Description: string` (explicitly added to ensure it's always present)
-    -   `[key: string]: string | number;` (Index signature for dynamic access)
-
+-   **`Character` (`src/types/character.ts`)**: (No changes)
+-   **`ArsenalCard` & `ArsenalItem` (`src/types/arsenal.ts`)**: (No changes)
+-   **`GameCard` (`src/components/card-generator/card-generator-ui.tsx`)**: (No changes)
+-   **`EventsSheetData` (`src/components/events/events-sheet-ui.tsx`)**: (No changes)
+-   **`InvestigationData` (`src/types/investigation.ts`)**: (No changes)
 -   **`ItemGeneratorInput` & `ItemGeneratorOutput` (`src/ai/flows/item-generator-flow.ts`)**:
-    -   **Input**: `itemType` (enum: 'Gear', 'Melee Weapon', etc.), `theme?` (string), `rarity?` (enum: "Common", "Uncommon", "Rare", "Artifact"), `statFocus?` (string).
-    -   **Output**: `itemName` (string), `itemTypeGenerated` (string), `description` (string), `gameEffect` (string), `rarityGenerated?` (string).
-
--   **`ShopItem` (`src/types/shop.ts` - for Google Sheet shop data)**:
-    -   `id: string` (Generated: `sheetName_rowIndex_itemName`)
-    -   `name: string` (From Sheet: `Name`)
-    -   `description: string` (From Sheet: `Effect`)
-    -   `cost: number` (From Sheet: `Cost`)
-    -   `category: ShopItemCategory` (From Sheet: `Category`, or inferred)
-    -   `subCategory?: UtilitySubCategory` (From Sheet: `SubCategory`, or inferred from Category like "Utility Bomb")
-    -   `imageUrl?: string` (From Sheet: `Image URL`)
-    -   `dataAiHint?: string` (From Sheet: `Data AI Hint`)
-    -   `stock?: number` (From Sheet: `Stock`)
-    -   `weaponClass?: string` (From Sheet: `Weapon Class`)
-    -   `attack?: string` (From Sheet: `Attack`)
-    -   `actionType?: 'Free Action' | 'Action' | 'Interrupt' | 'Passive'` (From Sheet: `Action Type`)
-    -   `charges?: number | 'Battery'` (From Sheet: `Charges`)
-    -   `skillCheck?: string` (From Sheet: `Skill Check`)
-
--   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: Standard email/password, with optional displayName and passwordConfirmation for sign-up.
-
--   **Dice Roller Types (`src/components/dice-roller/dice-roller-ui.tsx`)**:
-    -   `NumberedDiceConfig`: { id, numDice, diceSides, customSides }
-    -   `NumberedDiceGroupResult`: { notation, rolls[], total }
-    -   `CombatDieFace`: 'swordandshield' | 'double-sword' | 'blank'
-    -   `CombatDiceResult`: { notation, rolls: CombatDieFace[], summary }
-    -   `LatestRollData`: { type: 'numbered'|'combat', groups[], overallTotal?, timestamp }
-
--   **`EventData` (`src/types/event.ts` - for the currently empty `/events` (Item List) page)**:
-    -   `eventName: string`
-    -   `date: string`
-    -   `location: string`
-    -   `description: string`
-    -   `outcome: string`
+    -   **Input**: `itemType`, `theme?`, `rarity?`, `statFocus?`, `exampleItems?` (array of simple item objects), `loreContext?` (string).
+    -   **Output**: `itemName`, `itemTypeGenerated`, `description`, `gameEffect`, `rarityGenerated?`.
+-   **`GenerateShopItemImageInput` & `GenerateShopItemImageOutput` (`src/ai/flows/generate-shop-item-image-flow.ts`)**:
+    -   **Input**: `itemName`, `itemDescription`, `itemCategory`, `itemSubCategory?`, `itemWeaponClass?`.
+    -   **Output**: `imageDataUri`.
+-   **`ShopItem` (`src/types/shop.ts`)**: (No changes to structure, but data source is Google Sheets)
+-   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: (No changes)
+-   **Dice Roller Types (`src/components/dice-roller/dice-roller-ui.tsx`)**: (No changes)
+-   **`EventData` (`src/types/event.ts`)**: (No changes)
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
-
--   **Firebase Authentication Rules:**
-    -   Default rules allowing Email/Password sign-up and sign-in.
-
--   **Firebase Firestore Rules:**
-    ```firestore
-    rules_version = '2';
-    service cloud.firestore {
-      match /databases/{database}/documents {
-        // User-specific character data (saved characters) and preferences (default character)
-        match /userCharacters/{userId}/{document=**} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
-        }
-      }
-    }
-    ```
-
--   **Firebase Storage Rules:**
-    ```
-    rules_version = '2';
-    service firebase.storage {
-      match /b/{bucket}/o {
-        // Allows authenticated users to write to their own profile image folder
-        // Allows anyone to read profile images (common for public display)
-        match /profileImages/{userId}/{allPaths=**} {
-          allow read;
-          allow write: if request.auth != null && request.auth.uid == userId;
-        }
-      }
-    }
-    ```
-
--   **Cloud Functions:**
-    -   None explicitly implemented yet.
-
--   **External APIs & SDKs Used:**
-    -   **Google Sheets API:** Accessed server-side via the `googleapis` npm package to fetch data for Events, NPC Generator, Arsenal Cards, and Shop Items. Requires service account credentials (`GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, and sheet-specific IDs/ranges) stored in `.env.local`.
-    -   **Firebase SDK (Client-Side):**
-        -   `firebase/app`: For initialization.
-        -   `firebase/auth`: For user sign-up, login, logout, password reset, profile updates.
-        -   `firebase/firestore`: For reading and writing user-specific data (saved characters, preferences).
-        -   `firebase/storage`: For uploading and managing user profile images.
-    -   **Genkit SDK (Server-Side Flows):**
-        -   `@genkit-ai/googleai`: For interacting with Google's Gemini models.
-        -   `@genkit-ai/next`: For integrating Genkit flows with Next.js.
-        -   Used in `src/ai/flows/item-generator-flow.ts`.
-    -   **Placeholder Image Services:**
-        -   `https://placehold.co`
-        -   `https://picsum.photos` (used in simulated friends list)
+(No changes from previous state)
 
 ## 10. Other Important Observations
 -   The application heavily relies on client-side rendering for its UI components ("use client").
@@ -392,7 +248,6 @@
 -   The codebase has undergone significant refactoring to break down large UI components into smaller, more manageable sub-components.
 -   Theming is centralized in `globals.css` and leverages ShadCN's HSL variable system.
 -   Environment variables in `.env.local` are critical for Firebase client configuration and Google Sheets API server-side access.
-    -   `SHOP_ITEMS_GOOGLE_SHEET_RANGE` now supports comma-separated sheet names/ranges for fetching shop data from multiple tabs. Parsing logic for Utility items has been enhanced to handle combined Category/SubCategory values (e.g., "Utility Bomb") and map them correctly.
 -   Error handling is present for data fetching and Firebase operations, often using toast notifications.
 -   The rulebook content provided by the user (shop items, abilities, combat rules) is extensive and implies a long-term goal of creating a very rich and interactive digital companion. Much of this is not yet implemented but informs the design of data structures.
 -   The "Investigations" feature has been renamed to "NPC Generator".

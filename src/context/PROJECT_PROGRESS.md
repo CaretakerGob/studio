@@ -41,10 +41,13 @@ DONE:
     - Display of item details (cost, description, stats, charges, etc.).
     - Simulated "Crypto" currency tracker and purchasing logic.
     - Item data now fetched from Google Sheets instead of hardcoded.
+    - Implemented AI image generation for shop items without existing images (session-based display).
 - AI Item Generator:
     - Genkit flow for generating game items (name, type, lore, game effect, rarity).
-    - UI for user input (item type, theme, rarity, stat focus).
+    - UI for user input (item type, theme, rarity, stat focus, lore context).
     - Display of generated item.
+    - Shop items (from Google Sheet) used as examples for the AI.
+    - Reinforced prompt to strictly use RotB rules and avoid D&D elements.
 - User Profile Page:
     - Firebase Authentication (Email/Password Sign Up, Log In, Log Out).
     - Edit display name.
@@ -68,11 +71,12 @@ DONE:
     - Links to all major features.
     - Mobile-responsive (Sheet-based).
     - "Game Tools" items grouped under a dropdown.
+    - "Future Features" dropdown added; AI Item Generator and NPC Generator moved there and greyed out.
 - Mobile Optimizations:
     - Homepage feature card layout (vertical scrollable window).
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
-- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs).
+- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing).
 
 WORKING:
 - Ongoing review and minor clean-up of existing codebase.
@@ -91,6 +95,7 @@ NEXT:
 - Expand Genkit AI integrations:
     - Dynamic NPC dialogue generation.
     - AI-assisted event or NPC detail generation.
+    - Persist AI-generated shop item images.
 - Add a bestiary/monster manual section.
 - Implement game rule references or a digital rulebook section.
 - Further mobile optimization for all pages (Dice Roller, Card Generator, Events, NPC Generator, Shop, Profile, etc.).
@@ -98,3 +103,4 @@ NEXT:
 - Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).
 - Refine UI/UX across all pages based on testing.
       
+
