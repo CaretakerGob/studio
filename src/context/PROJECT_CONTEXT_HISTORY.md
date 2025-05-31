@@ -128,7 +128,7 @@
 - **Data Source for Examples:** Shop items from Google Sheets.
 
 ### 3.10. Shared Space (`/shared-space`)
-- **Description:** Placeholder for a collaborative session feature.
+- **Description:** Placeholder for a collaborative session feature. Term "Party" will be reserved for multi-user groups here.
 - **Functionality:**
     - Enter an access code to "join" a session.
     - Access code is currently hardcoded (`BEAST_PARTY`) for demonstration.
@@ -156,20 +156,20 @@
 - **Functionality:** Displays FAQs categorized into "App Questions" and "Board Game Concepts" using accordion style.
 
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
-- **Description:** Session-based game management hub, supporting multiple characters.
+- **Description:** Session-based game management hub, supporting a team of multiple characters.
 - **Functionality:**
-    - **Multi-Character Display**: Main view displays a grid of party members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card (header area) sets them as active.
+    - **Multi-Character Team Display**: Main view displays a grid of team members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points, stacked vertically. Clicking a character's card header sets them as active.
     - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
-    - Party Management Dialog: Add/remove characters. "Manage Party" button located in the page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
+    - Team Management Dialog: Add/remove characters. "Manage Team" button located in the page header.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal (removed from main card display).
     - Session Crypto Tracker: Global for the session.
     - Arsenal and equipment display for active character (images of selected arsenal).
     - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
     - Modal for active character details (all stats including MV/DEF, weapons, abilities, skills).
-    - Save Nexus Session: Logged-in users can save their current party's state (including all members' stats, arsenals, crypto) to Firestore.
+    - Save Nexus Session: Logged-in users can save their current team's state (including all members' stats, arsenals, crypto) to Firestore.
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
     - Reset Nexus Session: Functionality added to settings dropdown.
-- **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets. Party state is client-side, can be persisted.
+- **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets. Team state is client-side, can be persisted.
 
 ### 3.14. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
 - **Description:** Placeholder pages for legal documents.
@@ -196,7 +196,7 @@
     *   Loot Table and Mystery Table integration into gameplay loops.
     *   Character-specific unique abilities from the rulebook (Joe's Forage/Bounties, Nysa's Card Casting/Arcanas, etc.).
 -   **Data Persistence:**
-    *   Saving current pet HP/Sanity (if pets are part of party member state in Nexus).
+    *   Saving current pet HP/Sanity (if pets are part of team member state in Nexus).
     *   Saving character inventory.
     *   Persisting AI-generated shop item images (e.g., to Firebase Storage, updating Google Sheet with URL).
 -   **Advanced AI Features (Genkit):**
@@ -214,10 +214,10 @@
 -   **Modularity:** Ongoing effort to refactor large components into smaller, focused ones.
 -   **Styling:** Primary reliance on ShadCN component styling and Tailwind utilities, with global theme variables.
 -   **AI Integration:** Genkit for LLM interactions, keeping AI logic in server-side flows. User-provided lore excerpts can be passed to AI. Shop item image generation is session-based.
--   **State Management:** Primarily local component state and React Context for authentication. Hunter's Nexus uses local state for party management, persisted to Firestore on demand.
+-   **State Management:** Primarily local component state and React Context for authentication. Hunter's Nexus uses local state for team management, persisted to Firestore on demand.
 -   **User Data:** Stored in Firestore under user-specific paths for security and organization.
 -   **Error Handling:** Implemented for API calls (Google Sheets, Firebase) and user actions.
--   **Prototyping:** Some features like Shared Space and Friends List are currently simulated on the client-side.
+-   **Prototyping:** Some features like Shared Space and Friends List are currently simulated on the client-side. Naming convention: "Team" for single-user character groups in Nexus, "Party" to be used for multi-user groups in Shared Space.
 
 ## 7. Open Questions / Assumptions
 -   **Combat UI/UX:** How will the detailed turn-based combat be represented and managed interactively in the app?
@@ -243,7 +243,7 @@
 -   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: (No changes)
 -   **Dice Roller Types (`src/components/dice-roller/dice-roller-ui.tsx`)**: (No changes)
 -   **`EventData` (`src/types/event.ts`)**: (No changes)
--   **`SavedNexusState` & `PartyMemberSavedState` (`src/types/nexus.ts`)**: Updated to support multiple party members. `SavedNexusState` now contains `party: PartyMemberSavedState[]` and `activeCharacterIdInSession: string | null`. `PartyMemberSavedState` defined to hold individual character session data. Added `characterName` and `characterImageUrl` to `PartyMemberSavedState` for better display on load.
+-   **`SavedNexusState` & `PartyMemberSavedState` (`src/types/nexus.ts`)**: Updated to support multiple team members. `SavedNexusState` now contains `party: PartyMemberSavedState[]` (field name `party` retained for data compatibility, represents the "team") and `activeCharacterIdInSession: string | null`. `PartyMemberSavedState` defined to hold individual character session data. Added `characterName` and `characterImageUrl` to `PartyMemberSavedState` for better display on load.
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
 -   **Firebase Firestore Rules:** Updated to include rules for `userNexusStates/{userId}/{document=**}` allowing read/write for authenticated owners. Firestore rules confirmed to allow write access to `userNexusStates/{userId}/states/{sessionId}`.
@@ -269,3 +269,6 @@ This document provides a snapshot of the project's state and context.
     
 
     
+
+    
+

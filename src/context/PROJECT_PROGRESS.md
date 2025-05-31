@@ -63,17 +63,18 @@ DONE:
 - Shared Space Page:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
-    - **Multi-Character Display**: Main view displays a grid of party members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card (header area) sets them as active.
+    - **Multi-Character Team Display**: Main view displays a grid of team members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points, stacked vertically. Clicking a character's card header sets them as active.
     - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character.
-    - Party Management Dialog: Add/remove characters. "Manage Party" button located in the page header.
-    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
+    - Team Management Dialog: Add/remove characters. "Manage Team" button located in the page header.
+    - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal (removed from main card display).
     - Session Crypto Tracker: Global for the session.
     - Arsenal and equipment display for active character (images of selected arsenal).
     - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
     - Modal for active character details (all stats including MV/DEF, weapons, abilities, skills).
-    - Save Nexus Session: Logged-in users can save their current party's state (including all members' stats, arsenals, crypto) to Firestore.
+    - Save Nexus Session: Logged-in users can save their current team's state (including all members' stats, arsenals, crypto) to Firestore.
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
     - Reset Nexus Session: Functionality added to settings dropdown.
+    - Changed "Party" to "Team" in all user-facing text.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
 - Terms of Service Page (`/terms`):
@@ -122,3 +123,6 @@ NEXT:
     
 
     
+
+    
+

@@ -128,7 +128,7 @@ interface NexusRollResult {
 
 const combatDieFaces: CombatDieFace[] = ['swordandshield', 'swordandshield', 'swordandshield', 'double-sword', 'blank', 'blank'];
 const NEXUS_HEMORRHAGE_THRESHOLD = 3;
-const MAX_PARTY_SIZE = 4;
+const MAX_TEAM_SIZE = 4; // Renamed from MAX_PARTY_SIZE
 
 const MIN_SWIPE_DISTANCE = 50;
 const MAX_TAP_MOVEMENT = 10;
@@ -145,7 +145,7 @@ const parseCooldownRounds = (cooldownString?: string | number): number | undefin
   return match ? parseInt(match[0], 10) : undefined;
 };
 
-interface PartyMemberSessionSpecificData {
+interface TeamMemberSessionSpecificData { // Renamed from PartyMemberSessionSpecificData
   selectedArsenalId: string | null;
   currentHp: number;
   currentSanity: number;
@@ -178,9 +178,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [nexusLatestRoll, setNexusLatestRoll] = useState<NexusRollResult | null>(null);
   const [nexusRollKey, setNexusRollKey] = useState(0);
 
-  const [partyMembers, setPartyMembers] = useState<Character[]>([]);
+  const [teamMembers, setTeamMembers] = useState<Character[]>([]); // Renamed from partyMembers
   const [activeCharacterId, setActiveCharacterId] = useState<string | null>(null);
-  const [partySessionData, setPartySessionData] = useState<Record<string, PartyMemberSessionSpecificData>>({});
+  const [teamSessionData, setTeamSessionData] = useState<Record<string, TeamMemberSessionSpecificData>>({}); // Renamed from partySessionData
   
   const [sessionCrypto, setSessionCrypto] = useState<number>(0);
   
@@ -214,13 +214,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
   const activeCharacterBase = useMemo(() => {
     if (!activeCharacterId) return null;
-    return partyMembers.find(p => p.id === activeCharacterId) || null;
-  }, [activeCharacterId, partyMembers]);
+    return teamMembers.find(p => p.id === activeCharacterId) || null; // Renamed from partyMembers
+  }, [activeCharacterId, teamMembers]); // Renamed from partyMembers
 
   const activeCharacterSessionData = useMemo(() => {
     if (!activeCharacterId) return null;
-    return partySessionData[activeCharacterId] || null;
-  }, [activeCharacterId, partySessionData]);
+    return teamSessionData[activeCharacterId] || null; // Renamed from partySessionData
+  }, [activeCharacterId, teamSessionData]); // Renamed from partySessionData
 
 
   const criticalArsenalError = useMemo(() => {
@@ -241,8 +241,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
 
   const calculateEffectiveStatsForMember = useCallback((memberId: string): CharacterStats | null => {
-    const baseCharacter = partyMembers.find(p => p.id === memberId);
-    const sessionData = partySessionData[memberId];
+    const baseCharacter = teamMembers.find(p => p.id === memberId); // Renamed from partyMembers
+    const sessionData = teamSessionData[memberId]; // Renamed from partySessionData
     if (!baseCharacter || !sessionData) return null;
 
     let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(baseCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
@@ -290,7 +290,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     calculatedStats.maxSanity = Math.max(1, calculatedStats.maxSanity);
 
     return calculatedStats;
-  }, [partyMembers, partySessionData, arsenalCards]);
+  }, [teamMembers, teamSessionData, arsenalCards]); // Renamed from partyMembers, partySessionData
 
   const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
       if (!activeCharacterId) return null;
@@ -461,16 +461,16 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
    useEffect(() => {
     if (!activeCharacterId || !activeCharacterBase) {
-        if (activeCharacterId && partySessionData[activeCharacterId]) {
-            const charSession = partySessionData[activeCharacterId]!;
+        if (activeCharacterId && teamSessionData[activeCharacterId]) { // Renamed partySessionData
+            const charSession = teamSessionData[activeCharacterId]!; // Renamed partySessionData
             if (Object.keys(charSession.abilityCooldowns || {}).length > 0 || Object.keys(charSession.abilityQuantities || {}).length > 0) {
-                setPartySessionData(prev => ({
+                setTeamSessionData(prev => ({ // Renamed partySessionData
                     ...prev,
                     [activeCharacterId]: {
                         ...(prev[activeCharacterId] || {}),
                         abilityCooldowns: {},
                         abilityQuantities: {},
-                    } as PartyMemberSessionSpecificData,
+                    } as TeamMemberSessionSpecificData, // Renamed
                 }));
             }
         }
@@ -483,7 +483,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     const newCalculatedCDs: Record<string, number> = {};
     const newCalculatedQTs: Record<string, number> = {};
 
-    const currentSessionForChar = partySessionData[activeCharacterId];
+    const currentSessionForChar = teamSessionData[activeCharacterId]; // Renamed partySessionData
     const stateCDs = currentSessionForChar?.abilityCooldowns || {};
     const stateQTs = currentSessionForChar?.abilityQuantities || {};
 
@@ -503,7 +503,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         JSON.stringify(stateCDs) !== JSON.stringify(newCalculatedCDs) ||
         JSON.stringify(stateQTs) !== JSON.stringify(newCalculatedQTs)
     ) {
-        setPartySessionData(prev => {
+        setTeamSessionData(prev => { // Renamed partySessionData
             const charPrevSession = prev[activeCharacterId!] || {};
             const updatedCharSessionData = {
                 ...charPrevSession,
@@ -513,7 +513,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             if (JSON.stringify(prev[activeCharacterId!]) !== JSON.stringify(updatedCharSessionData)) {
                 return {
                     ...prev,
-                    [activeCharacterId!]: updatedCharSessionData as PartyMemberSessionSpecificData,
+                    [activeCharacterId!]: updatedCharSessionData as TeamMemberSessionSpecificData, // Renamed
                 };
             }
             return prev;
@@ -524,7 +524,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     abilityDataStringForEffect, 
     activeCharacterBase, 
     effectiveNexusCharacterAbilities, 
-    partySessionData, 
+    teamSessionData, // Renamed from partySessionData
 ]);
 
   const openAvatarImageModal = (imageUrl: string) => {
@@ -611,26 +611,26 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setTouchStartX(null); setTouchEndX(null); setTouchStartY(null); setTouchEndY(null);
   };
 
-  const handleAddCharacterToParty = (characterToAdd: Character) => {
-    if (partyMembers.length >= MAX_PARTY_SIZE) {
-      toast({ title: "Party Full", description: `Maximum of ${MAX_PARTY_SIZE} characters allowed.`, variant: "destructive"});
+  const handleAddCharacterToTeam = (characterToAdd: Character) => { // Renamed
+    if (teamMembers.length >= MAX_TEAM_SIZE) { // Renamed
+      toast({ title: "Team Full", description: `Maximum of ${MAX_TEAM_SIZE} characters allowed.`, variant: "destructive"}); // Renamed
       return;
     }
-    if (partyMembers.find(p => p.id === characterToAdd.id)) {
-      toast({ title: "Already in Party", description: `${characterToAdd.name} is already in the party.`, variant: "destructive"});
+    if (teamMembers.find(p => p.id === characterToAdd.id)) { // Renamed
+      toast({ title: "Already in Team", description: `${characterToAdd.name} is already in the team.`, variant: "destructive"}); // Renamed
       return;
     }
 
-    const newPartyMemberBase = JSON.parse(JSON.stringify(characterToAdd));
-    setPartyMembers(prev => [...prev, newPartyMemberBase]);
+    const newTeamMemberBase = JSON.parse(JSON.stringify(characterToAdd)); // Renamed
+    setTeamMembers(prev => [...prev, newTeamMemberBase]); // Renamed
 
-    const defaultSessionData: PartyMemberSessionSpecificData = {
-      selectedArsenalId: newPartyMemberBase.selectedArsenalCardId || null,
-      currentHp: newPartyMemberBase.baseStats.maxHp,
-      currentSanity: newPartyMemberBase.baseStats.maxSanity,
-      currentMv: newPartyMemberBase.baseStats.mv,
-      currentDef: newPartyMemberBase.baseStats.def,
-      sessionBleedPoints: newPartyMemberBase.bleedPoints || 0,
+    const defaultSessionData: TeamMemberSessionSpecificData = { // Renamed
+      selectedArsenalId: newTeamMemberBase.selectedArsenalCardId || null,
+      currentHp: newTeamMemberBase.baseStats.maxHp,
+      currentSanity: newTeamMemberBase.baseStats.maxSanity,
+      currentMv: newTeamMemberBase.baseStats.mv,
+      currentDef: newTeamMemberBase.baseStats.def,
+      sessionBleedPoints: newTeamMemberBase.bleedPoints || 0,
       sessionMaxHpModifier: 0,
       sessionMaxSanityModifier: 0,
       sessionMvModifier: 0,
@@ -642,7 +642,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       abilityQuantities: {},
     };
     
-    const charAbilities = newPartyMemberBase.abilities || [];
+    const charAbilities = newTeamMemberBase.abilities || [];
     const arsenalForNewChar = arsenalCards.find(ac => ac.id === defaultSessionData.selectedArsenalId);
     const combinedAbilitiesForNewChar: CharacterAbility[] = [...charAbilities];
 
@@ -674,25 +674,25 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     });
 
 
-    setPartySessionData(prev => ({ ...prev, [newPartyMemberBase.id]: defaultSessionData }));
+    setTeamSessionData(prev => ({ ...prev, [newTeamMemberBase.id]: defaultSessionData })); // Renamed
 
     if (!activeCharacterId) {
-      setActiveCharacterId(newPartyMemberBase.id);
+      setActiveCharacterId(newTeamMemberBase.id);
     }
-    toast({ title: "Character Added", description: `${newPartyMemberBase.name} joined the Nexus party.` });
+    toast({ title: "Character Added", description: `${newTeamMemberBase.name} joined the Nexus team.` }); // Renamed
   };
 
-  const handleRemoveCharacterFromParty = (characterIdToRemove: string) => {
-    const charToRemove = partyMembers.find(p => p.id === characterIdToRemove);
-    setPartyMembers(prev => prev.filter(p => p.id !== characterIdToRemove));
-    setPartySessionData(prev => {
+  const handleRemoveCharacterFromTeam = (characterIdToRemove: string) => { // Renamed
+    const charToRemove = teamMembers.find(p => p.id === characterIdToRemove); // Renamed
+    setTeamMembers(prev => prev.filter(p => p.id !== characterIdToRemove)); // Renamed
+    setTeamSessionData(prev => { // Renamed
       const { [characterIdToRemove]: _, ...rest } = prev;
       return rest;
     });
     if (activeCharacterId === characterIdToRemove) {
-      setActiveCharacterId(partyMembers.length > 1 ? partyMembers.find(p=> p.id !== characterIdToRemove)?.id || null : null);
+      setActiveCharacterId(teamMembers.length > 1 ? teamMembers.find(p=> p.id !== characterIdToRemove)?.id || null : null); // Renamed
     }
-    toast({ title: "Character Removed", description: `${charToRemove?.name || 'Character'} left the Nexus party.`, variant: "destructive" });
+    toast({ title: "Character Removed", description: `${charToRemove?.name || 'Character'} left the Nexus team.`, variant: "destructive" }); // Renamed
   };
 
 
@@ -727,9 +727,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     toast({ title: "Card Drawn!", description: `Drew ${drawnCard.name} from ${deck.name}.` });
   };
 
-  const handleNexusPartyMemberStatChange = (characterId: string, stat: StatName, operation: 'increment' | 'decrement') => {
-    const memberSessionData = partySessionData[characterId];
-    const memberBase = partyMembers.find(p => p.id === characterId);
+  const handleNexusTeamMemberStatChange = (characterId: string, stat: StatName, operation: 'increment' | 'decrement') => { // Renamed
+    const memberSessionData = teamSessionData[characterId]; // Renamed
+    const memberBase = teamMembers.find(p => p.id === characterId); // Renamed
     const memberEffectiveStats = calculateEffectiveStatsForMember(characterId);
 
     if (!memberSessionData || !memberBase || !memberEffectiveStats) return;
@@ -750,7 +750,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     effectiveMax = Math.max(1, effectiveMax);
     newValue = Math.min(newValue, effectiveMax);
 
-    setPartySessionData(prev => ({
+    setTeamSessionData(prev => ({ // Renamed
         ...prev,
         [characterId]: {
             ...prev[characterId]!,
@@ -759,11 +759,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     }));
   };
 
-  const handleNexusPartyMemberBleedChange = (characterId: string, operation: 'increment' | 'decrement') => {
-    const memberSessionData = partySessionData[characterId];
+  const handleNexusTeamMemberBleedChange = (characterId: string, operation: 'increment' | 'decrement') => { // Renamed
+    const memberSessionData = teamSessionData[characterId]; // Renamed
     if (!memberSessionData) return;
     const delta = operation === 'increment' ? 1 : -1;
-    setPartySessionData(prev => ({
+    setTeamSessionData(prev => ({ // Renamed
         ...prev,
         [characterId]: {
             ...prev[characterId]!,
@@ -777,7 +777,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     const delta = operation === 'increment' ? 1 : -1;
     
     let currentValToChange: number;
-    let statKeyInSessionData: keyof PartyMemberSessionSpecificData;
+    let statKeyInSessionData: keyof TeamMemberSessionSpecificData; // Renamed
 
     switch(stat) {
         case 'hp': currentValToChange = activeCharacterSessionData.currentHp; statKeyInSessionData = 'currentHp'; break;
@@ -802,7 +802,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     effectiveMax = Math.max((stat === 'hp' || stat === 'sanity' ? 1 : 0), effectiveMax);
     newValue = Math.min(newValue, effectiveMax);
 
-    setPartySessionData(prev => ({
+    setTeamSessionData(prev => ({ // Renamed
         ...prev,
         [activeCharacterId]: {
             ...prev[activeCharacterId]!,
@@ -815,7 +815,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const handleNexusBleedPointsChange = (operation: 'increment' | 'decrement') => {
     if (!activeCharacterId || !activeCharacterSessionData) return;
     const delta = operation === 'increment' ? 1 : -1;
-    setPartySessionData(prev => ({
+    setTeamSessionData(prev => ({ // Renamed
         ...prev,
         [activeCharacterId]: {
             ...prev[activeCharacterId]!,
@@ -833,19 +833,19 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const handleNexusSessionMaxStatModifierChange = (statType: 'hp' | 'sanity' | 'mv' | 'def', delta: number) => {
     if (!activeCharacterId || !activeCharacterSessionData || !activeCharacterBase || !effectiveNexusCharacterStats) return;
 
-    const statKeyForModifier: keyof PartyMemberSessionSpecificData = 
+    const statKeyForModifier: keyof TeamMemberSessionSpecificData = // Renamed
         statType === 'hp' ? 'sessionMaxHpModifier' :
         statType === 'sanity' ? 'sessionMaxSanityModifier' :
         statType === 'mv' ? 'sessionMvModifier' : 'sessionDefModifier';
     
     const baseMaxValue = activeCharacterBase.baseStats[statType] || (statType === 'hp' || statType === 'sanity' ? 1 : 0);
-    const currentStatToCapKey: keyof PartyMemberSessionSpecificData = 
+    const currentStatToCapKey: keyof TeamMemberSessionSpecificData = // Renamed
         statType === 'hp' ? 'currentHp' : 
         statType === 'sanity' ? 'currentSanity' : 
         statType === 'mv' ? 'currentMv' : 'currentDef';
 
 
-    setPartySessionData(prev => {
+    setTeamSessionData(prev => { // Renamed
         const currentCharacterData = prev[activeCharacterId]!;
         const currentModifier = currentCharacterData[statKeyForModifier] as number;
         let newModifier = currentModifier + delta;
@@ -883,14 +883,14 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   ) => {
     if (!activeCharacterId || !activeCharacterSessionData) return;
 
-    const modifierKey: keyof PartyMemberSessionSpecificData = 
+    const modifierKey: keyof TeamMemberSessionSpecificData = // Renamed
         weaponType === 'melee' ? 'sessionMeleeAttackModifier' :
         statTypeToModify === 'attack' ? 'sessionRangedAttackModifier' : 'sessionRangedRangeModifier';
     
     const baseWeapon = weaponType === 'melee' ? effectiveNexusMeleeWeapon : effectiveNexusRangedWeapon;
     const baseStatValue = baseWeapon ? (statTypeToModify === 'attack' ? baseWeapon.attack : (baseWeapon as RangedWeapon).range || 0) : 0;
 
-    setPartySessionData(prev => {
+    setTeamSessionData(prev => { // Renamed
         const currentCharacterData = prev[activeCharacterId]!;
         const currentModifier = currentCharacterData[modifierKey] as number;
         let newModifier = currentModifier + delta;
@@ -911,7 +911,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     const maxCD = (effectiveNexusCharacterAbilities.baseAbilities.find(a=>a.id === abilityId) || effectiveNexusCharacterAbilities.arsenalAbilities.find(a=>a.id === abilityId))?.cooldown;
     const maxCooldownValue = maxCD ? parseCooldownRounds(maxCD) : Infinity;
 
-    setPartySessionData(prev => ({
+    setTeamSessionData(prev => ({ // Renamed
       ...prev,
       [activeCharacterId]: {
         ...prev[activeCharacterId]!,
@@ -924,7 +924,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
   const handleDecrementNexusCooldown = (abilityId: string) => {
     if (!activeCharacterId || !activeCharacterSessionData) return;
-    setPartySessionData(prev => ({
+    setTeamSessionData(prev => ({ // Renamed
       ...prev,
       [activeCharacterId]: {
         ...prev[activeCharacterId]!,
@@ -939,7 +939,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
      if (!activeCharacterId || !activeCharacterSessionData) return;
     const maxQTY = (effectiveNexusCharacterAbilities.baseAbilities.find(a=>a.id === abilityId) || effectiveNexusCharacterAbilities.arsenalAbilities.find(a=>a.id === abilityId))?.maxQuantity;
 
-    setPartySessionData(prev => ({
+    setTeamSessionData(prev => ({ // Renamed
       ...prev,
       [activeCharacterId]: {
         ...prev[activeCharacterId]!,
@@ -952,7 +952,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
   const handleDecrementNexusQuantity = (abilityId: string) => {
     if (!activeCharacterId || !activeCharacterSessionData) return;
-    setPartySessionData(prev => ({
+    setTeamSessionData(prev => ({ // Renamed
       ...prev,
       [activeCharacterId]: {
         ...prev[activeCharacterId]!,
@@ -977,13 +977,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
   const handleInitiateSaveNexusState = () => {
     if (!currentUser) { toast({ title: "Login Required", description: "You must be logged in to save a Nexus session.", variant: "destructive" }); return; }
-    if (partyMembers.length === 0) { toast({ title: "No Party Members", description: "Add at least one character to the party before saving.", variant: "destructive" }); return; }
+    if (teamMembers.length === 0) { toast({ title: "No Team Members", description: "Add at least one character to the team before saving.", variant: "destructive" }); return; } // Renamed
     setSaveNexusName(`Nexus Session - ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`);
     setIsSaveNexusDialogOpen(true);
   };
 
   const executeSaveNexusState = async () => {
-    if (!currentUser || partyMembers.length === 0 || !auth.currentUser ) {
+    if (!currentUser || teamMembers.length === 0 || !auth.currentUser ) { // Renamed
       toast({ title: "Error", description: "Missing data to save Nexus session.", variant: "destructive" });
       return;
     }
@@ -992,10 +992,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setIsSavingNexus(true);
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     
-    const partyToSave: PartyMemberSavedState[] = partyMembers.map(member => {
-      const sessionDataForMember = partySessionData[member.id];
+    const partyToSave: PartyMemberSavedState[] = teamMembers.map(member => { // Renamed variable locally but underlying type still uses "party"
+      const sessionDataForMember = teamSessionData[member.id]; // Renamed
       if (!sessionDataForMember) {
-        console.error(`Missing session data for party member ${member.id} during save.`);
+        console.error(`Missing session data for team member ${member.id} during save.`); // Renamed
         const baseChar = charactersData.find(c => c.id === member.id) || charactersData.find(c=> c.id === 'custom')!;
         return { 
           baseCharacterId: member.id,
@@ -1029,7 +1029,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       name: saveNexusName.trim(),
       userId: currentUser.uid,
       lastSaved: new Date().toISOString(),
-      party: partyToSave,
+      party: partyToSave, // This field name in Firestore remains 'party'
       activeCharacterIdInSession: activeCharacterId,
       sessionCrypto: sessionCrypto,
     };
@@ -1046,9 +1046,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
 
   const executeResetNexusSession = () => {
-    setPartyMembers([]);
+    setTeamMembers([]); // Renamed
     setActiveCharacterId(null);
-    setPartySessionData({});
+    setTeamSessionData({}); // Renamed
     setSessionCrypto(0);
     setNexusLatestRoll(null);
     setNexusDrawnCardsHistory([]);
@@ -1074,10 +1074,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
 
   const handleLoadSelectedSession = (session: SavedNexusState) => {
-    const loadedPartyMembers: Character[] = [];
-    const loadedPartySessionData: Record<string, PartyMemberSessionSpecificData> = {};
+    const loadedTeamMembers: Character[] = []; // Renamed
+    const loadedTeamSessionData: Record<string, TeamMemberSessionSpecificData> = {}; // Renamed
 
-    session.party.forEach(savedMember => {
+    session.party.forEach(savedMember => { // 'party' is the field name in Firestore
       const baseCharTemplate = charactersData.find(c => c.id === savedMember.baseCharacterId);
       if (baseCharTemplate) {
         const charInstance: Character = {
@@ -1086,9 +1086,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             name: savedMember.characterName || baseCharTemplate.name, 
             imageUrl: savedMember.characterImageUrl || baseCharTemplate.imageUrl, 
         };
-        loadedPartyMembers.push(charInstance);
+        loadedTeamMembers.push(charInstance); // Renamed
         
-        loadedPartySessionData[savedMember.baseCharacterId] = {
+        loadedTeamSessionData[savedMember.baseCharacterId] = { // Renamed
           selectedArsenalId: savedMember.selectedArsenalId,
           currentHp: savedMember.currentHp, currentSanity: savedMember.currentSanity,
           currentMv: savedMember.currentMv, currentDef: savedMember.currentDef,
@@ -1104,8 +1104,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       }
     });
 
-    setPartyMembers(loadedPartyMembers);
-    setPartySessionData(loadedPartySessionData);
+    setTeamMembers(loadedTeamMembers); // Renamed
+    setTeamSessionData(loadedTeamSessionData); // Renamed
     setActiveCharacterId(session.activeCharacterIdInSession);
     setSessionCrypto(session.sessionCrypto);
     
@@ -1153,9 +1153,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             </div>
             <div className="flex items-center gap-1">
                <Button variant="outline" size="sm" onClick={() => setIsCharacterManagementDialogOpen(true)} disabled={isSavingNexus || isLoadingSessions || isDeletingSession}>
-                  <Users2 className="mr-1.5 h-4 w-4" /> Manage Party
+                  <Users2 className="mr-1.5 h-4 w-4" /> Manage Team
                 </Button>
-              {currentUser && partyMembers.length > 0 && (
+              {currentUser && teamMembers.length > 0 && ( // Renamed
                 <Button variant="outline" size="sm" onClick={handleInitiateSaveNexusState} disabled={isSavingNexus}>
                   <Save className="mr-1.5 h-4 w-4" /> Save Session
                 </Button>
@@ -1171,7 +1171,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     <UploadCloud className="mr-2 h-4 w-4" /> Load Session
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => setIsResetDialogOpen(true)} disabled={partyMembers.length === 0}>
+                  <DropdownMenuItem onSelect={() => setIsResetDialogOpen(true)} disabled={teamMembers.length === 0}> {/* Renamed */}
                     <RotateCcw className="mr-2 h-4 w-4" /> Reset Session
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -1182,24 +1182,24 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
           <Dialog open={isCharacterManagementDialogOpen} onOpenChange={setIsCharacterManagementDialogOpen}>
             <DialogContent className="sm:max-w-md bg-card border-border">
                 <DialogHeader>
-                  <DialogTitle>Manage Party</DialogTitle>
-                  <DialogDescription>Add or remove characters from your Nexus party (Max {MAX_PARTY_SIZE}).</DialogDescription>
+                  <DialogTitle>Manage Team</DialogTitle>
+                  <DialogDescription>Add or remove characters from your Nexus team (Max {MAX_TEAM_SIZE}).</DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <div>
-                        <h4 className="text-sm font-medium mb-2">Current Party ({partyMembers.length}/{MAX_PARTY_SIZE}):</h4>
-                        {partyMembers.length === 0 ? (
-                            <p className="text-xs text-muted-foreground">No characters in party.</p>
+                        <h4 className="text-sm font-medium mb-2">Current Team ({teamMembers.length}/{MAX_TEAM_SIZE}):</h4> {/* Renamed */}
+                        {teamMembers.length === 0 ? ( // Renamed
+                            <p className="text-xs text-muted-foreground">No characters in team.</p> // Renamed
                         ) : (
                             <ScrollArea className="h-[150px] border rounded-md p-2">
                                 <div className="space-y-1">
-                                {partyMembers.map(member => (
+                                {teamMembers.map(member => ( // Renamed
                                     <div key={`manage-${member.id}`} className="flex items-center justify-between p-1.5 rounded bg-muted/50">
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-7 w-7"><AvatarImage src={member.imageUrl} alt={member.name}/><AvatarFallback>{member.name.substring(0,1)}</AvatarFallback></Avatar>
                                             <span className="text-xs">{member.name}</span>
                                         </div>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveCharacterFromParty(member.id)}><UserRoundX className="h-3.5 w-3.5"/></Button>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveCharacterFromTeam(member.id)}><UserRoundX className="h-3.5 w-3.5"/></Button> {/* Renamed */}
                                     </div>
                                 ))}
                                 </div>
@@ -1210,8 +1210,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         <h4 className="text-sm font-medium mb-2">Available Characters to Add:</h4>
                          <ScrollArea className="h-[200px] border rounded-md p-2">
                             <div className="space-y-1">
-                            {charactersData.filter(char => !partyMembers.some(p => p.id === char.id)).map((char) => (
-                            <Button key={`add-${char.id}`} variant="ghost" className="w-full justify-start p-1.5 h-auto text-xs" onClick={() => handleAddCharacterToParty(char)} disabled={partyMembers.length >= MAX_PARTY_SIZE}>
+                            {charactersData.filter(char => !teamMembers.some(p => p.id === char.id)).map((char) => ( // Renamed
+                            <Button key={`add-${char.id}`} variant="ghost" className="w-full justify-start p-1.5 h-auto text-xs" onClick={() => handleAddCharacterToTeam(char)} disabled={teamMembers.length >= MAX_TEAM_SIZE}> {/* Renamed */}
                                 <Avatar className="h-7 w-7 mr-2">
                                 <AvatarImage src={char.imageUrl || `https://placehold.co/40x40.png?text=${char.name.substring(0,1)}`} alt={char.name} data-ai-hint="character avatar"/>
                                 <AvatarFallback>{char.name.substring(0,2).toUpperCase()}</AvatarFallback>
@@ -1219,8 +1219,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                 {char.name}
                             </Button>
                             ))}
-                             {charactersData.filter(char => !partyMembers.some(p => p.id === char.id)).length === 0 && (
-                                <p className="text-xs text-muted-foreground text-center py-2">All available characters are in the party.</p>
+                             {charactersData.filter(char => !teamMembers.some(p => p.id === char.id)).length === 0 && ( // Renamed
+                                <p className="text-xs text-muted-foreground text-center py-2">All available characters are in the team.</p> // Renamed
                             )}
                             </div>
                         </ScrollArea>
@@ -1359,10 +1359,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     </div>
 
                     <div className="lg:col-span-2 space-y-6">
-                        {partyMembers.length > 0 ? (
+                        {teamMembers.length > 0 ? ( // Renamed
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {partyMembers.map((member, memberIndex) => {
-                                    const memberSessionData = partySessionData[member.id];
+                                {teamMembers.map((member, memberIndex) => { // Renamed
+                                    const memberSessionData = teamSessionData[member.id]; // Renamed
                                     const memberEffectiveStats = calculateEffectiveStatsForMember(member.id);
                                     if (!memberSessionData || !memberEffectiveStats) return null;
 
@@ -1405,9 +1405,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                                     <div className="flex items-center justify-between">
                                                         <Label className="flex items-center text-xs font-medium"><Heart className="mr-1 h-3 w-3 text-red-500" />HP</Label>
                                                         <div className="flex items-center gap-1">
-                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusPartyMemberStatChange(member.id, 'hp', 'decrement'); }} disabled={memberSessionData.currentHp === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberStatChange(member.id, 'hp', 'decrement'); }} disabled={memberSessionData.currentHp === 0}><Minus className="h-2.5 w-2.5" /></Button> {/* Renamed */}
                                                             <Input type="number" readOnly value={memberSessionData.currentHp} className="w-8 h-5 text-center p-0 text-xs font-semibold" />
-                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusPartyMemberStatChange(member.id, 'hp', 'increment');}} disabled={memberSessionData.currentHp >= memberEffectiveStats.maxHp}><Plus className="h-2.5 w-2.5" /></Button>
+                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberStatChange(member.id, 'hp', 'increment');}} disabled={memberSessionData.currentHp >= memberEffectiveStats.maxHp}><Plus className="h-2.5 w-2.5" /></Button> {/* Renamed */}
                                                         </div>
                                                     </div>
                                                     <Progress value={(memberSessionData.currentHp / Math.max(1, memberEffectiveStats.maxHp)) * 100} className={cn("h-1", getStatProgressColorClass(memberSessionData.currentHp, memberEffectiveStats.maxHp, 'hp'))} />
@@ -1417,9 +1417,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                                     <div className="flex items-center justify-between">
                                                         <Label className="flex items-center text-xs font-medium"><Brain className="mr-1 h-3 w-3 text-blue-400" />Sanity</Label>
                                                         <div className="flex items-center gap-1">
-                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusPartyMemberStatChange(member.id, 'sanity', 'decrement');}} disabled={memberSessionData.currentSanity === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberStatChange(member.id, 'sanity', 'decrement');}} disabled={memberSessionData.currentSanity === 0}><Minus className="h-2.5 w-2.5" /></Button> {/* Renamed */}
                                                             <Input type="number" readOnly value={memberSessionData.currentSanity} className="w-8 h-5 text-center p-0 text-xs font-semibold" />
-                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusPartyMemberStatChange(member.id, 'sanity', 'increment');}} disabled={memberSessionData.currentSanity >= memberEffectiveStats.maxSanity}><Plus className="h-2.5 w-2.5" /></Button>
+                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberStatChange(member.id, 'sanity', 'increment');}} disabled={memberSessionData.currentSanity >= memberEffectiveStats.maxSanity}><Plus className="h-2.5 w-2.5" /></Button> {/* Renamed */}
                                                         </div>
                                                     </div>
                                                     <Progress value={(memberSessionData.currentSanity / Math.max(1, memberEffectiveStats.maxSanity)) * 100} className={cn("h-1", getStatProgressColorClass(memberSessionData.currentSanity, memberEffectiveStats.maxSanity, 'sanity'))} />
@@ -1429,9 +1429,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                                     <div className="flex items-center justify-between">
                                                         <Label className="flex items-center text-xs font-medium"><Droplets className="mr-1 h-3 w-3 text-red-400" />Bleed</Label>
                                                         <div className="flex items-center gap-1">
-                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusPartyMemberBleedChange(member.id, 'decrement');}} disabled={memberSessionData.sessionBleedPoints === 0}><Minus className="h-2.5 w-2.5" /></Button>
+                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberBleedChange(member.id, 'decrement');}} disabled={memberSessionData.sessionBleedPoints === 0}><Minus className="h-2.5 w-2.5" /></Button> {/* Renamed */}
                                                             <Input type="number" readOnly value={memberSessionData.sessionBleedPoints} className="w-8 h-5 text-center p-0 text-xs font-semibold" />
-                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusPartyMemberBleedChange(member.id, 'increment');}}><Plus className="h-2.5 w-2.5" /></Button>
+                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberBleedChange(member.id, 'increment');}}><Plus className="h-2.5 w-2.5" /></Button> {/* Renamed */}
                                                         </div>
                                                     </div>
                                                     <p className="text-xs text-muted-foreground text-right">Hemorrhage at: {NEXUS_HEMORRHAGE_THRESHOLD}</p>
@@ -1447,8 +1447,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         ) : (
                              <div className="col-span-full flex flex-col items-center justify-center min-h-[200px] text-center p-6 bg-card rounded-lg shadow-md">
                                 <UserCircle2 className="h-16 w-16 text-muted-foreground mb-3" />
-                                <h2 className="text-lg font-semibold text-muted-foreground">No Party Members</h2>
-                                <p className="text-sm text-muted-foreground">Click "Manage Party" in the header to add characters.</p>
+                                <h2 className="text-lg font-semibold text-muted-foreground">No Team Members</h2>
+                                <p className="text-sm text-muted-foreground">Click "Manage Team" in the header to add characters.</p>
                             </div>
                         )}
                         
@@ -1467,7 +1467,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                             value={activeCharacterSessionData.selectedArsenalId || "none"} 
                                             onValueChange={(value) => {
                                                 if(activeCharacterId) {
-                                                    setPartySessionData(prev => ({...prev, [activeCharacterId]: {...prev[activeCharacterId]!, selectedArsenalId: value === "none" ? null : value}}));
+                                                    setTeamSessionData(prev => ({...prev, [activeCharacterId]: {...prev[activeCharacterId]!, selectedArsenalId: value === "none" ? null : value}})); // Renamed
                                                 }
                                             }} 
                                             disabled={!arsenalCards || arsenalCards.length === 0 || (arsenalCards.length === 1 && arsenalCards[0].id.startsWith('error-'))}
@@ -1830,7 +1830,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
               <DialogHeader>
                 <DialogTitle>Save Nexus Session</DialogTitle>
                 <DialogDescription>
-                  Enter a name for this Nexus session state. This will save all party members, their current stats, modifiers, arsenals, and session crypto.
+                  Enter a name for this Nexus session state. This will save all team members, their current stats, modifiers, arsenals, and session crypto. {/* Renamed */}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -1851,7 +1851,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                 <Button type="button" variant="outline" onClick={() => setIsSaveNexusDialogOpen(false)} disabled={isSavingNexus}>
                   Cancel
                 </Button>
-                <Button type="button" onClick={executeSaveNexusState} disabled={isSavingNexus || !saveNexusName.trim() || partyMembers.length === 0}>
+                <Button type="button" onClick={executeSaveNexusState} disabled={isSavingNexus || !saveNexusName.trim() || teamMembers.length === 0}> {/* Renamed */}
                   {isSavingNexus ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Session"}
                 </Button>
               </DialogFooter>
@@ -1864,7 +1864,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Reset Nexus Session?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action will clear the current party, all stats, modifiers, arsenal selections, crypto, and any session-specific progress. This cannot be undone.
+                  This action will clear the current team, all stats, modifiers, arsenal selections, crypto, and any session-specific progress. This cannot be undone. {/* Renamed */}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -1897,7 +1897,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         <div>
                           <p className="font-medium">{session.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            Party: {session.party.map(p => p.characterName || p.baseCharacterId).join(', ') || "Empty"}
+                            Team: {session.party.map(p => p.characterName || p.baseCharacterId).join(', ') || "Empty"} {/* Renamed "Party" to "Team" in UI Text, data field remains 'party' */}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             Saved: {new Date(session.lastSaved).toLocaleString()}
@@ -1943,5 +1943,3 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
-
-    
