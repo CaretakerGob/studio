@@ -171,6 +171,8 @@
     - Displays character skills and weapons (base and arsenal-modified) in a modal.
     - Max Mod trackers for MV and DEF added to character modal.
     - **Save Nexus Session**: Logged-in users can save the current state of their Nexus session (selected character, stats, modifiers, arsenal, crypto, ability cooldowns/quantities) to Firestore.
+    - **Load/Delete Nexus Session**: Settings dropdown allows users to load previously saved sessions (overwriting current) or delete them from Firestore.
+    - **Reset Nexus Session**: Settings dropdown allows users to reset the current session state.
 - **Data Sources:** Character templates from `character-sheet-ui.tsx`, Arsenal Cards from Google Sheets (via props), card decks from `card-generator-ui.tsx`. State is client-side for the session but can be saved/loaded for logged-in users.
 
 ### 3.14. Layout & General
@@ -183,7 +185,6 @@
 -   Real-time collaboration features for the "Shared Space".
 -   Functional friends list with real-time presence.
 -   Complete item database for the "Item List" page (currently empty, data could come from shop sheet or a dedicated one).
--   Loading saved Hunter's Nexus sessions.
 
 ## 5. Planned Features / Future Work
 -   **Combat System UI:** A dedicated interface for managing combat encounters, tracking turns, enemy actions (potentially driven by Combat Cards), applying status effects, resolving attacks, etc.
@@ -205,6 +206,7 @@
 -   **Bestiary/Monster Manual:** A section to view details about game enemies.
 -   **Digital Rulebook/References:** In-app access to game rules.
 -   **Performance Optimization:** Caching strategies for Google Sheet data (ISR, server-side caching).
+-   **Hunter's Nexus Enhancements**: Session Display Preferences (toggle tool visibility, compact mode).
 
 ## 6. Design Decisions and Constraints
 -   **Tech Stack Choice:** Next.js, React, TypeScript, ShadCN, Tailwind, Firebase, Genkit, Google Sheets API.
@@ -275,5 +277,4 @@
 This document provides a snapshot of the project's state and context.
 
     
-
 

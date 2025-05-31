@@ -70,7 +70,9 @@ DONE:
     - Integrated dice roller and card generator.
     - Character avatar and arsenal card image modals.
     - Modal for character details (stats, weapons, abilities, skills).
-    - **Save Nexus Session**: Logged-in users can save their current Nexus session state (character, stats, arsenal, crypto, ability states) to Firestore.
+    - Save Nexus Session: Logged-in users can save their current Nexus session state to Firestore.
+    - Load/Delete Nexus Session: Functionality added to settings dropdown.
+    - Reset Nexus Session: Functionality added to settings dropdown.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
 - Sidebar Navigation:
@@ -82,11 +84,10 @@ DONE:
     - Homepage feature card layout (vertical scrollable window).
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md`.
-- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing).
+- Numerous bug fixes and UI refinements (hydration errors, reference errors, build errors, styling adjustments, hook order issues, accessibility fixes for dialogs, shop item category parsing, Firestore permissions for Nexus saves).
 
 WORKING:
 - Refinement of Character Sheet mobile optimization for inner tab content.
-- UI/UX for listing and loading saved Hunter's Nexus sessions.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -103,6 +104,7 @@ NEXT:
     - Persist AI-generated shop item images.
 - Add a bestiary/monster manual section.
 - Implement game rule references or a digital rulebook section.
+- Implement Hunter's Nexus "Session Display Preferences" (toggle tool visibility, compact mode).
 - Further mobile optimization for all pages (Dice Roller, Card Generator, Events, NPC Generator, Shop, Profile, etc.).
 - Caching strategies for Google Sheet data to improve performance in production.
 - Address any remaining warnings from the build process (e.g., related to Handlebars, OpenTelemetry if not critical).

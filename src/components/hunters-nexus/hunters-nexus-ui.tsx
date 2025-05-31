@@ -17,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -91,7 +92,10 @@ import {
   Crosshair,
   Coins,
   Save,
-  RotateCcw // Added for Reset Session
+  RotateCcw,
+  UploadCloud, // For Load icon
+  Trash2, // For Delete icon
+  Loader2 // For loading state
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -105,7 +109,7 @@ import type { ArsenalCard as ActualArsenalCard, ArsenalItem, ParsedStatModifier,
 import { AbilityCard } from '@/components/character-sheet/ability-card';
 import { useAuth } from '@/context/auth-context'; 
 import { db, auth } from '@/lib/firebase'; 
-import { doc, setDoc, collection } from "firebase/firestore"; 
+import { doc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore"; 
 import { v4 as uuidv4 } from 'uuid'; 
 import type { SavedNexusState } from '@/types/nexus';
 
@@ -189,6 +193,12 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [isSavingNexus, setIsSavingNexus] = useState(false);
 
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+
+  const [isLoadNexusDialogOpen, setIsLoadNexusDialogOpen] = useState(false);
+  const [savedNexusSessions, setSavedNexusSessions] = useState<SavedNexusState[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<SavedNexusState | null>(null);
+  const [isDeletingSession, setIsDeletingSession] = useState(false);
 
 
   const criticalArsenalError = useMemo(() => {
@@ -773,6 +783,88 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     toast({ title: "Nexus Session Reset", description: "The current session has been cleared." });
   };
 
+  const handleOpenLoadSessionDialog = async () => {
+    if (!currentUser || !auth.currentUser) {
+      toast({ title: "Login Required", description: "You must be logged in to load saved sessions.", variant: "destructive" });
+      return;
+    }
+    setIsLoadNexusDialogOpen(true);
+    setIsLoadingSessions(true);
+    try {
+      const sessionsCollectionRef = collection(db, "userNexusStates", auth.currentUser.uid, "states");
+      const querySnapshot = await getDocs(sessionsCollectionRef);
+      const sessions = querySnapshot.docs.map(docSnap => docSnap.data() as SavedNexusState)
+        .sort((a, b) => new Date(b.lastSaved).getTime() - new Date(a.lastSaved).getTime()); // Sort by most recent
+      setSavedNexusSessions(sessions);
+    } catch (error) {
+      console.error("Error fetching saved Nexus sessions:", error);
+      toast({ title: "Load Error", description: "Could not fetch saved sessions.", variant: "destructive" });
+      setSavedNexusSessions([]);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  const handleLoadSelectedSession = (session: SavedNexusState) => {
+    const baseChar = charactersData.find(c => c.id === session.baseCharacterId);
+    if (!baseChar) {
+      toast({ title: "Load Error", description: "Base character template for the saved session not found.", variant: "destructive" });
+      return;
+    }
+    const characterToLoad: Character = JSON.parse(JSON.stringify(baseChar));
+    
+    setSelectedNexusCharacter(characterToLoad);
+    setPartyMembers([characterToLoad]);
+    setSelectedCharacterArsenalId(session.selectedArsenalId);
+    setCharacterForModal(characterToLoad);
+
+    setCurrentNexusHp(session.currentHp);
+    setCurrentNexusSanity(session.currentSanity);
+    setCurrentNexusMv(session.currentMv);
+    setCurrentNexusDef(session.currentDef);
+    
+    setSessionCrypto(session.sessionCrypto);
+    
+    setNexusSessionMaxHpModifier(session.sessionMaxHpModifier);
+    setNexusSessionMaxSanityModifier(session.sessionMaxSanityModifier);
+    setNexusSessionMvModifier(session.sessionMvModifier);
+    setNexusSessionDefModifier(session.sessionDefModifier);
+    setNexusSessionMeleeAttackModifier(session.sessionMeleeAttackModifier);
+    setNexusSessionRangedAttackModifier(session.sessionRangedAttackModifier);
+    setNexusSessionRangedRangeModifier(session.sessionRangedRangeModifier);
+
+    setNexusCurrentAbilityCooldowns(session.abilityCooldowns || {});
+    setNexusCurrentAbilityQuantities(session.abilityQuantities || {});
+
+    // Reset other temporary UI states
+    setNexusLatestRoll(null);
+    setNexusDrawnCardsHistory([]);
+    setNexusSelectedDeckName(undefined);
+
+    setIsLoadNexusDialogOpen(false);
+    toast({ title: "Session Loaded", description: `Session "${session.name}" has been loaded.` });
+  };
+
+  const confirmDeleteSession = (session: SavedNexusState) => {
+    setSessionToDelete(session);
+  };
+
+  const executeDeleteSession = async () => {
+    if (!sessionToDelete || !currentUser || !auth.currentUser) return;
+    setIsDeletingSession(true);
+    try {
+      const sessionDocRef = doc(db, "userNexusStates", auth.currentUser.uid, "states", sessionToDelete.id);
+      await deleteDoc(sessionDocRef);
+      toast({ title: "Session Deleted", description: `Session "${sessionToDelete.name}" has been deleted.` });
+      setSavedNexusSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
+      setSessionToDelete(null);
+    } catch (error) {
+      console.error("Error deleting Nexus session:", error);
+      toast({ title: "Delete Failed", description: "Could not delete session.", variant: "destructive" });
+    } finally {
+      setIsDeletingSession(false);
+    }
+  };
 
   return (
     <>
@@ -799,14 +891,18 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                   <DropdownMenuItem onSelect={handleOpenLoadSessionDialog} disabled={!currentUser}>
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                    Load Session
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => setIsResetDialogOpen(true)} disabled={!selectedNexusCharacter}>
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Reset Session
                   </DropdownMenuItem>
-                  {/* Future items like "Load Session" can be added here */}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="ghost" size="icon" aria-label="Log Out"><LogOut className="h-5 w-5" /></Button>
+              {/* <Button variant="ghost" size="icon" aria-label="Log Out"><LogOut className="h-5 w-5" /></Button> */}
             </div>
           </header>
           
@@ -839,7 +935,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
                 <Card>
                     <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center"><Dices className="mr-2 h-5 w-5 text-primary" />Dice Roller</CardTitle>
+                        <CardTitle className="text-lg flex items-center"><Dices className="mr-2 h-5 w-5 text-primary" />Dice Roller</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                     <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
@@ -1459,7 +1555,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   Cancel
                 </Button>
                 <Button type="button" onClick={executeSaveNexusState} disabled={isSavingNexus || !saveNexusName.trim()}>
-                  {isSavingNexus ? "Saving..." : "Save Session"}
+                  {isSavingNexus ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Session"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1483,6 +1579,67 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* Load Saved Nexus Session Dialog */}
+           <Dialog open={isLoadNexusDialogOpen} onOpenChange={setIsLoadNexusDialogOpen}>
+            <DialogContent className="sm:max-w-lg bg-card border-border">
+              <DialogHeader>
+                <DialogTitle>Load Saved Nexus Session</DialogTitle>
+                <DialogDescription>Select a previously saved session to load.</DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="h-[400px] mt-4 pr-3">
+                {isLoadingSessions ? (
+                  <div className="flex justify-center items-center h-full">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : savedNexusSessions.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-10">No saved sessions found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {savedNexusSessions.map((session) => (
+                      <Card key={session.id} className="p-3 bg-muted/30 flex justify-between items-center">
+                        <div>
+                          <p className="font-medium">{session.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Character: {charactersData.find(c => c.id === session.baseCharacterId)?.name || session.baseCharacterId}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Saved: {new Date(session.lastSaved).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleLoadSelectedSession(session)}>Load</Button>
+                          <Button variant="destructive" size="sm" onClick={() => confirmDeleteSession(session)} disabled={isDeletingSession}>
+                            {isDeletingSession && sessionToDelete?.id === session.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+              <DialogFooter className="mt-4">
+                <DialogClose asChild><Button type="button" variant="outline">Close</Button></DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Confirm Delete Session Dialog */}
+          <AlertDialog open={!!sessionToDelete} onOpenChange={(open) => !open && setSessionToDelete(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Saved Session?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete the session "{sessionToDelete?.name}"? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setSessionToDelete(null)} disabled={isDeletingSession}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={executeDeleteSession} disabled={isDeletingSession} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                  {isDeletingSession ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
         </div>
       </TooltipProvider>
