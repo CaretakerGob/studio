@@ -112,7 +112,7 @@
     - Utility items are further sub-categorized within their tab.
     - Simulated "Crypto" currency tracker (client-side state).
     - Simulated purchasing logic (deducts Crypto, updates stock for consumables).
-- **Data Source:** Item data (Name, Cost, Category, Effect) is fetched from a Google Sheet (can use multiple tabs within the sheet).
+- **Data Source:** Item data (Name, Cost, Category, Effect, SubCategory, and other optional fields like Stock, Weapon Class, Attack, etc.) is fetched from a Google Sheet (can use multiple tabs). Handles parsing of "Utility [Type]" from Category column into main 'Utility' category and specific sub-category.
 
 ### 3.9. AI Item Generator (`/item-generator`)
 - **Description:** Uses Genkit to generate unique game items.
@@ -308,16 +308,16 @@
     -   `name: string` (From Sheet: `Name`)
     -   `description: string` (From Sheet: `Effect`)
     -   `cost: number` (From Sheet: `Cost`)
-    -   `category: ShopItemCategory` (From Sheet: `Category`)
-    -   `imageUrl?: string` (Not from current simplified sheet)
-    -   `dataAiHint?: string` (Not from current simplified sheet)
-    -   `subCategory?: UtilitySubCategory` (Not from current simplified sheet)
-    -   `stock?: number` (Not from current simplified sheet)
-    -   `weaponClass?: string` (Not from current simplified sheet)
-    -   `attack?: string` (Not from current simplified sheet)
-    -   `actionType?: 'Free Action' | 'Action' | 'Interrupt' | 'Passive'` (Not from current simplified sheet)
-    -   `charges?: number | 'Battery'` (Not from current simplified sheet)
-    -   `skillCheck?: string` (Not from current simplified sheet)
+    -   `category: ShopItemCategory` (From Sheet: `Category`, or inferred)
+    -   `subCategory?: UtilitySubCategory` (From Sheet: `SubCategory`, or inferred from Category like "Utility Bomb")
+    -   `imageUrl?: string` (From Sheet: `Image URL`)
+    -   `dataAiHint?: string` (From Sheet: `Data AI Hint`)
+    -   `stock?: number` (From Sheet: `Stock`)
+    -   `weaponClass?: string` (From Sheet: `Weapon Class`)
+    -   `attack?: string` (From Sheet: `Attack`)
+    -   `actionType?: 'Free Action' | 'Action' | 'Interrupt' | 'Passive'` (From Sheet: `Action Type`)
+    -   `charges?: number | 'Battery'` (From Sheet: `Charges`)
+    -   `skillCheck?: string` (From Sheet: `Skill Check`)
 
 -   **`AuthCredentials` & `SignUpCredentials` (`src/types/auth.ts`)**: Standard email/password, with optional displayName and passwordConfirmation for sign-up.
 
@@ -392,7 +392,7 @@
 -   The codebase has undergone significant refactoring to break down large UI components into smaller, more manageable sub-components.
 -   Theming is centralized in `globals.css` and leverages ShadCN's HSL variable system.
 -   Environment variables in `.env.local` are critical for Firebase client configuration and Google Sheets API server-side access.
-    -   `SHOP_ITEMS_GOOGLE_SHEET_RANGE` now supports comma-separated sheet names/ranges for fetching shop data from multiple tabs.
+    -   `SHOP_ITEMS_GOOGLE_SHEET_RANGE` now supports comma-separated sheet names/ranges for fetching shop data from multiple tabs. Parsing logic for Utility items has been enhanced to handle combined Category/SubCategory values (e.g., "Utility Bomb") and map them correctly.
 -   Error handling is present for data fetching and Firebase operations, often using toast notifications.
 -   The rulebook content provided by the user (shop items, abilities, combat rules) is extensive and implies a long-term goal of creating a very rich and interactive digital companion. Much of this is not yet implemented but informs the design of data structures.
 -   The "Investigations" feature has been renamed to "NPC Generator".
