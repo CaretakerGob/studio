@@ -216,10 +216,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
 
   const effectiveNexusCharacterStats: CharacterStats | null = useMemo(() => {
-    if (!selectedNexusCharacter) {
+    if (!characterForModal) { // Changed from selectedNexusCharacter to characterForModal
       return null;
     }
-    let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(selectedNexusCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
+    let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(characterForModal.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
 
     if (currentNexusArsenal) {
       calculatedStats.hp = (calculatedStats.hp || 0) + (currentNexusArsenal.hpMod || 0);
@@ -228,7 +228,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       calculatedStats.def = (calculatedStats.def || 0) + (currentNexusArsenal.defMod || 0);
       calculatedStats.sanity = (calculatedStats.sanity || 0) + (currentNexusArsenal.sanityMod || 0);
       calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (currentNexusArsenal.maxSanityMod || 0);
-      calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + (currentNexusArsenal.meleeAttackMod || 0);
+      // Melee attack from global arsenal mods is handled in weapon calculation now.
 
       if (currentNexusArsenal.items) {
         currentNexusArsenal.items.forEach(item => {
@@ -252,11 +252,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     calculatedStats.def = Math.max(0, calculatedStats.def);
     calculatedStats.sanity = Math.max(0, calculatedStats.sanity);
     calculatedStats.maxSanity = Math.max(1, calculatedStats.maxSanity);
-    calculatedStats.meleeAttack = Math.max(0, calculatedStats.meleeAttack ?? 0);
+    calculatedStats.meleeAttack = Math.max(0, calculatedStats.meleeAttack ?? 0); // Keep this as a base if needed elsewhere
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
     return calculatedStats;
-  }, [selectedNexusCharacter, currentNexusArsenal]);
+  }, [characterForModal, currentNexusArsenal]);
 
   const effectiveNexusCharacterAbilities = useMemo(() => {
     const result: { baseAbilities: CharacterAbility[], arsenalAbilities: CharacterAbility[] } = {
@@ -311,7 +311,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
   const effectiveNexusMeleeWeapon = useMemo(() => {
       if (!characterForModal) return undefined;
-      let weaponToDisplay: Weapon | undefined = JSON.parse(JSON.stringify(characterDefaultMeleeWeaponForNexus)); // Deep copy
+      let weaponToDisplay: Weapon | undefined = JSON.parse(JSON.stringify(characterDefaultMeleeWeaponForNexus)); 
 
       if (currentNexusArsenal?.items) {
           const arsenalMeleeItem = currentNexusArsenal.items.find(item =>
@@ -335,13 +335,12 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
           };
       }
       
-      // Apply session modifier
       if (weaponToDisplay) {
         weaponToDisplay.attack = Math.max(0, (weaponToDisplay.attack || 0) + nexusSessionMeleeAttackModifier);
       }
 
       const template = charactersData.find(c => c.id === (characterForModal.templateId || characterForModal.id));
-      if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === (1 + nexusSessionMeleeAttackModifier) && // Check against potentially modified default
+      if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === (1 + nexusSessionMeleeAttackModifier) && 
           !template?.meleeWeapon?.name &&
           !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (!i.parsedWeaponStats?.range || i.parsedWeaponStats.range <= 1)) &&
           !currentNexusArsenal?.meleeAttackMod &&
@@ -354,7 +353,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
   const effectiveNexusRangedWeapon = useMemo(() => {
       if (!characterForModal) return undefined;
-      let weaponToDisplay: RangedWeapon | undefined = JSON.parse(JSON.stringify(characterDefaultRangedWeaponForNexus)); // Deep copy
+      let weaponToDisplay: RangedWeapon | undefined = JSON.parse(JSON.stringify(characterDefaultRangedWeaponForNexus));
 
       if (currentNexusArsenal?.items) {
           const arsenalRangedItem = currentNexusArsenal.items.find(item =>
@@ -380,14 +379,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
           };
       }
 
-      // Apply session modifiers
       if (weaponToDisplay) {
         weaponToDisplay.attack = Math.max(0, (weaponToDisplay.attack || 0) + nexusSessionRangedAttackModifier);
         weaponToDisplay.range = Math.max(0, (weaponToDisplay.range || 0) + nexusSessionRangedRangeModifier);
       }
 
       const template = charactersData.find(c => c.id === (characterForModal.templateId || characterForModal.id));
-      if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === (0 + nexusSessionRangedAttackModifier) && weaponToDisplay.range === (0 + nexusSessionRangedRangeModifier) && // Check against potentially modified default
+      if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === (0 + nexusSessionRangedAttackModifier) && weaponToDisplay.range === (0 + nexusSessionRangedRangeModifier) && 
           !template?.rangedWeapon?.name &&
           !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 1)) &&
           !currentNexusArsenal?.rangedAttackMod && !currentNexusArsenal?.rangedRangeMod &&
@@ -414,7 +412,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
 
   useEffect(() => {
-    if (selectedNexusCharacter && effectiveNexusCharacterStats) {
+    if (characterForModal && effectiveNexusCharacterStats) { // Use characterForModal
       setCurrentNexusHp(effectiveNexusCharacterStats.hp);
       setCurrentNexusSanity(effectiveNexusCharacterStats.sanity);
       setCurrentNexusMv(effectiveNexusCharacterStats.mv);
@@ -435,7 +433,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       setNexusSessionRangedAttackModifier(0);
       setNexusSessionRangedRangeModifier(0);
     }
-  }, [selectedNexusCharacter, effectiveNexusCharacterStats]);
+  }, [characterForModal, effectiveNexusCharacterStats]); // Use characterForModal
 
   useEffect(() => {
     if (!enlargedImageUrl) {
@@ -548,7 +546,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
 
   const handleNexusStatChange = (stat: StatName, operation: 'increment' | 'decrement') => {
-    if (!selectedNexusCharacter || !effectiveNexusCharacterStats) return;
+    if (!characterForModal || !effectiveNexusCharacterStats) return; // Use characterForModal
     const delta = operation === 'increment' ? 1 : -1;
     
     const setters: Record<string, React.Dispatch<React.SetStateAction<number | null>>> = { 
@@ -587,7 +585,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   };
 
   const handleNexusSessionMaxStatModifierChange = (statType: 'hp' | 'sanity', delta: number) => {
-    if (!selectedNexusCharacter || !effectiveNexusCharacterStats) return;
+    if (!characterForModal || !effectiveNexusCharacterStats) return; // Use characterForModal
 
     if (statType === 'hp') {
       setNexusSessionMaxHpModifier(prevMod => {
@@ -980,10 +978,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     <AvatarImage src={characterForModal.imageUrl || `https://placehold.co/128x128.png`} alt={characterForModal.name} data-ai-hint="character avatar large"/>
                     <AvatarFallback className="text-4xl bg-muted">{characterForModal.name.substring(0,2).toUpperCase()}</AvatarFallback>
                   </Avatar>
+                  
                   <Separator />
                   <h4 className="text-lg font-semibold text-primary flex items-center"><Info className="mr-2 h-5 w-5" /> Core Stats</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    {/* HP Tracker */}
                     {currentNexusHp !== null && effectiveNexusCharacterStats.maxHp !== undefined && (
                         <div className="space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
@@ -1004,7 +1002,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                         </div>
                     )}
-                    {/* Sanity Tracker */}
                     {currentNexusSanity !== null && effectiveNexusCharacterStats.maxSanity !== undefined && (
                         <div className="space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
@@ -1025,7 +1022,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                         </div>
                     )}
-                    {/* MV Tracker */}
                     {currentNexusMv !== null && effectiveNexusCharacterStats.mv !== undefined && (
                       <div>
                         <div className="flex items-center justify-between mb-0.5">
@@ -1040,7 +1036,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         <p className="text-xs text-muted-foreground text-right mt-0.5">{currentNexusMv} / {effectiveNexusCharacterStats.mv}</p>
                       </div>
                     )}
-                    {/* DEF Tracker */}
                     {currentNexusDef !== null && effectiveNexusCharacterStats.def !== undefined && (
                       <div>
                         <div className="flex items-center justify-between mb-0.5">
@@ -1057,12 +1052,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     )}
                   </div>
 
-                  {characterForModal.skills && Object.values(characterForModal.skills).some(val => val && val > 0) && (
-                    <> <Separator /> <h4 className="text-lg font-semibold text-primary flex items-center"><ListChecks className="mr-2 h-5 w-5" /> Skills</h4>
-                      <div className="space-y-1 text-sm"> {skillDefinitions.map(skillDef => { const skillValue = characterForModal.skills?.[skillDef.id as SkillName] || 0; if (skillValue > 0) { const IconComponent = getSkillIcon(skillDef.id as SkillName); return ( <div key={skillDef.id} className="flex items-center justify-between p-1 bg-muted/20 rounded-sm"> <span className="flex items-center"><IconComponent className="mr-2 h-4 w-4 text-muted-foreground" /> {skillDef.label}</span> <span>{skillValue}</span> </div> ); } return null; })} </div>
-                    </>
-                  )}
-                  
                   {(effectiveNexusMeleeWeapon || effectiveNexusRangedWeapon) && (
                     <>
                       <Separator />
@@ -1129,7 +1118,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                       </div>
                     </>
                   )}
-
+                  
                   {(effectiveNexusCharacterAbilities.baseAbilities.length > 0 || effectiveNexusCharacterAbilities.arsenalAbilities.length > 0) && (
                      <> 
                         <Separator /> 
@@ -1178,6 +1167,15 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                   {effectiveNexusCharacterAbilities.baseAbilities.length === 0 && effectiveNexusCharacterAbilities.arsenalAbilities.length === 0 && (
                      <p className="text-sm text-muted-foreground text-center py-3">No abilities defined.</p>
                   )}
+
+                  {characterForModal.skills && Object.values(characterForModal.skills).some(val => val && val > 0) && (
+                    <> 
+                      <Separator /> 
+                      <h4 className="text-lg font-semibold text-primary flex items-center"><ListChecks className="mr-2 h-5 w-5" /> Skills</h4>
+                      <div className="space-y-1 text-sm"> {skillDefinitions.map(skillDef => { const skillValue = characterForModal.skills?.[skillDef.id as SkillName] || 0; if (skillValue > 0) { const IconComponent = getSkillIcon(skillDef.id as SkillName); return ( <div key={skillDef.id} className="flex items-center justify-between p-1 bg-muted/20 rounded-sm"> <span className="flex items-center"><IconComponent className="mr-2 h-4 w-4 text-muted-foreground" /> {skillDef.label}</span> <span>{skillValue}</span> </div> ); } return null; })} </div>
+                    </>
+                  )}
+
                 </div>
               </ScrollArea>
               <DialogFooter className="mt-4">
