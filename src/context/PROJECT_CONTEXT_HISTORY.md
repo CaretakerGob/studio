@@ -1,4 +1,3 @@
-
 # Project Context History: Riddle of the Beast App Companion
 
 ## 1. Project Objectives and Vision
@@ -159,14 +158,13 @@
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
 - **Description:** Session-based game management hub, supporting multiple characters.
 - **Functionality:**
-    - **Multi-Character Display**: Main view displays a grid of party members (up to 4). Each character's card now prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card (header area) sets them as active.
-    - **Active Character Focus**: Arsenal selection (now below the party grid) and detailed modal views operate on the selected active character.
+    - **Multi-Character Display**: Main view displays a grid of party members (up to 4). Each character's card prominently shows their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card (header area) sets them as active. The character's MV and DEF are hidden from this main card view but remain in the detailed modal. Stat trackers are stacked vertically (HP, then Sanity, then Bleed).
+    - **Active Character Focus**: Arsenal selection and detailed modal views operate on the selected active character. The active character's image is prominently displayed above the party grid.
     - Party Management Dialog: Add/remove characters. "Manage Party" button relocated to the page header.
     - Stat tracking (HP, Sanity, Bleed Points) with session modifiers. MV and DEF visible only in modal.
     - Session Crypto Tracker: Global for the session.
     - Arsenal and equipment display for active character (images of selected arsenal).
-    - Integrated dice roller and card generator.
-    - Character avatar and arsenal card image modals.
+    - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
     - Modal for active character details (all stats including MV/DEF, weapons, abilities, skills).
     - Save Nexus Session: Logged-in users can save their current party's state (including all members' stats, arsenals, crypto) to Firestore.
     - Load/Delete Nexus Session: Functionality added to settings dropdown.
@@ -260,7 +258,7 @@
 -   Error handling is present for data fetching and Firebase operations, often using toast notifications.
 -   The rulebook content provided by the user (shop items, abilities, combat rules) is extensive and implies a long-term goal of creating a very rich and interactive digital companion. Much of this is not yet implemented but informs the design of data structures.
 -   The "Investigations" feature has been renamed to "NPC Generator".
--   Build process uses Firebase App Hosting buildpacks. Previous build issues related to dependencies (`firebase`, `@tanstack-query-firebase/react`, `@opentelemetry/exporter-jaeger`) and Next.js Suspense boundaries have been addressed.
+-   Build process uses Firebase App Hosting buildpacks. Previous build issues related to dependencies (`firebase`, `@tanstack-query-firebase/react`, `@opentelemetry/exporter-jaeger`) and Next.js Suspense boundaries have been addressed. Max update depth error in Hunter's Nexus UI potentially resolved by stabilizing ability state calculation.
 -   The application is intended to be the "OFFICIAL Riddle of the Beast board game companion app."
 
 This document provides a snapshot of the project's state and context.
@@ -269,4 +267,3 @@ This document provides a snapshot of the project's state and context.
     
 
     
-
