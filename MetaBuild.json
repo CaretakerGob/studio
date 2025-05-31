@@ -1,3 +1,4 @@
+
 {
   "characters": [
     {
@@ -29,37 +30,45 @@
         "Gear enhancing survivability or mobility"
       ],
       "exampleArsenalCardConception": {
-        "name": "Marksman's Overwatch Kit (Conceptual)",
-        "description": "An arsenal designed to enhance a ranged operative's effectiveness and tactical awareness.",
+        "name": "Marksman's Overwatch Kit",
+        "description": "An arsenal designed to enhance a ranged operative's effectiveness and tactical awareness, using available shop items.",
         "globalStatModifiers": {
           "rangedAttackMod": 1
         },
         "items": [
           {
-            "name": "Advanced Scope",
+            "name": "Precision Scope",
             "category": "GEAR",
-            "type": "Upgrade",
-            "effect": "Passive - Attacks against Marked targets deal +1 damage. If target is at max range, gain +1 ATK.",
-            "itemDescription": "A high-quality rifle scope with integrated targeting assistance."
+            "type": "Defense Gear (Shop Item)",
+            "effect": "Passive: Increase Range by 2.",
+            "itemDescription": "Shop item: Enhances the effective range of ranged attacks."
           },
           {
-            "name": "Incendiary Rounds (x2)",
-            "category": "BONUS",
-            "type": "Ammunition",
+            "name": "Incendiary Ammo (x2)",
+            "category": "UTILITY",
+            "type": "Ammunition (Shop Item)",
             "qty": 2,
-            "abilityName": "Load Incendiary Round",
+            "abilityName": "Load Incendiary Ammo",
             "isFreeAction": true,
-            "effect": "Next Ranged attack this turn deals FIRE damage and applies BURNING status on hit.",
-            "itemDescription": "Specialized rounds that ignite on impact."
+            "effect": "Element of Range Attack is now FIRE for 1 turn. (Item has 3 charges per battle, this arsenal grants 2 uses).",
+            "itemDescription": "Shop item: Specialized ammunition that ignites on impact."
           },
           {
-            "name": "Targeting Binoculars",
-            "category": "ACTION",
-            "type": "Tool",
+            "name": "Targeting Sight",
+            "category": "UTILITY",
+            "type": "Miscellaneous (Shop Item)",
             "abilityName": "Designate Target",
-            "cd": "2 round CD",
-            "effect": "Action: Mark one enemy within 8 spaces. Target remains Marked for 2 rounds.",
-            "itemDescription": "Advanced binoculars that paint a target for enhanced engagement."
+            "charges": "2",
+            "isAction": true,
+            "effect": "Inflict MARKED Status on Target. Lasts 2 turns.",
+            "itemDescription": "Shop item: Advanced sight that paints a target for enhanced engagement."
+          },
+          {
+            "name": "Leather Armor",
+            "category": "GEAR",
+            "type": "Defense Gear (Shop Item)",
+            "effect": "Passive: Increase Max HP by 1.",
+            "itemDescription": "Shop item: Basic armor providing a small health boost."
           }
         ]
       },
@@ -86,17 +95,17 @@
         "Survivalist (SUR): Navigating terrain to get into melee range or escape danger.",
         "Athletics (ATH): Could be useful for maneuvers if points are invested in a custom Gob variant, or for general survivability checks."
       ],
-      "primaryWeaponStrategy": "Utilizing Wounding Strike (A3) to bypass armor or a potent melee weapon granted by an Arsenal.",
+      "primaryWeaponStrategy": "Utilizing Wounding Strike (A3) to bypass armor or an equipped melee weapon like the Elite Tactical Knife.",
       "secondaryWeaponStrategy": "Base Knife (A2) for standard attacks if Wounding Strike is on cooldown or not needed. Using Quick Draw (A3/R3) to control enemy positioning or create space.",
       "recommendedArsenalFocus": [
-        "Enhanced Melee Attack or a superior Melee Weapon.",
-        "Increased Defense or HP for survivability.",
-        "Items granting movement abilities or close-range debuffs.",
-        "Gear improving Sanity or resistance to melee-related status effects."
+        "Enhanced Melee Attack via a superior Melee Weapon from the shop.",
+        "Increased Defense or HP via Defense Gear from the shop.",
+        "Items granting movement abilities or close-range debuffs from the shop.",
+        "Gear improving Sanity or resistance to melee-related status effects from the shop."
       ],
       "exampleArsenalCardConception": {
-        "name": "Shadow Striker's Kit (Conceptual - Uses existing item ideas)",
-        "description": "An arsenal designed to enhance Gob's effectiveness as a close-quarters combatant and disruptor, using concepts from available gear.",
+        "name": "Shadow Striker's Kit",
+        "description": "An arsenal focusing on close-quarters engagement, utilizing available shop gear for enhanced melee, mobility, and disruption.",
         "globalStatModifiers": {
           "defenseMod": 1
         },
@@ -104,36 +113,37 @@
           {
             "name": "Elite Tactical Knife",
             "category": "WEAPON",
-            "type": "Melee Weapon",
-            "effect": "Replaces base Knife. Grants A4 Melee. Nimble Class: Quick Strike Interrupt. Critical Hits allow an extra attack (once per turn).",
-            "itemDescription": "A high-quality combat knife designed for swift, precise strikes. (Based on shop item)"
+            "type": "Melee Weapon (Shop Item)",
+            "effect": "A4 Melee. Nimble Class (grants Quick Strike Interrupt). If this weapon triggers a Critical Hit you can attack again. Can trigger once per turn.",
+            "itemDescription": "Shop item: A high-quality combat knife designed for swift, precise strikes."
           },
           {
             "name": "Knee Pad",
             "category": "GEAR",
-            "type": "Mobility",
+            "type": "Defense Gear (Shop Item)",
             "abilityName": "Evasive Roll",
             "isInterrupt": true,
             "cd": "1 round CD",
-            "effect": "Interrupt: Move 2 spaces in any direction.",
-            "itemDescription": "Allows for quick dodges and repositioning in combat. (Based on shop item)"
+            "effect": "Move 2 spaces in any direction.",
+            "itemDescription": "Shop item: Allows for quick dodges and repositioning in combat."
           },
           {
-            "name": "Pepper Spray (x1)",
-            "category": "BONUS",
-            "type": "Utility",
+            "name": "Pepper Spray",
+            "category": "UTILITY",
+            "type": "Miscellaneous (Shop Item)",
             "qty": 1,
             "abilityName": "Pepper Spray",
             "isInterrupt": true,
-            "effect": "Interrupt: Blind target within 4 spaces for 1 turn. Consumed on use.",
-            "itemDescription": "A potent irritant to disable an enemy temporarily. (Based on shop item)"
+            "charges": "1",
+            "effect": "R4 - Blind target for 1 turn.",
+            "itemDescription": "Shop item: A potent irritant to disable an enemy temporarily. This arsenal grants 1 charge per battle."
           },
           {
-            "name": "Stealth Suit (Passive)",
+            "name": "Stealth Suit",
             "category": "GEAR",
-            "type": "ArmorEffect",
-            "effect": "Passive: Lowers Range value of all enemy attacks by 2 when targeting Gob.",
-            "itemDescription": "A suit designed to reduce visibility, aiding in approaches. (Based on shop item)"
+            "type": "Defense Gear (Shop Item)",
+            "effect": "Passive: Lower Range value of all enemy attacks by 2 when targeting the wearer.",
+            "itemDescription": "Shop item: A suit designed to reduce visibility and protect during approaches."
           }
         ]
       },

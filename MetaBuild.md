@@ -1,3 +1,4 @@
+
 # Riddle of the Beast - Meta Builds
 
 This document outlines effective "meta" builds for characters in Riddle of the Beast, combining their inherent strengths with synergistic Arsenal Cards and playstyles.
@@ -24,13 +25,14 @@ An ideal Arsenal Card for Gob would enhance his ranged capabilities, provide fur
 -   Items that provide additional defensive utility or limited-use offensive tools (e.g., grenades, specialized ammo).
 -   Gear that complements a mobile, ranged playstyle.
 
-**Example Synergistic Arsenal Card Concept: "Marksman's Overwatch Kit"**
+**Example Synergistic Arsenal Card: "Marksman's Overwatch Kit"**
+This arsenal uses items available in the shop to enhance Gob's ranged effectiveness.
 *   **Global Modifiers:** +1 to Ranged Attack.
-*   **Items/Abilities Granted:**
-    *   **Advanced Scope (Gear):** Passive - Attacks against Marked targets deal +1 damage.
-    *   **Incendiary Rounds (Bonus Item - Qty 2):** FREE Action - Next Ranged attack deals FIRE damage and may apply BURNING.
-    *   **Targeting Binoculars (Action - CD 2):** Mark one enemy within 8 spaces for 2 rounds.
-    *   **Light Tactical Vest (Gear):** Passive - +1 Max HP.
+*   **Items/Abilities Granted (Shop Items):**
+    *   **Precision Scope (Defense Gear - Shop Item):** Passive - Increase Range by 2.
+    *   **Incendiary Ammo (Utility - Shop Item, Qty 2 uses granted):** FREE Action - Element of Range Attack is now FIRE for 1 turn.
+    *   **Targeting Sight (Utility - Shop Item):** ACTION (2 Charges) - Inflict MARKED Status on Target. Lasts 2 turns.
+    *   **Leather Armor (Defense Gear - Shop Item):** Passive - Increase Max HP by 1.
 
 **Playstyle:**
 1.  **Positioning:** Utilize Gob's Survivalist skill and MV to maintain optimal range with his AR-15, ideally staying out of immediate melee threat.
@@ -59,27 +61,28 @@ This build transforms Gob into a nimble melee combatant who excels at getting cl
     - **Flare x3 (Interrupt):** Maintains visibility for the team, negates enemy Stealth, useful even in melee.
 
 **Recommended Arsenal Focus:**
-An ideal Arsenal Card for this Gob build would enhance his melee effectiveness and survivability in close combat. Look for Arsenals that offer:
--   A superior Melee Weapon or bonuses to Melee Attack.
--   Increased Defense, HP, or damage reduction against melee attacks.
--   Items granting additional movement/repositioning abilities (like Evasive Roll).
--   Close-range debuff items (like Pepper Spray for Blind).
--   Gear that improves Sanity or resistance to status effects common in melee.
+An ideal Arsenal Card for this Gob build would enhance his melee effectiveness and survivability in close combat, using items directly from the shop.
+-   A superior Melee Weapon (e.g., Elite Tactical Knife).
+-   Increased Defense or HP from Defense Gear.
+-   Items granting movement abilities (e.g., Knee Pad).
+-   Close-range debuff items (e.g., Pepper Spray).
+-   Gear that improves survivability (e.g., Stealth Suit).
 
-**Example Synergistic Arsenal Card Concept: "Shadow Striker's Kit" (Conceptual - Uses existing item ideas)**
+**Example Synergistic Arsenal Card: "Shadow Striker's Kit"**
+This arsenal is composed of items directly available from the game's shop.
 *   **Global Modifiers:** +1 to Defense.
-*   **Items/Abilities Granted (Inspired by available shop gear):**
-    *   **Elite Tactical Knife (Weapon):** Replaces base Knife. Grants A4 Melee. Nimble Class (Quick Strike Interrupt). Critical Hits allow an extra attack (once per turn). (Based on shop item)
-    *   **Knee Pad (Gear):** Grants "Evasive Roll" (Interrupt: Move 2 spaces, 1 round CD). (Based on shop item)
-    *   **Pepper Spray (Bonus Item - Qty 1):** Interrupt: Blind target (R4) for 1 turn. Consumed. (Based on shop item)
-    *   **Stealth Suit (Gear - Passive):** Passive: Lowers Range value of all enemy attacks by 2 when targeting Gob. (Based on shop item)
+*   **Items/Abilities Granted (Shop Items):**
+    *   **Elite Tactical Knife (Melee Weapon - Shop Item):** A4 Melee. Nimble Class (grants Quick Strike Interrupt). If this weapon triggers a Critical Hit you can attack again. Can trigger once per turn.
+    *   **Knee Pad (Defense Gear - Shop Item):** INTERRUPT (1 round CD): Evasive Roll - Move 2 spaces in any direction.
+    *   **Pepper Spray (Utility Item - Shop Item, Qty 1 charge granted):** INTERRUPT (1 Charge): R4 - Blind target for 1 turn.
+    *   **Stealth Suit (Defense Gear - Shop Item):** Passive: Lower Range value of all enemy attacks by 2 when targeting the wearer.
 
 **Playstyle:**
 1.  **Target Prioritization:** Identify key enemies to neutralize with Wounding Strike, especially armored ones.
-2.  **Positioning & Engagement:** Use MV, Survivalist, and potentially Evasive Roll (from Arsenal) to close distances safely or disengage.
-3.  **Disruption:** Utilize Quick Draw proactively to push enemies out of position, break up formations, or protect vulnerable allies. Use Pepper Spray (from Arsenal) to disable a dangerous foe.
+2.  **Positioning & Engagement:** Use MV, Survivalist, and Evasive Roll (from Knee Pad) to close distances safely or disengage.
+3.  **Disruption:** Utilize Quick Draw proactively to push enemies out of position, break up formations, or protect vulnerable allies. Use Pepper Spray to disable a dangerous foe.
 4.  **Team Support:** Apply Leadership to buff allies before major engagements. Use Flares to maintain visibility and counter stealthed enemies.
-5.  **Melee Combat:** Rely on Wounding Strike for armor penetration. If an Arsenal provides a weapon like the Elite Tactical Knife, leverage its higher attack and Quick Strike ability for additional attacks or reactions.
+5.  **Melee Combat:** Rely on Wounding Strike for armor penetration. Leverage the Elite Tactical Knife's higher attack and Quick Strike ability for additional attacks or reactions.
 
 **Why this build works:**
-This build capitalizes on Gob's often-overlooked melee potential (Wounding Strike, Quick Draw) and his tactical skills. By equipping an Arsenal that enhances his close-quarters capabilities (better weapon, mobility, disruption tools) and survivability, Gob becomes a potent disruptor who can create chaos on the front line while still supporting his team.
+This build capitalizes on Gob's often-overlooked melee potential (Wounding Strike, Quick Draw) and his tactical skills. By equipping an Arsenal that enhances his close-quarters capabilities with specific shop items (better weapon, mobility, disruption tools) and survivability, Gob becomes a potent disruptor who can create chaos on the front line while still supporting his team.
