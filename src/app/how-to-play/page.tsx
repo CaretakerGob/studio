@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BookOpenText } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
-import Image from 'next/image'; // Added for image rendering
+import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'How to Play - Riddle of the Beast Companion',
@@ -20,7 +20,6 @@ interface Section {
   contentNodes: React.ReactNode[];
 }
 
-// Simplified inline parser
 const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[] => {
   const segments = text.split(/(\*\*.*?\*\*|!\[.*?\]\(.*?\)|\[.*?\]\(.*?\)|_.*?_|\*.*?\*)/g).filter(Boolean);
   return segments.map((segment, index) => {
@@ -38,8 +37,8 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
           <Image 
             src={imageMatch[2]} 
             alt={imageMatch[1] || 'Rulebook image'} 
-            width={500} // Adjust width as needed, or make responsive
-            height={300} // Adjust height as needed
+            width={500}
+            height={300}
             className="max-w-full h-auto rounded-md border inline-block" 
             data-ai-hint={imageMatch[1] || "rulebook illustration"}
           />
@@ -48,14 +47,11 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
     }
     const linkMatch = segment.match(/\[(.*?)\]\((.*?)\)/);
     if (linkMatch) {
-      // For now, render as text. Could be an <a> tag if needed.
       return <span key={currentKey} className="text-primary hover:underline">{linkMatch[1]}</span>;
     }
-    // For HTML entities like &rsquo;
     return <span key={currentKey} dangerouslySetInnerHTML={{ __html: segment }} />;
   });
 };
-
 
 const parseMarkdownToSections = (markdown: string): Section[] => {
   const lines = markdown.split('\n');
@@ -64,33 +60,28 @@ const parseMarkdownToSections = (markdown: string): Section[] => {
   let currentParagraphLines: string[] = [];
   let keyIndex = 0;
 
-  let isIgnoringShopSection = false;
-  let ignoredSectionStartLevel = 0; 
-  let mainAccordionSectionLevel = 0;
+  let ignoreCurrentH1H2Content = false; // True if the current H1/H2 title itself means its content should be skipped
+  let ignoreSubsequentContent = false;  // True if an H3+ title means subsequent content should be skipped
 
   const shopSectionTitlesToIgnore = [
-    "Defense Gear Shop", "Melee Weapons", "Melee Weapon Shop", "Range Weapons", "Range Weapon Shop", 
-    "Augment Shop", "Utility Shop", "Consumable Shop", "Relics*", "Loot Table", "Mystery Table" 
-    // Added Loot Table and Mystery Table as they are also large tables better suited for specific tools
+    "defense gear shop", "melee weapons", "melee weapon shop", "range weapons", "range weapon shop", 
+    "augment shop", "utility shop", "consumable shop", "relics*", 
+    "loot table", "mystery table", "weapon class special ability" 
   ].map(title => title.toLowerCase());
 
-  const flushParagraphToSection = (section: Section | null) => {
-    if (isIgnoringShopSection && section?.level !== mainAccordionSectionLevel) { // Don't add paragraphs to ignored sub-sections
-      currentParagraphLines = [];
-      return;
-    }
-    if (currentParagraphLines.length > 0 && section) {
+  const flushParagraph = () => {
+    if (currentParagraphLines.length > 0 && currentSection && !ignoreCurrentH1H2Content && !ignoreSubsequentContent) {
       const paragraphText = currentParagraphLines.join('\n').trim();
       if (paragraphText) {
-        const uniqueKey = `p-${section.id}-${keyIndex++}`;
-        section.contentNodes.push(
+        const uniqueKey = `p-${currentSection.id}-${keyIndex++}`;
+        currentSection.contentNodes.push(
           <p key={uniqueKey} className="mb-3 leading-relaxed text-foreground/90">
             {parseInlineMarkdown(paragraphText, uniqueKey)}
           </p>
         );
       }
-      currentParagraphLines = [];
     }
+    currentParagraphLines = [];
   };
 
   for (const line of lines) {
@@ -105,68 +96,44 @@ const parseMarkdownToSections = (markdown: string): Section[] => {
         headingText = match[2].trim();
       }
     }
-    
-    // Determine if we should stop ignoring content
-    if (isIgnoringShopSection) {
-      if (headingLevel > 0 && headingLevel <= mainAccordionSectionLevel && 
-          !(headingLevel === 3 && shopSectionTitlesToIgnore.includes(headingText.toLowerCase())) &&
-          !(headingLevel === 2 && shopSectionTitlesToIgnore.includes(headingText.toLowerCase())) // Also check for H2 ignored tables
-          ) {
-        isIgnoringShopSection = false; // Stop ignoring if we hit a new main accordion section level or a non-ignored H3+
-        ignoredSectionStartLevel = 0;
-      } else if (headingLevel > 0 && headingLevel < ignoredSectionStartLevel) {
-         // Stop ignoring if we hit a heading of a higher level than the one that started the ignore,
-         // unless it's another shop section we want to ignore.
-         if (!((headingLevel === 3 || headingLevel === 2) && shopSectionTitlesToIgnore.includes(headingText.toLowerCase()))) {
-            isIgnoringShopSection = false;
-            ignoredSectionStartLevel = 0;
-         }
-      } else {
-        currentParagraphLines = []; // Still ignoring
-        continue;
-      }
-    }
-    
-    // Create new accordion section for H1 or H2
+
     if (headingLevel === 1 || headingLevel === 2) {
-      flushParagraphToSection(currentSection);
-      if (currentSection) sections.push(currentSection);
+      flushParagraph();
+      if (currentSection) {
+        // Add previous section only if it's not an ignored H1/H2 title OR if it actually got content
+        // (An H1/H2 not on ignore list should be kept even if its content was all ignored H3s)
+        if (!shopSectionTitlesToIgnore.includes(currentSection.title.toLowerCase()) || currentSection.contentNodes.length > 0) {
+            sections.push(currentSection);
+        }
+      }
       
       const sectionId = `section-${headingText.toLowerCase().replace(/\s+/g, '-')}-${keyIndex++}`;
       currentSection = { id: sectionId, title: headingText, level: headingLevel, contentNodes: [] };
-      mainAccordionSectionLevel = headingLevel;
+      
+      ignoreCurrentH1H2Content = shopSectionTitlesToIgnore.includes(headingText.toLowerCase());
+      ignoreSubsequentContent = false; // Reset for new H1/H2 section
 
-      // Check if this new main section itself should be ignored (e.g. "Loot Table" as H2)
-      if (shopSectionTitlesToIgnore.includes(headingText.toLowerCase())) {
-        isIgnoringShopSection = true;
-        ignoredSectionStartLevel = headingLevel;
-        currentParagraphLines = [];
-        // Add the section shell so it can be skipped, but don't process its content further if it's a top-level ignored one
-        if(currentSection && currentSection.contentNodes.length === 0 && isIgnoringShopSection) {
-           // We can choose to add an empty section to show it's skipped or just not add it.
-           // For now, let's not add it if it's completely ignored from the start.
-           // If we want to show "Content Ignored", we'd add it here with placeholder.
+      if (ignoreCurrentH1H2Content) { // If H1/H2 title itself is on ignore list, we skip this whole section
+        currentSection = null; // Effectively discard this section
+        continue;
+      }
+    } else if (currentSection) { // Processing content for an active (non-ignored H1/H2) section
+      if (headingLevel >= 3) { // H3, H4, etc.
+        flushParagraph();
+        if (shopSectionTitlesToIgnore.includes(headingText.toLowerCase())) {
+          ignoreSubsequentContent = true; // Start ignoring from this H3
+          continue; // Don't add this H3 title or its content
+        } else {
+          ignoreSubsequentContent = false; // New non-ignorable H3, stop ignoring
         }
-        continue; 
       }
 
-    } else if (currentSection) { // Content for the current accordion section
-      // Check for H3 shop sections to ignore
-      if (headingLevel === 3 && shopSectionTitlesToIgnore.includes(headingText.toLowerCase())) {
-        flushParagraphToSection(currentSection);
-        isIgnoringShopSection = true;
-        ignoredSectionStartLevel = headingLevel;
-        currentParagraphLines = [];
+      if (ignoreSubsequentContent) {
+        currentParagraphLines = []; // Clear any buffer if we are in an ignore block
         continue;
       }
 
-      if (isIgnoringShopSection) {
-        currentParagraphLines = [];
-        continue;
-      }
-
-      flushParagraphToSection(currentSection);
-
+      // Add content to currentSection.contentNodes
       const uniqueKeyPrefix = `${currentSection.id}-${keyIndex++}`;
       if (headingLevel === 3) {
         currentSection.contentNodes.push(<h3 key={`h3-${uniqueKeyPrefix}`} className="text-2xl font-bold mt-5 mb-2 pb-1 border-b border-border text-primary/95">{headingText}</h3>);
@@ -177,14 +144,17 @@ const parseMarkdownToSections = (markdown: string): Section[] => {
       } else if (headingLevel === 6) {
         currentSection.contentNodes.push(<h6 key={`h6-${uniqueKeyPrefix}`} className="text-base font-semibold mt-2 mb-1 text-primary/80">{headingText}</h6>);
       } else if (trimmedLine.startsWith('---') || trimmedLine.startsWith('***') || trimmedLine.startsWith('___')) {
+        flushParagraph();
         currentSection.contentNodes.push(<Separator key={`hr-${uniqueKeyPrefix}`} className="my-4" />);
       } else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+        flushParagraph(); // Ensure paragraph is flushed before list item
         currentSection.contentNodes.push(
           <li key={`li-${uniqueKeyPrefix}`} className="ml-5 list-disc text-foreground/90 my-1">
             {parseInlineMarkdown(trimmedLine.substring(2), `li-text-${uniqueKeyPrefix}`)}
           </li>
         );
       } else if (trimmedLine.match(/^\d+\.\s/)) {
+        flushParagraph(); // Ensure paragraph is flushed before list item
         currentSection.contentNodes.push(
           <li key={`oli-${uniqueKeyPrefix}`} className="ml-5 list-decimal text-foreground/90 my-1">
             {parseInlineMarkdown(trimmedLine.replace(/^\d+\.\s/, ''), `oli-text-${uniqueKeyPrefix}`)}
@@ -193,21 +163,20 @@ const parseMarkdownToSections = (markdown: string): Section[] => {
       } else if (trimmedLine !== '') {
         currentParagraphLines.push(line);
       }
+    } else { // Lines before the first H1/H2, typically none or intro
+        if (trimmedLine !== '') currentParagraphLines.push(line);
     }
   }
 
-  flushParagraphToSection(currentSection);
-  if (currentSection && (!isIgnoringShopSection || currentSection.contentNodes.length > 0)) {
-    sections.push(currentSection);
+  flushParagraph();
+  if (currentSection) {
+     if (!shopSectionTitlesToIgnore.includes(currentSection.title.toLowerCase()) || currentSection.contentNodes.length > 0) {
+        sections.push(currentSection);
+     }
   }
   
-  // Filter out sections that ended up empty because their entire content was ignored
-  return sections.filter(section => section.title.trim() !== "" && section.contentNodes.length > 0 || 
-                                  // Keep main sections even if empty if they were NOT on ignore list
-                                  (section.level <= 2 && !shopSectionTitlesToIgnore.includes(section.title.toLowerCase()))
-                        );
+  return sections;
 };
-
 
 export default async function HowToPlayPage() {
   let sections: Section[] = [];
@@ -218,7 +187,7 @@ export default async function HowToPlayPage() {
     const rulesContent = await fs.readFile(filePath, 'utf8');
     sections = parseMarkdownToSections(rulesContent);
     if (sections.length === 0 && rulesContent.length > 0) {
-        errorMessage = "No sections could be parsed from the rulebook. The content might be structured in an unexpected way or is entirely ignored by filters."
+        errorMessage = "No displayable sections could be parsed from the rulebook. Content might be structured in an unexpected way or is entirely composed of ignored sections."
     }
   } catch (error) {
     console.error("Failed to read or parse game rules:", error);
@@ -251,7 +220,7 @@ export default async function HowToPlayPage() {
                     {section.title}
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 bg-background/30">
-                    {section.contentNodes}
+                    {section.contentNodes.length > 0 ? section.contentNodes : <p className="italic text-muted-foreground">Content for this section is not displayed or has been filtered.</p>}
                   </AccordionContent>
                 </AccordionItem>
               ))}
