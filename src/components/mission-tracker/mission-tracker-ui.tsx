@@ -54,10 +54,19 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
     setActiveEnemies(prev => prev.map(enemy => {
       if (enemy.instanceId === instanceId) {
         if (stat === 'hp') {
-          const newHp = Math.max(0, (enemy.currentHp || 0) + delta);
+          const maxHp = enemy.baseStats.hp || 0; // Max HP from the template
+          const currentHp = enemy.currentHp || 0; // Current tracked HP
+          const newHp = Math.min(Math.max(0, currentHp + delta), maxHp);
           return { ...enemy, currentHp: newHp };
         }
         // Add sanity handling if/when needed
+        // For example:
+        // if (stat === 'san' && enemy.baseStats.san !== undefined) {
+        //   const maxSan = enemy.baseStats.san || 0;
+        //   const currentSan = enemy.currentSanity || 0;
+        //   const newSan = Math.min(Math.max(0, currentSan + delta), maxSan);
+        //   return { ...enemy, currentSanity: newSan };
+        // }
       }
       return enemy;
     }));
