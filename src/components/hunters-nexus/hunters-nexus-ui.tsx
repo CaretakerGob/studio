@@ -24,6 +24,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuSubContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuLabel, // Added DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -2148,4 +2149,5 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
+
 
