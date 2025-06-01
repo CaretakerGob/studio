@@ -62,8 +62,8 @@ The cost value listed below indicates the Crypto price for each item.
 
 ### Defense Gear Shop
 
-| Name                   | Cost | Effect                                                                          |
-|------------------------|------|---------------------------------------------------------------------------------|
+| Name                   | Cost |Effect                                          |
+|--------------------------------------------------------------------------------|
 | Riot Shield            | 4    | -2 damage from Range Attacks.                                                   |
 | Body Armor             | 4    | -2 damage from Melee Attacks.                                                   |
 | Helmet                 | 6    | Lower damage received by Critical Hits by 2.                                    |
@@ -117,8 +117,8 @@ Treat all Melee weapons as Range of 1 unless otherwise indicated.
 
 **Melee Weapon Shop**
 
-| Name                 | Cost | Class        | Attack | Effect                                                                  |
-|----------------------|------|--------------|--------|-------------------------------------------------------------------------|
+| Name                 | Cost | Class        | Attack | Effect  |
+|---------------------------------------------------------------|
 | Bat                  | 2    | Blunt        | A2     |                                                                         |
 | Crowbar              | 6    | Blunt        | A3     | Critical Hits inflict FLINCH for 1 turn                                 |
 | Sledge Hammer        | 10   | Blunt        | A4     |                                                                         |
@@ -173,10 +173,10 @@ All Range weapons trigger an Attack of Opportunity if used within melee range of
 *   **Magnum:** Impacting (PASSIVE) - Damaged targets are WOUNDED for 1 turn.
 *   **Pistol:** Close Combat (ACTION): Range Attack does not trigger an attack of opportunity
 *   **Rapid:** Quick Fire (INTERRUPT) - Attack with the weapon as an Interrupt.
-*   **Revolver:** Fan the Hammer: {ACTION} - Attack up to 4 times in 1 round. Can target multiple targets. This attack cannot Critically Hit. 3 round CD.
-*   **Rifle:** Burst Fire {ACTION} - Re-roll 2 missed Attack Dice. 3 round CD.
+*   **Revolver:** Fan the Hammer: (ACTION) - Attack up to 4 times in 1 round. Can target multiple targets. This attack cannot Critically Hit. 3 round CD.
+*   **Rifle:** Burst Fire (ACTION) - Re-roll 2 missed Attack Dice. 3 round CD.
 *   **Shotgun:** Spread (PASSIVE) - Attack one additional enemy adjacent to the target.
-*   **SMG:** Suppressive Fire {INTERRUPT): Roll the weapons attack value. All enemies of the BASE Template have their Range Value lowered by 1 for each HIT rolled. This attack does not inflict damage. 3 round CD.
+*   **SMG:** Suppressive Fire (INTERRUPT): Roll the weapons attack value. All enemies of the BASE Template have their Range Value lowered by 1 for each HIT rolled. This attack does not inflict damage. 3 round CD.
 *   **Sniper:** Called Shot (Action) - Wielder must spend 1 round to take aim. DOUBLE SWORDS rolled while aiming bypass the targets defense.
 
 **Range Weapon Shop**

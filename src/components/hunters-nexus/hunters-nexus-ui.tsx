@@ -18,13 +18,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
   DropdownMenuSubContent,
   DropdownMenuCheckboxItem,
-  DropdownMenuLabel, // Added DropdownMenuLabel
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -233,8 +232,8 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [isNexusMvVisible, setIsNexusMvVisible] = useState(true);
   const [isNexusDefVisible, setIsNexusDefVisible] = useState(true);
   const [isNexusBleedVisible, setIsNexusBleedVisible] = useState(true);
-  const [isNexusMeleeAttackVisible, setIsNexusMeleeAttackVisible] = useState(false); // Default hidden
-  const [isNexusRangedAttackVisible, setIsNexusRangedAttackVisible] = useState(false); // Default hidden
+  const [isNexusMeleeAttackVisible, setIsNexusMeleeAttackVisible] = useState(false);
+  const [isNexusRangedAttackVisible, setIsNexusRangedAttackVisible] = useState(false);
 
 
   const activeCharacterBase = useMemo(() => {
@@ -265,52 +264,95 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   }, [activeCharacterSessionData?.selectedArsenalId, arsenalCards]);
 
 
-  const calculateEffectiveStatsForMember = useCallback((memberId: string): CharacterStats | null => {
-    const baseCharacter = teamMembers.find(p => p.id === memberId); 
-    const sessionData = teamSessionData[memberId]; 
+ const calculateEffectiveStatsForMember = useCallback((memberId: string): CharacterStats | null => {
+    const baseCharacter = teamMembers.find(p => p.id === memberId);
+    const sessionData = teamSessionData[memberId];
     if (!baseCharacter || !sessionData) return null;
 
-    let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(baseCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0, rangedAttack: 0, rangedRange: 0 }));
+    // Start with a deep copy of base stats (HP, Sanity, MV, DEF).
+    let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(baseCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1 }));
+    
+    // Initialize effective weapon stats from base character's weapons
+    let effectiveMeleeAttack = baseCharacter.meleeWeapon?.attack || 0;
+    let effectiveRangedAttack = baseCharacter.rangedWeapon?.attack || 0;
+    let effectiveRangedRange = baseCharacter.rangedWeapon?.range || 0;
+
     const memberArsenal = arsenalCards.find(ac => ac.id === sessionData.selectedArsenalId && !ac.id.startsWith('error-'));
 
+    // Step 1: Override with Arsenal Weapon if present
+    if (memberArsenal && memberArsenal.items) {
+        const arsenalMeleeItem = memberArsenal.items.find(item =>
+           !item.isPet &&
+           (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON') || item.category?.toUpperCase() === 'WEAPON') &&
+           item.parsedWeaponStats?.attack !== undefined &&
+           (!item.parsedWeaponStats?.range || item.parsedWeaponStats.range <= 1 || item.parsedWeaponStats.range === 0)
+        );
+        if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
+            effectiveMeleeAttack = arsenalMeleeItem.parsedWeaponStats.attack;
+        }
+
+        const arsenalRangedItem = memberArsenal.items.find(item =>
+           !item.isPet &&
+           (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON') || item.category?.toUpperCase() === 'WEAPON') &&
+           item.parsedWeaponStats?.attack !== undefined &&
+           item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 1
+        );
+        if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
+            effectiveRangedAttack = arsenalRangedItem.parsedWeaponStats.attack;
+            effectiveRangedRange = arsenalRangedItem.parsedWeaponStats.range;
+        }
+    }
+
+    // Step 2: Apply Arsenal Card GLOBAL modifiers
     if (memberArsenal) {
-      calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (memberArsenal.maxHpMod || 0);
-      calculatedStats.mv = (calculatedStats.mv || 0) + (memberArsenal.mvMod || 0);
-      calculatedStats.def = (calculatedStats.def || 0) + (memberArsenal.defMod || 0);
-      calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (memberArsenal.maxSanityMod || 0);
-      calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + (memberArsenal.meleeAttackMod || 0);
-      calculatedStats.rangedAttack = (calculatedStats.rangedAttack || 0) + (memberArsenal.rangedAttackMod || 0);
-      calculatedStats.rangedRange = (calculatedStats.rangedRange || 0) + (memberArsenal.rangedRangeMod || 0);
-      
-      if (memberArsenal.items) {
-        memberArsenal.items.forEach(item => {
-          if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
-            item.parsedStatModifiers.forEach(mod => {
-              const statKey = mod.targetStat as keyof CharacterStats;
-              if (statKey in calculatedStats && typeof (calculatedStats[statKey]) === 'number') {
-                (calculatedStats[statKey] as number) = Math.max(
-                    (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0, 
-                    (calculatedStats[statKey] as number) + mod.value
-                );
-              }
-            });
-          }
-        });
-      }
+        calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (memberArsenal.maxHpMod || 0);
+        calculatedStats.mv = (calculatedStats.mv || 0) + (memberArsenal.mvMod || 0);
+        calculatedStats.def = (calculatedStats.def || 0) + (memberArsenal.defMod || 0);
+        calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (memberArsenal.maxSanityMod || 0);
+        
+        effectiveMeleeAttack += (memberArsenal.meleeAttackMod || 0);
+        effectiveRangedAttack += (memberArsenal.rangedAttackMod || 0);
+        effectiveRangedRange += (memberArsenal.rangedRangeMod || 0);
     }
     
+    // Step 3: Apply Arsenal GEAR item modifiers (mostly for core stats)
+    if (memberArsenal && memberArsenal.items) {
+      memberArsenal.items.forEach(item => {
+        if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
+          item.parsedStatModifiers.forEach(mod => {
+            const statKey = mod.targetStat as keyof CharacterStats;
+            if (statKey in calculatedStats && typeof (calculatedStats[statKey]) === 'number' &&
+                statKey !== 'meleeAttack' && statKey !== 'rangedAttack' && statKey !== 'rangedRange') { // Ensure not to double-modify weapon stats here
+              (calculatedStats[statKey] as number) = Math.max(
+                  (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0, 
+                  (calculatedStats[statKey] as number) + mod.value
+              );
+            }
+          });
+        }
+      });
+    }
+    
+    // Step 4: Assign determined and globally modified weapon stats to calculatedStats object
+    calculatedStats.meleeAttack = effectiveMeleeAttack;
+    calculatedStats.rangedAttack = effectiveRangedAttack;
+    calculatedStats.rangedRange = effectiveRangedRange;
+    
+    // Step 5: Apply session-specific modifiers to ALL stats (core and weapon)
     calculatedStats.maxHp = (calculatedStats.maxHp || 1) + sessionData.sessionMaxHpModifier;
-    calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + sessionData.sessionMaxSanityModifier;
     calculatedStats.mv = (calculatedStats.mv || 0) + sessionData.sessionMvModifier;
     calculatedStats.def = (calculatedStats.def || 0) + sessionData.sessionDefModifier;
+    calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + sessionData.sessionMaxSanityModifier;
+    
     calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + sessionData.sessionMeleeAttackModifier;
     calculatedStats.rangedAttack = (calculatedStats.rangedAttack || 0) + sessionData.sessionRangedAttackModifier;
     calculatedStats.rangedRange = (calculatedStats.rangedRange || 0) + sessionData.sessionRangedRangeModifier;
 
-
+    // Current HP/Sanity are from sessionData directly
     calculatedStats.hp = sessionData.currentHp;
     calculatedStats.sanity = sessionData.currentSanity;
     
+    // Final caps and non-negative checks
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
 
@@ -323,7 +365,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     calculatedStats.meleeAttack = Math.max(0, calculatedStats.meleeAttack || 0);
     calculatedStats.rangedAttack = Math.max(0, calculatedStats.rangedAttack || 0);
     calculatedStats.rangedRange = Math.max(0, calculatedStats.rangedRange || 0);
-
 
     return calculatedStats;
   }, [teamMembers, teamSessionData, arsenalCards]); 
@@ -395,90 +436,89 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
   const effectiveNexusMeleeWeapon = useMemo(() => {
       if (!activeCharacterBase || !activeCharacterSessionData) return undefined;
-      let weaponToDisplay: Weapon | undefined = JSON.parse(JSON.stringify(characterDefaultMeleeWeaponForNexus)); 
+      
+      let baseAttack = activeCharacterBase.meleeWeapon?.attack || 0;
+      let weaponName = activeCharacterBase.meleeWeapon?.name || "Fists";
+      let flavorText = activeCharacterBase.meleeWeapon?.flavorText || "Basic unarmed attack";
 
       if (currentNexusArsenal?.items) {
           const arsenalMeleeItem = currentNexusArsenal.items.find(item =>
              !item.isPet &&
-             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
+             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON') || item.category?.toUpperCase() === 'WEAPON') &&
              item.parsedWeaponStats?.attack !== undefined &&
              (!item.parsedWeaponStats?.range || item.parsedWeaponStats.range <= 1 || item.parsedWeaponStats.range === 0)
           );
           if (arsenalMeleeItem?.parsedWeaponStats?.attack !== undefined) {
-              weaponToDisplay = {
-                  name: arsenalMeleeItem.abilityName || 'Arsenal Melee',
-                  attack: arsenalMeleeItem.parsedWeaponStats.attack,
-                  flavorText: arsenalMeleeItem.itemDescription || arsenalMeleeItem.parsedWeaponStats.rawDetails,
-              };
+              baseAttack = arsenalMeleeItem.parsedWeaponStats.attack;
+              weaponName = arsenalMeleeItem.abilityName || 'Arsenal Melee';
+              flavorText = arsenalMeleeItem.itemDescription || arsenalMeleeItem.parsedWeaponStats.rawDetails || '';
           }
       }
-      if (currentNexusArsenal && weaponToDisplay) {
-          weaponToDisplay = {
-              ...weaponToDisplay,
-              attack: (weaponToDisplay.attack || 0) + (currentNexusArsenal.meleeAttackMod || 0),
-          };
-      }
       
-      if (weaponToDisplay) {
-        weaponToDisplay.attack = Math.max(0, (weaponToDisplay.attack || 0) + activeCharacterSessionData.sessionMeleeAttackModifier);
-      }
+      baseAttack += (currentNexusArsenal?.meleeAttackMod || 0);
+      baseAttack += activeCharacterSessionData.sessionMeleeAttackModifier;
+      baseAttack = Math.max(0, baseAttack);
+
 
       const template = charactersData.find(c => c.id === (activeCharacterBase.templateId || activeCharacterBase.id));
-      if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === (1 + activeCharacterSessionData.sessionMeleeAttackModifier) && 
+      if (weaponName === "Fists" && baseAttack === 1 && 
           !template?.meleeWeapon?.name &&
-          !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (!i.parsedWeaponStats?.range || i.parsedWeaponStats.range <= 1)) &&
+          !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON') || item.category?.toUpperCase() === 'WEAPON') && i.parsedWeaponStats?.attack !== undefined && (!i.parsedWeaponStats?.range || i.parsedWeaponStats.range <= 1)) &&
           !currentNexusArsenal?.meleeAttackMod &&
-          activeCharacterBase.templateId !== 'custom'
+          activeCharacterSessionData.sessionMeleeAttackModifier === 0 &&
+          activeCharacterBase.templateId !== 'custom' 
       ) {
         return undefined;
       }
-      return weaponToDisplay;
-  }, [activeCharacterBase, activeCharacterSessionData, currentNexusArsenal, characterDefaultMeleeWeaponForNexus]);
+
+      return { name: weaponName, attack: baseAttack, flavorText: flavorText };
+
+  }, [activeCharacterBase, activeCharacterSessionData, currentNexusArsenal]);
 
   const effectiveNexusRangedWeapon = useMemo(() => {
       if (!activeCharacterBase || !activeCharacterSessionData) return undefined;
-      let weaponToDisplay: RangedWeapon | undefined = JSON.parse(JSON.stringify(characterDefaultRangedWeaponForNexus));
+
+      let baseAttack = activeCharacterBase.rangedWeapon?.attack || 0;
+      let baseRange = activeCharacterBase.rangedWeapon?.range || 0;
+      let weaponName = activeCharacterBase.rangedWeapon?.name || "None";
+      let flavorText = activeCharacterBase.rangedWeapon?.flavorText || "No ranged weapon";
+
 
       if (currentNexusArsenal?.items) {
           const arsenalRangedItem = currentNexusArsenal.items.find(item =>
              !item.isPet &&
-             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
+             (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON') || item.category?.toUpperCase() === 'WEAPON') &&
              item.parsedWeaponStats?.attack !== undefined &&
              item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 1
           );
           if (arsenalRangedItem?.parsedWeaponStats?.attack !== undefined && arsenalRangedItem.parsedWeaponStats.range !== undefined) {
-              weaponToDisplay = {
-                  name: arsenalRangedItem.abilityName || 'Arsenal Ranged',
-                  attack: arsenalRangedItem.parsedWeaponStats.attack,
-                  range: arsenalRangedItem.parsedWeaponStats.range,
-                  flavorText: arsenalRangedItem.itemDescription || arsenalRangedItem.parsedWeaponStats.rawDetails,
-              };
+              baseAttack = arsenalRangedItem.parsedWeaponStats.attack;
+              baseRange = arsenalRangedItem.parsedWeaponStats.range;
+              weaponName = arsenalRangedItem.abilityName || 'Arsenal Ranged';
+              flavorText = arsenalRangedItem.itemDescription || arsenalRangedItem.parsedWeaponStats.rawDetails || '';
           }
       }
-      if (currentNexusArsenal && weaponToDisplay) {
-          weaponToDisplay = {
-              ...weaponToDisplay,
-              attack: (weaponToDisplay.attack || 0) + (currentNexusArsenal.rangedAttackMod || 0),
-              range: (weaponToDisplay.range || 0) + (currentNexusArsenal.rangedRangeMod || 0),
-          };
-      }
-
-      if (weaponToDisplay) {
-        weaponToDisplay.attack = Math.max(0, (weaponToDisplay.attack || 0) + activeCharacterSessionData.sessionRangedAttackModifier);
-        weaponToDisplay.range = Math.max(0, (weaponToDisplay.range || 0) + activeCharacterSessionData.sessionRangedRangeModifier);
-      }
+      
+      baseAttack += (currentNexusArsenal?.rangedAttackMod || 0);
+      baseRange += (currentNexusArsenal?.rangedRangeMod || 0);
+      baseAttack += activeCharacterSessionData.sessionRangedAttackModifier;
+      baseRange += activeCharacterSessionData.sessionRangedRangeModifier;
+      
+      baseAttack = Math.max(0, baseAttack);
+      baseRange = Math.max(0, baseRange);
 
       const template = charactersData.find(c => c.id === (activeCharacterBase.templateId || activeCharacterBase.id));
-      if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === (0 + activeCharacterSessionData.sessionRangedAttackModifier) && weaponToDisplay.range === (0 + activeCharacterSessionData.sessionRangedRangeModifier) && 
+      if (weaponName === "None" && baseAttack === 0 && baseRange === 0 && 
           !template?.rangedWeapon?.name &&
-          !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 1)) &&
+          !currentNexusArsenal?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON') || item.category?.toUpperCase() === 'WEAPON') && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 1)) &&
           !currentNexusArsenal?.rangedAttackMod && !currentNexusArsenal?.rangedRangeMod &&
+          activeCharacterSessionData.sessionRangedAttackModifier === 0 && activeCharacterSessionData.sessionRangedRangeModifier === 0 &&
           activeCharacterBase.templateId !== 'custom'
       ) {
         return undefined;
       }
-      return weaponToDisplay;
-  }, [activeCharacterBase, activeCharacterSessionData, currentNexusArsenal, characterDefaultRangedWeaponForNexus]);
+      return { name: weaponName, attack: baseAttack, range: baseRange, flavorText: flavorText };
+  }, [activeCharacterBase, activeCharacterSessionData, currentNexusArsenal]);
 
   const arsenalProvidedEquipment = useMemo(() => {
     if (!currentNexusArsenal?.items) return [];
@@ -2149,5 +2189,3 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
-
-
