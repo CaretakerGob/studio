@@ -17,14 +17,14 @@
 
     
 Each Animated Object manifests with distinct traits, altering its base statistics and combat behavior. Refer to the target enemy on the Table below and adjust the Animated Objects Base values by the result. Each variation has its own unique Abilities.
-Animated Objects Table
-Object
+* Animated Objects Table
+**Object**
 Stat changes over Base
-    Animated Armor
+    - Animated Armor
 +2 DEF
-    Animated Sword
+    - Animated Sword
 +2 Melee, +2 MV
-    Living Painting
+    - Living Painting
 +5 HP, -2 MV
         
 

@@ -14,7 +14,7 @@ export interface EnemyStatBlock {
 }
 
 export interface EnemyAttack {
-  type: 'Melee' | 'Range' | 'Special 1' | 'Special 2' | 'Signature' | string; // Allow string for other attack types
+  type: 'Melee' | 'Range' | 'Special 1' | 'Special 2' | 'Signature' | string;
   details: string;
 }
 
@@ -24,8 +24,23 @@ export interface EnemyLogic {
 
 export interface EnemyAbility {
   name: string;
-  type: string; // e.g., Special 1, Special 2, Signature, Passive
-  description: string; // Full ability text
+  type: string;
+  description: string;
+}
+
+// New interface for stat modifiers
+export type StatModifierName = 'HP' | 'MV' | 'Def' | 'San' | 'MeleeAttackBonus' | 'RangedAttackBonus' | 'MaxHP' | 'MaxSanity'; // Add more as needed
+
+export interface StatModifier {
+  stat: StatModifierName; // e.g., 'Def', 'HP', 'MV', 'MeleeAttackBonus'
+  value: number; // e.g., 2 for "+2 DEF", -1 for "-1 MV"
+}
+
+// New interface for enemy variations
+export interface EnemyVariation {
+  name: string; // e.g., "Animated Armor"
+  statChanges: StatModifier[]; // e.g., [{ stat: 'Def', value: 2 }]
+  abilities?: EnemyAbility[]; // Optional: if variations also have unique abilities
 }
 
 export interface Enemy {
@@ -36,14 +51,13 @@ export interface Enemy {
   baseStats: EnemyStatBlock;
   baseAttacks: EnemyAttack[];
   logic?: EnemyLogic;
-  abilities?: EnemyAbility[]; // For more detailed abilities later
-  // rawContent?: string; // For debugging or future complex parsing
+  abilities?: EnemyAbility[];
+  variations?: EnemyVariation[]; // Added to hold variations
 }
 
-// Represents an enemy instance in an active encounter
 export interface ActiveEnemy extends Enemy {
   instanceId: string;
   currentHp: number;
-  currentSanity?: number; // Optional for now
-  // Add other trackable instance-specific stats here, e.g., status effects
+  currentSanity?: number;
+  selectedVariationName?: string; // To know which variation is active
 }
