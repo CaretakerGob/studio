@@ -22,38 +22,53 @@ interface MissionTrackerUIProps {
 
 // Helper function to apply stat modifiers
 function applyStatModifiers(baseStats: EnemyStatBlock, modifiers: StatModifier[]): EnemyStatBlock {
-  const newStats = JSON.parse(JSON.stringify(baseStats)); // Deep clone
+  const newStats: EnemyStatBlock = JSON.parse(JSON.stringify(baseStats));
+
+  // Ensure all potentially modifiable stats exist on newStats, defaulting to 0 or base value if not already present.
+  // Note: baseStats.hp is MaxHP, baseStats.san is MaxSanity for the template.
+  newStats.hp = newStats.hp ?? 0;
+  newStats.mv = newStats.mv ?? 0;
+  newStats.def = newStats.def ?? 0;
+  newStats.san = newStats.san ?? undefined; // Sanity can be undefined if an enemy has none.
+  newStats.meleeAttackBonus = newStats.meleeAttackBonus ?? 0;
+  newStats.rangedAttackBonus = newStats.rangedAttackBonus ?? 0;
 
   modifiers.forEach(mod => {
     switch (mod.stat) {
-      case 'HP':
       case 'MaxHP':
-        newStats.hp = (newStats.hp || 0) + mod.value;
+      case 'HP': // Assuming 'HP' mod from variations means 'MaxHP'
+        newStats.hp = (newStats.hp ?? 0) + mod.value;
         break;
       case 'MV':
-        newStats.mv = (newStats.mv || 0) + mod.value;
+        newStats.mv = (newStats.mv ?? 0) + mod.value;
         break;
       case 'Def':
-        newStats.def = (newStats.def || 0) + mod.value;
+        newStats.def = (newStats.def ?? 0) + mod.value;
         break;
-      case 'San':
       case 'MaxSanity':
-        newStats.san = (newStats.san || 0) + mod.value;
+      case 'San': // Assuming 'San' mod from variations means 'MaxSanity'
+        // If base san is undefined (enemy has no sanity), and we add a mod, it starts from 0 + mod.value
+        newStats.san = (newStats.san ?? 0) + mod.value;
         break;
       case 'MeleeAttackBonus':
-        newStats.meleeAttackBonus = (newStats.meleeAttackBonus || 0) + mod.value;
+        newStats.meleeAttackBonus = (newStats.meleeAttackBonus ?? 0) + mod.value;
         break;
       case 'RangedAttackBonus':
-        newStats.rangedAttackBonus = (newStats.rangedAttackBonus || 0) + mod.value;
+        newStats.rangedAttackBonus = (newStats.rangedAttackBonus ?? 0) + mod.value;
         break;
     }
-    // Ensure stats don't go below a reasonable minimum
-    if (newStats.hp !== undefined) newStats.hp = Math.max(1, newStats.hp);
-    if (newStats.mv !== undefined) newStats.mv = Math.max(0, newStats.mv);
-    if (newStats.def !== undefined) newStats.def = Math.max(0, newStats.def);
-    // Max Sanity could be 0 if enemy has none. currentSanity tracking will also need this in mind.
-    if (newStats.san !== undefined) newStats.san = Math.max(0, newStats.san); 
   });
+
+  // Clamp values after all modifications
+  if (newStats.hp !== undefined) newStats.hp = Math.max(1, newStats.hp); // Max HP should be at least 1
+  if (newStats.mv !== undefined) newStats.mv = Math.max(0, newStats.mv);
+  if (newStats.def !== undefined) newStats.def = Math.max(0, newStats.def);
+  if (newStats.san !== undefined) newStats.san = Math.max(0, newStats.san); // Max Sanity can be 0
+  
+  // Ensure bonuses are numbers, defaulting to 0 if they became undefined
+  newStats.meleeAttackBonus = newStats.meleeAttackBonus ?? 0;
+  newStats.rangedAttackBonus = newStats.rangedAttackBonus ?? 0;
+
   return newStats;
 }
 
@@ -79,15 +94,15 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
       return;
     }
 
-    const effectiveStats = JSON.parse(JSON.stringify(enemyTemplate.baseStats)); // Start with base
+    const initialEffectiveStats = JSON.parse(JSON.stringify(enemyTemplate.baseStats));
 
     const newActiveEnemy: ActiveEnemy = {
-      ...enemyTemplate, // Spread template first
+      ...enemyTemplate,
       instanceId: `${enemyTemplate.id}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      effectiveStats: effectiveStats,
-      currentHp: effectiveStats.hp || 10,
-      currentSanity: effectiveStats.san, // Initialize currentSanity from effectiveStats
-      selectedVariationName: undefined, // No variation selected initially
+      effectiveStats: initialEffectiveStats,
+      currentHp: initialEffectiveStats.hp || 10, // Default to 10 if baseStats.hp is undefined (should not happen for parsed enemies)
+      currentSanity: initialEffectiveStats.san, 
+      selectedVariationName: undefined,
     };
 
     setActiveEnemies(prev => [...prev, newActiveEnemy]);
@@ -103,12 +118,15 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
 
         if (stat === 'hp') {
           newStatValue = (enemy.currentHp || 0) + delta;
-          maxStatValue = enemy.effectiveStats.hp || 0;
+          maxStatValue = enemy.effectiveStats.hp || 0; // Max HP from effective stats
           newStatValue = Math.min(Math.max(0, newStatValue), maxStatValue);
           return { ...enemy, currentHp: newStatValue };
-        } else if (stat === 'san' && enemy.effectiveStats.san !== undefined) {
-          newStatValue = (enemy.currentSanity || 0) + delta;
-          maxStatValue = enemy.effectiveStats.san || 0; // Default to 0 if undefined
+        } else if (stat === 'san') {
+           // Only proceed if sanity is defined for this enemy (i.e., not undefined in effectiveStats)
+          if (enemy.effectiveStats.san === undefined) return enemy; // Do nothing if enemy has no sanity stat
+          
+          newStatValue = (enemy.currentSanity ?? enemy.effectiveStats.san ?? 0) + delta; // Use effective San as current if currentSanity is null/undefined
+          maxStatValue = enemy.effectiveStats.san ?? 0; // Max Sanity from effective stats
           newStatValue = Math.min(Math.max(0, newStatValue), maxStatValue);
           return { ...enemy, currentSanity: newStatValue };
         }
@@ -129,7 +147,7 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
     setActiveEnemies(prevActiveEnemies => prevActiveEnemies.map(enemy => {
       if (enemy.instanceId === instanceId) {
         const originalTemplate = enemiesList.find(e => e.id === enemy.id);
-        if (!originalTemplate) return enemy; // Should not happen
+        if (!originalTemplate) return enemy; 
 
         let newEffectiveStats = JSON.parse(JSON.stringify(originalTemplate.baseStats));
         let selectedVariation: EnemyVariation | undefined = undefined;
@@ -141,9 +159,8 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
           }
         }
         
-        // Reset current HP and Sanity to the new maximums from effectiveStats
         const newCurrentHp = newEffectiveStats.hp || 0;
-        const newCurrentSanity = newEffectiveStats.san; // Can be undefined if enemy has no sanity
+        const newCurrentSanity = newEffectiveStats.san; // Can be undefined
 
         return { 
           ...enemy, 
@@ -165,7 +182,7 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
   
   const getStatProgressColorClass = (current: number | undefined, max: number | undefined, type: 'hp' | 'san'): string => {
     if (current === undefined || current === null || max === undefined || max === null || max === 0) {
-      return '[&>div]:bg-gray-400'; // Default color if stats are undefined
+      return '[&>div]:bg-gray-400';
     }
     const percentage = (current / max) * 100;
     if (type === 'hp') {
@@ -173,12 +190,12 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
         if (percentage <= 66) return '[&>div]:bg-yellow-500';
         return '[&>div]:bg-green-500';
     }
-    if (type === 'san') { // Example: Sanity might use blue tones
-        if (percentage <= 33) return '[&>div]:bg-red-600'; // Low sanity more critical red
+    if (type === 'san') { 
+        if (percentage <= 33) return '[&>div]:bg-red-600'; 
         if (percentage <= 66) return '[&>div]:bg-indigo-400';
         return '[&>div]:bg-blue-500';
     }
-    return '[&>div]:bg-primary'; // Fallback
+    return '[&>div]:bg-primary';
   };
 
 
@@ -305,6 +322,7 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
                         <p className="text-xs text-muted-foreground text-right mt-0.5">{enemy.currentHp} / {enemy.effectiveStats.hp || 'N/A'}</p>
                       </div>
                       
+                      {/* Sanity tracking is only shown if enemy.effectiveStats.san is defined */}
                       {enemy.effectiveStats.san !== undefined && (
                         <div>
                           <div className="flex items-center justify-between">
@@ -340,7 +358,7 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
                             <p className="font-medium">Base Attacks:</p>
                             {enemy.baseAttacks.map((atk, idx) => {
                                 let attackDetails = atk.details;
-                                if (atk.type.toLowerCase().includes('melee') && enemy.effectiveStats.meleeAttackBonus) {
+                                if (atk.type.toLowerCase().includes('melee') && enemy.effectiveStats.meleeAttackBonus) { 
                                     attackDetails += ` (${enemy.effectiveStats.meleeAttackBonus > 0 ? '+' : ''}${enemy.effectiveStats.meleeAttackBonus} ATK)`;
                                 } else if (atk.type.toLowerCase().includes('range') && enemy.effectiveStats.rangedAttackBonus) {
                                     attackDetails += ` (${enemy.effectiveStats.rangedAttackBonus > 0 ? '+' : ''}${enemy.effectiveStats.rangedAttackBonus} ATK)`;
@@ -369,3 +387,6 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
     </div>
   );
 }
+
+
+    
