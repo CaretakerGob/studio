@@ -10,7 +10,9 @@ export interface EnemyStatBlock {
   def?: number;
   san?: number;
   armor?: EnemyArmor;
-  [key: string]: any; // For other potential stats from markdown
+  meleeAttackBonus?: number; 
+  rangedAttackBonus?: number; 
+  [key: string]: any; 
 }
 
 export interface EnemyAttack {
@@ -28,19 +30,17 @@ export interface EnemyAbility {
   description: string;
 }
 
-// New interface for stat modifiers
-export type StatModifierName = 'HP' | 'MV' | 'Def' | 'San' | 'MeleeAttackBonus' | 'RangedAttackBonus' | 'MaxHP' | 'MaxSanity'; // Add more as needed
+export type StatModifierName = 'HP' | 'MV' | 'Def' | 'San' | 'MeleeAttackBonus' | 'RangedAttackBonus' | 'MaxHP' | 'MaxSanity';
 
 export interface StatModifier {
-  stat: StatModifierName; // e.g., 'Def', 'HP', 'MV', 'MeleeAttackBonus'
-  value: number; // e.g., 2 for "+2 DEF", -1 for "-1 MV"
+  stat: StatModifierName; 
+  value: number; 
 }
 
-// New interface for enemy variations
 export interface EnemyVariation {
-  name: string; // e.g., "Animated Armor"
-  statChanges: StatModifier[]; // e.g., [{ stat: 'Def', value: 2 }]
-  abilities?: EnemyAbility[]; // Optional: if variations also have unique abilities
+  name: string; 
+  statChanges: StatModifier[]; 
+  abilities?: EnemyAbility[]; 
 }
 
 export interface Enemy {
@@ -52,12 +52,13 @@ export interface Enemy {
   baseAttacks: EnemyAttack[];
   logic?: EnemyLogic;
   abilities?: EnemyAbility[];
-  variations?: EnemyVariation[]; // Added to hold variations
+  variations?: EnemyVariation[]; 
 }
 
 export interface ActiveEnemy extends Enemy {
   instanceId: string;
-  currentHp: number;
-  currentSanity?: number;
-  selectedVariationName?: string; // To know which variation is active
+  effectiveStats: EnemyStatBlock; // Holds base + variation mods
+  currentHp: number; // Tracks damage against effectiveStats.hp
+  currentSanity?: number; // Tracks loss against effectiveStats.san
+  selectedVariationName?: string;
 }

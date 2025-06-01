@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
-import type { Enemy, ActiveEnemy } from '@/types/mission';
+import { useState, useEffect, useCallback } from 'react';
+import type { Enemy, ActiveEnemy, EnemyStatBlock, StatModifier, StatModifierName, EnemyVariation } from '@/types/mission';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,11 +11,52 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Map, ShieldAlert, UserPlus, UserMinus, Trash2, PlayCircle, Crosshair, Zap, Brain, Heart } from 'lucide-react';
+import { Map, ShieldAlert, UserPlus, UserMinus, Trash2, PlayCircle, Crosshair, Zap, Brain, Heart, SlidersHorizontal } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+
 
 interface MissionTrackerUIProps {
   initialEnemies: Enemy[];
 }
+
+// Helper function to apply stat modifiers
+function applyStatModifiers(baseStats: EnemyStatBlock, modifiers: StatModifier[]): EnemyStatBlock {
+  const newStats = JSON.parse(JSON.stringify(baseStats)); // Deep clone
+
+  modifiers.forEach(mod => {
+    switch (mod.stat) {
+      case 'HP':
+      case 'MaxHP':
+        newStats.hp = (newStats.hp || 0) + mod.value;
+        break;
+      case 'MV':
+        newStats.mv = (newStats.mv || 0) + mod.value;
+        break;
+      case 'Def':
+        newStats.def = (newStats.def || 0) + mod.value;
+        break;
+      case 'San':
+      case 'MaxSanity':
+        newStats.san = (newStats.san || 0) + mod.value;
+        break;
+      case 'MeleeAttackBonus':
+        newStats.meleeAttackBonus = (newStats.meleeAttackBonus || 0) + mod.value;
+        break;
+      case 'RangedAttackBonus':
+        newStats.rangedAttackBonus = (newStats.rangedAttackBonus || 0) + mod.value;
+        break;
+    }
+    // Ensure stats don't go below a reasonable minimum
+    if (newStats.hp !== undefined) newStats.hp = Math.max(1, newStats.hp);
+    if (newStats.mv !== undefined) newStats.mv = Math.max(0, newStats.mv);
+    if (newStats.def !== undefined) newStats.def = Math.max(0, newStats.def);
+    // Max Sanity could be 0 if enemy has none. currentSanity tracking will also need this in mind.
+    if (newStats.san !== undefined) newStats.san = Math.max(0, newStats.san); 
+  });
+  return newStats;
+}
+
 
 export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
   const [enemiesList, setEnemiesList] = useState<Enemy[]>(initialEnemies);
@@ -38,35 +79,39 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
       return;
     }
 
+    const effectiveStats = JSON.parse(JSON.stringify(enemyTemplate.baseStats)); // Start with base
+
     const newActiveEnemy: ActiveEnemy = {
-      ...enemyTemplate,
+      ...enemyTemplate, // Spread template first
       instanceId: `${enemyTemplate.id}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      currentHp: enemyTemplate.baseStats.hp || 10, // Default to 10 if HP undefined
-      currentSanity: enemyTemplate.baseStats.san, // Optional for now
+      effectiveStats: effectiveStats,
+      currentHp: effectiveStats.hp || 10,
+      currentSanity: effectiveStats.san, // Initialize currentSanity from effectiveStats
+      selectedVariationName: undefined, // No variation selected initially
     };
 
     setActiveEnemies(prev => [...prev, newActiveEnemy]);
     toast({ title: "Enemy Added", description: `${enemyTemplate.name} added to the encounter.` });
-    setSelectedEnemyIdToAdd(undefined); // Reset selection
+    setSelectedEnemyIdToAdd(undefined); 
   };
 
   const handleEnemyStatChange = (instanceId: string, stat: 'hp' | 'san', delta: number) => {
-    setActiveEnemies(prev => prev.map(enemy => {
+    setActiveEnemies(prevActiveEnemies => prevActiveEnemies.map(enemy => {
       if (enemy.instanceId === instanceId) {
+        let newStatValue;
+        let maxStatValue;
+
         if (stat === 'hp') {
-          const maxHp = enemy.baseStats.hp || 0; // Max HP from the template
-          const currentHp = enemy.currentHp || 0; // Current tracked HP
-          const newHp = Math.min(Math.max(0, currentHp + delta), maxHp);
-          return { ...enemy, currentHp: newHp };
+          newStatValue = (enemy.currentHp || 0) + delta;
+          maxStatValue = enemy.effectiveStats.hp || 0;
+          newStatValue = Math.min(Math.max(0, newStatValue), maxStatValue);
+          return { ...enemy, currentHp: newStatValue };
+        } else if (stat === 'san' && enemy.effectiveStats.san !== undefined) {
+          newStatValue = (enemy.currentSanity || 0) + delta;
+          maxStatValue = enemy.effectiveStats.san || 0; // Default to 0 if undefined
+          newStatValue = Math.min(Math.max(0, newStatValue), maxStatValue);
+          return { ...enemy, currentSanity: newStatValue };
         }
-        // Add sanity handling if/when needed
-        // For example:
-        // if (stat === 'san' && enemy.baseStats.san !== undefined) {
-        //   const maxSan = enemy.baseStats.san || 0;
-        //   const currentSan = enemy.currentSanity || 0;
-        //   const newSan = Math.min(Math.max(0, currentSan + delta), maxSan);
-        //   return { ...enemy, currentSanity: newSan };
-        // }
       }
       return enemy;
     }));
@@ -79,16 +124,74 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
         toast({ title: "Enemy Removed", description: `${enemyToRemove.name} removed from encounter.`, variant: "destructive" });
     }
   };
+
+  const handleVariationChange = (instanceId: string, variationName: string | undefined) => {
+    setActiveEnemies(prevActiveEnemies => prevActiveEnemies.map(enemy => {
+      if (enemy.instanceId === instanceId) {
+        const originalTemplate = enemiesList.find(e => e.id === enemy.id);
+        if (!originalTemplate) return enemy; // Should not happen
+
+        let newEffectiveStats = JSON.parse(JSON.stringify(originalTemplate.baseStats));
+        let selectedVariation: EnemyVariation | undefined = undefined;
+
+        if (variationName && variationName !== "Base") {
+          selectedVariation = originalTemplate.variations?.find(v => v.name === variationName);
+          if (selectedVariation) {
+            newEffectiveStats = applyStatModifiers(newEffectiveStats, selectedVariation.statChanges);
+          }
+        }
+        
+        // Reset current HP and Sanity to the new maximums from effectiveStats
+        const newCurrentHp = newEffectiveStats.hp || 0;
+        const newCurrentSanity = newEffectiveStats.san; // Can be undefined if enemy has no sanity
+
+        return { 
+          ...enemy, 
+          selectedVariationName: variationName === "Base" ? undefined : variationName, 
+          effectiveStats: newEffectiveStats,
+          currentHp: newCurrentHp,
+          currentSanity: newCurrentSanity
+        };
+      }
+      return enemy;
+    }));
+    
+    const enemyName = activeEnemies.find(e => e.instanceId === instanceId)?.name;
+    toast({
+        title: "Variation Changed",
+        description: `${enemyName || 'Enemy'}'s variation set to ${variationName || 'Base'}. Stats updated.`,
+      });
+  };
   
-  if (initialEnemies.length === 0 && !initialEnemies.find(e => e.id === 'parser-error-indicator')) {
-     // Check if it's not the specific error indicator from a failed parse
+  const getStatProgressColorClass = (current: number | undefined, max: number | undefined, type: 'hp' | 'san'): string => {
+    if (current === undefined || current === null || max === undefined || max === null || max === 0) {
+      return '[&>div]:bg-gray-400'; // Default color if stats are undefined
+    }
+    const percentage = (current / max) * 100;
+    if (type === 'hp') {
+        if (percentage <= 33) return '[&>div]:bg-red-500';
+        if (percentage <= 66) return '[&>div]:bg-yellow-500';
+        return '[&>div]:bg-green-500';
+    }
+    if (type === 'san') { // Example: Sanity might use blue tones
+        if (percentage <= 33) return '[&>div]:bg-red-600'; // Low sanity more critical red
+        if (percentage <= 66) return '[&>div]:bg-indigo-400';
+        return '[&>div]:bg-blue-500';
+    }
+    return '[&>div]:bg-primary'; // Fallback
+  };
+
+
+  if (initialEnemies.length === 0 || (initialEnemies.length === 1 && initialEnemies[0].id === 'parser-error-indicator')) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Mission Tracker Error</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-destructive">Failed to load enemy data from the Horror Journal. Please check the file and server logs.</p>
+                <p className="text-destructive">
+                    {initialEnemies[0]?.baseAttacks[0]?.details || "Failed to load enemy data from the Horror Journal. Please check the file and server logs."}
+                </p>
             </CardContent>
         </Card>
     );
@@ -97,7 +200,6 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-      {/* Mission Setup & Enemy Selection */}
       <Card className="lg:col-span-1 shadow-xl">
         <CardHeader>
           <div className="flex items-center">
@@ -107,14 +209,11 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
           <CardDescription>Configure your mission and add enemies to the encounter.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Placeholder for Hunt Selection / Mission Details */}
           <div className="p-4 border rounded-md bg-muted/30">
             <h4 className="font-semibold text-lg mb-2">Current Hunt/Objective</h4>
             <p className="text-sm text-muted-foreground"> (Hunt selection and objective tracking will be added here.)</p>
           </div>
-          
           <Separator />
-
           <div>
             <Label htmlFor="enemy-select" className="text-md font-medium">Add Enemy to Encounter</Label>
             <div className="flex items-center gap-2 mt-1">
@@ -138,7 +237,6 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
         </CardContent>
       </Card>
 
-      {/* Active Encounter Section */}
       <Card className="lg:col-span-2 shadow-xl">
         <CardHeader>
            <div className="flex items-center">
@@ -157,7 +255,7 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
                   <Card key={enemy.instanceId} className="bg-card/50 border-border relative group">
                     <CardHeader className="pb-2 pt-3 px-3">
                       <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg text-primary">{enemy.name}</CardTitle>
+                        <CardTitle className="text-lg text-primary">{enemy.name} {enemy.selectedVariationName && `(${enemy.selectedVariationName})`}</CardTitle>
                         <Button 
                             variant="ghost" 
                             size="icon" 
@@ -171,38 +269,88 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
                         CP: {enemy.cp || 'N/A'} | Template: {enemy.template || 'N/A'}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="px-3 pb-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor={`hp-${enemy.instanceId}`} className="flex items-center text-sm">
-                            <Heart className="mr-1.5 h-4 w-4 text-red-500" /> HP:
-                        </Label>
-                        <div className="flex items-center gap-1">
-                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleEnemyStatChange(enemy.instanceId, 'hp', -1)}><UserMinus className="h-3 w-3" /></Button>
-                          <Input id={`hp-${enemy.instanceId}`} type="number" value={enemy.currentHp} readOnly className="w-12 h-6 text-center text-sm" />
-                           <span className="text-sm text-muted-foreground">/ {enemy.baseStats.hp || 'N/A'}</span>
-                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleEnemyStatChange(enemy.instanceId, 'hp', 1)}><UserPlus className="h-3 w-3" /></Button>
+                    <CardContent className="px-3 pb-3 space-y-3">
+                      {enemy.variations && enemy.variations.length > 0 && (
+                        <div className="mt-1">
+                          <Label htmlFor={`variation-select-${enemy.instanceId}`} className="text-xs text-muted-foreground">Variation:</Label>
+                          <Select
+                            value={enemy.selectedVariationName || "Base"}
+                            onValueChange={(value) => handleVariationChange(enemy.instanceId, value === "Base" ? undefined : value)}
+                          >
+                            <SelectTrigger id={`variation-select-${enemy.instanceId}`} className="h-8 text-xs">
+                              <SelectValue placeholder="Select Variation..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Base">Base</SelectItem>
+                              {enemy.variations.map(v => (
+                                <SelectItem key={v.name} value={v.name}>{v.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
+                      )}
+
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={`hp-${enemy.instanceId}`} className="flex items-center text-sm">
+                              <Heart className="mr-1.5 h-4 w-4 text-red-500" /> HP:
+                          </Label>
+                          <div className="flex items-center gap-1">
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleEnemyStatChange(enemy.instanceId, 'hp', -1)}><UserMinus className="h-3 w-3" /></Button>
+                            <Input id={`hp-${enemy.instanceId}`} type="number" value={enemy.currentHp} readOnly className="w-12 h-6 text-center text-sm" />
+                            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleEnemyStatChange(enemy.instanceId, 'hp', 1)}><UserPlus className="h-3 w-3" /></Button>
+                          </div>
+                        </div>
+                        <Progress value={(enemy.currentHp / (enemy.effectiveStats.hp || 1)) * 100} className={cn("h-1.5 mt-1", getStatProgressColorClass(enemy.currentHp, enemy.effectiveStats.hp, 'hp'))} />
+                        <p className="text-xs text-muted-foreground text-right mt-0.5">{enemy.currentHp} / {enemy.effectiveStats.hp || 'N/A'}</p>
                       </div>
-                      {/* Basic Stats Display */}
-                      <div className="grid grid-cols-3 gap-x-2 text-xs border-t pt-2 mt-2">
-                        <p><Zap className="inline h-3 w-3 mr-1 text-yellow-400"/>MV: {enemy.baseStats.mv || 'N/A'}</p>
-                        <p><ShieldAlert className="inline h-3 w-3 mr-1 text-gray-400"/>DEF: {enemy.baseStats.def || 'N/A'}</p>
-                        {enemy.baseStats.san !== undefined && <p><Brain className="inline h-3 w-3 mr-1 text-blue-400"/>SAN: {enemy.baseStats.san}</p>}
+                      
+                      {enemy.effectiveStats.san !== undefined && (
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor={`san-${enemy.instanceId}`} className="flex items-center text-sm">
+                                <Brain className="mr-1.5 h-4 w-4 text-blue-400" /> Sanity:
+                            </Label>
+                             <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleEnemyStatChange(enemy.instanceId, 'san', -1)}><UserMinus className="h-3 w-3" /></Button>
+                                <Input id={`san-${enemy.instanceId}`} type="number" value={enemy.currentSanity ?? enemy.effectiveStats.san ?? ''} readOnly className="w-12 h-6 text-center text-sm" />
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleEnemyStatChange(enemy.instanceId, 'san', 1)}><UserPlus className="h-3 w-3" /></Button>
+                             </div>
+                          </div>
+                          <Progress value={((enemy.currentSanity ?? enemy.effectiveStats.san ?? 0) / (enemy.effectiveStats.san || 1)) * 100} className={cn("h-1.5 mt-1", getStatProgressColorClass(enemy.currentSanity ?? enemy.effectiveStats.san, enemy.effectiveStats.san, 'san'))} />
+                          <p className="text-xs text-muted-foreground text-right mt-0.5">
+                            {enemy.currentSanity ?? enemy.effectiveStats.san ?? 'N/A'} / {enemy.effectiveStats.san ?? 'N/A'}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs border-t pt-2 mt-2">
+                        <p><Zap className="inline h-3 w-3 mr-1 text-yellow-400"/>MV: {enemy.effectiveStats.mv ?? 'N/A'}</p>
+                        <p><ShieldAlert className="inline h-3 w-3 mr-1 text-gray-400"/>DEF: {enemy.effectiveStats.def ?? 'N/A'}</p>
                       </div>
-                      {enemy.baseStats.armor && (
+
+                      {enemy.effectiveStats.armor && (
                         <div className="text-xs border-t pt-2 mt-2">
-                            <p className="font-medium">Armor: {enemy.baseStats.armor.name}</p>
-                            <p className="text-muted-foreground">Effect: {enemy.baseStats.armor.effect}</p>
+                            <p className="font-medium">Armor: {enemy.effectiveStats.armor.name}</p>
+                            <p className="text-muted-foreground">Effect: {enemy.effectiveStats.armor.effect}</p>
                         </div>
                       )}
                        {enemy.baseAttacks.length > 0 && (
                         <div className="text-xs border-t pt-2 mt-2">
                             <p className="font-medium">Base Attacks:</p>
-                            {enemy.baseAttacks.map((atk, idx) => (
+                            {enemy.baseAttacks.map((atk, idx) => {
+                                let attackDetails = atk.details;
+                                if (atk.type.toLowerCase().includes('melee') && enemy.effectiveStats.meleeAttackBonus) {
+                                    attackDetails += ` (${enemy.effectiveStats.meleeAttackBonus > 0 ? '+' : ''}${enemy.effectiveStats.meleeAttackBonus} ATK)`;
+                                } else if (atk.type.toLowerCase().includes('range') && enemy.effectiveStats.rangedAttackBonus) {
+                                    attackDetails += ` (${enemy.effectiveStats.rangedAttackBonus > 0 ? '+' : ''}${enemy.effectiveStats.rangedAttackBonus} ATK)`;
+                                }
+                                return (
                                 <p key={idx} className="text-muted-foreground">
-                                    <Crosshair className="inline h-3 w-3 mr-1 text-green-400"/> {atk.type}: {atk.details}
+                                    <Crosshair className="inline h-3 w-3 mr-1 text-green-400"/> {atk.type}: {attackDetails}
                                 </p>
-                            ))}
+                                );
+                            })}
                         </div>
                        )}
                        {enemy.logic && (
@@ -210,7 +358,6 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
                             <p className="font-medium">Logic: <span className="text-muted-foreground">{enemy.logic.condition}</span></p>
                         </div>
                        )}
-                       {/* Placeholder for detailed abilities view button */}
                     </CardContent>
                   </Card>
                 ))}
@@ -219,12 +366,6 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
           )}
         </CardContent>
       </Card>
-
-       {/* Placeholder for Card Decks / Game State Section */}
-       {/* <Card className="lg:col-span-3 shadow-xl">
-            <CardHeader><CardTitle>Game State & Card Decks</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">(Card deck interactions and global game state will be managed here.)</p></CardContent>
-       </Card> */}
     </div>
   );
 }
