@@ -47,27 +47,13 @@ const normalizeKey = (text: string): string => {
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 };
 
-const shopSectionTitlesToIgnore = [
-  "defense-gear-shop", "melee-weapons", "melee-weapon-shop", "melee-weapon-shop-continued",
-  "range-weapons", "range-weapon-shop", "range-weapon-shop-continued",
-  "upgrades", "augment-shop", "utility-shop", "consumable-shop", "relics",
-  "loot-table", "mystery-table", "dybbuk-boxes",
-  "ammunition", "bombs", "traps", "healing-items", "battery-items", "miscellaneous-items",
-  "bleed-threshold-table", "you-are-hunted-table", "maniac-table", "tenebrae-resurrection-table",
-  "bounty-trait-1-table", "bounty-trait-2-table", "rare-bounty-trait-3-table", "pet-rank-table",
-  "renown", "infamy", "order-1d6", "chaos-1d6", "ghoul-table", "killer-plants",
-  "drowned-ones", "giant-insects", "possessed-objects", "skirmish-mode-pvp", "skirmish-mode-with-enemy-units",
-  "example-armor-types", "weapon-class-special-ability", "gear-and-equipment", "equipment-slots", "gear-shop", "categories",
-  "hunter-armor", "enemy-armor", "damage-resolution-steps", "starting-arsenals-listed-below-at-level-1", "leveling-up-starting-arsenals",
-  "the-horror-journal", "sample-stat-block", "enemy-targeting-and-movement",
-  "what-is-skirmish-mode", "tcp", "forge-map", "select-characters", "set-battle-order", "character-deployment", "battle-for-victory",
-  "skirmish-mode-round-order", "welcome-to-your-first-hunt-the-chupacabra", "setup-estimated-time-5-minutes", "select-hunters", "starting-gear", "map-tokens", "light-setting", "cards-needed", "objectives", "round-walkthrough-what-to-do", "initiative-phase", "hunter-round", "enemy-round", "clash-card", "tips-for-first-time-players"
-].map(title => normalizeKey(title));
+// shopSectionTitlesToIgnore is removed for now, as it was based on the structure file.
+// We can re-add filtering later if needed, based on actual headings from the main rulebook.
+// const shopSectionTitlesToIgnore = [ ... ].map(title => normalizeKey(title));
 
 
 const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[] => {
   if (!text) return [];
-  // Enhanced regex to also capture standalone image links properly
   const segments = text.split(/(\*\*.*?\*\*|_.*?_|\*.*?\*|`.*?`|!\[.*?\]\(.*?\)|\[.*?\]\(.*?\))/g).filter(Boolean);
   
   return segments.map((segment, index) => {
@@ -81,7 +67,7 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
     if (segment.startsWith('`') && segment.endsWith('`')) {
       return <code key={currentKey} className="bg-muted px-1 py-0.5 rounded text-sm">{segment.substring(1, segment.length - 1)}</code>;
     }
-    const imageMatch = segment.match(/^!\[(.*?)\]\((.*?)\)$/); // Match only if segment IS an image
+    const imageMatch = segment.match(/^!\[(.*?)\]\((.*?)\)$/);
     if (imageMatch) {
       return (
         <span key={currentKey} className="block my-2 text-center">
@@ -100,7 +86,6 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
     if (linkMatch) {
       return <a href={linkMatch[2]} key={currentKey} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{linkMatch[1]}</a>;
     }
-    // Split by newline for <br /> tags, then process each line
     return segment.split('\n').map((line, lineIdx) => (
       <React.Fragment key={`${currentKey}-line-${lineIdx}`}>
         {lineIdx > 0 && <br />}
@@ -110,169 +95,131 @@ const parseInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode[]
   });
 };
 
-
-const buildMainRulebookLookup = (markdown: string): Map<string, string[]> => {
-  const lookup = new Map<string, string[]>();
-  if (!markdown) return lookup;
+const parseMainRulebookToSections = (markdown: string): Section[] => {
+  const sections: Section[] = [];
+  if (!markdown) return sections;
 
   const lines = markdown.split('\n');
-  let currentKey: string | null = null;
-  let currentContentLines: string[] = [];
-
-  for (const line of lines) {
-    const headingMatch = line.match(/^(#{1,6})\s+(.*)/);
-    if (headingMatch) {
-      if (currentKey && currentContentLines.length > 0) {
-        lookup.set(currentKey, [...currentContentLines]);
-      }
-      currentKey = normalizeKey(headingMatch[2].trim());
-      currentContentLines = []; 
-    } else if (currentKey) {
-      currentContentLines.push(line);
-    }
-  }
-  if (currentKey && currentContentLines.length > 0) {
-    lookup.set(currentKey, currentContentLines);
-  }
-  return lookup;
-};
-
-
-const parseStructureAndMergeContent = (
-  structureMarkdown: string,
-  mainRulebookLookup: Map<string, string[]>
-): Section[] => {
-  const sections: Section[] = [];
-  if (!structureMarkdown) return sections;
-
-  const lines = structureMarkdown.split('\n');
   let currentH2Section: Section | null = null;
+  let currentContentBuffer: string[] = [];
   keyCounter = 0;
 
-  const addContentFromMainRulebook = (originalHeading: string, section: Section) => {
-    const normalizedLookupKey = normalizeKey(originalHeading);
-    
-    if (shopSectionTitlesToIgnore.includes(normalizedLookupKey)) {
+  const flushContentBuffer = (section: Section | null) => {
+    if (!section || currentContentBuffer.length === 0) {
+      currentContentBuffer = [];
       return;
     }
 
-    const contentLines = mainRulebookLookup.get(normalizedLookupKey);
+    let paragraphBuffer: string[] = [];
+    let listBuffer: { type: 'ul' | 'ol'; items: React.ReactNode[][] } | null = null;
+    let inList = false;
 
-    if (contentLines && contentLines.length > 0) {
-      let paragraphBuffer: string[] = [];
-      let listBuffer: { type: 'ul' | 'ol'; items: React.ReactNode[][] } | null = null;
-      let inList = false;
-
-      const flushParagraph = () => {
-        if (paragraphBuffer.length > 0) {
-          const text = paragraphBuffer.join('\n').trim();
-          if (text) {
-            section.contentNodes.push({
-              type: 'p',
-              content: parseInlineMarkdown(text, generateNodeKey(`p-main-${section.id}`)),
-              key: generateNodeKey(`p-key-main-${section.id}`),
-            });
-          }
-          paragraphBuffer = [];
-        }
-      };
-
-      const flushList = () => {
-        if (listBuffer) {
+    const flushParagraph = () => {
+      if (paragraphBuffer.length > 0) {
+        const text = paragraphBuffer.join('\n').trim();
+        if (text) {
           section.contentNodes.push({
-            type: listBuffer.type,
-            items: [...listBuffer.items],
-            key: generateNodeKey(`list-main-${listBuffer.type}-${section.id}`),
+            type: 'p',
+            content: parseInlineMarkdown(text, generateNodeKey(`p-main-${section.id}`)),
+            key: generateNodeKey(`p-key-main-${section.id}`),
           });
         }
-        listBuffer = null;
-        inList = false;
-      };
-      
-      contentLines.forEach(line => {
-        const trimmedLine = line.trim();
-        const ulMatch = trimmedLine.match(/^[\-\*]\s+(.*)/);
-        const olMatch = trimmedLine.match(/^\d+\.\s+(.*)/);
-        const imgMatch = trimmedLine.match(/^!\[(.*?)\]\((.*?)\)/);
+        paragraphBuffer = [];
+      }
+    };
 
-        if (imgMatch) {
-          flushParagraph(); flushList();
-          section.contentNodes.push({
-            type: 'img',
-            src: imgMatch[2],
-            alt: imgMatch[1] || 'Rulebook image from main',
-            key: generateNodeKey(`img-main-${section.id}`),
-          });
-        } else if (ulMatch || olMatch) {
-          flushParagraph(); // End current paragraph before starting/continuing a list
-          const itemText = ulMatch ? ulMatch[1] : (olMatch ? olMatch[1] : '');
-          const currentListType = ulMatch ? 'ul' : 'ol';
-          if (!listBuffer || listBuffer.type !== currentListType) {
-            flushList(); // Flush if switching list types or starting new list
-            listBuffer = { type: currentListType, items: [] };
-            inList = true;
-          }
-          listBuffer.items.push(parseInlineMarkdown(itemText, generateNodeKey(`li-main-${section.id}`)));
-        } else if (trimmedLine === '') { // Empty line signifies a paragraph break
-          flushParagraph();
-          if (inList) flushList(); // If empty line appears in a list, it's likely the end of that list
-        } else { // Non-empty, non-list, non-image line
-          if (inList) flushList(); // If we were in a list and now get a normal text line, list is over
-          paragraphBuffer.push(line);
-        }
-      });
-      flushParagraph();
-      flushList();
-    } else {
-        const debugKeyNotFound = !mainRulebookLookup.has(normalizedLookupKey);
-        const debugMessage = debugKeyNotFound
-            ? `_Debug: Key "${normalizedLookupKey}" (from "${originalHeading}") not found in main rulebook lookup._`
-            : `_No detailed content found for "${originalHeading}" in the main rulebook (content was empty)._`;
-
+    const flushList = () => {
+      if (listBuffer) {
         section.contentNodes.push({
-          type: 'p',
-          content: parseInlineMarkdown(debugMessage, generateNodeKey(`p-debug-${section.id}`)),
-          key: generateNodeKey(`p-key-debug-${section.id}`),
+          type: listBuffer.type,
+          items: [...listBuffer.items],
+          key: generateNodeKey(`list-main-${listBuffer.type}-${section.id}`),
         });
-    }
+      }
+      listBuffer = null;
+      inList = false;
+    };
+
+    currentContentBuffer.forEach(line => {
+      const trimmedLine = line.trim();
+      const ulMatch = trimmedLine.match(/^[\-\*]\s+(.*)/);
+      const olMatch = trimmedLine.match(/^\d+\.\s+(.*)/);
+      const imgMatch = trimmedLine.match(/^!\[(.*?)\]\((.*?)\)/);
+      const h3Match = trimmedLine.match(/^###\s+(.*)/); // Check for H3s within content
+
+      if (h3Match) {
+        flushParagraph(); flushList();
+        section.contentNodes.push({
+          type: 'h3',
+          content: parseInlineMarkdown(h3Match[1].trim(), generateNodeKey(`h3-content-${section.id}`)),
+          key: generateNodeKey(`h3-key-content-${section.id}`),
+        });
+      } else if (imgMatch) {
+        flushParagraph(); flushList();
+        section.contentNodes.push({
+          type: 'img',
+          src: imgMatch[2],
+          alt: imgMatch[1] || 'Rulebook image from main',
+          key: generateNodeKey(`img-main-${section.id}`),
+        });
+      } else if (ulMatch || olMatch) {
+        flushParagraph();
+        const itemText = ulMatch ? ulMatch[1] : (olMatch ? olMatch[1] : '');
+        const currentListType = ulMatch ? 'ul' : 'ol';
+        if (!listBuffer || listBuffer.type !== currentListType) {
+          flushList();
+          listBuffer = { type: currentListType, items: [] };
+          inList = true;
+        }
+        listBuffer.items.push(parseInlineMarkdown(itemText, generateNodeKey(`li-main-${section.id}`)));
+      } else if (trimmedLine === '') {
+        flushParagraph();
+        if (inList) flushList();
+      } else {
+        if (inList) flushList();
+        paragraphBuffer.push(line);
+      }
+    });
+    flushParagraph();
+    flushList();
+    currentContentBuffer = [];
   };
 
   for (const line of lines) {
-    const trimmedLine = line.trim();
-    const h2Match = trimmedLine.match(/^##\s+(.*)/);
-    const h3Match = trimmedLine.match(/^###\s+(.*)/);
+    const h2Match = line.match(/^##\s+(.*)/);
+    const h3Match = line.match(/^###\s+(.*)/); // Also detect H3s at top level if any section isn't active
 
     if (h2Match) {
-      if (currentH2Section) sections.push(currentH2Section);
-      const title = h2Match[1].trim();
-      const normalizedTitleKey = normalizeKey(title);
-      if (shopSectionTitlesToIgnore.includes(normalizedTitleKey)) {
-        currentH2Section = null; continue;
+      if (currentH2Section) {
+        flushContentBuffer(currentH2Section);
+        sections.push(currentH2Section);
       }
+      const title = h2Match[1].trim();
+      // Removed shopSectionTitlesToIgnore check for now
       currentH2Section = {
-        id: generateNodeKey(`section-h2-${normalizedTitleKey}`),
+        id: generateNodeKey(`section-h2-${normalizeKey(title)}`),
         title: title,
         contentNodes: [],
       };
-      addContentFromMainRulebook(title, currentH2Section);
     } else if (h3Match && currentH2Section) {
-      const title = h3Match[1].trim();
-      const normalizedTitleKey = normalizeKey(title);
-      if (shopSectionTitlesToIgnore.includes(normalizedTitleKey)) continue;
-      currentH2Section.contentNodes.push({
-        type: 'h3',
-        content: parseInlineMarkdown(title, generateNodeKey(`h3-title-${currentH2Section.id}`)),
-        key: generateNodeKey(`h3-key-${currentH2Section.id}`),
-      });
-      addContentFromMainRulebook(title, currentH2Section);
-    } 
-    // List items from the structure file are no longer rendered independently here,
-    // as their content is expected to be pulled from the main rulebook via H2/H3 lookups.
+        flushContentBuffer(currentH2Section); // Flush previous content before adding H3
+        currentH2Section.contentNodes.push({
+          type: 'h3',
+          content: parseInlineMarkdown(h3Match[1].trim(), generateNodeKey(`h3-title-${currentH2Section.id}`)),
+          key: generateNodeKey(`h3-key-title-${currentH2Section.id}`),
+        });
+    } else if (currentH2Section) {
+      currentContentBuffer.push(line);
+    }
   }
-  if (currentH2Section) sections.push(currentH2Section);
 
+  if (currentH2Section) {
+    flushContentBuffer(currentH2Section);
+    sections.push(currentH2Section);
+  }
   return sections;
 };
+
 
 const renderSectionNode = (node: SectionNode): React.ReactNode => {
   switch (node.type) {
@@ -308,48 +255,31 @@ const renderSectionNode = (node: SectionNode): React.ReactNode => {
 };
 
 export default async function HowToPlayPage() {
-  let structureFileContent = "";
   let mainRulebookFileContent = "";
   let sections: Section[] = [];
   let errorMessage: string | null = null;
-  let mainRulebookLookup = new Map<string, string[]>();
   
   try {
-    const structureFilePath = path.join(process.cwd(), 'docs', 'RoTB_Rulebook_Dropdown_Structure.md');
-    structureFileContent = await fs.readFile(structureFilePath, 'utf8');
-    
     const mainRulebookFilePath = path.join(process.cwd(), 'docs', 'Riddle_of_the_Beast_Rulebook.md');
     mainRulebookFileContent = await fs.readFile(mainRulebookFilePath, 'utf8');
 
   } catch (error: any) {
-    console.error("Failed to read rulebook files for How to Play:", error);
+    console.error("Failed to read main rulebook file for How to Play:", error);
     sections = [];
     if (error.code === 'ENOENT') {
-        errorMessage = `Error: A rulebook file was not found. Please check the 'docs' directory. Missing: ${error.path.includes('RoTB_Rulebook_Dropdown_Structure.md') ? 'RoTB_Rulebook_Dropdown_Structure.md' : (error.path.includes('Riddle_of_the_Beast_Rulebook.md') ? 'Riddle_of_the_Beast_Rulebook.md' : 'Unknown File')}.`;
+        errorMessage = `Error: The main rulebook file (Riddle_of_the_Beast_Rulebook.md) was not found in the 'docs' directory.`;
     } else {
         errorMessage = `Error loading or processing game rules: ${error.message}. Please check the server logs.`;
     }
   }
 
   if (!errorMessage) {
-    if (!structureFileContent.trim()) {
-      errorMessage = "Error: The rulebook structure file (RoTB_Rulebook_Dropdown_Structure.md) is empty.";
-    } else if (!mainRulebookFileContent.trim()) {
+    if (!mainRulebookFileContent.trim()) {
       errorMessage = "Error: The main rulebook content file (Riddle_of_the_Beast_Rulebook.md) is empty.";
     } else {
-      mainRulebookLookup = buildMainRulebookLookup(mainRulebookFileContent);
-      if (mainRulebookLookup.size === 0 && mainRulebookFileContent.includes("##")) {
-        errorMessage = "Error: Could not parse any headings from the main rulebook content file (Riddle_of_the_Beast_Rulebook.md), though it seems to contain Markdown headings. Check heading format (e.g., ## Heading) and parser logic.";
-      } else if (mainRulebookLookup.size === 0 && !mainRulebookFileContent.includes("##")) {
-         errorMessage = "Warning: The main rulebook content file (Riddle_of_the_Beast_Rulebook.md) does not appear to contain any recognizable Markdown headings (e.g., ## Heading). Detailed content might be missing.";
-         sections = parseStructureAndMergeContent(structureFileContent, new Map());
-      }
-      
-      if (!errorMessage || errorMessage.startsWith("Warning:")) {
-        sections = parseStructureAndMergeContent(structureFileContent, mainRulebookLookup);
-        if (sections.length === 0 && structureFileContent.trim() && !errorMessage) { 
-          errorMessage = "No displayable sections could be parsed from the rulebook structure file. This might mean all H2 sections were filtered out or the file structure is not as expected (e.g., missing H2s).";
-        }
+      sections = parseMainRulebookToSections(mainRulebookFileContent);
+      if (sections.length === 0) {
+        errorMessage = "Warning: No H2 sections could be parsed from the main rulebook file. The page might appear empty or not structured as expected. Ensure the rulebook uses '## Heading' for main sections.";
       }
     }
   }
@@ -364,7 +294,7 @@ export default async function HowToPlayPage() {
             <CardTitle className="text-4xl font-bold text-primary">How to Play: Riddle of the Beast</CardTitle>
           </div>
           <CardDescription className="text-lg text-muted-foreground">
-            Explore the rules and mechanics of the game, section by section.
+            Explore the rules and mechanics of the game, section by section, directly from the rulebook.
           </CardDescription>
         </CardHeader>
         <CardContent className="py-6 px-4 md:px-8">
@@ -372,8 +302,8 @@ export default async function HowToPlayPage() {
             <p className="text-destructive text-center">{errorMessage}</p>
           ) : errorMessage && errorMessage.startsWith("Warning:") && sections.length === 0 ? (
              <p className="text-yellow-500 text-center">{errorMessage}</p>
-          ) : sections.length === 0 ? (
-             <p className="text-muted-foreground text-center">No rulebook sections to display. The structure file might be empty or incorrectly formatted.</p>
+          ) : sections.length === 0 && !errorMessage ? ( // Handles case where file was read but parsing yielded nothing
+             <p className="text-muted-foreground text-center">No rulebook sections found in the main rulebook file. Ensure it uses '## Heading' for main sections.</p>
           ) : (
             <Accordion type="multiple" className="w-full space-y-3">
               {sections.map((section) => (
@@ -382,13 +312,13 @@ export default async function HowToPlayPage() {
                     {section.title}
                   </AccordionTrigger>
                   <AccordionContent className="px-4 py-3 bg-background/30">
-                    {section.contentNodes.length > 0 ? section.contentNodes.map(renderSectionNode) : <p className="italic text-muted-foreground">_This section is defined in the structure but has no further content specified directly within it, or corresponding content was not found in the main rulebook._</p>}
+                    {section.contentNodes.length > 0 ? section.contentNodes.map(renderSectionNode) : <p className="italic text-muted-foreground">_This section from the rulebook appears to have no detailed content directly under its heading._</p>}
                   </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
           )}
-           {errorMessage && errorMessage.startsWith("Warning:") && sections.length > 0 && (
+           {errorMessage && errorMessage.startsWith("Warning:") && sections.length > 0 && ( // Show warning even if sections were parsed
              <p className="text-yellow-500 text-center mt-4 text-sm">{errorMessage}</p>
            )}
         </CardContent>

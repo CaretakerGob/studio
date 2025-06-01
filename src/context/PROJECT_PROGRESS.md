@@ -6,9 +6,8 @@ DONE:
     - Base stat tracking (HP, Sanity, MV, DEF) with interactive controls.
     - Crypto Tracker: Added persistent crypto tracking (default 0, user adjustable).
     - Bleed Points Tracker: Added persistent bleed points tracking (default 0, user adjustable, with Hemorrhage warning).
-    - Skill display and point-buy system for Custom Characters.
+    - Skill display.
     - Abilities display (Actions, Interrupts, Passives, FREE Actions) with cooldown/quantity trackers.
-    - Custom Character ability purchase system.
     - Weapon display (melee & ranged).
     - Arsenal Card selection and display (including images).
     - Application of global stat modifiers from Arsenal Cards.
@@ -17,8 +16,9 @@ DONE:
     - Dynamic granting of abilities from Arsenal Card items.
     - Companion (Pet) display with interactive stats (HP, Sanity, MV, DEF) and melee attack, derived from Arsenal Card items.
     - Firebase Firestore integration for saving/loading character configurations for logged-in users.
-    - Updated character images for predefined characters.
+    - Updated character images for predefined characters, including `backImageUrl`.
     - Core Stats section mobile layout refined.
+    - "Custom Character" template and specific UI for point-buy/customization removed.
 - Dice Roller:
     - Numbered dice rolling (multiple groups, custom sides).
     - Combat dice rolling (image-based faces).
@@ -64,22 +64,17 @@ DONE:
 - Shared Space Page:
     - Simulated access code UI for joining a session.
 - Hunter's Nexus Page:
-    - Multi-Character Team Display: Main display area shows a grid where each team member has their own card with their image, name, and interactive trackers for HP, Sanity, and Bleed Points. Clicking a character's card header sets them as active.
-    - Active Character Focus: Arsenal selection and detailed modal views operate on the selected active character. "Selected Arsenal" card area below the team grid displays the active character's chosen arsenal images. Active Character Image Display (before team grid) added.
-    - Team Management Dialog: Add/remove characters. "Manage Team" button relocated to the page header.
-    - Session Crypto Tracker: Global for the session.
-    - Character avatar and arsenal card image modals. Enlarged arsenal card modal now supports click/swipe to flip between front and back images.
-    - Modal for active character details (all stats including MV/DEF, weapons, abilities, skills).
-    - Save Nexus Session: Logged-in users can save their current team's state (including all members' stats, arsenals, crypto) to Firestore.
-    - Load/Delete Nexus Session: Functionality added to settings dropdown.
-    - Reset Nexus Session: Functionality added to settings dropdown.
-    - Changed "Party" to "Team" in all user-facing text for Nexus.
+    - Multi-Character Team Display.
+    - Active Character Focus.
+    - Team Management Dialog.
+    - Session Crypto Tracker.
+    - Character avatar and arsenal card image modals with flip & zoom functionality.
+    - Modal for active character details.
+    - Save/Load/Delete/Reset Nexus Session functionality.
 - How to Play Page (`/how-to-play`):
-    - Page now uses `RoTB_Rulebook_Dropdown_Structure.md` for accordion structure.
-    - For each H2/H3 from structure, detailed content (text, lists, images) is pulled from `Riddle_of_the_Beast_Rulebook.md` based on heading matching.
-    - Specified shop and large table sections are omitted.
-    - Added link to sidebar.
-    - Improved parsing and debug messages for content fetching.
+    - Page now derives structure (H2s, H3s) and content (paragraphs, lists, images) solely from `Riddle_of_the_Beast_Rulebook.md`.
+    - `RoTB_Rulebook_Dropdown_Structure.md` is no longer used.
+    - Fixed `normalizeKey` ReferenceError.
 - FAQ Page:
     - Content for App Questions and Board Game Concepts using accordion.
 - Terms of Service Page (`/terms`):
@@ -97,12 +92,10 @@ DONE:
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md` and `docs/Riddle_of_the_Beast_Rulebook.md`.
 - MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob.
-- Corrected filename case sensitivity issue for `RoTB_Rulebook_Dropdown_Structure.md` in `how-to-play/page.tsx`.
 - Numerous bug fixes and UI refinements.
 
 WORKING:
-- Ongoing review and minor clean-up of existing codebase.
-- Refining the "How to Play" page content parsing logic to accurately display detailed text, lists, and images from the main rulebook under the structured headings.
+- Refining the "How to Play" page content parsing logic from `Riddle_of_the_Beast_Rulebook.md` to accurately display all content types (paragraphs, lists, images) under their respective H2/H3 headings.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -127,4 +120,5 @@ NEXT:
       
 
     
+
 

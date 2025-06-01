@@ -24,7 +24,7 @@
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
     - **Google Sheets API:** Used to fetch game data for Events, NPC Generator, Arsenal Cards, and Shop Items via server-side logic in page components. Shop items can be sourced from multiple tabs within the same Google Sheet.
-    - **Local Filesystem (`fs` module):** Used server-side to read rulebook Markdown files for the "How to Play" page. Reads `RoTB_Rulebook_Dropdown_Structure.md` for structure and `Riddle_of_the_Beast_Rulebook.md` for detailed content.
+    - **Local Filesystem (`fs` module):** Used server-side to read `Riddle_of_the_Beast_Rulebook.md` for the "How to Play" page content.
 - **Image Placeholders:** `https://placehold.co` and `https://picsum.photos`. Firebase Storage for character/card images.
 - **Deployment:** Firebase App Hosting (inferred from build logs and setup).
 - **Code Quality:**
@@ -69,14 +69,15 @@
 - (No changes in this update)
 
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
-- (No changes in this update)
+- Character avatar images in the enlarged modal now support flipping between front and back (if `backImageUrl` is defined for the character and different from `imageUrl`) and zooming, similar to arsenal cards.
+- `EnlargedModalContentType` updated for consistency.
+- `openAvatarImageModal` now takes the full character object.
 
 ### 3.14. How to Play (`/how-to-play`)
-- Now uses `RoTB_Rulebook_Dropdown_Structure.md` for accordion structure (H2s as triggers).
-- For each H2 and H3 from the structure file, it attempts to look up the heading in `Riddle_of_the_Beast_Rulebook.md` and pulls in the detailed content (paragraphs, lists, images) under that heading.
-- List items from the structure file are rendered directly.
-- Shop sections and specified tables continue to be omitted.
-- Debug messages added if content lookup fails.
+- Page now derives its entire structure (H2s for accordion triggers, H3s for sub-sections) and content (paragraphs, lists, images) solely from `Riddle_of_the_Beast_Rulebook.md`.
+- The `RoTB_Rulebook_Dropdown_Structure.md` file is no longer read or used for this page.
+- The `shopSectionTitlesToIgnore` list has been removed for now; filtering can be re-added if needed based on actual headings from the main rulebook.
+- Corrected a `ReferenceError` for `normalizeKey` by moving its definition before usage.
 
 ### 3.15. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
 - (No changes in this update)
@@ -94,20 +95,21 @@
 - (No changes in this update)
 
 ## 7. Open Questions / Assumptions
-- The "How to Play" page's content rendering heavily relies on consistent heading normalization and the presence of matching Markdown headings in `Riddle_of_the_Beast_Rulebook.md`.
+- The "How to Play" page's content rendering relies on the structure of `Riddle_of_the_Beast_Rulebook.md` using `##` for main sections and `###` for sub-sections to generate a meaningful accordion.
 
 ## 8. Data Structures of the App
-- (No changes in this update)
+- `Character` type in `src/types/character.ts` now includes an optional `backImageUrl` string property.
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
 - (No changes in this update)
 
 ## 10. Other Important Observations
-- The "How to Play" page's complexity has increased due to the two-file content merging strategy.
-- The parsing of Markdown for the "How to Play" page, especially for lists and multi-paragraph content from the main rulebook, is a delicate process.
+- The "How to Play" page's parsing logic for Markdown from a single file needs to be robust to handle various content types correctly under H2/H3 headings.
+- Character data in `character-sheet-ui.tsx` now includes `backImageUrl` for each character, sourced from `docs/HunterUrl.md`.
 
 This document provides a snapshot of the project's state and context.
     
 
     
+
 

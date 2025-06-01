@@ -1,25 +1,26 @@
 Dark Flame Studios Presents 
 
-Riddle of the Beast        Rulebook 
+Riddle of the Beast       
+Rulebook 
 
 
-Table of Contents
+# Table of Contents #
 
-What to Expect...
+## What to Expect... ##
 
-Welcome to Riddle of the Beast, a world where urban legends, ancient conspiracies, and mythological horrors bleed into the shadows of the modern world. Vampires, werewolves, and unspeakable nightmares stalk the living, protected by the Judas Pact, a secretive alliance of governments, cults, and hidden societies that keeps the truth buried.
+### Welcome to Riddle of the Beast, a world where urban legends, ancient conspiracies, and mythological horrors bleed into the shadows of the modern world. Vampires, werewolves, and unspeakable nightmares stalk the living, protected by the Judas Pact, a secretive alliance of governments, cults, and hidden societies that keeps the truth buried.
 
-But some have seen through the veil.
+### But some have seen through the veil.
 
-You are a Hunter—one of the rare few who can no longer pretend the world is safe. Armed with grit, steel, and occult knowledge, your job is simple: survive the night, destroy the darkness, and reveal the truth behind the Riddle of the Beast.
+### You are a Hunter—one of the rare few who can no longer pretend the world is safe. Armed with grit, steel, and occult knowledge, your job is simple: survive the night, destroy the darkness, and reveal the truth behind the Riddle of the Beast.
 
-This core box introduces players to the brutal world of Riddle of the Beast through Hunts—combat-focused missions where teams of Hunters battle terrifying monsters from the Horror Journal. Hunts are ranked from Bronze to Platinum, escalating in danger, complexity, and lore. From twisted cryptids and dark fey to classic monsters like vampires and werewolves, each Hunt will test your strategy and sanity.
+### This core box introduces players to the brutal world of Riddle of the Beast through Hunts—combat-focused missions where teams of Hunters battle terrifying monsters from the Horror Journal. Hunts are ranked from Bronze to Platinum, escalating in danger, complexity, and lore. From twisted cryptids and dark fey to classic monsters like vampires and werewolves, each Hunt will test your strategy and sanity.
 
-Every Hunter is unique, with customizable gear and skills to suit different play-styles. Choose your team wisely, equip your Arsenal, and prepare for battle.
+### Every Hunter is unique, with customizable gear and skills to suit different play-styles. Choose your team wisely, equip your Arsenal, and prepare for battle.
 
 What’s Included?
 
-This box contains everything you need to enter the dark world of Riddle of the Beast:
+The game box contains everything you need to enter the dark world of Riddle of the Beast:
 
 Rule Book – Complete gameplay instructions, including the Horror Journal with detailed entries for every enemy featured in the Hunts.
 
@@ -39,227 +40,227 @@ Clash Cards – Unpredictable events that help—or hurt—the Hunters.
 
 Arsenal Cards – Weapons and gear used to customize your team.
 
-How to Play
+## How to Play
 
-If you’re eager to jump into the action, follow these quick steps to start a Hunt:
+### If you’re eager to jump into the action, follow these quick steps to start a Hunt:
 
-Understand the Basics: Before battle, review the core rules:
+#### Understand the Basics: Before battle, review the core rules:
 
-Actions and Movement
+#### Actions and Movement
 
-Critical Hits and Perfect Defense
+#### Critical Hits and Perfect Defense
 
-Interrupts and Initiative
+#### Interrupts and Initiative
 
-Combat Cards and Enemy Logic
+#### Combat Cards and Enemy Logic
 
-Choose a Hunt – Select a Hunt
+#### Choose a Hunt – Select a Hunt
 
-Each one lists the enemy targets, difficulty and whether its Day or Night, this effects Clash Cards, Sanity and Enemy Abilities
+#### Each one lists the enemy targets, difficulty and whether its Day or Night, this effects Clash Cards, Sanity and Enemy Abilities
 
-Assemble Your Team:
+### Assemble Your Team:
 
-Choose up to 4 Hunters
+#### Choose up to 4 Hunters
 
-Equip an Arsenal for each Hunter
+#### Equip an Arsenal for each Hunter
 
-Clash and Survive
+#### Clash and Survive
 
-Draw Clash Cards at the start of each Player round for random effects.
+#### Draw Clash Cards at the start of each Player round for random effects.
 
-Use Combat Cards to determine enemy actions.
+#### Use Combat Cards to determine enemy actions.
 
-Defeat the enemies using teamwork, tactics, and well-timed Interrupts.
+#### Defeat the enemies using teamwork, tactics, and well-timed Interrupts.
 
-Victory and Loot
+### Victory and Loot
 
-Defeating all enemies ends the Hunt. Surviving Hunters may earn Crypto, the in-game currency used to upgrade Arsenal Ranks and to purchase new Gear.
+#### Defeating all enemies ends the Hunt. Surviving Hunters may earn Crypto, the in-game currency used to upgrade Arsenal Ranks and to purchase new Gear.
 
-Replay Hunts to test new teams or strategies—or move up the ranks to deadlier threats.
+#### Replay Hunts to test new teams or strategies—or move up the ranks to deadlier threats.
 
-Want some DLC? How about some FREE-LC
+### Want some DLC? How about some FREE-LC
 
-The Riddle of the Beast App unlocks tons of Free Content, such as:
+* The Riddle of the Beast App unlocks tons of Free Content, such as:
 
-Investigation Mode – visit Points of Interest across the map, complete random Events, survive dangerous Ambushes and solve the mystery.
++ Investigation Mode – visit Points of Interest across the map, complete random Events, survive dangerous Ambushes and solve the mystery.
 
-Arsenals and Gear – Become a Sharpshooter, a Monster Hunter or even a Tartarian Tesnician with new unique Arsenals.
++ Arsenals and Gear – Become a Sharpshooter, a Monster Hunter or even a Tartarian Tesnician with new unique Arsenals.
 
-Cameo Hunters – unlock new playable Hunters, from the mysterious God Child, a fate weaving Witch, a master of enemy copying Blood Arts and more!
++ Cameo Hunters – unlock new playable Hunters, from the mysterious God Child, a fate weaving Witch, a master of enemy copying Blood Arts and more!
 
-Hunts
+### Hunts
 
-Hunts are fast-paced, high-stakes missions where Hunters face off against terrifying creatures drawn from the Horror Journal.
+#### Hunts are fast-paced, high-stakes missions where Hunters face off against terrifying creatures drawn from the Horror Journal.
 
-Each Hunt pits your Hunters against enemies ranked from Bronze to Platinum. As you rise through the ranks, enemies grow more deadly, environments more hostile, and survival more uncertain.
+#### Each Hunt pits your Hunters against enemies ranked from Bronze to Platinum. As you rise through the ranks, enemies grow more deadly, environments more hostile, and survival more uncertain.
 
-Starting a Hunt
+#### Starting a Hunt
 
-Choose a Hunt
+#### Choose a Hunt
 
-Use the Hunt Table to select a scenario.
+#### Use the Hunt Table to select a scenario.
 
-Each Hunt lists the Target, Rank, and starting Location.
+#### Each Hunt lists the Target, Rank, and starting Location.
 
-The Hunt also tells you whether it takes place during Day or Night.
+#### The Hunt also tells you whether it takes place during Day or Night.
 
-Build Your Team
+### Build Your Team
 
-Select up to 4 Hunters from the character roster.
+#### Select up to 4 Hunters from the character roster.
 
-Equip each Hunter with a Arsenal 
+#### Equip each Hunter with a Arsenal 
 
-Record each Hunter’s HP and Sanity.
+#### Record each Hunter’s HP and Sanity.
 
-Prepare for Combat
+### Prepare for Combat
 
-Set up the Map and place the Hunters and Target on the Starting Location listed on the Hunt.
+#### Set up the Map and place the Hunters and Target on the Starting Location listed on the Hunt.
 
-Begin Round 1 by drawing a Clash Card, refer to the Light or Dark side based on the Hunt’s Day/Night setting.
+#### Begin Round 1 by drawing a Clash Card, refer to the Light or Dark side based on the Hunt’s Day/Night setting.
 
-Roll for initiative to see whether the Hunters or Target starts the round.
+#### Roll for initiative to see whether the Hunters or Target starts the round.
 
-Victory and Defeat
+### Victory and Defeat
 
-A Hunt ends when all enemies are defeated, or all Hunters are Incapacitated.
+#### A Hunt ends when all enemies are defeated, or all Hunters are Incapacitated.
 
-Surviving the Hunt may reward you with Crypto, currency that can be used to upgrade Arsenal Ranks and purchase new Gear in the Gear shop.
+#### Surviving the Hunt may reward you with Crypto, currency that can be used to upgrade Arsenal Ranks and purchase new Gear in the Gear shop.
 
-Light and Darkness
+### Light and Darkness
 
-In Riddle of the Beast, the balance between Light and Darkness shapes the horrors that emerge and the Hunters' ability to survive them. Whether bathed in sunlight or cloaked in shadow, the environment influences sanity, abilities, and the effectiveness of supernatural forces.
+#### In Riddle of the Beast, the balance between Light and Darkness shapes the horrors that emerge and the Hunters' ability to survive them. Whether bathed in sunlight or cloaked in shadow, the environment influences sanity, abilities, and the effectiveness of supernatural forces.
 
-In Hunt Mode, the scenario itself dictates whether the battle takes place during Day or Night, and that condition remains in effect for the entire Hunt.
+#### In Hunt Mode, the scenario itself dictates whether the battle takes place during Day or Night, and that condition remains in effect for the entire Hunt.
 
-Day
+#### Day
 
-Light Conditions: The world is illuminated, providing safety and reducing risks.
+##### Light Conditions: The world is illuminated, providing safety and reducing risks.
 
-Effects:
+#### Effects:
 
-Hunters do not suffer penalties to Defense or Sanity Checks.
+##### Hunters do not suffer penalties to Defense or Sanity Checks.
 
-Certain enemies, such as Creatures of the Night and Undead, are weakened in Light (refer to Templates for details).
+##### Certain enemies, such as Creatures of the Night and Undead, are weakened in Light (refer to Templates for details).
 
-Night
+#### Night
 
-Dark Conditions: The world is shrouded in darkness, heightening danger and exposing Hunters to greater threats.
+##### Dark Conditions: The world is shrouded in darkness, heightening danger and exposing Hunters to greater threats.
 
-Effects:
+#### Effects:
 
-Defense Penalty: Hunters take -1 to DEFENSE in the Darkness.
+##### Defense Penalty: Hunters take -1 to DEFENSE in the Darkness.
 
-Sanity Checks: All Sanity Rolls are made with -1 during Night.
+#####  Sanity Checks: All Sanity Rolls are made with -1 during Night.
 
-Enemies like Undead and Creatures of the Night gain bonuses in the Dark (see Templates for details).
+##### Enemies like Undead and Creatures of the Night gain bonuses in the Dark (see Templates for details).
 
-Strategic Challenges:
+#### Strategic Challenges:
 
-Use Light Sources strategically to mitigate penalties and create safe zones.
+##### Use Light Sources strategically to mitigate penalties and create safe zones.
 
-Creating Light Sources
+#### Creating Light Sources
 
-Hunters can create Light Sources to counteract the dangers of Night using Abilities such as Flare and Gear. Light Sources illuminate a small radius, providing safety for the Hunters and hindering certain enemies.
+##### Hunters can create Light Sources to counteract the dangers of Night using Abilities such as Flare and Gear. Light Sources illuminate a small radius, providing safety for the Hunters and hindering certain enemies.
 
-Clash Cards
+### Clash Cards
 
-Clash Cards represent the chaotic, shifting nature of the world—introducing sudden events, supernatural twists, or unexpected turns in combat. Each card has two sides: Light and Dark, and the chosen Hunt will determine which side is used.
+#### Clash Cards represent the chaotic, shifting nature of the world—introducing sudden events, supernatural twists, or unexpected turns in combat. Each card has two sides: Light and Dark, and the chosen Hunt will determine which side is used.
 
-Using Clash Cards in a Hunt
+#### Using Clash Cards in a Hunt
 
-At the start of each round, draw 1 Clash Card.
+#### At the start of each round, draw 1 Clash Card.
 
-Apply its effect immediately, or hold it if the card allows.
+#### Apply its effect immediately, or hold it if the card allows.
 
-The Hunt will indicate whether the battle takes place during Day or Night.
+#### The Hunt will indicate whether the battle takes place during Day or Night.
 
-Refer to the appropriate side of the card:
+#### Refer to the appropriate side of the card:
 
-Light Side (Top): Typically beneficial—providing healing, buffs, or protective boons.
+#### Light Side (Top): Typically beneficial—providing healing, buffs, or protective boons.
 
-Dark Side (Bottom): Usually harmful—inflicting Debuffs, hazards, or disruptive effects.
+#### Dark Side (Bottom): Usually harmful—inflicting Debuffs, hazards, or disruptive effects.
 
-No two battles feel the same. Clash Cards force Hunters to adapt, rethink, and survive the unexpected.
+#### No two battles feel the same. Clash Cards force Hunters to adapt, rethink, and survive the unexpected.
 
-Types of Clash Cards
+### Types of Clash Cards
 
-BUFFS - Buff cards offer temporary advantages. Some trigger instantly; others can be held and played later. Cards with the HAND icon may be played once as a FREE ACTION on your turn.
+#### BUFFS - Buff cards offer temporary advantages. Some trigger instantly; others can be held and played later. Cards with the HAND icon may be played once as a FREE ACTION on your turn.
 
-DEBUFFS - Debuffs represent setbacks—traps, misfires, fear effects, or strange occurrences. Unless the card specifies otherwise, the player who drew it chooses which unit suffers the effect.
+#### DEBUFFS - Debuffs represent setbacks—traps, misfires, fear effects, or strange occurrences. Unless the card specifies otherwise, the player who drew it chooses which unit suffers the effect.
 
-SIDE QUESTS – Side quests are special cards that offer additional battle risks but also additional rewards. 
+#### SIDE QUESTS – Side quests are special cards that offer additional battle risks but also additional rewards. 
 
-Sanity and Madness
+### Sanity and Madness
 
-In Riddle of the Beast, violence is only part of the danger. Hunters face horrors that strain the mind as much as the body. Inspired by the spirit of H.P. Lovecraft, this game doesn’t just threaten your health—it challenges your sanity.
+##### In Riddle of the Beast, violence is only part of the danger. Hunters face horrors that strain the mind as much as the body. Inspired by the spirit of H.P. Lovecraft, this game doesn’t just threaten your health—it challenges your sanity.
 
-Sanity
+#### Sanity
 
-Every Hunter has a Sanity score, listed on their Character Card. This represents their mental resilience in the face of trauma, fear, and the supernatural.
+##### Every Hunter has a Sanity score, listed on their Character Card. This represents their mental resilience in the face of trauma, fear, and the supernatural.
 
-Sanity Loss can occur through abilities, events, or Clash Cards.
+##### Sanity Loss can occur through abilities, events, or Clash Cards.
 
-If a Hunter’s Sanity is reduced to 0, they fall into Madness.
+##### If a Hunter’s Sanity is reduced to 0, they fall into Madness.
 
-Sanity Checks
+##### Sanity Checks
 
-Certain effects may require a Sanity Check. To perform a Sanity Check:
+##### Certain effects may require a Sanity Check. To perform a Sanity Check:
 
-Roll 1d6.
+##### Roll 1d6.
 
-If the result is greater than the Hunter’s current Sanity, they lose 1 Sanity.
+##### If the result is greater than the Hunter’s current Sanity, they lose 1 Sanity.
 
-A roll of 6 is always a failure, and a 1 is always a success, regardless of the current score.
+##### A roll of 6 is always a failure, and a 1 is always a success, regardless of the current score.
 
-The lower a Hunter’s Sanity, the more likely they are to fail.
+##### The lower a Hunter’s Sanity, the more likely they are to fail.
 
-Madness
+#### Madness
 
-When a Hunter reaches 0 Sanity, they suffer the following penalties for the rest of the Hunt or Investigation:
+##### When a Hunter reaches 0 Sanity, they suffer the following penalties for the rest of the Hunt or Investigation:
 
-Lose access to their Passive Skill
+##### Lose access to their Passive Skill
 
-Cannot roll Perfect Defense
+##### Cannot roll Perfect Defense
 
-Optional Rule: If using the Riddle of the Beast App, ignore the Madness penalty and draw a Madness Card instead.
+##### Optional Rule: If using the Riddle of the Beast App, ignore the Madness penalty and draw a Madness Card instead.
 
-Enemy Sanity: It may Most enemies are already twisted beyond reason—but some still have a Sanity stat and can be pushed to their limit.
+##### Enemy Sanity: It may Most enemies are already twisted beyond reason—but some still have a Sanity stat and can be pushed to their limit.
 
-If an enemy’s Sanity is reduced to 0, they gain the Psychosis Debuff.
+##### If an enemy’s Sanity is reduced to 0, they gain the Psychosis Debuff.
 
-Psychosis – Enemies under the effect of Psychosis can no longer use their Signature ability. If the Signature card is drawn they waste their turn. Enemies without a starting Sanity Score are immune to Psychosis.
+##### Psychosis – Enemies under the effect of Psychosis can no longer use their Signature ability. If the Signature card is drawn they waste their turn. Enemies without a starting Sanity Score are immune to Psychosis.
 
-Character Cards
+### Character Cards
 
-Combat
+#### Combat
 
-Combat in Riddle of the Beast is fast-paced, tactical, and unforgiving. Every battle is a deadly dance of timing, positioning, and teamwork. Hunters must coordinate their abilities, manage resources, and anticipate enemy behavior to survive the horrors they face.
+##### Combat in Riddle of the Beast is fast-paced, tactical, and unforgiving. Every battle is a deadly dance of timing, positioning, and teamwork. Hunters must coordinate their abilities, manage resources, and anticipate enemy behavior to survive the horrors they face.
 
-Each encounter unfolds in Rounds, with Hunters and enemies acting in sequence. Prepare your Hunters. 
+##### Each encounter unfolds in Rounds, with Hunters and enemies acting in sequence. Prepare your Hunters. 
 
-Study your enemies. The battlefield is a puzzle—and the wrong move could be your last.
+##### Study your enemies. The battlefield is a puzzle—and the wrong move could be your last.
 
-Combat Rounds
+#### Combat Rounds
 
-Combat is structured into Rounds, which repeat until the enemies are defeated or the objective is complete.
+##### Combat is structured into Rounds, which repeat until the enemies are defeated or the objective is complete.
 
-Hunter Round: Players act with each Hunter.
+##### Hunter Round: Players act with each Hunter.
 
-Enemy Round: Enemies act using Combat Cards and Combat Logic.
+##### Enemy Round: Enemies act using Combat Cards and Combat Logic.
 
-End of Round: Resolve ongoing effects and prepare for the next round.
+##### End of Round: Resolve ongoing effects and prepare for the next round.
 
-Initiative Phase
+##### Initiative Phase
 
-At the start of combat, determine who acts first:
+##### At the start of combat, determine who acts first:
 
-One player rolls 1d6 for the Hunters.
+##### One player rolls 1d6 for the Hunters.
 
-Roll another 1d6 for the enemies.
+##### Roll another 1d6 for the enemies.
 
-Higher roll goes first; reroll ties.
+##### Higher roll goes first; reroll ties.
 
-This order remains the same for the entire battle.
+##### This order remains the same for the entire battle.
 
 Hunters Round
 
