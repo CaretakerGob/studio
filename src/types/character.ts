@@ -87,12 +87,13 @@ export interface Character {
   skills?: Skills;
   abilities: Ability[];
   avatarSeed?: string;
-  imageUrl?: string;
+  imageUrl?: string; // This will be the front image
+  backImageUrl?: string; // Optional back image
   meleeWeapon?: Weapon;
   rangedWeapon?: RangedWeapon;
   characterPoints?: number;
   crypto?: number;
-  bleedPoints?: number; // Added bleedPoints
+  bleedPoints?: number;
   selectedArsenalCardId?: string | null;
   savedCooldowns?: Record<string, number>;
   savedQuantities?: Record<string, number>;

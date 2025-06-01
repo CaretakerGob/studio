@@ -84,7 +84,6 @@ export const skillDefinitions: SkillDefinition[] = [
 ];
 
 export const charactersData: Character[] = [
-  // "Custom Character" entry removed
   {
     id: 'gob',
     name: 'Gob',
@@ -94,6 +93,7 @@ export const charactersData: Character[] = [
     bleedPoints: 0,
     avatarSeed: 'gob',
     imageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FGob%20front%201.png?alt=media&token=50020f87-b211-4a89-8232-8be16a3d513e`,
+    backImageUrl: `https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FGob%20back.png?alt=media&token=328fad68-f72d-469b-a49a-cee8064be9e2`,
     meleeWeapon: { name: "Knife", attack: 2 },
     rangedWeapon: { name: "AR-15", attack: 4, range: 5 },
     abilities: [
@@ -114,6 +114,7 @@ export const charactersData: Character[] = [
     bleedPoints: 0,
     avatarSeed: 'cassandra',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FCassandra%20front%201.png?alt=media&token=20d48903-12e7-4b7b-be18-14b7e32aa5bc',
+    backImageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FCassandra%20back.png?alt=media&token=79e47683-69dd-454e-8a17-f95091bad294',
     meleeWeapon: { name: "Saber", attack: 3 },
     rangedWeapon: { name: "Wrangler", attack: 3, range: 3 },
     abilities: [
@@ -134,6 +135,7 @@ export const charactersData: Character[] = [
     bleedPoints: 0,
     avatarSeed: 'fei',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FFei%20front%201.png?alt=media&token=edb4236c-ce3f-4809-8dfb-c9fcc0be303a',
+    backImageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FFei%20back.png?alt=media&token=37023519-64f7-4603-8ab4-4274f0b980d7',
     meleeWeapon: { name: "Punch", attack: 1, flavorText: "A swift punch." },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon." },
     abilities: [
@@ -156,6 +158,7 @@ export const charactersData: Character[] = [
     bleedPoints: 0,
     avatarSeed: 'michael',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FMichael%20front%201.png?alt=media&token=4589bf01-5104-424f-8055-8f35edb2aea3',
+    backImageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FMichael%20back.png?alt=media&token=0d57a287-0896-45bb-8292-802c7e6b77a5',
     meleeWeapon: { name: "Kunai", attack: 3 },
     rangedWeapon: { name: "Kunai", attack: 4, range: 2 },
     abilities: [
@@ -177,6 +180,7 @@ export const charactersData: Character[] = [
     bleedPoints: 0,
     avatarSeed: 'tamara',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FTamara%20front%201.png?alt=media&token=b1a57842-f145-4fa7-b239-18ec2977dd8c',
+    backImageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FTamara%20back.png?alt=media&token=a02e1a4f-0496-4918-8a51-a5381a04f6ae',
     meleeWeapon: { name: "Martial Arts", attack: 2 },
     rangedWeapon: { name: "M7", attack: 3, range: 3 },
     abilities: [
@@ -197,6 +201,7 @@ export const charactersData: Character[] = [
     bleedPoints: 0,
     avatarSeed: 'trish',
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FTrish%20front%201.png?alt=media&token=d33490c7-2eff-4abb-8c5d-e260378b7c34',
+    backImageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FTrish%20back.png?alt=media&token=d991488a-b935-406e-abbb-0f534f20719b',
     meleeWeapon: { name: "Katana", attack: 4 },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [
@@ -216,7 +221,11 @@ export const charactersData: Character[] = [
     crypto: 0,
     bleedPoints: 0,
     avatarSeed: 'blake',
+    // Assuming the current imageUrl for Blake is his intended front, or only one image is available.
+    // docs/HunterUrl.md lists "Blake Back.png" but no distinct "Blake Front.png".
+    // If a distinct front exists, it should be used here. For now, backImageUrl will be same as imageUrl if no distinct front exists.
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FBlake%20Back.png?alt=media&token=93ab27db-954b-4fac-ab31-a10337e74529',
+    backImageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FBlake%20Back.png?alt=media&token=93ab27db-954b-4fac-ab31-a10337e74529',
     meleeWeapon: { name: "Kukri", attack: 4 },
     rangedWeapon: { name: "Outlaw .44", attack: 3, range: 3 },
     abilities: [
@@ -237,7 +246,10 @@ export const charactersData: Character[] = [
     crypto: 0,
     bleedPoints: 0,
     avatarSeed: 'walter',
+    // Assuming current imageUrl for Walter is his front. docs/HunterUrl.md only lists "Walter Back (1)" and "(2)" which are the same.
+    // If a distinct front exists, it should be used here.
     imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FWalter%20back.png?alt=media&token=ef9ee84f-6c26-4452-ae9a-c2279ead4df7',
+    backImageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Characters%2FHunters%2FWalter%20back.png?alt=media&token=ef9ee84f-6c26-4452-ae9a-c2279ead4df7',
     meleeWeapon: { name: "Mace", attack: 3 },
     rangedWeapon: { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" },
     abilities: [
@@ -257,7 +269,6 @@ type AbilityWithCost = Ability & { cost: number };
 export const allUniqueAbilities: AbilityWithCost[] = (() => {
   const abilitiesMap = new Map<string, AbilityWithCost>();
   charactersData.forEach(character => {
-    if (character.id === 'custom') return;
     character.abilities.forEach(ability => {
       if (!abilitiesMap.has(ability.id)) {
         abilitiesMap.set(ability.id, { ...ability, cost: ability.cost === undefined ? 50 : ability.cost });
@@ -381,14 +392,12 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       let characterToLoad: Character | undefined | null = undefined;
 
       try {
-        // "Custom Character" template is removed, so selectedCharacterId will never be 'custom' for template loading
         if (currentUser && auth.currentUser) {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
           const docSnap = await getDoc(characterRef);
           if (docSnap.exists()) {
               characterToLoad = { id: docSnap.id, ...docSnap.data() } as Character;
               if (!characterToLoad.templateId) {
-                // If templateId is missing, assume it's a saved version of a base template
                 characterToLoad.templateId = charactersData.some(c => c.id === docSnap.id) ? docSnap.id : selectedCharacterId;
               }
               showToastHelper({ title: "Saved Character Loaded", description: `Loaded your saved version of ${characterToLoad.name || characterToLoad.id}.` });
@@ -580,15 +589,14 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           const querySnapshot = await getDocs(charactersCollectionRef);
           const chars = querySnapshot.docs.map(docSnap => {
             const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string; lastSaved?: string };
-            // Ensure only valid character IDs are processed for templateId
             const isValidTemplateId = charactersData.some(template => template.id === data.templateId);
             return {
               ...data,
               id: docSnap.id,
-              templateId: isValidTemplateId ? data.templateId : docSnap.id, // Fallback to docSnap.id if templateId is invalid or refers to 'custom'
+              templateId: isValidTemplateId ? data.templateId : docSnap.id, 
               lastSaved: data.lastSaved || undefined
             };
-          }).filter(char => char.templateId !== 'custom'); // Filter out characters that were saved as 'custom'
+          }).filter(char => char.templateId !== 'custom'); 
           setUserSavedCharacters(chars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
         } catch (err) {
           showToastHelper({ title: "Load Error", description: "Could not fetch list of saved characters.", variant: "destructive"});
@@ -607,7 +615,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const characterDropdownOptions = useMemo(() => {
     const optionsMap = new Map<string, { id: string; name: string; displayNameInDropdown: string; isSaved: boolean }>();
 
-    charactersData.forEach(templateChar => { // No filtering needed here, as 'custom' is removed from charactersData
+    charactersData.forEach(templateChar => { 
       optionsMap.set(templateChar.id, {
         id: templateChar.id,
         name: templateChar.name,
@@ -626,7 +634,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                                 ? `${savedChar.name} (${baseTemplateForSaved.name})`
                                 : `${baseTemplateForSaved.name} (Saved)`;
       } else {
-        // This case should be less common now, but handles characters whose templateId isn't in current charactersData
         displayNameInDropdown = `${optionName} (Saved - Unknown Base)`;
       }
 
@@ -669,9 +676,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
 
   const handleCustomCharacterNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    // This function is no longer needed for "Custom Character" specific name changes
-    // It can be used for renaming any character if that feature is desired for all saved characters
-    if (editableCharacterData) { // Apply to any editable character if a rename feature is active
+    if (editableCharacterData) { 
       setEditableCharacterData(prevData => {
         if (!prevData) return null;
         return { ...prevData, name: e.target.value };
@@ -693,7 +698,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
-    // Custom character stat point buy is removed, so this applies to all selected characters
     const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (isNaN(numericValue)) return;
 
@@ -842,11 +846,9 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
 
   const handleBuyStatPoint = (statKey: Exclude<StatName, 'maxHp' | 'maxSanity'| 'meleeAttack'>) => {
-    // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleSellStatPoint = (statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>) => {
-    // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleIncrementCooldown = (abilityId: string) => {
@@ -908,28 +910,22 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
 
   const handleAddAbilityToCustomCharacter = () => {
-    // This functionality is removed as "Custom Character" is hidden
   };
 
   const handlePurchaseSkill = () => {
-     // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleIncreaseSkillLevel = (skillId: SkillName) => {
-     // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleDecreaseSkillLevel = (skillId: SkillName) => {
-     // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleRemoveSkill = (skillId: SkillName) => {
-     // This functionality is removed as "Custom Character" is hidden
   };
 
   const purchasedSkills = useMemo(() => {
-    // "Custom Character" specific logic removed
-    return []; // Return empty array as skill purchasing is removed
+    return []; 
   }, []);
 
   const handleSaveCharacter = async () => {
@@ -947,12 +943,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     try {
       const effectiveTemplateId = editableCharacterData.templateId || editableCharacterData.id;
       let docIdForFirestore: string = editableCharacterData.id;
-
-      // If the character being saved is a base template (not a custom_ prefixed ID),
-      // and a saved version doesn't exist yet, ensure we're not overwriting the base template ID
-      // in user's saved data if they intended to customize it.
-      // However, with "custom character" fully removed, users will primarily be saving modified versions of base templates.
-      // The docIdForFirestore should correctly be the original template ID if it's a base template.
 
       const characterToSave: Character = {
         ...editableCharacterData,
@@ -1006,7 +996,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
 
   const effectiveBaseStats = useMemo(() => {
-    if (!editableCharacterData) return { ...initialCustomCharacterStats }; // Fallback, though should not happen if loading is correct
+    if (!editableCharacterData) return { ...initialCustomCharacterStats }; 
     let base = { ...editableCharacterData.baseStats };
 
     if (equippedArsenalCard) {
@@ -1052,7 +1042,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         ? { ...template.meleeWeapon }
         : { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" };
 
-    // Removed logic that hides default "Fists" if templateId was 'custom'
     return defaultWeapon;
   }, [editableCharacterData]);
 
@@ -1063,7 +1052,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           ? { ...template.rangedWeapon } as RangedWeapon
           : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" } as RangedWeapon;
 
-    // Removed logic that hides default "None" if templateId was 'custom'
       return defaultWeapon;
   }, [editableCharacterData]);
 
@@ -1249,7 +1237,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             isLoadingCharacter={isLoadingCharacter}
             onCharacterDropdownChange={handleCharacterDropdownChange}
             onCustomCharacterNameChange={handleCustomCharacterNameChange}
-            onLoadSavedCustomCharacter={() => { /* Removed */}}
             onResetStats={resetStats}
         />
         <CardContent className="space-y-6">
@@ -1273,8 +1260,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                 handleBleedPointsChange={handleBleedPointsChange}
                 incrementBleedPoints={incrementBleedPoints}
                 decrementBleedPoints={decrementBleedPoints}
-                handleBuyStatPoint={handleBuyStatPoint}
-                handleSellStatPoint={handleSellStatPoint}
                 customStatPointBuyConfig={customStatPointBuyConfig}
                 sessionMaxHpModifier={sessionMaxHpModifier}
                 sessionMaxSanityModifier={sessionMaxSanityModifier}
