@@ -12,7 +12,7 @@ import type { User } from 'firebase/auth';
 import type { Character } from '@/types/character';
 import type { ArsenalCard as ActualArsenalCard } from '@/types/arsenal';
 import { Separator } from '@/components/ui/separator';
-import { charactersData } from './character-sheet-ui'; 
+import { charactersData } from './character-sheet-ui';
 
 interface CharacterHeaderProps {
   selectedCharacterId: string;
@@ -21,10 +21,9 @@ interface CharacterHeaderProps {
   currentUser: User | null;
   isLoadingCharacter: boolean;
   onCharacterDropdownChange: (id: string) => void;
-  onCustomCharacterNameChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onLoadSavedCustomCharacter: () => void;
+  onCustomCharacterNameChange: (e: ChangeEvent<HTMLInputElement>) => void; // Still useful for renaming any character
   onResetStats: () => void;
-  rawArsenalCards: ActualArsenalCard[]; // Ensure this prop is defined if used here, or passed down if needed
+  rawArsenalCards: ActualArsenalCard[];
 }
 
 export function CharacterHeader({
@@ -34,8 +33,7 @@ export function CharacterHeader({
   currentUser,
   isLoadingCharacter,
   onCharacterDropdownChange,
-  onCustomCharacterNameChange,
-  onLoadSavedCustomCharacter,
+  onCustomCharacterNameChange, // Retained for general renaming if applicable to all
   onResetStats,
 }: CharacterHeaderProps) {
 
@@ -47,8 +45,8 @@ export function CharacterHeader({
     )
   }
 
-  const characterDisplayNameForTitle = editableCharacterData.name || 
-                                     (charactersData.find(c => c.id === selectedCharacterId)?.name) || 
+  const characterDisplayNameForTitle = editableCharacterData.name ||
+                                     (charactersData.find(c => c.id === selectedCharacterId)?.name) ||
                                      "Character";
 
   return (
@@ -67,7 +65,7 @@ export function CharacterHeader({
       </CardHeader>
       <CardContent className="space-y-6 p-4 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
-          <div className="md:col-span-2 space-y-4"> {/* Adjusted to take 2 columns on medium for better balance */}
+          <div className="md:col-span-2 space-y-4">
             <div className="w-full">
               <Label htmlFor="characterName" className="text-md sm:text-lg font-medium mb-1 block">Character Template</Label>
               <Select value={selectedCharacterId} onValueChange={onCharacterDropdownChange}>
@@ -83,50 +81,33 @@ export function CharacterHeader({
                 </SelectContent>
               </Select>
             </div>
-             {editableCharacterData?.templateId === 'custom' && (
-              <>
-                <div className="w-full">
-                  <Label htmlFor="customCharacterName" className="text-md sm:text-lg font-medium mb-1 block">
-                    Character Name
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="customCharacterName"
-                      type="text"
-                      value={editableCharacterData.name === 'Custom Character' && !characterDropdownOptions.find(c => c.id === 'custom' && c.name !== 'Custom Character') ? '' : editableCharacterData.name}
-                      onChange={onCustomCharacterNameChange}
-                      placeholder="Enter custom name"
-                      className="text-md sm:text-lg p-2 flex-grow"
-                    />
-                    <Edit2 className="h-5 w-5 text-muted-foreground" />
-                  </div>
+             {/* "Custom Character" specific name input and load button removed */}
+             {/* The following block could be generalized if you want to allow renaming ANY saved character directly here */}
+             {/* For now, renaming is handled in the Profile page */}
+            {/*
+            {editableCharacterData && currentUser && ( // Example: If you want to rename any saved character
+              <div className="w-full">
+                <Label htmlFor="characterInstanceName" className="text-md sm:text-lg font-medium mb-1 block">
+                  Character Name
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="characterInstanceName"
+                    type="text"
+                    value={editableCharacterData.name}
+                    onChange={onCustomCharacterNameChange} // Renamed to reflect generic name change
+                    placeholder="Enter name"
+                    className="text-md sm:text-lg p-2 flex-grow"
+                  />
+                  <Edit2 className="h-5 w-5 text-muted-foreground" />
                 </div>
-                {currentUser && (
-                  <Button
-                    onClick={onLoadSavedCustomCharacter}
-                    variant="outline"
-                    className="w-full"
-                    disabled={isLoadingCharacter}
-                  >
-                    <UserCog className="mr-2 h-4 w-4" /> Load My Saved Custom
-                  </Button>
-                )}
-              </>
+              </div>
             )}
+            */}
           </div>
 
-           <div className="md:col-span-1 space-y-4 flex md:justify-end"> {/* Adjusted alignment for CP */}
-              {editableCharacterData && editableCharacterData.characterPoints !== undefined && (
-              <div className="p-3 rounded-lg border border-border bg-card/50 shadow-md w-full md:w-fit flex flex-col items-start md:items-end">
-                  <Label className="text-md font-medium flex items-center">
-                  <Award className="mr-2 h-5 w-5 text-primary" />
-                  Character Points
-                  </Label>
-                  <p className="text-xl font-bold text-primary mt-1">
-                  {editableCharacterData.characterPoints}
-                  </p>
-              </div>
-              )}
+           <div className="md:col-span-1 space-y-4 flex md:justify-end">
+              {/* Character Points display is now removed as it was primarily for custom characters */}
           </div>
         </div>
         <Separator />

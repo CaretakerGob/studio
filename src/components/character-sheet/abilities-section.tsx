@@ -23,11 +23,11 @@ interface CategorizedAbilities {
 
 interface AbilitiesSectionProps {
   editableCharacterData: Character;
-  allUniqueAbilities: AbilityWithCost[];
-  categorizedAbilities: CategorizedAbilities;
-  abilityToAddId: string | undefined;
-  setAbilityToAddId: (id: string | undefined) => void;
-  handleAddAbilityToCustomCharacter: () => void;
+  allUniqueAbilities: AbilityWithCost[]; // This might become unused or simplified
+  categorizedAbilities: CategorizedAbilities; // This might become unused or simplified
+  abilityToAddId: string | undefined; // Unused
+  setAbilityToAddId: (id: string | undefined) => void; // Unused
+  handleAddAbilityToCustomCharacter: () => void; // Unused
   currentAbilityCooldowns: Record<string, number>;
   maxAbilityCooldowns: Record<string, number>;
   handleIncrementCooldown: (abilityId: string) => void;
@@ -40,11 +40,11 @@ interface AbilitiesSectionProps {
 
 export function AbilitiesSection({
   editableCharacterData,
-  allUniqueAbilities,
-  categorizedAbilities,
-  abilityToAddId,
-  setAbilityToAddId,
-  handleAddAbilityToCustomCharacter,
+  // allUniqueAbilities, // Unused parameter as custom character is removed
+  // categorizedAbilities, // Unused parameter
+  // abilityToAddId, // Unused
+  // setAbilityToAddId, // Unused
+  // handleAddAbilityToCustomCharacter, // Unused
   currentAbilityCooldowns,
   maxAbilityCooldowns,
   handleIncrementCooldown,
@@ -54,7 +54,7 @@ export function AbilitiesSection({
   handleIncrementQuantity,
   handleDecrementQuantity,
 }: AbilitiesSectionProps) {
-  
+
   const currentCharacterAbilities = editableCharacterData?.abilities || [];
   const actionAbilities = currentCharacterAbilities.filter(a => a.type === 'Action');
   const interruptAbilities = currentCharacterAbilities.filter(a => a.type === 'Interrupt');
@@ -63,80 +63,10 @@ export function AbilitiesSection({
 
   return (
     <>
-      {editableCharacterData.id === 'custom' && (
-        <>
-          <div className="space-y-4 p-4 border border-dashed border-primary/50 rounded-lg bg-card/30 mb-6">
-            <h3 className="text-lg font-semibold text-primary flex items-center">
-              <ShoppingCart className="mr-2 h-5 w-5" /> Custom Ability Selection
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
-              <div className="w-full">
-                <Label htmlFor="abilitySelect" className="text-sm text-muted-foreground">Choose an ability to add (Cost: 50 CP):</Label>
-                <Select value={abilityToAddId} onValueChange={setAbilityToAddId}>
-                  <SelectTrigger id="abilitySelect">
-                    <SelectValue placeholder="Select an ability" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categorizedAbilities.actions.length > 0 && (
-                      <SelectGroup>
-                        <SelectLabel className="text-base text-primary">Actions</SelectLabel>
-                        {categorizedAbilities.actions.map(ability => (
-                          <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
-                            {ability.name} ({ability.type}) - {ability.cost} CP
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    )}
-                    {categorizedAbilities.interrupts.length > 0 && (
-                      <SelectGroup>
-                        <SelectLabel className="text-base text-primary">Interrupts</SelectLabel>
-                        {categorizedAbilities.interrupts.map(ability => (
-                          <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
-                            {ability.name} ({ability.type}) - {ability.cost} CP
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    )}
-                    {categorizedAbilities.passives.length > 0 && (
-                      <SelectGroup>
-                        <SelectLabel className="text-base text-primary">Passives</SelectLabel>
-                        {categorizedAbilities.passives.map(ability => (
-                          <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
-                            {ability.name} ({ability.type}) - {ability.cost} CP
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    )}
-                     {categorizedAbilities.freeActions.length > 0 && (
-                      <SelectGroup>
-                        <SelectLabel className="text-base text-primary">FREE Actions</SelectLabel>
-                        {categorizedAbilities.freeActions.map(ability => (
-                          <SelectItem key={ability.id} value={ability.id} disabled={(editableCharacterData.characterPoints || 0) < ability.cost || editableCharacterData.abilities.some(a => a.id === ability.id)}>
-                            {ability.name} ({ability.type}) - {ability.cost} CP
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                onClick={handleAddAbilityToCustomCharacter}
-                disabled={!abilityToAddId || (editableCharacterData.characterPoints || 0) < (allUniqueAbilities.find(a=>a.id === abilityToAddId)?.cost || Infinity)}
-                className="bg-primary hover:bg-primary/90"
-              >
-                Add Ability
-              </Button>
-            </div>
-          </div>
-          <Separator className="my-6" />
-        </>
-      )}
+      {/* Custom Ability Selection UI Removed */}
 
-      {currentCharacterAbilities.length === 0 && editableCharacterData.id !== 'custom' ? (
+      {currentCharacterAbilities.length === 0 ? (
         <p className="text-muted-foreground text-center py-8 bg-card/50 rounded-md">This character has no special abilities defined.</p>
-      ) : currentCharacterAbilities.length === 0 && editableCharacterData.id === 'custom' ? (
-        <p className="text-muted-foreground text-center py-8 bg-card/50 rounded-md">No abilities purchased yet for this custom character.</p>
       ) : (
         <div className="space-y-6">
           {actionAbilities.length > 0 && (

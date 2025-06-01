@@ -15,7 +15,7 @@ import {
   HeartHandshake, Wrench, Search, BookMarked, Smile, Leaf, ClipboardList, SlidersHorizontal, PersonStanding,
   Package, WandSparkles, UserCog, Eye, Copy, Trash2, Edit3, CircleDot, Users, AlertCircle,
   Sword as MeleeIcon,
-  Star, 
+  Star,
   Settings,
   UserMinus,
   UserPlus,
@@ -29,7 +29,7 @@ import {
   Clock,
   Box,
   Coins,
-  Droplets // Added Droplets icon
+  Droplets
 } from "lucide-react";
 import type { CharacterStats, StatName, Character, Ability, AbilityType, Weapon, RangedWeapon, Skills, SkillName, SkillDefinition } from '@/types/character';
 import type { ArsenalCard as ActualArsenalCard, ArsenalItem } from '@/types/arsenal';
@@ -84,21 +84,7 @@ export const skillDefinitions: SkillDefinition[] = [
 ];
 
 export const charactersData: Character[] = [
-  {
-    id: 'custom',
-    name: 'Custom Character',
-    baseStats: { ...initialCustomCharacterStats },
-    skills: { ...initialSkills },
-    abilities: [],
-    crypto: 0,
-    bleedPoints: 0,
-    avatarSeed: 'customcharacter',
-    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/riddle-of-the-beast-companion.firebasestorage.app/o/Cards%2FCharacters%20no%20BG%2FCustom%20Character%20silhouette.png?alt=media&token=2b64a81c-42cf-4f1f-82ac-01b9ceae863b',
-    meleeWeapon: { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" },
-    rangedWeapon: { name: "Thrown Rock", attack: 1, range: 3, flavorText: "A hastily thrown rock" },
-    characterPoints: 375,
-    selectedArsenalCardId: null,
-  },
+  // "Custom Character" entry removed
   {
     id: 'gob',
     name: 'Gob',
@@ -271,7 +257,7 @@ type AbilityWithCost = Ability & { cost: number };
 export const allUniqueAbilities: AbilityWithCost[] = (() => {
   const abilitiesMap = new Map<string, AbilityWithCost>();
   charactersData.forEach(character => {
-    if (character.id === 'custom') return; 
+    if (character.id === 'custom') return;
     character.abilities.forEach(ability => {
       if (!abilitiesMap.has(ability.id)) {
         abilitiesMap.set(ability.id, { ...ability, cost: ability.cost === undefined ? 50 : ability.cost });
@@ -301,7 +287,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const [abilityToAddId, setAbilityToAddId] = useState<string | undefined>(undefined);
   const [skillToPurchase, setSkillToPurchase] = useState<SkillName | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true); 
+  const [isLoadingCharacter, setIsLoadingCharacter] = useState(true);
   const [initialIdProcessed, setInitialIdProcessed] = useState(false);
 
   const [currentBleedPoints, setCurrentBleedPoints] = useState(0);
@@ -309,7 +295,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const [currentPetSanity, setCurrentPetSanity] = useState<number | null>(null);
   const [currentPetMv, setCurrentPetMv] = useState<number | null>(null);
   const [currentPetDef, setCurrentPetDef] = useState<number | null>(null);
-  
+
   const [sessionMaxHpModifier, setSessionMaxHpModifier] = useState(0);
   const [sessionMaxSanityModifier, setSessionMaxSanityModifier] = useState(0);
 
@@ -347,11 +333,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         newUrl.searchParams.delete('load');
         router.replace(newUrl.pathname + newUrl.search, { scroll: false });
       }
-      return; 
+      return;
     }
 
-    if (!selectedCharacterId && !initialIdProcessed) { 
-      let newSelectedIdToSet = charactersData[0].id; 
+    if (!selectedCharacterId && !initialIdProcessed) {
+      let newSelectedIdToSet = charactersData[0].id;
 
       if (currentUser) {
         const prefsDocRef = doc(db, "userCharacters", currentUser.uid, "preferences", "userPrefs");
@@ -380,7 +366,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         setInitialIdProcessed(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, currentUser, authLoading, initialIdProcessed, userSavedCharacters]); 
+  }, [searchParams, currentUser, authLoading, initialIdProcessed, userSavedCharacters]);
 
   const loadCharacterData = useCallback(async () => {
       if (!selectedCharacterId) {
@@ -393,18 +379,17 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       if (setAuthError) setAuthError(null);
 
       let characterToLoad: Character | undefined | null = undefined;
-      
+
       try {
-        if (selectedCharacterId === 'custom') {
-          characterToLoad = charactersData.find(c => c.id === 'custom') ? JSON.parse(JSON.stringify(charactersData.find(c => c.id === 'custom'))) : null;
-          if(characterToLoad) characterToLoad.templateId = 'custom';
-        } else if (currentUser && auth.currentUser) {
+        // "Custom Character" template is removed, so selectedCharacterId will never be 'custom' for template loading
+        if (currentUser && auth.currentUser) {
           const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", selectedCharacterId);
           const docSnap = await getDoc(characterRef);
           if (docSnap.exists()) {
               characterToLoad = { id: docSnap.id, ...docSnap.data() } as Character;
               if (!characterToLoad.templateId) {
-                characterToLoad.templateId = charactersData.some(c => c.id === docSnap.id) ? docSnap.id : 'custom';
+                // If templateId is missing, assume it's a saved version of a base template
+                characterToLoad.templateId = charactersData.some(c => c.id === docSnap.id) ? docSnap.id : selectedCharacterId;
               }
               showToastHelper({ title: "Saved Character Loaded", description: `Loaded your saved version of ${characterToLoad.name || characterToLoad.id}.` });
           } else {
@@ -422,7 +407,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         }
 
         if (characterToLoad) {
-          const baseTemplateForStats = charactersData.find(c => c.id === (characterToLoad?.templateId || characterToLoad?.id || 'custom'));
+          const baseTemplateForStats = charactersData.find(c => c.id === (characterToLoad?.templateId || characterToLoad?.id));
           if (!baseTemplateForStats) {
             showToastHelper({ title: "Error", description: `Base template for ${characterToLoad.name} not found.`, variant: "destructive" });
             setEditableCharacterData(null);
@@ -430,7 +415,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             characterToLoad.baseStats = { ...(baseTemplateForStats.baseStats || initialCustomCharacterStats) , ...characterToLoad.baseStats };
             characterToLoad.skills = { ...(baseTemplateForStats.skills || initialSkills) , ...characterToLoad.skills };
             characterToLoad.abilities = Array.isArray(characterToLoad.abilities) ? characterToLoad.abilities : (baseTemplateForStats.abilities || []);
-            characterToLoad.crypto = characterToLoad.crypto === undefined ? 0 : characterToLoad.crypto; 
+            characterToLoad.crypto = characterToLoad.crypto === undefined ? 0 : characterToLoad.crypto;
             characterToLoad.bleedPoints = characterToLoad.bleedPoints === undefined ? 0 : characterToLoad.bleedPoints;
             setCurrentBleedPoints(characterToLoad.bleedPoints);
             characterToLoad.savedCooldowns = characterToLoad.savedCooldowns || {};
@@ -442,7 +427,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             if (defaultTemplate){
                 let fallbackChar: Character = JSON.parse(JSON.stringify(defaultTemplate));
                 fallbackChar.templateId = selectedCharacterId;
-                fallbackChar.crypto = 0; 
+                fallbackChar.crypto = 0;
                 fallbackChar.bleedPoints = 0;
                 setCurrentBleedPoints(0);
                 setEditableCharacterData(fallbackChar);
@@ -480,7 +465,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     } else if (!selectedCharacterId && initialIdProcessed) {
         setIsLoadingCharacter(false);
         setEditableCharacterData(null);
-    } 
+    }
   }, [loadCharacterData, selectedCharacterId, initialIdProcessed]);
 
   const equippedArsenalCard = useMemo(() => {
@@ -510,7 +495,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                         cooldown: item.cd,
                         maxQuantity: item.qty,
                         details: item.class || item.type,
-                        cost: 0, 
+                        cost: 0,
                     });
                 }
             };
@@ -549,11 +534,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           const maxRounds = parseCooldownRounds(String(ability.cooldown));
           if (maxRounds !== undefined) {
             newMaxCDs[ability.id] = maxRounds;
-            const isBaseAbility = editableCharacterData.abilities.find(ba => ba.id === ability.id); 
+            const isBaseAbility = editableCharacterData.abilities.find(ba => ba.id === ability.id);
             if (isBaseAbility && savedCDs[ability.id] !== undefined) {
               newInitialCurrentCDs[ability.id] = savedCDs[ability.id];
             } else {
-              newInitialCurrentCDs[ability.id] = maxRounds; 
+              newInitialCurrentCDs[ability.id] = maxRounds;
             }
           }
         }
@@ -563,7 +548,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
            if (isBaseAbility && savedQTs[ability.id] !== undefined) {
              newInitialCurrentQTs[ability.id] = savedQTs[ability.id];
            } else {
-             newInitialCurrentQTs[ability.id] = ability.maxQuantity; 
+             newInitialCurrentQTs[ability.id] = ability.maxQuantity;
            }
         }
       });
@@ -584,7 +569,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       savedCooldownsJSONKey,
       savedQuantitiesJSONKey,
       parseCooldownRounds,
-      editableCharacterData?.abilities, 
+      editableCharacterData?.abilities,
     ]);
 
   useEffect(() => {
@@ -595,13 +580,15 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           const querySnapshot = await getDocs(charactersCollectionRef);
           const chars = querySnapshot.docs.map(docSnap => {
             const data = docSnap.data() as Omit<Character, 'id'> & { templateId?: string; lastSaved?: string };
+            // Ensure only valid character IDs are processed for templateId
+            const isValidTemplateId = charactersData.some(template => template.id === data.templateId);
             return {
               ...data,
               id: docSnap.id,
-              templateId: data.templateId || (docSnap.id === 'custom' ? 'custom' : docSnap.id),
+              templateId: isValidTemplateId ? data.templateId : docSnap.id, // Fallback to docSnap.id if templateId is invalid or refers to 'custom'
               lastSaved: data.lastSaved || undefined
             };
-          });
+          }).filter(char => char.templateId !== 'custom'); // Filter out characters that were saved as 'custom'
           setUserSavedCharacters(chars.sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)));
         } catch (err) {
           showToastHelper({ title: "Load Error", description: "Could not fetch list of saved characters.", variant: "destructive"});
@@ -619,14 +606,8 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
   const characterDropdownOptions = useMemo(() => {
     const optionsMap = new Map<string, { id: string; name: string; displayNameInDropdown: string; isSaved: boolean }>();
-    const defaultCustomTemplate = charactersData.find(c => c.id === 'custom');
-    const defaultCustomName = defaultCustomTemplate?.name || "Custom Character";
 
-    // Populate with base templates, EXCLUDING 'custom' template
-    charactersData.forEach(templateChar => {
-      if (templateChar.id === 'custom') { // Filter out the "Custom Character" template
-        return;
-      }
+    charactersData.forEach(templateChar => { // No filtering needed here, as 'custom' is removed from charactersData
       optionsMap.set(templateChar.id, {
         id: templateChar.id,
         name: templateChar.name,
@@ -640,16 +621,13 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       let optionName = savedChar.name || savedChar.id;
       let displayNameInDropdown;
 
-      if (savedChar.templateId === 'custom') {
-        displayNameInDropdown = (savedChar.name && savedChar.name !== defaultCustomName)
-                                ? `${savedChar.name} (Custom Character)`
-                                : `${defaultCustomName} (Saved)`;
-      } else if (baseTemplateForSaved) {
+      if (baseTemplateForSaved) {
         displayNameInDropdown = (savedChar.name && savedChar.name !== baseTemplateForSaved.name)
                                 ? `${savedChar.name} (${baseTemplateForSaved.name})`
                                 : `${baseTemplateForSaved.name} (Saved)`;
       } else {
-        displayNameInDropdown = `${optionName} (Saved)`;
+        // This case should be less common now, but handles characters whose templateId isn't in current charactersData
+        displayNameInDropdown = `${optionName} (Saved - Unknown Base)`;
       }
 
       optionsMap.set(savedChar.id, {
@@ -664,15 +642,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         const option = optionsMap.get(selectedCharacterId)!;
         const baseTemplateForCurrent = charactersData.find(c => c.id === (editableCharacterData.templateId || selectedCharacterId));
 
-        if (editableCharacterData.id === 'custom') {
-          if (editableCharacterData.name === defaultCustomName && !option.isSaved) {
-            option.displayNameInDropdown = defaultCustomName;
-          } else if (editableCharacterData.name && editableCharacterData.name !== defaultCustomName) {
-            option.displayNameInDropdown = `${editableCharacterData.name} (Custom Character)`;
-          } else if (editableCharacterData.name === defaultCustomName && option.isSaved) {
-             option.displayNameInDropdown = `${defaultCustomName} (Saved)`;
-          }
-        } else if (baseTemplateForCurrent) {
+        if (baseTemplateForCurrent) {
             if (editableCharacterData.name === baseTemplateForCurrent.name && !option.isSaved) {
                 option.displayNameInDropdown = baseTemplateForCurrent.name;
             }
@@ -699,7 +669,9 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
 
   const handleCustomCharacterNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (editableCharacterData?.templateId === 'custom' || editableCharacterData?.id === 'custom' || (editableCharacterData?.id && editableCharacterData.id.startsWith("custom_")) ) {
+    // This function is no longer needed for "Custom Character" specific name changes
+    // It can be used for renaming any character if that feature is desired for all saved characters
+    if (editableCharacterData) { // Apply to any editable character if a rename feature is active
       setEditableCharacterData(prevData => {
         if (!prevData) return null;
         return { ...prevData, name: e.target.value };
@@ -721,7 +693,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   };
 
   const handleStatChange = (statName: StatName, value: number | string) => {
-     if (!editableCharacterData || editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) return;
+    // Custom character stat point buy is removed, so this applies to all selected characters
     const numericValue = typeof value === 'string' ? parseInt(value, 10) : value;
     if (isNaN(numericValue)) return;
 
@@ -744,7 +716,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   };
 
   const incrementStat = (statName: StatName) => {
-     if (!editableCharacterData || editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) return;
+    if (!editableCharacterData) return;
      const currentStats = editableCharacterData.baseStats;
      if (statName === 'hp' && currentStats.hp >= (currentStats.maxHp + sessionMaxHpModifier)) return;
      if (statName === 'sanity' && currentStats.sanity >= (currentStats.maxSanity + sessionMaxSanityModifier)) return;
@@ -752,7 +724,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   };
 
   const decrementStat = (statName: StatName) => {
-    if (!editableCharacterData || editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) return;
+    if (!editableCharacterData) return;
     handleStatChange(statName, (editableCharacterData.baseStats[statName] || 0) - 1);
   };
 
@@ -819,7 +791,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         mv: coreStats.mv,
         def: coreStats.def,
     };
-    
+
     const setter = settersMap[statType as Exclude<typeof statType, 'meleeAttack'>];
     const currentValue = currentValuesMap[statType as Exclude<typeof statType, 'meleeAttack'>];
     const maxValueForStat = maxValuesMap[statType as Exclude<typeof statType, 'meleeAttack'>];
@@ -827,7 +799,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
     if (setter && currentValue !== null && maxValueForStat !== undefined) {
         let newValue = currentValue + delta;
-        newValue = Math.max(0, newValue); 
+        newValue = Math.max(0, newValue);
         newValue = Math.min(newValue, maxValueForStat);
         setter(newValue);
     }
@@ -870,66 +842,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
 
   const handleBuyStatPoint = (statKey: Exclude<StatName, 'maxHp' | 'maxSanity'| 'meleeAttack'>) => {
-    if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) ) return;
-
-    const config = customStatPointBuyConfig[statKey];
-    const currentVal = editableCharacterData.baseStats[statKey] || 0; 
-    const currentPoints = editableCharacterData.characterPoints || 0;
-
-    if (currentVal >= config.max) {
-      showToastHelper({ title: "Max Reached", description: `Maximum for ${statKey.toUpperCase()} is ${config.max}.`, variant: "destructive" });
-      return;
-    }
-    if (currentPoints < config.cost) {
-      showToastHelper({ title: "Not Enough CP", description: `Need ${config.cost} CP for +1 ${statKey.toUpperCase()}.`, variant: "destructive" });
-      return;
-    }
-
-    setEditableCharacterData(prev => {
-      if (!prev) return null;
-      const newStats = { ...prev.baseStats };
-      newStats[statKey] = (newStats[statKey] || 0) + 1; 
-      if (statKey === 'hp') newStats.maxHp = (newStats.maxHp || 0) + 1;
-      if (statKey === 'sanity') newStats.maxSanity = (newStats.maxSanity || 0) + 1;
-
-      return {
-        ...prev,
-        baseStats: newStats,
-        characterPoints: currentPoints - config.cost,
-      };
-    });
+    // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleSellStatPoint = (statKey: Exclude<StatName, 'maxHp' | 'maxSanity' | 'meleeAttack'>) => {
-    if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) ) return;
-
-    const currentVal = editableCharacterData.baseStats[statKey] || 0;
-     if (currentVal <= 1) { 
-      showToastHelper({ title: "Min Reached", description: `${statKey.toUpperCase()} cannot go below 1.`, variant: "destructive" });
-      return;
-    }
-    const currentPoints = editableCharacterData.characterPoints || 0;
-
-    setEditableCharacterData(prev => {
-      if (!prev) return null;
-      const newStats = { ...prev.baseStats };
-      const costToRefund = customStatPointBuyConfig[statKey].cost;
-      newStats[statKey] = currentVal - 1;
-      if (statKey === 'hp') {
-        newStats.maxHp = Math.max(1, (newStats.maxHp || 1) -1); 
-         if (newStats.hp > newStats.maxHp) newStats.hp = newStats.maxHp;
-      }
-      if (statKey === 'sanity') {
-        newStats.maxSanity = Math.max(1, (newStats.maxSanity || 1) -1); 
-         if (newStats.sanity > newStats.maxSanity) newStats.sanity = newStats.maxSanity;
-      }
-
-      return {
-        ...prev,
-        baseStats: newStats,
-        characterPoints: currentPoints + costToRefund,
-      };
-    });
+    // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleIncrementCooldown = (abilityId: string) => {
@@ -963,7 +880,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
  const resetStats = () => {
     if (!editableCharacterData) return;
 
-    const baseTemplateIdToResetTo = editableCharacterData.templateId || editableCharacterData.id || 'custom';
+    const baseTemplateIdToResetTo = editableCharacterData.templateId || editableCharacterData.id;
     const originalCharacterTemplate = charactersData.find(c => c.id === baseTemplateIdToResetTo);
 
     if (!originalCharacterTemplate) {
@@ -971,32 +888,17 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         return;
     }
 
-    let characterToSet: Character;
-    if (baseTemplateIdToResetTo === 'custom') {
-        const customDefaultTemplate = charactersData.find(c => c.id === 'custom');
-        characterToSet = JSON.parse(JSON.stringify(customDefaultTemplate || initialCustomCharacterStats)); 
-        characterToSet.name = customDefaultTemplate?.name || "Custom Character";
-        characterToSet.baseStats = { ...(customDefaultTemplate?.baseStats || initialCustomCharacterStats) };
-        characterToSet.skills = { ...(customDefaultTemplate?.skills || initialSkills) };
-        characterToSet.abilities = customDefaultTemplate?.abilities ? [...customDefaultTemplate.abilities] : [];
-        characterToSet.characterPoints = customDefaultTemplate?.characterPoints ?? 375;
-        characterToSet.crypto = 0; 
-        characterToSet.bleedPoints = 0;
-        setCurrentBleedPoints(0);
-        characterToSet.imageUrl = customDefaultTemplate?.imageUrl;
-    } else {
-        characterToSet = JSON.parse(JSON.stringify(originalCharacterTemplate));
-        characterToSet.crypto = 0; 
-        characterToSet.bleedPoints = 0;
-        setCurrentBleedPoints(0);
-    }
-    
-    characterToSet.id = editableCharacterData.id; 
-    characterToSet.templateId = baseTemplateIdToResetTo; 
+    let characterToSet: Character = JSON.parse(JSON.stringify(originalCharacterTemplate));
+    characterToSet.crypto = 0;
+    characterToSet.bleedPoints = 0;
+    setCurrentBleedPoints(0);
+
+    characterToSet.id = editableCharacterData.id;
+    characterToSet.templateId = baseTemplateIdToResetTo;
     characterToSet.selectedArsenalCardId = null;
     characterToSet.savedCooldowns = {};
     characterToSet.savedQuantities = {};
-    
+
     setSessionMaxHpModifier(0);
     setSessionMaxSanityModifier(0);
     setEditableCharacterData(characterToSet);
@@ -1006,153 +908,29 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
 
 
   const handleAddAbilityToCustomCharacter = () => {
-    if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) || !abilityToAddId) return;
-
-    const abilityInfo = allUniqueAbilities.find(a => a.id === abilityToAddId);
-    if (!abilityInfo) {
-        showToastHelper({ title: "Error", description: "Selected ability not found.", variant: "destructive" });
-        return;
-    }
-
-    if (editableCharacterData.abilities.some(a => a.id === abilityInfo.id)) {
-        showToastHelper({ title: "Ability Exists", description: `${abilityInfo.name} is already added.`, variant: "destructive" });
-        return;
-    }
-
-    const currentCP = editableCharacterData.characterPoints || 0;
-    const abilityCost = abilityInfo.cost ?? 0; 
-    const abilityNameForToast = abilityInfo.name;
-
-    if (currentCP < abilityCost) {
-        showToastHelper({ title: "Not Enough CP", description: `You need ${abilityCost} CP to add ${abilityInfo.name}. You have ${currentCP}.`, variant: "destructive" });
-        return;
-    }
-
-    setEditableCharacterData(prevData => {
-        if (!prevData) return null;
-        const { cost, ...abilityToAddWithoutCostField } = abilityInfo;
-        const newAbilities = [...prevData.abilities, abilityToAddWithoutCostField as Ability]; 
-        const newCharacterPoints = currentCP - abilityCost;
-        
-        showToastHelper({ title: "Ability Added", description: `${abilityNameForToast} added to Custom Character for ${abilityCost} CP.` });
-
-        return { ...prevData, abilities: newAbilities, characterPoints: newCharacterPoints };
-    });
-    setAbilityToAddId(undefined);
+    // This functionality is removed as "Custom Character" is hidden
   };
 
   const handlePurchaseSkill = () => {
-    if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) || !skillToPurchase) return;
-
-    const currentSkills = editableCharacterData.skills || { ...initialSkills };
-    const currentSkillLevel = currentSkills[skillToPurchase] || 0;
-
-    if (currentSkillLevel > 0) {
-      showToastHelper({ title: "Skill Already Added", description: "This skill is already part of your character. Use +/- to adjust its level.", variant: "destructive" });
-      return;
-    }
-
-    const currentCP = editableCharacterData.characterPoints || 0;
-    if (currentCP < SKILL_COST_LEVEL_1) {
-      showToastHelper({ title: "Not Enough CP", description: `You need ${SKILL_COST_LEVEL_1} CP to add this skill.`, variant: "destructive" });
-      return;
-    }
-
-    const skillDef = skillDefinitions.find(s => s.id === skillToPurchase);
-
-    setEditableCharacterData(prevData => {
-      if (!prevData) return null;
-      const newSkills = { ...currentSkills, [skillToPurchase!]: 1 };
-      const newCharacterPoints = currentCP - SKILL_COST_LEVEL_1;
-      showToastHelper({ title: "Skill Added", description: `${skillDef?.label || skillToPurchase} added at level 1.` });
-      return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
-    });
-    setSkillToPurchase(undefined);
+     // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleIncreaseSkillLevel = (skillId: SkillName) => {
-    if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_")))) return;
-
-    const currentSkills = editableCharacterData.skills || { ...initialSkills };
-    const currentLevel = currentSkills[skillId] || 0;
-    if (currentLevel >= 3) {
-      showToastHelper({ title: "Max Level Reached", description: "This skill is already at its maximum level.", variant: "destructive" });
-      return;
-    }
-
-    let cost = 0;
-    if (currentLevel === 0) cost = SKILL_COST_LEVEL_1;
-    else if (currentLevel === 1) cost = SKILL_COST_LEVEL_2;
-    else if (currentLevel === 2) cost = SKILL_COST_LEVEL_3;
-
-    const currentCP = editableCharacterData.characterPoints || 0;
-    if (currentCP < cost) {
-      showToastHelper({ title: "Not Enough CP", description: `You need ${cost} CP to upgrade this skill.`, variant: "destructive" });
-      return;
-    }
-
-    const skillDef = skillDefinitions.find(s => s.id === skillId);
-    setEditableCharacterData(prevData => {
-      if (!prevData) return null;
-      const newSkills = { ...currentSkills, [skillId]: currentLevel + 1 };
-      const newCharacterPoints = currentCP - cost;
-      showToastHelper({ title: "Skill Upgraded", description: `${skillDef?.label || skillId} upgraded to level ${currentLevel + 1}.` });
-      return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
-    });
+     // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleDecreaseSkillLevel = (skillId: SkillName) => {
-    if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_")))) return;
-
-    const currentSkills = editableCharacterData.skills || { ...initialSkills };
-    const currentLevel = currentSkills[skillId] || 0;
-    if (currentLevel <= 1) { 
-        handleRemoveSkill(skillId);
-        return;
-    }
-
-    let refund = 0;
-    if (currentLevel === 3) refund = SKILL_COST_LEVEL_3;
-    else if (currentLevel === 2) refund = SKILL_COST_LEVEL_2;
-
-    const skillDef = skillDefinitions.find(s => s.id === skillId);
-    setEditableCharacterData(prevData => {
-      if (!prevData) return null;
-      const newSkills = { ...currentSkills, [skillId]: currentLevel - 1 };
-      const newCharacterPoints = (prevData.characterPoints || 0) + refund;
-      showToastHelper({ title: "Skill Downgraded", description: `${skillDef?.label || skillId} downgraded to level ${currentLevel - 1}.` });
-      return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
-    });
+     // This functionality is removed as "Custom Character" is hidden
   };
 
   const handleRemoveSkill = (skillId: SkillName) => {
-    if (!editableCharacterData || !(editableCharacterData.templateId === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_")))) return;
-
-    const currentSkills = editableCharacterData.skills || { ...initialSkills };
-    const currentLevel = currentSkills[skillId] || 0;
-    if (currentLevel === 0) return;
-
-    let totalRefund = 0;
-    if (currentLevel === 1) totalRefund = SKILL_COST_LEVEL_1;
-    else if (currentLevel === 2) totalRefund = SKILL_COST_LEVEL_1 + SKILL_COST_LEVEL_2;
-    else if (currentLevel === 3) totalRefund = SKILL_COST_LEVEL_1 + SKILL_COST_LEVEL_2 + SKILL_COST_LEVEL_3;
-
-    const skillDef = skillDefinitions.find(s => s.id === skillId);
-    setEditableCharacterData(prevData => {
-      if (!prevData) return null;
-      const newSkills = { ...currentSkills, [skillId]: 0 };
-      const newCharacterPoints = (prevData.characterPoints || 0) + totalRefund;
-      showToastHelper({ title: "Skill Removed", description: `${skillDef?.label || skillId} removed. ${totalRefund} CP refunded.` });
-      return { ...prevData, skills: newSkills, characterPoints: newCharacterPoints };
-    });
+     // This functionality is removed as "Custom Character" is hidden
   };
 
   const purchasedSkills = useMemo(() => {
-    if (editableCharacterData && (editableCharacterData.id === 'custom' || (editableCharacterData.id && editableCharacterData.id.startsWith("custom_"))) && editableCharacterData.skills) {
-      return skillDefinitions.filter(def => (editableCharacterData.skills?.[def.id as SkillName] || 0) > 0);
-    }
-    return [];
-  }, [editableCharacterData]);
+    // "Custom Character" specific logic removed
+    return []; // Return empty array as skill purchasing is removed
+  }, []);
 
   const handleSaveCharacter = async () => {
     if (!currentUser || !auth.currentUser) {
@@ -1167,10 +945,14 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     setIsSaving(true);
     if(setAuthError) setAuthError(null);
     try {
-      const effectiveTemplateId = (editableCharacterData.id === 'custom' || editableCharacterData.id.startsWith("custom_"))
-                                  ? 'custom'
-                                  : editableCharacterData.templateId || editableCharacterData.id;
+      const effectiveTemplateId = editableCharacterData.templateId || editableCharacterData.id;
       let docIdForFirestore: string = editableCharacterData.id;
+
+      // If the character being saved is a base template (not a custom_ prefixed ID),
+      // and a saved version doesn't exist yet, ensure we're not overwriting the base template ID
+      // in user's saved data if they intended to customize it.
+      // However, with "custom character" fully removed, users will primarily be saving modified versions of base templates.
+      // The docIdForFirestore should correctly be the original template ID if it's a base template.
 
       const characterToSave: Character = {
         ...editableCharacterData,
@@ -1194,47 +976,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       if(setAuthError && error instanceof Error) setAuthError("Failed to save character data." + error.message);
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleLoadSavedCustomCharacter = async () => {
-    if (!currentUser || !auth.currentUser) {
-      showToastHelper({ title: "Not Logged In", description: "Please log in to load your saved character.", variant: "destructive" });
-      return;
-    }
-    setIsLoadingCharacter(true);
-    const characterRef = doc(db, "userCharacters", currentUser.uid, "characters", "custom"); 
-    try {
-      const docSnap = await getDoc(characterRef);
-      if (docSnap.exists()) {
-        let loadedChar = { id: docSnap.id, ...docSnap.data() } as Character;
-        loadedChar.templateId = 'custom'; 
-        loadedChar.crypto = loadedChar.crypto || 0; 
-        loadedChar.bleedPoints = loadedChar.bleedPoints || 0;
-        setCurrentBleedPoints(loadedChar.bleedPoints);
-        setEditableCharacterData(loadedChar);
-        setSessionMaxHpModifier(0); 
-        setSessionMaxSanityModifier(0);
-        showToastHelper({ title: "Saved Custom Loaded", description: `Loaded your saved Custom Character.` });
-      } else {
-        const defaultCustomTemplate = charactersData.find(c => c.id === 'custom');
-        if (defaultCustomTemplate) {
-          let charToSet: Character = JSON.parse(JSON.stringify(defaultCustomTemplate));
-          charToSet.templateId = 'custom';
-          charToSet.crypto = 0;
-          charToSet.bleedPoints = 0;
-          setCurrentBleedPoints(0);
-          setEditableCharacterData(charToSet);
-          setSessionMaxHpModifier(0);
-          setSessionMaxSanityModifier(0);
-          showToastHelper({ title: "Default Custom Loaded", description: "No saved custom character found. Loaded default." });
-        }
-      }
-    } catch (err) {
-      console.error("Error loading saved custom character:", err);
-      showToastHelper({ title: "Load Error", description: "Failed to load saved custom character.", variant: "destructive" });
-    } finally {
-      setIsLoadingCharacter(false);
     }
   };
 
@@ -1265,7 +1006,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
   const criticalArsenalError = arsenalCards.find(card => card.id === 'error-critical-arsenal');
 
   const effectiveBaseStats = useMemo(() => {
-    if (!editableCharacterData) return { ...initialCustomCharacterStats };
+    if (!editableCharacterData) return { ...initialCustomCharacterStats }; // Fallback, though should not happen if loading is correct
     let base = { ...editableCharacterData.baseStats };
 
     if (equippedArsenalCard) {
@@ -1311,12 +1052,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         ? { ...template.meleeWeapon }
         : { name: "Fists", attack: 1, flavorText: "Basic unarmed attack" };
 
-    if (defaultWeapon?.name === "Fists" && defaultWeapon.attack === 1 &&
-        !template?.meleeWeapon?.name &&
-        editableCharacterData.templateId !== 'custom'
-    ) {
-        return undefined;
-    }
+    // Removed logic that hides default "Fists" if templateId was 'custom'
     return defaultWeapon;
   }, [editableCharacterData]);
 
@@ -1327,12 +1063,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           ? { ...template.rangedWeapon } as RangedWeapon
           : { name: "None", attack: 0, range: 0, flavorText: "No ranged weapon" } as RangedWeapon;
 
-    if (defaultWeapon?.name === "None" && defaultWeapon.attack === 0 && defaultWeapon.range === 0 &&
-        !template?.rangedWeapon?.name &&
-        editableCharacterData.templateId !== 'custom'
-    ) {
-      return undefined;
-    }
+    // Removed logic that hides default "None" if templateId was 'custom'
       return defaultWeapon;
   }, [editableCharacterData]);
 
@@ -1357,7 +1088,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             };
         }
     }
-    if (equippedArsenalCard && weaponToDisplay) { 
+    if (equippedArsenalCard && weaponToDisplay) {
         weaponToDisplay = {
             ...weaponToDisplay,
             attack: (weaponToDisplay.attack || 0) + (equippedArsenalCard.meleeAttackMod || 0),
@@ -1368,8 +1099,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     if (weaponToDisplay?.name === "Fists" && weaponToDisplay.attack === 1 &&
         !template?.meleeWeapon?.name &&
         !equippedArsenalCard?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (!i.parsedWeaponStats?.range || i.parsedWeaponStats.range <= 1)) &&
-        !equippedArsenalCard?.meleeAttackMod &&
-        editableCharacterData.templateId !== 'custom' 
+        !equippedArsenalCard?.meleeAttackMod
     ) {
       return undefined;
     }
@@ -1398,7 +1128,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
               };
           }
       }
-      if (equippedArsenalCard && weaponToDisplay) { 
+      if (equippedArsenalCard && weaponToDisplay) {
           weaponToDisplay = {
               ...weaponToDisplay,
               attack: (weaponToDisplay.attack || 0) + (equippedArsenalCard.rangedAttackMod || 0),
@@ -1410,8 +1140,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     if (weaponToDisplay?.name === "None" && weaponToDisplay.attack === 0 && weaponToDisplay.range === 0 &&
         !template?.rangedWeapon?.name &&
         !equippedArsenalCard?.items.some(i => !i.isPet && (i.isFlaggedAsWeapon || (i.category?.toUpperCase() === 'LOAD OUT' && i.type?.toUpperCase() === 'WEAPON')) && i.parsedWeaponStats?.attack !== undefined && (i.parsedWeaponStats?.range && i.parsedWeaponStats.range > 1)) &&
-        !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod &&
-        editableCharacterData.templateId !== 'custom' 
+        !equippedArsenalCard?.rangedAttackMod && !equippedArsenalCard?.rangedRangeMod
     ) {
       return undefined;
     }
@@ -1502,7 +1231,6 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
           data-ai-hint={
              editableCharacterData.name === "Fei" ? "male hunter anime" :
              editableCharacterData.name === "Michael" ? "male soldier urban" :
-             editableCharacterData.name === "Custom Character" ? "silhouette mysterious" :
              editableCharacterData.name === "Tamara" ? "female adventurer jungle" :
              editableCharacterData.name === "Trish" ? "female warrior katana" :
              editableCharacterData.name === "Blake" ? "male hunter bandana" :
@@ -1521,7 +1249,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
             isLoadingCharacter={isLoadingCharacter}
             onCharacterDropdownChange={handleCharacterDropdownChange}
             onCustomCharacterNameChange={handleCustomCharacterNameChange}
-            onLoadSavedCustomCharacter={handleLoadSavedCustomCharacter}
+            onLoadSavedCustomCharacter={() => { /* Removed */}}
             onResetStats={resetStats}
         />
         <CardContent className="space-y-6">
@@ -1749,8 +1477,8 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
                     handleArsenalCardChange={handleArsenalCardChange}
                     currentCompanion={currentCompanion}
                     criticalArsenalError={criticalArsenalError}
-                    currentPetHp={currentPetHp} 
-                    currentPetSanity={currentPetSanity} 
+                    currentPetHp={currentPetHp}
+                    currentPetSanity={currentPetSanity}
                     handleIncrementPetStat={(statType: 'hp' | 'sanity' | 'mv' | 'def') => handlePetStatChange(statType, 'increment')}
                     handleDecrementPetStat={(statType: 'hp' | 'sanity' | 'mv' | 'def') => handlePetStatChange(statType, 'decrement')}
                 />
@@ -1787,5 +1515,3 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
       </Card>
   );
 }
-
-    
