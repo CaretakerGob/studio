@@ -34,7 +34,8 @@ import {
   Gamepad2,
   ChevronDown,
   Lightbulb,
-  BookOpenText, // Added BookOpenText
+  BookOpenText,
+  Target, // New Icon for Mission Tracker
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -60,6 +61,7 @@ const navItemsConfig: CombinedNavItem[] = [
   {
     label: 'Game Tools', icon: Gamepad2, type: 'dropdown', children: [
       { href: '/character-sheet', label: 'Character Sheet', icon: UserCircle },
+      { href: '/mission-tracker', label: 'Mission Tracker', icon: Target }, // New Item
       { href: '/dice-roller', label: 'Dice Roller', icon: Dices },
       { href: '/card-generator', label: 'Card Generator', icon: Layers },
       { href: '/item-list', label: 'Events', icon: CalendarDays }, 
@@ -67,7 +69,7 @@ const navItemsConfig: CombinedNavItem[] = [
       { href: '/events', label: 'Item List', icon: List }, 
     ]
   },
-  { href: '/how-to-play', label: 'How to Play', icon: BookOpenText, type: 'link' }, // NEW ITEM
+  { href: '/how-to-play', label: 'How to Play', icon: BookOpenText, type: 'link' },
   {
     label: 'Future Features', icon: Lightbulb, type: 'dropdown', children: [
       { href: '/item-generator', label: 'Item Generator (AI)', icon: WandSparkles, disabled: true },

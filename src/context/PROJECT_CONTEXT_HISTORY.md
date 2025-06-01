@@ -24,7 +24,7 @@
     - Flows are defined in `src/ai/flows/`.
 - **External Data Sources:**
     - **Google Sheets API:** Used to fetch game data for Events, NPC Generator, Arsenal Cards, and Shop Items via server-side logic in page components. Shop items can be sourced from multiple tabs within the same Google Sheet.
-    - **Local Filesystem (`fs` module):** Used server-side to read `Riddle_of_the_Beast_Rulebook.md` for the "How to Play" page content.
+    - **Local Filesystem (`fs` module):** Used server-side to read `Riddle_of_the_Beast_Rulebook.md` for the "How to Play" page content and `Horror Journal Rulebook.md` for the "Mission Tracker" enemy data.
 - **Image Placeholders:** `https://placehold.co` and `https://picsum.photos`. Firebase Storage for character/card images.
 - **Deployment:** Firebase App Hosting (inferred from build logs and setup).
 - **Code Quality:**
@@ -69,49 +69,64 @@
 - (No changes in this update)
 
 ### 3.13. Hunter's Nexus (`/hunters-nexus`)
-- Character avatar images in the enlarged modal now support flipping between front and back (if `backImageUrl` is defined for the character and different from `imageUrl`) and zooming, similar to arsenal cards.
-- `EnlargedModalContentType` updated for consistency.
-- `openAvatarImageModal` now takes the full character object.
-- Added "Display Preferences" to the settings dropdown menu. Users can now toggle the visibility of the Crypto Tracker, Dice Roller, and Card Decks windows. These settings are currently session-local and do not persist.
-
-### 3.14. How to Play (`/how-to-play`)
-- Page now derives its entire structure (H2s for accordion triggers, H3s for sub-sections) and content (paragraphs, lists, images) solely from `Riddle_of_the_Beast_Rulebook.md`.
-- The `RoTB_Rulebook_Dropdown_Structure.md` file is no longer read or used for this page.
-- The `shopSectionTitlesToIgnore` list has been removed for now; filtering can be re-added if needed based on actual headings from the main rulebook.
-- Corrected a `ReferenceError` for `normalizeKey` by moving its definition before usage.
-
-### 3.15. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
 - (No changes in this update)
 
-### 3.16. Layout & General
+### 3.14. How to Play (`/how-to-play`)
+- (No changes in this update)
+
+### 3.15. Mission Tracker (`/mission-tracker`) - NEW
+- **Initial Setup:** New page and route created.
+- **Enemy Data Parsing:**
+    - Created `src/lib/enemy-parser.ts` with `parseHorrorJournal` function.
+    - This function reads `Horror Journal Rulebook.md` and parses enemy data based on `#` (enemy name), `##` (sections like Base Stats, Base Attacks, Logic), and `###` (sub-sections like Armor).
+    - Extracts: Name, CP, Template, HP, MV, Def, San, Armor (Name & Effect), basic Melee/Range attack details, and Logic string.
+    - Basic ability titles are captured, but detailed multi-line ability descriptions are not yet fully parsed.
+- **Data Types:** Defined in `src/types/mission.ts` for `Enemy`, `EnemyStatBlock`, `EnemyAttack`, `EnemyArmor`, `EnemyLogic`, `ActiveEnemy`.
+- **Basic UI (`mission-tracker-ui.tsx`):**
+    - Displays a dropdown to select from parsed enemies.
+    - Allows adding selected enemies to an "Active Encounter" list.
+    - Each active enemy in the encounter shows: Name, CP, Template, current HP (with +/- buttons for tracking), MV, DEF, SAN, Armor, basic Melee/Range, and Logic.
+    - Button to remove an enemy from the encounter.
+- **Sidebar Integration:** Added "Mission Tracker" link under "Game Tools".
+
+### 3.16. Terms of Service (`/terms`) & Privacy Policy (`/privacy`)
+- (No changes in this update)
+
+### 3.17. Layout & General
 - (No changes in this update)
 
 ## 4. Features Currently Under Development
-- (No changes in this update)
+- **Mission Tracker Enhancements:**
+    - Parsing and displaying detailed enemy abilities (Special 1, Special 2, Signature, Passives) from the rulebook.
+    - Handling enemy variations described in tables (e.g., Animated Objects, Drowned Ones).
+    - UI for managing specific Hunts/Investigations, objectives, and POIs.
+    - Integration with card decks (Combat Cards, Clash Cards).
+    - Tracking for more enemy stats (e.g., Sanity for active enemies, status effects).
 
 ## 5. Planned Features / Future Work
--   Persistent "Display Preferences" for Hunter's Nexus (e.g., save to Firebase).
--   Ability to reorder/customize window positions in Hunter's Nexus.
+- (No changes directly related to this update's feature, but existing items remain)
 
 ## 6. Design Decisions and Constraints
--   Hunter's Nexus display preferences (window visibility) are currently client-side state and reset on refresh/navigation.
+- **Enemy Parsing:** Initial parser focuses on core stats and simple fields. Complex multi-line descriptions (like detailed abilities) and table-based variations are deferred for future enhancement due to parsing complexity.
+- **Mission Tracker UI:** Initial UI is focused on basic enemy selection and HP tracking.
 
 ## 7. Open Questions / Assumptions
-- (No changes in this update)
+- The `Horror Journal Rulebook.md` format is assumed to be relatively consistent for the initial parser. Significant deviations might require parser adjustments.
 
 ## 8. Data Structures of the App
-- `Character` type in `src/types/character.ts` now includes an optional `backImageUrl` string property.
+- New types added in `src/types/mission.ts`: `EnemyArmor`, `EnemyStatBlock`, `EnemyAttack`, `EnemyLogic`, `EnemyAbility`, `Enemy`, `ActiveEnemy`.
 
 ## 9. Firebase Rules, Cloud Functions, and APIs
 - (No changes in this update)
 
 ## 10. Other Important Observations
-- (No changes in this update)
+- The `Horror Journal Rulebook.md` is a critical data source for the new Mission Tracker.
 
 This document provides a snapshot of the project's state and context.
     
 
     
+
 
 
 

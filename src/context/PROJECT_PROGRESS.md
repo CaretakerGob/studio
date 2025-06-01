@@ -69,9 +69,11 @@ DONE:
     - Team Management Dialog.
     - Session Crypto Tracker.
     - Character avatar and arsenal card image modals with flip & zoom functionality.
-    - Modal for active character details.
+    - Modal for active character details (including visibility toggles for specific stats).
     - Save/Load/Delete/Reset Nexus Session functionality.
-    - Added "Display Preferences" to settings for toggling visibility of Crypto, Dice Roller, and Card Decks windows (session-local state).
+    - Added "Display Preferences" to settings for toggling visibility of Crypto, Dice Roller, Card Decks, and Active Character Core Stats windows (session-local state).
+    - Fixed DropdownMenuLabel and DropdownMenuTrigger ReferenceErrors.
+    - Corrected Melee/Ranged ATK display on compact cards.
 - How to Play Page (`/how-to-play`):
     - Page now derives structure (H2s, H3s) and content (paragraphs, lists, images) solely from `Riddle_of_the_Beast_Rulebook.md`.
     - `RoTB_Rulebook_Dropdown_Structure.md` is no longer used.
@@ -85,7 +87,7 @@ DONE:
 - Sidebar Navigation:
     - Links to all major features.
     - Mobile-responsive (Sheet-based).
-    - "Game Tools" items grouped under a dropdown.
+    - "Game Tools" items grouped under a dropdown, including new "Mission Tracker".
     - "Future Features" dropdown added; AI Item Generator and NPC Generator moved there and greyed out.
     - Added "How to Play" link.
 - Mobile Optimizations:
@@ -93,10 +95,17 @@ DONE:
     - Character Sheet tabs and header.
 - Rulebook Data Ingestion: Received and stored game rules in `docs/game-rules.md` and `docs/Riddle_of_the_Beast_Rulebook.md`.
 - MetaBuild Files: Created `MetaBuild.md` and `MetaBuild.json` with initial builds for Gob.
+- Initial Mission Tracker page (`/mission-tracker`):
+    - Basic UI for selecting enemies and adding them to an encounter.
+    - Enemy data parsed from `Horror Journal Rulebook.md` (Name, CP, Template, Base Stats, Basic Attacks, Logic).
+    - HP tracking for active enemies in the encounter.
 - Numerous bug fixes and UI refinements.
 
 WORKING:
-- Ongoing review and minor clean-up of existing codebase.
+- Refining Mission Tracker:
+    - Improve enemy data parsing (e.g., detailed abilities, variations).
+    - Enhance UI for managing Hunts, objectives, POIs.
+    - Integrate card deck functionalities.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -106,15 +115,15 @@ NEXT:
     - Dynamic stat/ability updates based on equipped items.
 - Implement Hunter's Nexus "Display Preferences" persistence (e.g., save to Firebase).
 - Implement Hunter's Nexus window reordering/position customization.
-- Integrate combat rules into a basic combat UI/tracker.
+- Integrate combat rules into a basic combat UI/tracker (potentially part of Mission Tracker).
 - Develop "Shared Space" with real-time collaboration features (Firebase) (using "Party" terminology).
 - Populate "Item List" page with actual game items (from rulebook or new data source, potentially shop sheet).
 - Expand Genkit AI integrations:
     - Dynamic NPC dialogue generation.
     - AI-assisted event or NPC detail generation.
     - Persist AI-generated shop item images.
-- Add a bestiary/monster manual section.
-- Implement game rule references or a digital rulebook section (current "How to Play" serves this, but could be enhanced).
+- Add a bestiary/monster manual section (could leverage enemy parser).
+- Implement game rule references or a digital rulebook section (current "How to Play" serves this, but could be enhanced with search/navigation).
 - Further mobile optimization for all pages.
 - Caching strategies for Google Sheet data.
 - Address any remaining warnings from the build process.
@@ -122,6 +131,7 @@ NEXT:
       
 
     
+
 
 
 
