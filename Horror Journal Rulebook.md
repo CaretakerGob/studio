@@ -20,36 +20,38 @@ Each Animated Object manifests with distinct traits, altering its base statistic
 * Animated Objects Table
 **Object**
 Stat changes over Base
-    - Animated Armor
+#### Animated Armor
 +2 DEF
-    - Animated Sword
+#### Animated Sword
 +2 Melee, +2 MV
     - Living Painting
 +5 HP, -2 MV
         
 
-Animated Armor, Animated Sword, Living Painting
+**Animated Armor, Animated Sword, Living Painting**
 
-Animated Armor
-Special 1: Posture � User gains a ward of 2
-Special 2: Combo Attack � Make 3 melee attacks in a row. 
-Signature: Harden - +1 to allies Attack for 2 rounds. This effect can stack up to 2 times. 
-Passive - Guardian � Allies gain Ward of 1 HP while adjacent to the Armor 
-
-
-Animated Sword
-Special 1: Blade Storm � A3/R3 � Attack all enemies within range. 
-Special 2: Impale - A4/R2 � MULTI-ATTACK
-Signature: Sharpen - +2 to all Attacks for 2 rounds. 
-Passive: Edged - Damaged targets take 1 point of BLEED.
+#### Animated Armor
+**Abilities**
+- Special 1: Posture � User gains a ward of 2
+- Special 2: Combo Attack � Make 3 melee attacks in a row. 
+- Signature: Harden - +1 to allies Attack for 2 rounds. This effect can stack up to 2 times. 
+- Passive - Guardian � Allies gain Ward of 1 HP while adjacent to the Armor 
 
 
-Living Painting
-Special 1: Twisting Gaze � R3 � Target gains the FEAR effect for the remainder of this battle. 
-Special 2: Twisting Nightmare � R5 � The painting shifts grotesquely, forcing all enemies within range to roll a Sanity check. Those who fail take 1 Sanity damage and cannot move for 1 round
-Signature: Portrait of Madness � A4/R6 � The painting distorts into a horrifying scene of the target's worst fears. The target must roll a Sanity check. On failure, they take 2 Sanity damage and roll only 1 Defense dice against this attack.
-Passive: Unreal � Any tiles within 2 spaces of the Living Painting is treated as Darkness. Living Painting regains 1 HP for each point of Sanity damage inflicted. 
-    
+**Animated Sword**
+- Special 1: Blade Storm � A3/R3 � Attack all enemies within range. 
+- Special 2: Impale - A4/R2 � MULTI-ATTACK
+- Signature: Sharpen - +2 to all Attacks for 2 rounds. 
+- Passive: Edged - Damaged targets take 1 point of BLEED.
+
+
+**Living Painting**
+- Special 1: Twisting Gaze � R3 � Target gains the FEAR effect for the remainder of this battle. 
+- Special 2: Twisting Nightmare � R5 � The painting shifts grotesquely, forcing all enemies within range to roll a Sanity check. Those who fail take 1 Sanity damage and cannot move for 1 round
+- Signature: Portrait of Madness � A4/R6 � The painting distorts into a horrifying scene of the target's worst fears. The target must roll a Sanity check. On failure, they take 2 - Sanity damage and roll only 1 Defense dice against this attack.
+- Passive: Unreal � Any tiles within 2 spaces of the Living Painting is treated as Darkness. Living Painting regains 1 HP for each point of Sanity damage inflicted. 
+
+ ____________________________________________________________________________________   
 
 Arachne
     
