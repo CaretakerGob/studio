@@ -72,6 +72,7 @@
 - Character avatar images in the enlarged modal now support flipping between front and back (if `backImageUrl` is defined for the character and different from `imageUrl`) and zooming, similar to arsenal cards.
 - `EnlargedModalContentType` updated for consistency.
 - `openAvatarImageModal` now takes the full character object.
+- Added "Display Preferences" to the settings dropdown menu. Users can now toggle the visibility of the Crypto Tracker, Dice Roller, and Card Decks windows. These settings are currently session-local and do not persist.
 
 ### 3.14. How to Play (`/how-to-play`)
 - Page now derives its entire structure (H2s for accordion triggers, H3s for sub-sections) and content (paragraphs, lists, images) solely from `Riddle_of_the_Beast_Rulebook.md`.
@@ -89,13 +90,14 @@
 - (No changes in this update)
 
 ## 5. Planned Features / Future Work
-- (No changes in this update)
+-   Persistent "Display Preferences" for Hunter's Nexus (e.g., save to Firebase).
+-   Ability to reorder/customize window positions in Hunter's Nexus.
 
 ## 6. Design Decisions and Constraints
-- (No changes in this update)
+-   Hunter's Nexus display preferences (window visibility) are currently client-side state and reset on refresh/navigation.
 
 ## 7. Open Questions / Assumptions
-- The "How to Play" page's content rendering relies on the structure of `Riddle_of_the_Beast_Rulebook.md` using `##` for main sections and `###` for sub-sections to generate a meaningful accordion.
+- (No changes in this update)
 
 ## 8. Data Structures of the App
 - `Character` type in `src/types/character.ts` now includes an optional `backImageUrl` string property.
@@ -104,12 +106,12 @@
 - (No changes in this update)
 
 ## 10. Other Important Observations
-- The "How to Play" page's parsing logic for Markdown from a single file needs to be robust to handle various content types correctly under H2/H3 headings.
-- Character data in `character-sheet-ui.tsx` now includes `backImageUrl` for each character, sourced from `docs/HunterUrl.md`.
+- (No changes in this update)
 
 This document provides a snapshot of the project's state and context.
     
 
     
+
 
 

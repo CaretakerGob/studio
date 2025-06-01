@@ -71,6 +71,7 @@ DONE:
     - Character avatar and arsenal card image modals with flip & zoom functionality.
     - Modal for active character details.
     - Save/Load/Delete/Reset Nexus Session functionality.
+    - Added "Display Preferences" to settings for toggling visibility of Crypto, Dice Roller, and Card Decks windows (session-local state).
 - How to Play Page (`/how-to-play`):
     - Page now derives structure (H2s, H3s) and content (paragraphs, lists, images) solely from `Riddle_of_the_Beast_Rulebook.md`.
     - `RoTB_Rulebook_Dropdown_Structure.md` is no longer used.
@@ -95,7 +96,7 @@ DONE:
 - Numerous bug fixes and UI refinements.
 
 WORKING:
-- Refining the "How to Play" page content parsing logic from `Riddle_of_the_Beast_Rulebook.md` to accurately display all content types (paragraphs, lists, images) under their respective H2/H3 headings.
+- Ongoing review and minor clean-up of existing codebase.
 
 NEXT:
 - Implement full "Gear and Equipment" system based on rulebook:
@@ -103,6 +104,8 @@ NEXT:
     - Equipment slots on Character Sheet UI.
     - Logic for equipping/unequipping individual items (Gear, Utility, Augments, Consumables).
     - Dynamic stat/ability updates based on equipped items.
+- Implement Hunter's Nexus "Display Preferences" persistence (e.g., save to Firebase).
+- Implement Hunter's Nexus window reordering/position customization.
 - Integrate combat rules into a basic combat UI/tracker.
 - Develop "Shared Space" with real-time collaboration features (Firebase) (using "Party" terminology).
 - Populate "Item List" page with actual game items (from rulebook or new data source, potentially shop sheet).
@@ -112,7 +115,6 @@ NEXT:
     - Persist AI-generated shop item images.
 - Add a bestiary/monster manual section.
 - Implement game rule references or a digital rulebook section (current "How to Play" serves this, but could be enhanced).
-- Implement Hunter's Nexus "Session Display Preferences" (toggle tool visibility, compact mode).
 - Further mobile optimization for all pages.
 - Caching strategies for Google Sheet data.
 - Address any remaining warnings from the build process.
@@ -120,5 +122,6 @@ NEXT:
       
 
     
+
 
 

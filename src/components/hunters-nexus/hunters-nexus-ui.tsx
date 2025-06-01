@@ -19,6 +19,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -102,6 +107,7 @@ import {
   UserRoundX,
   CheckCircle,
   Image as LucideImage,
+  Eye, // Added Eye icon
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -215,6 +221,11 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<SavedNexusState | null>(null);
   const [isDeletingSession, setIsDeletingSession] = useState(false);
+
+  // State for window visibility
+  const [isCryptoVisible, setIsCryptoVisible] = useState(true);
+  const [isDiceRollerVisible, setIsDiceRollerVisible] = useState(true);
+  const [isCardDecksVisible, setIsCardDecksVisible] = useState(true);
 
 
   const activeCharacterBase = useMemo(() => {
@@ -1078,6 +1089,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setNexusDrawnCardsHistory([]);
     setNexusSelectedDeckName(undefined);
     setIsResetDialogOpen(false);
+    setIsCryptoVisible(true);
+    setIsDiceRollerVisible(true);
+    setIsCardDecksVisible(true);
     toast({ title: "Nexus Session Reset", description: "The current session has been cleared." });
   };
 
@@ -1137,6 +1151,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setNexusLatestRoll(null);
     setNexusDrawnCardsHistory([]);
     setNexusSelectedDeckName(undefined);
+    setIsCryptoVisible(true); // Reset visibility on load
+    setIsDiceRollerVisible(true);
+    setIsCardDecksVisible(true);
 
     setIsLoadNexusDialogOpen(false);
     toast({ title: "Session Loaded", description: `Session "${session.name}" has been loaded.` });
@@ -1193,6 +1210,34 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                    <DropdownMenuItem onSelect={handleOpenLoadSessionDialog} disabled={!currentUser}>
                     <UploadCloud className="mr-2 h-4 w-4" /> Load Session
                   </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Display Preferences
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuCheckboxItem
+                          checked={isCryptoVisible}
+                          onCheckedChange={setIsCryptoVisible}
+                        >
+                          Show Crypto Tracker
+                        </DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem
+                          checked={isDiceRollerVisible}
+                          onCheckedChange={setIsDiceRollerVisible}
+                        >
+                          Show Dice Roller
+                        </DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem
+                          checked={isCardDecksVisible}
+                          onCheckedChange={setIsCardDecksVisible}
+                        >
+                          Show Card Decks
+                        </DropdownMenuCheckboxItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => setIsResetDialogOpen(true)} disabled={teamMembers.length === 0}> 
                     <RotateCcw className="mr-2 h-4 w-4" /> Reset Session
@@ -1258,127 +1303,133 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-1 space-y-6">
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-lg flex items-center">
-                                <Coins className="mr-2 h-5 w-5 text-yellow-400" />Session Crypto
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center gap-2">
-                                <Button variant="outline" size="icon" onClick={() => handleSessionCryptoChange(sessionCrypto - 1)} className="h-8 w-8">
-                                    <Minus className="h-4 w-4" />
-                                </Button>
-                                <Input
-                                    type="number"
-                                    value={sessionCrypto}
-                                    onChange={(e) => handleSessionCryptoChange(e.target.value)}
-                                    className="w-24 h-8 text-center text-lg font-bold"
-                                    min="0"
-                                />
-                                <Button variant="outline" size="icon" onClick={() => handleSessionCryptoChange(sessionCrypto + 1)} className="h-8 w-8">
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-lg flex items-center"><Dices className="mr-2 h-5 w-5 text-primary" />Dice Roller</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                            <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                                <Label className="text-sm">Combat Dice</Label>
-                                <div className="flex items-end gap-2">
-                                <div className="flex-1">
-                                    <Label htmlFor="nexusNumCombatDice" className="text-xs">Qty (1-12)</Label>
-                                    <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice} onChange={(e) => setNexusNumCombatDice(e.target.value)} min="1" max="12" className="h-8" />
-                                </div>
-                                <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2"><ChevronsRight className="h-4 w-4" /> Roll</Button>
-                                </div>
-                            </div>
-                            <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                                <Label className="text-sm">Numbered Dice</Label>
-                                <div className="flex items-end gap-2">
-                                <div className="flex-1">
-                                    <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
-                                    <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(e.target.value)} min="1" className="h-8" />
-                                </div>
-                                <span className="pb-2">d</span>
-                                <div className="flex-1">
-                                    <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
-                                    <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(e.target.value)} min="2" className="h-8" />
-                                </div>
-                                <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2"><ChevronsRight className="h-4 w-4" /> Roll</Button>
-                                </div>
-                            </div>
-                            {nexusLatestRoll && (
-                                <Card key={nexusRollKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
-                                <CardHeader className="p-2">
-                                    <CardTitle className="text-sm flex items-center justify-between">
-                                    <span>Latest Roll:</span>
-                                    <Badge variant="secondary" className="text-xs">{nexusLatestRoll.notation}</Badge>
+                        {isCryptoVisible && (
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-lg flex items-center">
+                                    <Coins className="mr-2 h-5 w-5 text-yellow-400" />Session Crypto
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="p-2 text-center">
-                                    {nexusLatestRoll.type === 'numbered' && (
-                                    <>
-                                        <div className="flex flex-wrap gap-1 justify-center mb-1">
-                                        {(nexusLatestRoll.rolls as number[]).map((roll, idx) => (
-                                            <Badge key={idx} variant="default" className="text-md bg-primary/20 text-primary-foreground border border-primary">{roll}</Badge>
-                                        ))}
-                                        </div>
-                                        <p className="font-semibold text-primary">Total: {nexusLatestRoll.total}</p>
-                                    </>
+                                <CardContent>
+                                    <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="icon" onClick={() => handleSessionCryptoChange(sessionCrypto - 1)} className="h-8 w-8">
+                                        <Minus className="h-4 w-4" />
+                                    </Button>
+                                    <Input
+                                        type="number"
+                                        value={sessionCrypto}
+                                        onChange={(e) => handleSessionCryptoChange(e.target.value)}
+                                        className="w-24 h-8 text-center text-lg font-bold"
+                                        min="0"
+                                    />
+                                    <Button variant="outline" size="icon" onClick={() => handleSessionCryptoChange(sessionCrypto + 1)} className="h-8 w-8">
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {isDiceRollerVisible && (
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-lg flex items-center"><Dices className="mr-2 h-5 w-5 text-primary" />Dice Roller</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                                    <Label className="text-sm">Combat Dice</Label>
+                                    <div className="flex items-end gap-2">
+                                    <div className="flex-1">
+                                        <Label htmlFor="nexusNumCombatDice" className="text-xs">Qty (1-12)</Label>
+                                        <Input id="nexusNumCombatDice" type="number" value={nexusNumCombatDice} onChange={(e) => setNexusNumCombatDice(e.target.value)} min="1" max="12" className="h-8" />
+                                    </div>
+                                    <Button onClick={handleNexusCombatRoll} size="sm" className="h-8 px-2"><ChevronsRight className="h-4 w-4" /> Roll</Button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                                    <Label className="text-sm">Numbered Dice</Label>
+                                    <div className="flex items-end gap-2">
+                                    <div className="flex-1">
+                                        <Label htmlFor="nexusNumDice" className="text-xs">Qty</Label>
+                                        <Input id="nexusNumDice" type="number" value={nexusNumDice} onChange={(e) => setNexusNumDice(e.target.value)} min="1" className="h-8" />
+                                    </div>
+                                    <span className="pb-2">d</span>
+                                    <div className="flex-1">
+                                        <Label htmlFor="nexusDiceSides" className="text-xs">Sides</Label>
+                                        <Input id="nexusDiceSides" type="number" value={nexusDiceSides} onChange={(e) => setNexusDiceSides(e.target.value)} min="2" className="h-8" />
+                                    </div>
+                                    <Button onClick={handleNexusNumberedRoll} size="sm" className="h-8 px-2"><ChevronsRight className="h-4 w-4" /> Roll</Button>
+                                    </div>
+                                </div>
+                                {nexusLatestRoll && (
+                                    <Card key={nexusRollKey} className="mt-2 bg-muted/30 border-primary/50 shadow-sm animate-in fade-in duration-300">
+                                    <CardHeader className="p-2">
+                                        <CardTitle className="text-sm flex items-center justify-between">
+                                        <span>Latest Roll:</span>
+                                        <Badge variant="secondary" className="text-xs">{nexusLatestRoll.notation}</Badge>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-2 text-center">
+                                        {nexusLatestRoll.type === 'numbered' && (
+                                        <>
+                                            <div className="flex flex-wrap gap-1 justify-center mb-1">
+                                            {(nexusLatestRoll.rolls as number[]).map((roll, idx) => (
+                                                <Badge key={idx} variant="default" className="text-md bg-primary/20 text-primary-foreground border border-primary">{roll}</Badge>
+                                            ))}
+                                            </div>
+                                            <p className="font-semibold text-primary">Total: {nexusLatestRoll.total}</p>
+                                        </>
+                                        )}
+                                        {nexusLatestRoll.type === 'combat' && (
+                                        <>
+                                            <div className="flex flex-wrap gap-1 justify-center mb-1">
+                                            {(nexusLatestRoll.rolls as CombatDieFace[]).map((roll, idx) => (
+                                                <CombatDieFaceImage key={idx} face={roll} size={48} />
+                                            ))}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">{nexusLatestRoll.total as string}</p>
+                                        </>
+                                        )}
+                                    </CardContent>
+                                    </Card>
+                                )}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {isCardDecksVisible && (
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-lg flex items-center"><Layers3 className="mr-2 h-5 w-5 text-primary" />Card Decks</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
+                                        <Label htmlFor="nexusDeckSelect" className="text-sm">Select Deck</Label>
+                                        <Select value={nexusSelectedDeckName} onValueChange={setNexusSelectedDeckName}>
+                                            <SelectTrigger id="nexusDeckSelect" className="h-8"><SelectValue placeholder="Choose a deck..." /></SelectTrigger>
+                                            <SelectContent>{sampleDecks.map(deck => (<SelectItem key={deck.name} value={deck.name} className="text-xs">{deck.name} ({deck.cards.length} cards)</SelectItem>))}</SelectContent>
+                                        </Select>
+                                        <Button onClick={handleNexusDrawCard} size="sm" className="w-full h-8 mt-2" disabled={!nexusSelectedDeckName}><BookOpen className="mr-2 h-4 w-4" /> Draw Card</Button>
+                                    </div>
+                                    {nexusDrawnCardsHistory.length > 0 && nexusDrawnCardsHistory[0] && (
+                                    <div className="mt-2">
+                                        <h4 className="text-sm font-semibold mb-1 text-muted-foreground text-center">Latest Card Drawn</h4>
+                                        <GameCardDisplay card={nexusDrawnCardsHistory[0]} key={`${nexusDrawnCardsHistory[0].id}-${nexusCardKey}`} size="medium" onClick={() => nexusDrawnCardsHistory[0].imageUrl && openAvatarImageModal(nexusDrawnCardsHistory[0] as unknown as Character)} isButton={!!nexusDrawnCardsHistory[0].imageUrl} className="mx-auto animate-in fade-in duration-300" imageOnly={true} />
+                                    </div>
                                     )}
-                                    {nexusLatestRoll.type === 'combat' && (
-                                    <>
-                                        <div className="flex flex-wrap gap-1 justify-center mb-1">
-                                        {(nexusLatestRoll.rolls as CombatDieFace[]).map((roll, idx) => (
-                                            <CombatDieFaceImage key={idx} face={roll} size={48} />
+                                    {nexusDrawnCardsHistory.length > 1 && (
+                                        <div className="mt-4">
+                                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground text-center">Previously Drawn</h4>
+                                        <div className="grid grid-cols-2 gap-2">
+                                        {nexusDrawnCardsHistory.slice(1).map((card, idx) => (
+                                            <GameCardDisplay key={`${card.id}-hist-${idx}`} card={card} size="small" onClick={() => card.imageUrl && openAvatarImageModal(card as unknown as Character)} isButton={!!card.imageUrl} className="w-full" imageOnly={true} />
                                         ))}
                                         </div>
-                                        <p className="text-xs text-muted-foreground">{nexusLatestRoll.total as string}</p>
-                                    </>
+                                        </div>
                                     )}
                                 </CardContent>
-                                </Card>
-                            )}
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-lg flex items-center"><Layers3 className="mr-2 h-5 w-5 text-primary" />Card Decks</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div className="space-y-2 p-2 border border-muted-foreground/20 rounded-md">
-                                    <Label htmlFor="nexusDeckSelect" className="text-sm">Select Deck</Label>
-                                    <Select value={nexusSelectedDeckName} onValueChange={setNexusSelectedDeckName}>
-                                        <SelectTrigger id="nexusDeckSelect" className="h-8"><SelectValue placeholder="Choose a deck..." /></SelectTrigger>
-                                        <SelectContent>{sampleDecks.map(deck => (<SelectItem key={deck.name} value={deck.name} className="text-xs">{deck.name} ({deck.cards.length} cards)</SelectItem>))}</SelectContent>
-                                    </Select>
-                                    <Button onClick={handleNexusDrawCard} size="sm" className="w-full h-8 mt-2" disabled={!nexusSelectedDeckName}><BookOpen className="mr-2 h-4 w-4" /> Draw Card</Button>
-                                </div>
-                                {nexusDrawnCardsHistory.length > 0 && nexusDrawnCardsHistory[0] && (
-                                <div className="mt-2">
-                                    <h4 className="text-sm font-semibold mb-1 text-muted-foreground text-center">Latest Card Drawn</h4>
-                                    <GameCardDisplay card={nexusDrawnCardsHistory[0]} key={`${nexusDrawnCardsHistory[0].id}-${nexusCardKey}`} size="medium" onClick={() => nexusDrawnCardsHistory[0].imageUrl && openAvatarImageModal(nexusDrawnCardsHistory[0] as unknown as Character)} isButton={!!nexusDrawnCardsHistory[0].imageUrl} className="mx-auto animate-in fade-in duration-300" imageOnly={true} />
-                                </div>
-                                )}
-                                {nexusDrawnCardsHistory.length > 1 && (
-                                    <div className="mt-4">
-                                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground text-center">Previously Drawn</h4>
-                                    <div className="grid grid-cols-2 gap-2">
-                                    {nexusDrawnCardsHistory.slice(1).map((card, idx) => (
-                                        <GameCardDisplay key={`${card.id}-hist-${idx}`} card={card} size="small" onClick={() => card.imageUrl && openAvatarImageModal(card as unknown as Character)} isButton={!!card.imageUrl} className="w-full" imageOnly={true} />
-                                    ))}
-                                    </div>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                            </Card>
+                        )}
                     </div>
 
                     <div className="lg:col-span-2 space-y-6">
@@ -1807,7 +1858,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={!!enlargedModalContent} onOpenChange={(isOpen) => { if (!isOpen) setEnlargedModalContent(null); }}>
+          <Dialog 
+            open={!!enlargedModalContent} 
+            onOpenChange={(isOpen) => { if (!isOpen) setEnlargedModalContent(null); }}
+          >
             <DialogContent 
               className="max-w-5xl w-[95vw] h-[95vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center" 
               onInteractOutside={(e) => { 
@@ -1973,3 +2027,4 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
+
