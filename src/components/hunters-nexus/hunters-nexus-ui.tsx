@@ -107,7 +107,7 @@ import {
   UserRoundX,
   CheckCircle,
   Image as LucideImage,
-  Eye, // Added Eye icon
+  Eye, 
 } from "lucide-react";
 import { CombatDieFaceImage, type CombatDieFace } from '@/components/dice-roller/combat-die-face-image';
 import { Badge } from '@/components/ui/badge';
@@ -226,6 +226,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [isCryptoVisible, setIsCryptoVisible] = useState(true);
   const [isDiceRollerVisible, setIsDiceRollerVisible] = useState(true);
   const [isCardDecksVisible, setIsCardDecksVisible] = useState(true);
+  const [isCoreStatsVisible, setIsCoreStatsVisible] = useState(true); // New state
 
 
   const activeCharacterBase = useMemo(() => {
@@ -1092,6 +1093,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setIsCryptoVisible(true);
     setIsDiceRollerVisible(true);
     setIsCardDecksVisible(true);
+    setIsCoreStatsVisible(true); // Reset this too
     toast({ title: "Nexus Session Reset", description: "The current session has been cleared." });
   };
 
@@ -1123,7 +1125,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
             id: savedMember.baseCharacterId, 
             name: savedMember.characterName || baseCharTemplate.name, 
             imageUrl: savedMember.characterImageUrl || baseCharTemplate.imageUrl, 
-            backImageUrl: baseCharTemplate.backImageUrl, // Ensure backImageUrl is loaded from template
+            backImageUrl: baseCharTemplate.backImageUrl, 
         };
         loadedTeamMembers.push(charInstance); 
         
@@ -1151,9 +1153,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setNexusLatestRoll(null);
     setNexusDrawnCardsHistory([]);
     setNexusSelectedDeckName(undefined);
-    setIsCryptoVisible(true); // Reset visibility on load
+    setIsCryptoVisible(true); 
     setIsDiceRollerVisible(true);
     setIsCardDecksVisible(true);
+    setIsCoreStatsVisible(true); // Reset this too
 
     setIsLoadNexusDialogOpen(false);
     toast({ title: "Session Loaded", description: `Session "${session.name}" has been loaded.` });
@@ -1217,6 +1220,12 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                     </DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                       <DropdownMenuSubContent>
+                        <DropdownMenuCheckboxItem
+                          checked={isCoreStatsVisible}
+                          onCheckedChange={setIsCoreStatsVisible}
+                        >
+                          Show Active Character Stats
+                        </DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem
                           checked={isCryptoVisible}
                           onCheckedChange={setIsCryptoVisible}
@@ -1526,7 +1535,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                             </div>
                         )}
                         
-                        {activeCharacterBase && activeCharacterSessionData && (
+                        {activeCharacterBase && activeCharacterSessionData && effectiveNexusCharacterStats && (
                             <Card className="mt-6">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-lg flex items-center">
@@ -1572,6 +1581,50 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                     )}
                                 </CardContent>
                             </Card>
+                        )}
+                        {isCoreStatsVisible && activeCharacterBase && activeCharacterSessionData && effectiveNexusCharacterStats && (
+                             <Card className="mt-6">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-lg flex items-center">
+                                        <UserCircle2 className="mr-2 h-5 w-5 text-primary" /> Active Character Stats: {activeCharacterBase.name}
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                                        {/* HP, Sanity, MV, DEF displays for ACTIVE character, using effectiveNexusCharacterStats and activeCharacterSessionData */}
+                                        {/* HP */}
+                                        <div className="space-y-0.5">
+                                            <Label className="flex items-center text-sm font-medium"><Heart className="mr-1.5 h-4 w-4 text-red-500" />HP</Label>
+                                            <Progress value={(activeCharacterSessionData.currentHp / Math.max(1, effectiveNexusCharacterStats.maxHp)) * 100} className={cn("h-2", getStatProgressColorClass(activeCharacterSessionData.currentHp, effectiveNexusCharacterStats.maxHp, 'hp'))} />
+                                            <p className="text-xs text-muted-foreground text-right">{activeCharacterSessionData.currentHp} / {effectiveNexusCharacterStats.maxHp}</p>
+                                        </div>
+                                        {/* Sanity */}
+                                        <div className="space-y-0.5">
+                                            <Label className="flex items-center text-sm font-medium"><Brain className="mr-1.5 h-4 w-4 text-blue-400" />Sanity</Label>
+                                            <Progress value={(activeCharacterSessionData.currentSanity / Math.max(1, effectiveNexusCharacterStats.maxSanity)) * 100} className={cn("h-2", getStatProgressColorClass(activeCharacterSessionData.currentSanity, effectiveNexusCharacterStats.maxSanity, 'sanity'))} />
+                                            <p className="text-xs text-muted-foreground text-right">{activeCharacterSessionData.currentSanity} / {effectiveNexusCharacterStats.maxSanity}</p>
+                                        </div>
+                                        {/* MV */}
+                                        <div className="flex items-center justify-between">
+                                            <Label className="flex items-center text-sm font-medium"><Footprints className="mr-1.5 h-4 w-4 text-green-500" />MV</Label>
+                                            <Badge variant="outline" className="text-sm">{effectiveNexusCharacterStats.mv}</Badge>
+                                        </div>
+                                        {/* DEF */}
+                                        <div className="flex items-center justify-between">
+                                            <Label className="flex items-center text-sm font-medium"><Shield className="mr-1.5 h-4 w-4 text-gray-400" />DEF</Label>
+                                            <Badge variant="outline" className="text-sm">{effectiveNexusCharacterStats.def}</Badge>
+                                        </div>
+                                        {/* Bleed */}
+                                        <div className={cn("flex items-center justify-between md:col-span-2", activeCharacterSessionData.sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "p-1 rounded-sm ring-1 ring-destructive" : "")}>
+                                            <Label className="flex items-center text-sm font-medium"><Droplets className="mr-1.5 h-4 w-4 text-red-400" />Bleed Pts.</Label>
+                                            <Badge variant={activeCharacterSessionData.sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "destructive" : "outline"} className="text-sm">
+                                                {activeCharacterSessionData.sessionBleedPoints}
+                                                {activeCharacterSessionData.sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD && <AlertTriangle className="ml-1.5 h-3 w-3 inline"/>}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                             </Card>
                         )}
                     </div>
                 </div>
