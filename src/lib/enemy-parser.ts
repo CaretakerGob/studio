@@ -37,7 +37,8 @@ function parseStatModifiers(changeStr: string): StatModifier[] {
   };
 
   parts.forEach(part => {
-    const match = part.match(/([+-])?\s*(\d+)\s+(.*)/i); // Made operator optional for cases like "Regen 1 HP"
+    // Regex to capture operator (+/-), value (digits), and stat name (words, possibly with spaces)
+    const match = part.match(/^([+-])?\s*(\d+)\s+([a-zA-Z\s]+)/i);
     if (match) {
       const operator = match[1] || '+'; // Default to '+' if no operator
       const value = parseInt(match[2], 10);
@@ -51,11 +52,9 @@ function parseStatModifiers(changeStr: string): StatModifier[] {
           value: operator === '+' ? value : -value,
         });
       } else if (rawStatName.startsWith("regen") && rawStatName.endsWith("hp")) {
-        // Could potentially map "Regen X HP" to a special ability/trait or a specific stat if desired
-        // For now, let's log it or decide how to handle it. For StatModifier, it's tricky.
         // console.log(`[EnemyParser] Encountered Regen HP: "${part}", not directly parsed as StatModifier for now.`);
       } else {
-        // console.warn(`[EnemyParser] Unmapped stat modifier name: "${rawStatName}" in string "${part}"`);
+        // console.warn(`[EnemyParser] Unmapped stat modifier name: "${rawStatName}" in string "${part}" from "${changeStr}"`);
       }
     } else {
         // console.warn(`[EnemyParser] Could not parse stat modifier part: "${part}" from string "${changeStr}"`);
@@ -131,28 +130,56 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
         }
         continue;
       }
-      if (line.match(/^\*\s.*Table$/i)) {
+      
+      const variationTitleMatch = line.match(/^####\s+(.*)/);
+      if (variationTitleMatch) {
+        const variationName = variationTitleMatch[1].trim();
+        currentVariationNameForAbilities = variationName; // Set context for potential abilities later
+
+        let variation = currentEnemy.variations?.find(v => v.name === variationName);
+        if (!variation) {
+          if (!currentEnemy.variations) currentEnemy.variations = [];
+          variation = { name: variationName, statChanges: [], abilities: [] };
+          currentEnemy.variations.push(variation);
+        }
+        
+        // Check next line for stat modifiers directly
+        if (i + 1 < lines.length) {
+          const nextLineContent = lines[i+1].trim();
+          // Check if nextLine is a stat modifier string and not an ability section or another heading
+          if (nextLineContent && !nextLineContent.startsWith('**Abilities**') && !nextLineContent.startsWith('#') && !nextLineContent.startsWith('* ') && nextLineContent.match(/^([+-]\d+\s+\w+)/) ) {
+            const parsedMods = parseStatModifiers(nextLineContent);
+            if (parsedMods.length > 0) {
+              variation.statChanges = [...(variation.statChanges || []), ...parsedMods];
+            }
+            i++; // Consume the stat modifier line
+          }
+        }
+
+        // Check for abilities section (might be on the line after stat mods or directly after variation name)
+        if (i + 1 < lines.length && lines[i+1].trim() === '**Abilities**') {
+          parsingSection = 'variationAbilities'; // This state will be used by the next iteration of the loop for abilities under this variation
+          i++; // Consume the "**Abilities**" line
+        } else {
+          // If no **Abilities** found immediately after, reset parsing section
+          // to prevent misinterpreting subsequent lines as abilities for this variation
+          parsingSection = null; 
+        }
+        continue; // Continue to next line after processing #### block
+      }
+
+      // This parses the table (like Tenebrae Resurrection Table)
+      // Ensure it doesn't conflict with the #### parsing for Animated Objects
+      if (line.match(/^\*\s.*Table$/i) && !line.includes("Animated Objects Table")) {
         parsingSection = 'variationTable'; currentVariationNameForAbilities = null;
         variationTableHeaders = []; variationNameColumnIndex = -1; statChangesColumnIndex = -1;
-        if (lines[i+1] && (lines[i+1].startsWith('**') || lines[i+1].trim().split(/\s{2,}/).length > 1) ) { // Check for header-like line
+        if (lines[i+1] && (lines[i+1].startsWith('**') || lines[i+1].trim().split(/\s{2,}/).length > 1) ) {
           const headerLine = lines[i+1].startsWith('**') ? lines[i+1].replace(/\*\*/g, '') : lines[i+1];
-          variationTableHeaders = headerLine.split(/\s{2,}/).map(h => h.trim().toLowerCase()).filter(Boolean); // Split by 2+ spaces
+          variationTableHeaders = headerLine.split(/\s{2,}/).map(h => h.trim().toLowerCase()).filter(Boolean);
           
-          variationNameColumnIndex = variationTableHeaders.findIndex(h => h.includes('object') || h.includes('variation') || h.includes(name.split(' ')[0].toLowerCase()) || h.includes('enemy') || h.includes('insect') || h.includes('maniac') || h.includes('plant'));
+          variationNameColumnIndex = variationTableHeaders.findIndex(h => h.includes('object') || h.includes('variation') || h.includes(name.split(' ')[0].toLowerCase()) || h.includes('enemy') || h.includes('insect') || h.includes('maniac') || h.includes('plant') || h.includes('evolution'));
           statChangesColumnIndex = variationTableHeaders.findIndex(h => h.includes('stat changes') || h.includes('changes over base') || h.includes('stat mods'));
           i++; 
-        }
-        continue;
-      }
-      // Detect start of specific variation ability block
-      const variationAbilityBlockMatch = line.match(/^####\s+(.*)/);
-      if (variationAbilityBlockMatch) {
-        currentVariationNameForAbilities = variationAbilityBlockMatch[1].trim();
-        parsingSection = null; // Reset general parsing section
-        // Look for "**Abilities**" on the next line
-        if (lines[i+1] && lines[i+1].trim() === '**Abilities**') {
-          parsingSection = 'variationAbilities';
-          i++; // Consume the "**Abilities**" line
         }
         continue;
       }
@@ -178,17 +205,17 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
         const rangeMatch = attackLine.match(/Range:\s*(.*)/i);
         if (meleeMatch) currentEnemy.baseAttacks!.push({ type: 'Melee', details: meleeMatch[1].trim() });
         else if (rangeMatch) currentEnemy.baseAttacks!.push({ type: 'Range', details: rangeMatch[1].trim() });
-      } else if (parsingSection === 'abilities' && line.startsWith('- ')) {
+      } else if (parsingSection === 'abilities' && line.startsWith('- ')) { // Base enemy abilities
         const abilityLine = line.substring(2);
         const abilityTitleMatch = abilityLine.match(/^(Special \d+|Signature|Passive(?: \d+)?)\s*[-–—:]?\s*(.*)/i);
         if (abilityTitleMatch && abilityTitleMatch[1]) {
           currentEnemy.abilities?.push({ 
-            name: abilityTitleMatch[1].trim() + (abilityTitleMatch[2] ? `: ${abilityTitleMatch[2].split('–')[0].split('')[0].trim()}` : ''),
+            name: abilityTitleMatch[1].trim() + (abilityTitleMatch[2] ? `: ${abilityTitleMatch[2].split('–')[0].trim()}` : ''),
             type: abilityTitleMatch[1].trim().split(' ')[0], 
             description: abilityLine 
           });
         }
-      } else if (parsingSection === 'variationAbilities' && currentVariationNameForAbilities && line.startsWith('- ')) {
+      } else if (parsingSection === 'variationAbilities' && currentVariationNameForAbilities && line.startsWith('- ')) { // Variation-specific abilities
         const abilityLine = line.substring(2);
         const abilityTitleMatch = abilityLine.match(/^(Special \d+|Signature|Passive(?: \d+)?)\s*[-–—:]?\s*(.*)/i);
         if (abilityTitleMatch && abilityTitleMatch[1]) {
@@ -196,7 +223,7 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
           if (variation) {
             if (!variation.abilities) variation.abilities = [];
             variation.abilities.push({
-              name: abilityTitleMatch[1].trim() + (abilityTitleMatch[2] ? `: ${abilityTitleMatch[2].split('–')[0].split('')[0].trim()}` : ''),
+              name: abilityTitleMatch[1].trim() + (abilityTitleMatch[2] ? `: ${abilityTitleMatch[2].split('–')[0].trim()}` : ''),
               type: abilityTitleMatch[1].trim().split(' ')[0],
               description: abilityLine
             });
@@ -208,11 +235,18 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
           const variationName = columns[variationNameColumnIndex].trim();
           const statChangeString = columns[statChangesColumnIndex].trim();
           if (variationName && statChangeString) {
-            currentEnemy.variations!.push({
-              name: variationName,
-              statChanges: parseStatModifiers(statChangeString),
-              abilities: [] // Initialize abilities array for the variation
-            });
+             // Ensure variations array exists
+            if (!currentEnemy.variations) {
+                currentEnemy.variations = [];
+            }
+            // Check if variation already exists (e.g., from a #### block)
+            let variation = currentEnemy.variations.find(v => v.name === variationName);
+            if (!variation) {
+                variation = { name: variationName, statChanges: [], abilities: [] };
+                currentEnemy.variations.push(variation);
+            }
+            const parsedMods = parseStatModifiers(statChangeString);
+            variation.statChanges = [...(variation.statChanges || []), ...parsedMods];
           }
         }
       }
@@ -223,3 +257,4 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
   }
   return enemies;
 }
+
