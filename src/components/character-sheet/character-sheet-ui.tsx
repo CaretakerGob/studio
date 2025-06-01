@@ -380,7 +380,7 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
         setInitialIdProcessed(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, currentUser, authLoading, initialIdProcessed]); 
+  }, [searchParams, currentUser, authLoading, initialIdProcessed, userSavedCharacters]); 
 
   const loadCharacterData = useCallback(async () => {
       if (!selectedCharacterId) {
@@ -622,7 +622,11 @@ export function CharacterSheetUI({ arsenalCards: rawArsenalCards }: CharacterShe
     const defaultCustomTemplate = charactersData.find(c => c.id === 'custom');
     const defaultCustomName = defaultCustomTemplate?.name || "Custom Character";
 
+    // Populate with base templates, EXCLUDING 'custom' template
     charactersData.forEach(templateChar => {
+      if (templateChar.id === 'custom') { // Filter out the "Custom Character" template
+        return;
+      }
       optionsMap.set(templateChar.id, {
         id: templateChar.id,
         name: templateChar.name,
