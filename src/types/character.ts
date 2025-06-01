@@ -1,5 +1,5 @@
 
-export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity' | 'meleeAttack';
+export type StatName = 'hp' | 'maxHp' | 'mv' | 'def' | 'sanity' | 'maxSanity' | 'meleeAttack' | 'rangedAttack' | 'rangedRange'; // Added rangedAttack & rangedRange
 export type SkillName =
   'ath' |
   'cpu' |
@@ -23,6 +23,8 @@ export interface CharacterStats {
   sanity: number;
   maxSanity: number;
   meleeAttack?: number;
+  rangedAttack?: number; // Added
+  rangedRange?: number;  // Added
 }
 
 export interface Skills {

@@ -226,7 +226,14 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
   const [isCryptoVisible, setIsCryptoVisible] = useState(true);
   const [isDiceRollerVisible, setIsDiceRollerVisible] = useState(true);
   const [isCardDecksVisible, setIsCardDecksVisible] = useState(true);
-  const [isCoreStatsVisible, setIsCoreStatsVisible] = useState(true); // New state
+  const [isCoreStatsVisible, setIsCoreStatsVisible] = useState(true); 
+
+  // State for compact card stat visibility
+  const [isNexusMvVisible, setIsNexusMvVisible] = useState(true);
+  const [isNexusDefVisible, setIsNexusDefVisible] = useState(true);
+  const [isNexusBleedVisible, setIsNexusBleedVisible] = useState(true);
+  const [isNexusMeleeAttackVisible, setIsNexusMeleeAttackVisible] = useState(false); // Default hidden
+  const [isNexusRangedAttackVisible, setIsNexusRangedAttackVisible] = useState(false); // Default hidden
 
 
   const activeCharacterBase = useMemo(() => {
@@ -262,7 +269,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     const sessionData = teamSessionData[memberId]; 
     if (!baseCharacter || !sessionData) return null;
 
-    let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(baseCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0 }));
+    let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(baseCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0, rangedAttack: 0, rangedRange: 0 }));
     const memberArsenal = arsenalCards.find(ac => ac.id === sessionData.selectedArsenalId && !ac.id.startsWith('error-'));
 
     if (memberArsenal) {
@@ -270,6 +277,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       calculatedStats.mv = (calculatedStats.mv || 0) + (memberArsenal.mvMod || 0);
       calculatedStats.def = (calculatedStats.def || 0) + (memberArsenal.defMod || 0);
       calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + (memberArsenal.maxSanityMod || 0);
+      calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + (memberArsenal.meleeAttackMod || 0);
+      calculatedStats.rangedAttack = (calculatedStats.rangedAttack || 0) + (memberArsenal.rangedAttackMod || 0);
+      calculatedStats.rangedRange = (calculatedStats.rangedRange || 0) + (memberArsenal.rangedRangeMod || 0);
       
       if (memberArsenal.items) {
         memberArsenal.items.forEach(item => {
@@ -292,6 +302,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     calculatedStats.maxSanity = (calculatedStats.maxSanity || 1) + sessionData.sessionMaxSanityModifier;
     calculatedStats.mv = (calculatedStats.mv || 0) + sessionData.sessionMvModifier;
     calculatedStats.def = (calculatedStats.def || 0) + sessionData.sessionDefModifier;
+    calculatedStats.meleeAttack = (calculatedStats.meleeAttack || 0) + sessionData.sessionMeleeAttackModifier;
+    calculatedStats.rangedAttack = (calculatedStats.rangedAttack || 0) + sessionData.sessionRangedAttackModifier;
+    calculatedStats.rangedRange = (calculatedStats.rangedRange || 0) + sessionData.sessionRangedRangeModifier;
+
 
     calculatedStats.hp = sessionData.currentHp;
     calculatedStats.sanity = sessionData.currentSanity;
@@ -305,6 +319,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     calculatedStats.def = Math.max(0, calculatedStats.def);
     calculatedStats.sanity = Math.max(0, calculatedStats.sanity);
     calculatedStats.maxSanity = Math.max(1, calculatedStats.maxSanity);
+    calculatedStats.meleeAttack = Math.max(0, calculatedStats.meleeAttack || 0);
+    calculatedStats.rangedAttack = Math.max(0, calculatedStats.rangedAttack || 0);
+    calculatedStats.rangedRange = Math.max(0, calculatedStats.rangedRange || 0);
+
 
     return calculatedStats;
   }, [teamMembers, teamSessionData, arsenalCards]); 
@@ -1093,7 +1111,12 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setIsCryptoVisible(true);
     setIsDiceRollerVisible(true);
     setIsCardDecksVisible(true);
-    setIsCoreStatsVisible(true); // Reset this too
+    setIsCoreStatsVisible(true); 
+    setIsNexusMvVisible(true);
+    setIsNexusDefVisible(true);
+    setIsNexusBleedVisible(true);
+    setIsNexusMeleeAttackVisible(false);
+    setIsNexusRangedAttackVisible(false);
     toast({ title: "Nexus Session Reset", description: "The current session has been cleared." });
   };
 
@@ -1156,7 +1179,12 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     setIsCryptoVisible(true); 
     setIsDiceRollerVisible(true);
     setIsCardDecksVisible(true);
-    setIsCoreStatsVisible(true); // Reset this too
+    setIsCoreStatsVisible(true); 
+    setIsNexusMvVisible(true);
+    setIsNexusDefVisible(true);
+    setIsNexusBleedVisible(true);
+    setIsNexusMeleeAttackVisible(false);
+    setIsNexusRangedAttackVisible(false);
 
     setIsLoadNexusDialogOpen(false);
     toast({ title: "Session Loaded", description: `Session "${session.name}" has been loaded.` });
@@ -1244,6 +1272,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         >
                           Show Card Decks
                         </DropdownMenuCheckboxItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Compact Card Stats</DropdownMenuLabel>
+                        <DropdownMenuCheckboxItem checked={isNexusMvVisible} onCheckedChange={setIsNexusMvVisible}>Show MV</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusDefVisible} onCheckedChange={setIsNexusDefVisible}>Show DEF</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusBleedVisible} onCheckedChange={setIsNexusBleedVisible}>Show Bleed</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusMeleeAttackVisible} onCheckedChange={setIsNexusMeleeAttackVisible}>Show Melee ATK</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusRangedAttackVisible} onCheckedChange={setIsNexusRangedAttackVisible}>Show Ranged ATK</DropdownMenuCheckboxItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>
@@ -1484,6 +1519,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                               </button>
                                             )}
                                             <CardContent className="p-1 space-y-1.5 flex-grow mt-1">
+                                                {/* HP */}
                                                 <div className="space-y-0.5">
                                                     <div className="flex items-center justify-between">
                                                         <Label className="flex items-center text-xs font-medium"><Heart className="mr-1 h-3 w-3 text-red-500" />HP</Label>
@@ -1496,6 +1532,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                                     <Progress value={(memberSessionData.currentHp / Math.max(1, memberEffectiveStats.maxHp)) * 100} className={cn("h-1", getStatProgressColorClass(memberSessionData.currentHp, memberEffectiveStats.maxHp, 'hp'))} />
                                                     <p className="text-xs text-muted-foreground text-right">{memberSessionData.currentHp}/{memberEffectiveStats.maxHp}</p>
                                                 </div>
+                                                {/* Sanity */}
                                                  <div className="space-y-0.5">
                                                     <div className="flex items-center justify-between">
                                                         <Label className="flex items-center text-xs font-medium"><Brain className="mr-1 h-3 w-3 text-blue-400" />Sanity</Label>
@@ -1508,20 +1545,51 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                                                     <Progress value={(memberSessionData.currentSanity / Math.max(1, memberEffectiveStats.maxSanity)) * 100} className={cn("h-1", getStatProgressColorClass(memberSessionData.currentSanity, memberEffectiveStats.maxSanity, 'sanity'))} />
                                                     <p className="text-xs text-muted-foreground text-right">{memberSessionData.currentSanity}/{memberEffectiveStats.maxSanity}</p>
                                                 </div>
-                                                <div className={cn("space-y-0.5", memberSessionData.sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "border-destructive ring-1 ring-destructive rounded p-0.5 -m-0.5" : "")}>
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="flex items-center text-xs font-medium"><Droplets className="mr-1 h-3 w-3 text-red-400" />Bleed</Label>
-                                                        <div className="flex items-center gap-1">
-                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberBleedChange(member.id, 'decrement');}} disabled={memberSessionData.sessionBleedPoints === 0}><Minus className="h-2.5 w-2.5" /></Button> 
-                                                            <Input type="number" readOnly value={memberSessionData.sessionBleedPoints} className="w-8 h-5 text-center p-0 text-xs font-semibold" />
-                                                            <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberBleedChange(member.id, 'increment');}}><Plus className="h-2.5 w-2.5" /></Button> 
+                                                {/* Bleed */}
+                                                {isNexusBleedVisible && (
+                                                    <div className={cn("space-y-0.5", memberSessionData.sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD ? "border-destructive ring-1 ring-destructive rounded p-0.5 -m-0.5" : "")}>
+                                                        <div className="flex items-center justify-between">
+                                                            <Label className="flex items-center text-xs font-medium"><Droplets className="mr-1 h-3 w-3 text-red-400" />Bleed</Label>
+                                                            <div className="flex items-center gap-1">
+                                                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberBleedChange(member.id, 'decrement');}} disabled={memberSessionData.sessionBleedPoints === 0}><Minus className="h-2.5 w-2.5" /></Button> 
+                                                                <Input type="number" readOnly value={memberSessionData.sessionBleedPoints} className="w-8 h-5 text-center p-0 text-xs font-semibold" />
+                                                                <Button variant="outline" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); handleNexusTeamMemberBleedChange(member.id, 'increment');}}><Plus className="h-2.5 w-2.5" /></Button> 
+                                                            </div>
                                                         </div>
+                                                        <p className="text-xs text-muted-foreground text-right">Hemorrhage at: {NEXUS_HEMORRHAGE_THRESHOLD}</p>
+                                                        {memberSessionData.sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD && (
+                                                            <div className="text-xs text-destructive font-bold flex items-center justify-end"><AlertTriangle className="mr-1 h-3 w-3" /> HEMORRHAGE!</div>
+                                                        )}
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground text-right">Hemorrhage at: {NEXUS_HEMORRHAGE_THRESHOLD}</p>
-                                                    {memberSessionData.sessionBleedPoints >= NEXUS_HEMORRHAGE_THRESHOLD && (
-                                                        <div className="text-xs text-destructive font-bold flex items-center justify-end"><AlertTriangle className="mr-1 h-3 w-3" /> HEMORRHAGE!</div>
-                                                    )}
-                                                </div>
+                                                )}
+                                                {/* MV */}
+                                                {isNexusMvVisible && (
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <Label className="flex items-center font-medium"><Footprints className="mr-1 h-3 w-3 text-green-500" />MV</Label>
+                                                        <span>{memberEffectiveStats.mv}</span>
+                                                    </div>
+                                                )}
+                                                {/* DEF */}
+                                                {isNexusDefVisible && (
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <Label className="flex items-center font-medium"><Shield className="mr-1 h-3 w-3 text-gray-400" />DEF</Label>
+                                                        <span>{memberEffectiveStats.def}</span>
+                                                    </div>
+                                                )}
+                                                {/* Melee Attack */}
+                                                {isNexusMeleeAttackVisible && memberEffectiveStats.meleeAttack !== undefined && (
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <Label className="flex items-center font-medium"><MeleeIcon className="mr-1 h-3 w-3 text-orange-400" />Melee ATK</Label>
+                                                        <span>{memberEffectiveStats.meleeAttack}</span>
+                                                    </div>
+                                                )}
+                                                {/* Ranged Attack */}
+                                                {isNexusRangedAttackVisible && memberEffectiveStats.rangedAttack !== undefined && memberEffectiveStats.rangedRange !== undefined && (
+                                                    <div className="flex items-center justify-between text-xs">
+                                                        <Label className="flex items-center font-medium"><Crosshair className="mr-1 h-3 w-3 text-cyan-400" />Ranged</Label>
+                                                        <span>A{memberEffectiveStats.rangedAttack}/R{memberEffectiveStats.rangedRange}</span>
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     );
