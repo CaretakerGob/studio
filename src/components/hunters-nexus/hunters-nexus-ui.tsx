@@ -24,6 +24,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
+  DropdownMenuTrigger, // Added DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -269,21 +270,18 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     const sessionData = teamSessionData[memberId];
     if (!baseCharacter || !sessionData) return null;
 
-    // Start with a deep copy of base stats (HP, Sanity, MV, DEF).
-    let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(baseCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1 }));
+    let calculatedStats: CharacterStats = JSON.parse(JSON.stringify(baseCharacter.baseStats || { hp: 1, maxHp: 1, mv: 1, def: 1, sanity: 1, maxSanity: 1, meleeAttack: 0, rangedAttack: 0, rangedRange: 0 }));
     
-    // Initialize effective weapon stats from base character's weapons
     let effectiveMeleeAttack = baseCharacter.meleeWeapon?.attack || 0;
     let effectiveRangedAttack = baseCharacter.rangedWeapon?.attack || 0;
     let effectiveRangedRange = baseCharacter.rangedWeapon?.range || 0;
 
     const memberArsenal = arsenalCards.find(ac => ac.id === sessionData.selectedArsenalId && !ac.id.startsWith('error-'));
 
-    // Step 1: Override with Arsenal Weapon if present
     if (memberArsenal && memberArsenal.items) {
         const arsenalMeleeItem = memberArsenal.items.find(item =>
            !item.isPet &&
-           (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON') || item.category?.toUpperCase() === 'WEAPON') &&
+           (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'WEAPON' || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
            item.parsedWeaponStats?.attack !== undefined &&
            (!item.parsedWeaponStats?.range || item.parsedWeaponStats.range <= 1 || item.parsedWeaponStats.range === 0)
         );
@@ -293,7 +291,7 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
 
         const arsenalRangedItem = memberArsenal.items.find(item =>
            !item.isPet &&
-           (item.isFlaggedAsWeapon === true || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON') || item.category?.toUpperCase() === 'WEAPON') &&
+           (item.isFlaggedAsWeapon === true || item.category?.toUpperCase() === 'WEAPON' || (item.category?.toUpperCase() === 'LOAD OUT' && item.type?.toUpperCase() === 'WEAPON')) &&
            item.parsedWeaponStats?.attack !== undefined &&
            item.parsedWeaponStats?.range !== undefined && item.parsedWeaponStats.range > 1
         );
@@ -303,7 +301,6 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         }
     }
 
-    // Step 2: Apply Arsenal Card GLOBAL modifiers
     if (memberArsenal) {
         calculatedStats.maxHp = (calculatedStats.maxHp || 1) + (memberArsenal.maxHpMod || 0);
         calculatedStats.mv = (calculatedStats.mv || 0) + (memberArsenal.mvMod || 0);
@@ -315,14 +312,13 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
         effectiveRangedRange += (memberArsenal.rangedRangeMod || 0);
     }
     
-    // Step 3: Apply Arsenal GEAR item modifiers (mostly for core stats)
     if (memberArsenal && memberArsenal.items) {
       memberArsenal.items.forEach(item => {
         if (item.category?.toUpperCase() === 'GEAR' && item.parsedStatModifiers) {
           item.parsedStatModifiers.forEach(mod => {
             const statKey = mod.targetStat as keyof CharacterStats;
             if (statKey in calculatedStats && typeof (calculatedStats[statKey]) === 'number' &&
-                statKey !== 'meleeAttack' && statKey !== 'rangedAttack' && statKey !== 'rangedRange') { // Ensure not to double-modify weapon stats here
+                statKey !== 'meleeAttack' && statKey !== 'rangedAttack' && statKey !== 'rangedRange') { 
               (calculatedStats[statKey] as number) = Math.max(
                   (statKey === 'maxHp' || statKey === 'maxSanity') ? 1 : 0, 
                   (calculatedStats[statKey] as number) + mod.value
@@ -333,12 +329,10 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
       });
     }
     
-    // Step 4: Assign determined and globally modified weapon stats to calculatedStats object
     calculatedStats.meleeAttack = effectiveMeleeAttack;
     calculatedStats.rangedAttack = effectiveRangedAttack;
     calculatedStats.rangedRange = effectiveRangedRange;
     
-    // Step 5: Apply session-specific modifiers to ALL stats (core and weapon)
     calculatedStats.maxHp = (calculatedStats.maxHp || 1) + sessionData.sessionMaxHpModifier;
     calculatedStats.mv = (calculatedStats.mv || 0) + sessionData.sessionMvModifier;
     calculatedStats.def = (calculatedStats.def || 0) + sessionData.sessionDefModifier;
@@ -348,11 +342,9 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     calculatedStats.rangedAttack = (calculatedStats.rangedAttack || 0) + sessionData.sessionRangedAttackModifier;
     calculatedStats.rangedRange = (calculatedStats.rangedRange || 0) + sessionData.sessionRangedRangeModifier;
 
-    // Current HP/Sanity are from sessionData directly
     calculatedStats.hp = sessionData.currentHp;
     calculatedStats.sanity = sessionData.currentSanity;
     
-    // Final caps and non-negative checks
     if (calculatedStats.hp > calculatedStats.maxHp) calculatedStats.hp = calculatedStats.maxHp;
     if (calculatedStats.sanity > calculatedStats.maxSanity) calculatedStats.sanity = calculatedStats.maxSanity;
 
@@ -2189,3 +2181,4 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
+
