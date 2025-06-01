@@ -13,29 +13,44 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-let storage: FirebaseStorage;
-let db: Firestore; // Declare Firestore db
+let app: FirebaseApp | undefined = undefined;
+let auth: Auth | undefined = undefined;
+let storage: FirebaseStorage | undefined = undefined;
+let db: Firestore | undefined = undefined;
 
 // Initialize Firebase only on the client side and only once
-if (typeof window !== 'undefined' && !getApps().length) {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    storage = getStorage(app);
-    db = getFirestore(app); // Initialize Firestore
-    console.log("Firebase initialized successfully with Auth, Storage, and Firestore.");
-  } catch (error) {
-    console.error("Firebase initialization error:", error);
+if (typeof window !== 'undefined') {
+  if (!getApps().length) {
+    try {
+      // Basic validation of essential config keys
+      if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+        console.error("Firebase config is missing apiKey or projectId. Aborting initialization.");
+      } else {
+        app = initializeApp(firebaseConfig);
+        // Only initialize other services if app was initialized successfully
+        if (app) {
+          auth = getAuth(app);
+          storage = getStorage(app);
+          db = getFirestore(app);
+          // console.log("Firebase initialized successfully with Auth, Storage, and Firestore.");
+        } else {
+          console.error("Firebase app initialization failed, services not initialized.");
+        }
+      }
+    } catch (error) {
+      console.error("Firebase initialization error:", error);
+      // app, auth, storage, db will remain undefined
+    }
+  } else {
+    app = getApps()[0]; // If apps exist, app is already initialized
+    // Ensure auth, storage, db are also assigned if app exists from previous init
+    if (app) {
+        auth = getAuth(app);
+        storage = getStorage(app);
+        db = getFirestore(app);
+    }
   }
-} else if (getApps().length > 0) {
-  app = getApps()[0];
-  auth = getAuth(app);
-  storage = getStorage(app);
-  db = getFirestore(app); // Get existing Firestore instance
 }
 
-// Export the Firebase services.
-// @ts-ignore
-export { app, auth, storage, db }; // Export db
+// Export the Firebase services. They might be undefined if initialization failed.
+export { app, auth, storage, db };
