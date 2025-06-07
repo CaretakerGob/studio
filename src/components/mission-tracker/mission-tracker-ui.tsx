@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Enemy, ActiveEnemy, EnemyStatBlock, StatModifier, StatModifierName, EnemyVariation } from '@/types/mission';
+import type { Enemy, ActiveEnemy, EnemyStatBlock, StatModifier, StatModifierName, EnemyVariation, EnemyAbility } from '@/types/mission';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Map, ShieldAlert, UserPlus, UserMinus, Trash2, PlayCircle, Crosshair, Zap, Brain, Heart, SlidersHorizontal } from 'lucide-react';
+import { Map, ShieldAlert, UserPlus, UserMinus, Trash2, PlayCircle, Crosshair, Zap, Brain, Heart, SlidersHorizontal, Star, WandSparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
@@ -24,11 +24,9 @@ interface MissionTrackerUIProps {
 function applyStatModifiers(baseStats: EnemyStatBlock, modifiers: StatModifier[]): EnemyStatBlock {
   const newStats: EnemyStatBlock = JSON.parse(JSON.stringify(baseStats));
 
-  // Ensure all potentially modifiable stats exist on newStats.
-  newStats.hp = newStats.hp ?? 0; // Base HP from rulebook is MaxHP
+  newStats.hp = newStats.hp ?? 0;
   newStats.mv = newStats.mv ?? 0;
   newStats.def = newStats.def ?? 0;
-  // Initialize san only if it's present in baseStats or a modifier targets it
   if (newStats.san === undefined && modifiers.some(mod => mod.stat === 'San' || mod.stat === 'MaxSanity')) {
     newStats.san = 0;
   }
@@ -60,7 +58,6 @@ function applyStatModifiers(baseStats: EnemyStatBlock, modifiers: StatModifier[]
     }
   });
 
-  // Clamp values after all modifications
   if (newStats.hp !== undefined) newStats.hp = Math.max(1, newStats.hp);
   if (newStats.mv !== undefined) newStats.mv = Math.max(0, newStats.mv);
   if (newStats.def !== undefined) newStats.def = Math.max(0, newStats.def);
@@ -97,12 +94,12 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
     const initialEffectiveStats = JSON.parse(JSON.stringify(enemyTemplate.baseStats));
 
     const newActiveEnemy: ActiveEnemy = {
-      ...enemyTemplate, // Spreads base name, cp, template, baseStats, baseAttacks, logic, abilities, variations
+      ...enemyTemplate, 
       instanceId: `${enemyTemplate.id}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      effectiveStats: initialEffectiveStats, // Initial effective stats are the base stats
+      effectiveStats: initialEffectiveStats, 
       currentHp: initialEffectiveStats.hp || 10, 
       currentSanity: initialEffectiveStats.san, 
-      selectedVariationName: undefined, // No variation selected initially
+      selectedVariationName: undefined, 
     };
 
     setActiveEnemies(prev => [...prev, newActiveEnemy]);
@@ -271,6 +268,9 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {activeEnemies.map(enemy => {
                   const displayName = enemy.selectedVariationName || enemy.name;
+                  const selectedVarData = enemy.selectedVariationName && enemy.variations?.find(v => v.name === enemy.selectedVariationName);
+                  const abilitiesToShow = selectedVarData?.abilities?.length ? selectedVarData.abilities : (enemy.abilities || []);
+
                   return (
                     <Card key={enemy.instanceId} className="bg-card/50 border-border relative group">
                       <CardHeader className="pb-2 pt-3 px-3">
@@ -380,6 +380,23 @@ export function MissionTrackerUI({ initialEnemies }: MissionTrackerUIProps) {
                               <p className="font-medium">Logic: <span className="text-muted-foreground">{enemy.logic.condition}</span></p>
                           </div>
                          )}
+                         {abilitiesToShow.length > 0 && (
+                          <div className="text-xs border-t pt-2 mt-2">
+                            <p className="font-medium mb-1 flex items-center">
+                                {selectedVarData ? <WandSparkles className="inline h-3 w-3 mr-1 text-purple-400"/> : <Star className="inline h-3 w-3 mr-1 text-yellow-400"/>}
+                                Abilities ({selectedVarData ? selectedVarData.name : 'Base'}):
+                            </p>
+                            <ScrollArea className="h-[100px] pr-2">
+                                <ul className="list-disc pl-4 space-y-1">
+                                {abilitiesToShow.map((abi, idx) => (
+                                    <li key={`${enemy.instanceId}-abi-${idx}`} className="text-muted-foreground">
+                                    <span className="font-semibold text-foreground/80">{abi.name.split(':')[0]}:</span> {abi.description.substring(abi.name.split(':')[0].length +1).trim()}
+                                    </li>
+                                ))}
+                                </ul>
+                            </ScrollArea>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );

@@ -32,7 +32,7 @@ function parseStatModifiers(changeStr: string): StatModifier[] {
     'san': 'San', 'sanity': 'San', 'max san': 'MaxSanity', 'max sanity': 'MaxSanity',
     'melee': 'MeleeAttackBonus', 'melee attack': 'MeleeAttackBonus', 'meleeattackbonus': 'MeleeAttackBonus',
     'range': 'RangedAttackBonus', 'range attack': 'RangedAttackBonus', 'rangedattackbonus': 'RangedAttackBonus',
-    'attack': 'MeleeAttackBonus', 
+    'attack': 'MeleeAttackBonus',
     'attacks': 'MeleeAttackBonus',
   };
 
@@ -94,22 +94,20 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
       name,
       baseStats: {},
       baseAttacks: [],
-      abilities: [],
+      abilities: [], // Initialize base abilities array
       variations: [],
     };
 
-    let parsingSection: 'stats' | 'attacks' | 'logic' | 'abilities' | 'armor' | 'variationAbilities' | 'variationTable' | null = null;
-    let currentVariationNameForAbilities: string | null = null;
-    let currentVariationForAbilities: EnemyVariation | null = null; // To store the current variation object
-    let potentialVariationNameFromTable: string | null = null;
+    let parsingSection: 'stats' | 'attacks' | 'logic' | 'abilities' | 'armor' | 'variationTable' | 'variationAbilities' | null = null;
+    let currentVariationForAbilities: EnemyVariation | null = null;
 
     for (let i = 1; i < lines.length; i++) {
       let line = lines[i];
 
-      if (line.startsWith('## Base Stats')) { parsingSection = 'stats'; currentVariationNameForAbilities = null; currentVariationForAbilities = null; continue; }
-      if (line.startsWith('## Base Attacks')) { parsingSection = 'attacks'; currentVariationNameForAbilities = null; currentVariationForAbilities = null; continue; }
+      if (line.startsWith('## Base Stats')) { parsingSection = 'stats'; currentVariationForAbilities = null; continue; }
+      if (line.startsWith('## Base Attacks')) { parsingSection = 'attacks'; currentVariationForAbilities = null; continue; }
       if (line.startsWith('## Logic:')) {
-        parsingSection = 'logic'; currentVariationNameForAbilities = null; currentVariationForAbilities = null;
+        parsingSection = 'logic'; currentVariationForAbilities = null;
         const logicMatch = line.match(/Logic:\s*(.*)/i);
         if (logicMatch && logicMatch[1].trim()) { currentEnemy.logic = { condition: logicMatch[1].trim() }; }
         else if (i + 1 < lines.length && lines[i+1] && !lines[i+1].startsWith('#') && !lines[i+1].startsWith('- CP:')) {
@@ -117,10 +115,10 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
         }
         continue;
       }
-      if (line.startsWith('## Abilities:')) { parsingSection = 'abilities'; currentVariationNameForAbilities = null; currentVariationForAbilities = null; continue; }
+      if (line.startsWith('## Abilities:')) { parsingSection = 'abilities'; currentVariationForAbilities = null; continue; }
       
       if (line.startsWith('### Armor:')) {
-        parsingSection = 'armor'; currentVariationNameForAbilities = null; currentVariationForAbilities = null;
+        parsingSection = 'armor'; currentVariationForAbilities = null;
         const armorNameMatch = line.match(/Armor:\s*(.*)/i);
         if (armorNameMatch && currentEnemy.baseStats) {
           currentEnemy.baseStats.armor = { name: armorNameMatch[1].trim(), effect: '' };
@@ -128,79 +126,64 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
         continue;
       }
       
-      // Detect start of a variation table like "* Animated Objects Table"
-      if (line.startsWith('* ') && line.endsWith(' Table') && line.toLowerCase().includes('table')) {
+      if (line.startsWith('* ') && line.endsWith(' Table') && !line.includes("Resurrection Table")) {
         parsingSection = 'variationTable';
-        potentialVariationNameFromTable = null; // Reset for new table
-        // Skip header line(s) of the table
+        // Skip typical table header lines
         let k = i + 1;
         while (k < lines.length && (lines[k].trim() === '' || lines[k].trim().toLowerCase().includes('stat changes over base') || lines[k].trim().toLowerCase().startsWith('**object'))) {
           k++;
         }
-        i = k - 1; // Adjust i to point to the line before the first data row or the last skipped header
+        i = k - 1; // Position i before the first actual variation data line
         continue;
       }
 
-      // Parsing variation stat changes from a table (#### Name \n +Mod Stat) or direct H4 listing
-      if (parsingSection === 'variationTable' && line.startsWith('#### ')) {
-        const variationName = line.substring(5).trim();
-        potentialVariationNameFromTable = variationName; // Store for possible ability association later
-        let statLineIndex = i + 1;
-        
-        while (statLineIndex < lines.length && lines[statLineIndex].trim() === '') {
-          statLineIndex++; // Skip blank lines
-        }
+      if (parsingSection === 'variationTable') {
+        if (line.startsWith('#### ')) {
+            const variationName = line.substring(5).trim();
+            let statLineIndex = i + 1;
+            while (statLineIndex < lines.length && lines[statLineIndex].trim() === '') {
+                statLineIndex++; // Skip blank lines
+            }
 
-        if (statLineIndex < lines.length && lines[statLineIndex].trim() && !lines[statLineIndex].startsWith('#') && !lines[statLineIndex].startsWith('*')) {
-          const statChangeString = lines[statLineIndex].trim();
-          let variation = currentEnemy.variations?.find(v => v.name === variationName);
-          if (!variation) {
-            if (!currentEnemy.variations) currentEnemy.variations = [];
-            variation = { name: variationName, statChanges: [], abilities: [] };
-            currentEnemy.variations.push(variation);
-          }
-          const parsedMods = parseStatModifiers(statChangeString);
-          variation.statChanges = [...(variation.statChanges || []), ...parsedMods];
-          i = statLineIndex; // Advance main loop index past the stat line
+            if (statLineIndex < lines.length && lines[statLineIndex].trim() && !lines[statLineIndex].startsWith('#') && !lines[statLineIndex].startsWith('*')) {
+                const statChangeString = lines[statLineIndex].trim();
+                let variation = currentEnemy.variations?.find(v => v.name === variationName);
+                if (!variation) {
+                    if (!currentEnemy.variations) currentEnemy.variations = [];
+                    variation = { name: variationName, statChanges: [], abilities: [] };
+                    currentEnemy.variations.push(variation);
+                }
+                const parsedMods = parseStatModifiers(statChangeString);
+                variation.statChanges = [...(variation.statChanges || []), ...parsedMods];
+                i = statLineIndex; // Advance main loop index past the stat line
+            }
+        } else if (line.trim() !== '' && !line.startsWith('####')) {
+            // If it's not a '####' and not blank, assume end of this specific table's variation definitions
+            parsingSection = null; 
+            i--; // Re-evaluate this line with general logic as it might be start of abilities
         }
-        currentVariationNameForAbilities = variationName; // Set context for any abilities immediately following
-        currentVariationForAbilities = currentEnemy.variations?.find(v => v.name === variationName) || null;
-        parsingSection = 'variationAbilities'; // Assume abilities might follow
-        continue;
+        continue; 
       }
       
-      // Variation abilities under a specific variation name heading (often H5)
-      const variationSpecificHeadingMatch = line.match(/^(?:#####?)\s+(.*)/); // H4 or H5
-      if (variationSpecificHeadingMatch) {
-        const variationNameFromHeading = variationSpecificHeadingMatch[1].trim().replace(/\*\*/g, '');
-        
-        // Try to find an existing variation (created from table or previous H4)
-        let variation = currentEnemy.variations?.find(v => v.name === variationNameFromHeading);
-        
-        // If not found by exact name, and we had a name from a table context, try that
-        if (!variation && potentialVariationNameFromTable && variationNameFromHeading.startsWith(potentialVariationNameFromTable)) {
-            variation = currentEnemy.variations?.find(v => v.name === potentialVariationNameFromTable);
-        }
-
-        if (variation) {
-            currentVariationNameForAbilities = variation.name; // Use the canonical name from the variation object
-            currentVariationForAbilities = variation;
-            parsingSection = 'variationAbilities';
-
-            // Check for **Abilities** keyword
-            let k = i + 1;
-            while (k < lines.length && lines[k].trim() === "") k++; // Skip blank lines
-            if (k < lines.length && lines[k].trim().toLowerCase() === '**abilities**') {
-              i = k; // Move index past "**Abilities**" line
-            }
-        } else {
-            // This might be a general ability subheader, not tied to a specific variation
-            currentVariationNameForAbilities = null;
-            currentVariationForAbilities = null;
-            // Keep parsingSection as is, or reset if it was variationAbilities
-             if (parsingSection === 'variationAbilities') parsingSection = null;
-        }
-        continue;
+      const variationAbilityHeadingMatch = line.match(/^(?:#####?)\s+(.*)/); // H4 or H5 for variation abilities block
+      if (variationAbilityHeadingMatch) {
+          const variationNameFromHeading = variationAbilityHeadingMatch[1].trim().replace(/\*\*/g, '');
+          currentVariationForAbilities = currentEnemy.variations?.find(v => v.name === variationNameFromHeading) || null;
+          if (currentVariationForAbilities) {
+              parsingSection = 'variationAbilities';
+              // Check for **Abilities** keyword immediately following
+              let k = i + 1;
+              while (k < lines.length && lines[k].trim() === "") k++; // Skip blank lines
+              if (k < lines.length && lines[k].trim().toLowerCase() === '**abilities**') {
+                  i = k; // Move index past "**Abilities**" line
+              }
+          } else {
+              // It might be a general abilities sub-header not tied to a table-defined variation
+              // console.warn(`[Parser] Found ability heading "${line}" but no matching variation "${variationNameFromHeading}" from table. Treating as general ability section if applicable.`);
+              parsingSection = 'abilities'; // Fallback to general abilities if variation not found
+              currentVariationForAbilities = null;
+          }
+          continue;
       }
 
 
@@ -225,7 +208,7 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
         if (meleeMatch) currentEnemy.baseAttacks!.push({ type: 'Melee', details: meleeMatch[1].trim() });
         else if (rangeMatch) currentEnemy.baseAttacks!.push({ type: 'Range', details: rangeMatch[1].trim() });
       } else if (parsingSection === 'abilities' && line.startsWith('- ')) { 
-        const abilityLine = line.substring(2).replace(/\uFFFD/g, ' '); // Replaced  with space
+        const abilityLine = line.substring(2).replace(/\uFFFD/g, ' ');
         const abilityTitleMatch = abilityLine.match(/^(Special \d+|Signature|Passive(?: \d+)?)\s*[-–—:]?\s*([^–—:]*)/i);
         if (abilityTitleMatch && abilityTitleMatch[1]) {
           currentEnemy.abilities?.push({ 
@@ -235,7 +218,7 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
           });
         }
       } else if (parsingSection === 'variationAbilities' && currentVariationForAbilities && line.startsWith('- ')) {
-        const abilityLine = line.substring(2).replace(/\uFFFD/g, ' '); // Replaced  with space
+        const abilityLine = line.substring(2).replace(/\uFFFD/g, ' ');
         const abilityTitleMatch = abilityLine.match(/^(Special \d+|Signature|Passive(?: \d+)?)\s*[-–—:]?\s*([^–—:]*)/i);
         if (abilityTitleMatch && abilityTitleMatch[1]) {
           if (!currentVariationForAbilities.abilities) currentVariationForAbilities.abilities = [];
@@ -247,13 +230,9 @@ export async function parseHorrorJournal(): Promise<Enemy[]> {
         }
       }
       
-      // Reset context if a new major section (##) or rule (___) is encountered,
-      // or if it's a top-level heading (#) that isn't the start of the current enemy block.
       if (line.startsWith('## ') || line.startsWith('___') || (line.startsWith('# ') && line.trim() !== lines[0].trim()) ) {
         parsingSection = null;
-        currentVariationNameForAbilities = null;
         currentVariationForAbilities = null;
-        potentialVariationNameFromTable = null;
       }
     }
     if (currentEnemy.name) {
