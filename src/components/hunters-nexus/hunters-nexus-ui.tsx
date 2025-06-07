@@ -1284,34 +1284,38 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
                         <DropdownMenuCheckboxItem
                           checked={isCoreStatsVisible}
                           onCheckedChange={setIsCoreStatsVisible}
+                          onSelect={(e) => e.preventDefault()}
                         >
                           Show Active Character Stats
                         </DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem
                           checked={isCryptoVisible}
                           onCheckedChange={setIsCryptoVisible}
+                          onSelect={(e) => e.preventDefault()}
                         >
                           Show Crypto Tracker
                         </DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem
                           checked={isDiceRollerVisible}
                           onCheckedChange={setIsDiceRollerVisible}
+                          onSelect={(e) => e.preventDefault()}
                         >
                           Show Dice Roller
                         </DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem
                           checked={isCardDecksVisible}
                           onCheckedChange={setIsCardDecksVisible}
+                          onSelect={(e) => e.preventDefault()}
                         >
                           Show Card Decks
                         </DropdownMenuCheckboxItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>Compact Card Stats</DropdownMenuLabel>
-                        <DropdownMenuCheckboxItem checked={isNexusMvVisible} onCheckedChange={setIsNexusMvVisible}>Show MV</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem checked={isNexusDefVisible} onCheckedChange={setIsNexusDefVisible}>Show DEF</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem checked={isNexusBleedVisible} onCheckedChange={setIsNexusBleedVisible}>Show Bleed</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem checked={isNexusMeleeAttackVisible} onCheckedChange={setIsNexusMeleeAttackVisible}>Show Melee ATK</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem checked={isNexusRangedAttackVisible} onCheckedChange={setIsNexusRangedAttackVisible}>Show Ranged ATK</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusMvVisible} onCheckedChange={setIsNexusMvVisible} onSelect={(e) => e.preventDefault()}>Show MV</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusDefVisible} onCheckedChange={setIsNexusDefVisible} onSelect={(e) => e.preventDefault()}>Show DEF</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusBleedVisible} onCheckedChange={setIsNexusBleedVisible} onSelect={(e) => e.preventDefault()}>Show Bleed</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusMeleeAttackVisible} onCheckedChange={setIsNexusMeleeAttackVisible} onSelect={(e) => e.preventDefault()}>Show Melee ATK</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={isNexusRangedAttackVisible} onCheckedChange={setIsNexusRangedAttackVisible} onSelect={(e) => e.preventDefault()}>Show Ranged ATK</DropdownMenuCheckboxItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>
@@ -2181,4 +2185,3 @@ export function HuntersNexusUI({ arsenalCards = [] }: HuntersNexusUIProps) {
     </>
   );
 }
-
